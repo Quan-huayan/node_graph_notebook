@@ -1,0 +1,45 @@
+{
+  "version": "0.1.0",
+  "theme": "system",
+  "language": "zh_CN",
+
+  "editor": {
+    "font_family": "monospace",
+    "font_size": 14,
+    "line_height": 1.5,
+    "spell_check": true
+  },
+
+  "graph": {
+    "default_view_mode": "normalGraph",
+    "auto_layout_enabled": false,
+    "default_layout_algorithm": "forceDirected",
+    "show_grid": true,
+    "show_mini_map": true
+  },
+
+  "converter": {
+    "default_split_strategy": "heading",
+    "heading_level": 2,
+    "auto_extract_links": true,
+    "auto_extract_tags": true
+  },
+
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "max_tokens": 2000,
+    "api_key_encrypted": false
+  },
+
+  "plugins": {
+    "enabled": [],
+    "install_path": "data/plugins/installed"
+  },
+
+  "privacy": {
+    "analytics": false,
+    "crash_reports": false
+  }
+}

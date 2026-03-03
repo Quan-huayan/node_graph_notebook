@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/d/data_and_kits/Flutter/bin/flutter.bat run:*)",
+      "Bash(flutter analyze:*)",
+      "WebSearch",
+      "Bash(dart analyze:*)"
+    ]
+  }
+}

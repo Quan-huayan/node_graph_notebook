@@ -1,0 +1,184 @@
+import 'package:flutter/foundation.dart';
+import '../../core/models/models.dart';
+import '../../core/services/services.dart';
+
+/// 图状态管理
+class GraphModel extends ChangeNotifier {
+  GraphModel(this._service);
+
+  final GraphService _service;
+
+  Graph? _currentGraph;
+  List<Node> _graphNodes = [];
+  List<Connection> _connections = [];
+  bool _isLoading = false;
+  String? _error;
+
+  Graph? get currentGraph => _currentGraph;
+  List<Node> get graphNodes => _graphNodes;
+  List<Connection> get connections => _connections;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  bool get hasGraph => _currentGraph != null;
+  bool get hasError => _error != null;
+
+  /// 初始化 - 加载当前图
+  Future<void> initialize() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _currentGraph = await _service.getCurrentGraph();
+      if (_currentGraph != null) {
+        await _loadGraphData(_currentGraph!);
+      }
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 创建图
+  Future<Graph> createGraph(String name) async {
+    try {
+      final graph = await _service.createGraph(name: name);
+      _currentGraph = graph;
+      await _loadGraphData(graph);
+      notifyListeners();
+      return graph;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// 切换图
+  Future<void> switchGraph(String graphId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final graph = await _service.getGraph(graphId);
+      if (graph == null) {
+        throw GraphNotFoundException(graphId);
+      }
+
+      _currentGraph = graph;
+      await _loadGraphData(graph);
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 更新图配置
+  Future<void> updateViewConfig(GraphViewConfig config) async {
+    if (_currentGraph == null) return;
+
+    try {
+      _currentGraph = await _service.updateGraph(
+        _currentGraph!.id,
+        viewConfig: config,
+      );
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// 添加节点到图
+  Future<void> addNode(String nodeId) async {
+    if (_currentGraph == null) return;
+
+    try {
+      await _service.addNodeToGraph(_currentGraph!.id, nodeId);
+      final node = await _service.getGraphNodes(_currentGraph!.id);
+      _graphNodes = node;
+      _connections = Connection.calculateConnections(_graphNodes);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// 从图移除节点
+  Future<void> removeNode(String nodeId) async {
+    if (_currentGraph == null) return;
+
+    try {
+      await _service.removeNodeFromGraph(_currentGraph!.id, nodeId);
+      _graphNodes.removeWhere((n) => n.id == nodeId);
+      _connections = Connection.calculateConnections(_graphNodes);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// 切换视图模式
+  Future<void> switchViewMode(ViewModeType mode) async {
+    if (_currentGraph == null) return;
+
+    try {
+      await _service.switchViewMode(_currentGraph!.id, mode);
+      final graph = await _service.getGraph(_currentGraph!.id);
+      if (graph != null) {
+        _currentGraph = graph;
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// 应用布局
+  Future<void> applyLayout(LayoutAlgorithm algorithm) async {
+    if (_currentGraph == null) return;
+
+    try {
+      await _service.applyLayout(_currentGraph!.id, algorithm);
+      final graph = await _service.getGraph(_currentGraph!.id);
+      if (graph != null) {
+        _currentGraph = graph;
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// 刷新图数据
+  Future<void> refresh() async {
+    if (_currentGraph == null) return;
+    await _loadGraphData(_currentGraph!);
+  }
+
+  Future<void> _loadGraphData(Graph graph) async {
+    _graphNodes = await _service.getGraphNodes(graph.id);
+    _connections = Connection.calculateConnections(_graphNodes);
+    notifyListeners();
+  }
+
+  /// 清除错误
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+}
