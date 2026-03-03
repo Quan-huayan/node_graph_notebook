@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
-import '../../ui/models/models.dart';
+import '../models/models.dart';
 import '../pages/markdown_editor_page.dart';
 
 /// 搜索对话框

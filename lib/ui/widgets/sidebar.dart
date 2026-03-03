@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/models.dart';
 import '../models/models.dart';
-import 'folder_tree_view.dart';
+import '../views/folder_tree_view.dart';
 
 /// 侧边栏
 class Sidebar extends StatelessWidget {

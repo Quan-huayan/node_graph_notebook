@@ -9,3 +9,5 @@ export 'layout_service.dart';
 export 'settings_service.dart';
 export 'theme_service.dart';
 export 'data_recovery_service.dart';
+export 'shortcut_manager.dart';
+export 'undo_manager.dart';

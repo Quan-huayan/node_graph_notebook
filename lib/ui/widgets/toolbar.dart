@@ -4,7 +4,7 @@ import '../../core/models/models.dart';
 import '../../core/services/services.dart';
 import '../../core/services/theme_service.dart';
 import '../models/models.dart';
-import 'graph_nodes_dialog.dart';
+import '../dialogs/graph_nodes_dialog.dart';
 
 /// 工具栏
 class Toolbar extends StatelessWidget {

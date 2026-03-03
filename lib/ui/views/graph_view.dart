@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/settings_service.dart';
 import '../models/models.dart';
-import 'toolbar.dart';
-import 'sidebar.dart';
+import '../widgets/toolbar.dart';
+import '../widgets/sidebar.dart';
 import '../../flame/flame.dart';
 
 

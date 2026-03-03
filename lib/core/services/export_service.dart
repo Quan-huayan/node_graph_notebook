@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../models/models.dart';
-import '../../converter/converter_service.dart';
+import '../../converter/models/models.dart';
 
 /// 打开文件的辅助函数
 Future<void> openFile(String filePath) async {

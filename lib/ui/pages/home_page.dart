@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
-import '../pages/markdown_editor_page.dart';
-import 'search_widget.dart';
-import 'settings_dialog.dart';
-import 'create_node_dialog.dart';
-import 'graph_view.dart';
+import 'markdown_editor_page.dart';
+import '../dialogs/search_dialog.dart';
+import '../dialogs/settings_dialog.dart';
+import '../dialogs/create_node_dialog.dart';
+import '../views/graph_view.dart';
 import '../../core/services/export_service.dart';
 
 /// 主页面

@@ -8,8 +8,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:node_graph_notebook/main.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
+import 'package:node_graph_notebook/app.dart';
 
 void main() {
   testWidgets('App starts successfully', (WidgetTester tester) async {

@@ -2,10 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
-import '../../converter/converter_service.dart';
+import '../../converter/converter_service_impl.dart';
 import '../../core/models/models.dart';
 import '../../core/repositories/repositories.dart';
 import '../../ui/models/models.dart';
+import '../../converter/models/models.dart';
 
 /// 转换配置页面
 class ConverterPage extends StatefulWidget {

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
-import '../../core/services/theme_service.dart';
-import '../../ui/models/models.dart';
+import '../models/models.dart';
 
 /// 设置对话框
 class SettingsDialog extends StatefulWidget {

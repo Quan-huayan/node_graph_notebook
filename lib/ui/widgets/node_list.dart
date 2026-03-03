@@ -4,7 +4,7 @@ import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
 import '../models/models.dart';
 import '../pages/markdown_editor_page.dart';
-import '../widgets/connection_dialog.dart';
+import '../dialogs/connection_dialog.dart';
 
 /// 节点列表项
 class NodeListItem extends StatelessWidget {
