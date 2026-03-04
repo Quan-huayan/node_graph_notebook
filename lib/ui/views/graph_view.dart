@@ -5,6 +5,8 @@ import '../../core/services/settings_service.dart';
 import '../models/models.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/sidebar.dart';
+import '../widgets/node_context_menu.dart';
+import '../pages/markdown_editor_page.dart';
 import '../../flame/flame.dart';
 
 
@@ -88,7 +90,7 @@ class GraphView extends StatelessWidget {
                 // Flame 图渲染组件
                 Positioned.fill(
                   child: GraphFlameWidget(
-                    key: ValueKey(theme.backgrounds.canvas.value), // 使用主题背景色作为 key，主题变化时重建
+                    key: ValueKey(theme.backgrounds.canvas.toARGB32()), // 使用主题背景色作为 key，主题变化时重建
                     graph: graphModel.currentGraph!,
                     nodes: graphModel.graphNodes,
                     connections: graphModel.connections,
@@ -105,6 +107,50 @@ class GraphView extends StatelessWidget {
                       );
                       // 刷新图数据
                       await graphModel.refresh();
+                    },
+                    onSecondaryTap: (node, position) {
+                      showNodeContextMenu(
+                        context,
+                        node: node,
+                        position: position,
+                      );
+                    },
+                    onDoubleTap: (node) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => MarkdownEditorPage(node: node),
+                        ),
+                      );
+                    },
+                    onNodeDropped: (nodeId) async {
+                      // 检查节点是否已经在图中
+                      final alreadyInGraph = graphModel.graphNodes.any((n) => n.id == nodeId);
+                      if (alreadyInGraph) {
+                        // 节点已经在图中，显示提示
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Node is already in the graph'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+
+                      // 添加节点到图中
+                      try {
+                        await graphModel.addNode(nodeId);
+                        // 可选：选择新添加的节点
+                        context.read<NodeModel>().selectNode(nodeId);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to add node: $e')),
+                          );
+                        }
+                      }
                     },
                   ),
                 ),

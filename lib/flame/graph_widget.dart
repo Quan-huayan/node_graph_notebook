@@ -19,6 +19,9 @@ class GraphGame extends FlameGame {
     required this.theme,
     this.onTap,
     this.onDragEnd,
+    this.onSecondaryTap,
+    this.onDoubleTap,
+    this.onZoomChanged,
   });
 
   final Graph graph;
@@ -29,6 +32,9 @@ class GraphGame extends FlameGame {
   final AppThemeData theme;
   final Function(Node)? onTap;
   final Function(Node, Offset)? onDragEnd;
+  final Function(Node, Offset)? onSecondaryTap;
+  final Function(Node)? onDoubleTap;
+  final Function(double)? onZoomChanged;
 
   GraphWorld? _graphWorld;
 
@@ -64,9 +70,30 @@ class GraphGame extends FlameGame {
       theme: theme,
       onTap: onTap,
       onDragEndCallback: onDragEnd,
+      onSecondaryTap: onSecondaryTap,
+      onDoubleTap: onDoubleTap,
     );
 
     await world.add(_graphWorld!);
+  }
+
+  /// 处理滚轮缩放
+  void handleZoom(double delta) {
+    if (_graphWorld == null) return;
+
+    // 缩放系数
+    const zoomFactor = 0.001;
+    final zoomChange = delta * zoomFactor;
+
+    // 计算新的缩放级别 - 使用 camera viewport 的缩放
+    final currentZoom = camera.viewport.position.length;
+    var newZoom = currentZoom + zoomChange;
+
+    // 限制缩放范围
+    newZoom = newZoom.clamp(0.1, 5.0);
+
+    // 通知外部缩放变化
+    onZoomChanged?.call(newZoom);
   }
 
   /// 更新节点
@@ -107,6 +134,10 @@ class GraphFlameWidget extends StatefulWidget {
     required this.theme,
     this.onTap,
     this.onDragEnd,
+    this.onSecondaryTap,
+    this.onDoubleTap,
+    this.onZoomChanged,
+    this.onNodeDropped,
   });
 
   final Graph graph;
@@ -117,6 +148,10 @@ class GraphFlameWidget extends StatefulWidget {
   final AppThemeData theme;
   final Function(Node)? onTap;
   final Function(Node, Offset)? onDragEnd;
+  final Function(Node, Offset)? onSecondaryTap;
+  final Function(Node)? onDoubleTap;
+  final Function(double)? onZoomChanged;
+  final Function(String nodeId)? onNodeDropped;
 
   @override
   State<GraphFlameWidget> createState() => _GraphFlameWidgetState();
@@ -141,6 +176,9 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
       theme: widget.theme,
       onTap: widget.onTap,
       onDragEnd: widget.onDragEnd,
+      onSecondaryTap: widget.onSecondaryTap,
+      onDoubleTap: widget.onDoubleTap,
+      onZoomChanged: widget.onZoomChanged,
     );
 
     // 监听游戏加载完成
@@ -195,7 +233,30 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
           height: constraints.maxHeight.isInfinite
               ? double.infinity
               : constraints.maxHeight,
-          child: GameWidget(game: _game),
+          child: DragTarget<String>(
+            onAcceptWithDetails: (details) {
+              widget.onNodeDropped?.call(details.data);
+            },
+            builder: (context, candidateData, rejected) {
+              // 检查是否正在拖拽节点
+              final isDraggingOver = candidateData.isNotEmpty;
+
+              return Container(
+                decoration: isDraggingOver
+                    ? BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.5),
+                        border: Border.all(
+                          color: Colors.blue.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                      )
+                    : null,
+                child: GameWidget(
+                  game: _game,
+                ),
+              );
+            },
+          ),
         );
       },
     );

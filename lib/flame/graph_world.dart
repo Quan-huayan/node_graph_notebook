@@ -17,6 +17,8 @@ class GraphWorld extends Component with HasGameReference {
     required this.theme,
     this.onTap,
     this.onDragEndCallback,
+    this.onSecondaryTap,
+    this.onDoubleTap,
   });
 
   final Graph graph;
@@ -27,6 +29,8 @@ class GraphWorld extends Component with HasGameReference {
   final AppThemeData theme;
   final Function(Node)? onTap;
   final Function(Node, Offset)? onDragEndCallback;
+  final Function(Node, Offset)? onSecondaryTap;
+  final Function(Node)? onDoubleTap;
 
   late final ConnectionRenderer _connectionRenderer;
   final Map<String, NodeComponent> _nodeComponents = {};
@@ -55,6 +59,8 @@ class GraphWorld extends Component with HasGameReference {
         theme: theme,
         onTap: _handleNodeTap,
         onDragEndCallback: _handleNodeDragEnd,
+        onSecondaryTap: onSecondaryTap,
+        onDoubleTap: onDoubleTap,
       );
       add(component);
       _nodeComponents[node.id] = component;
@@ -106,6 +112,8 @@ class GraphWorld extends Component with HasGameReference {
       theme: theme,
       onTap: _handleNodeTap,
       onDragEndCallback: _handleNodeDragEnd,
+      onSecondaryTap: onSecondaryTap,
+      onDoubleTap: onDoubleTap,
     );
     add(component);
     _nodeComponents[node.id] = component;

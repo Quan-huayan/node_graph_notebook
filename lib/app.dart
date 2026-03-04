@@ -158,7 +158,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
     return MaterialApp(
       home: Scaffold(
-        body: Container(
+        body: DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,

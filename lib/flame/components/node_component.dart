@@ -5,13 +5,15 @@ import '../../core/models/models.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Flame 节点渲染组件
-class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks {
+class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, SecondaryTapCallbacks, DoubleTapCallbacks {
   NodeComponent({
     required this.node,
     required this.viewConfig,
     required this.theme,
     this.onTap,
     this.onDragEndCallback,
+    this.onSecondaryTap,
+    this.onDoubleTap,
     Vector2? position,
   }) : super(
           position: position ??
@@ -46,6 +48,8 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks {
   final AppThemeData theme;
   final Function(Node)? onTap;
   final Function(Node, Offset)? onDragEndCallback;
+  final Function(Node, Offset)? onSecondaryTap;
+  final Function(Node)? onDoubleTap;
 
   bool _isSelected = false;
   bool _isHovered = false;
@@ -562,6 +566,17 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks {
   @override
   void onTapCancel(TapCancelEvent event) {
     _isHovered = false;
+  }
+
+  @override
+  void onSecondaryTapDown(SecondaryTapDownEvent event) {
+    // 使用 devicePosition 获取全局设备坐标
+    onSecondaryTap?.call(node, Offset(event.devicePosition.x, event.devicePosition.y));
+  }
+
+  @override
+  void onDoubleTapDown(DoubleTapDownEvent event) {
+    onDoubleTap?.call(node);
   }
 
   void setSelected(bool selected) {

@@ -114,6 +114,7 @@ class NodeModel extends ChangeNotifier {
     String? title,
     String? content,
     Offset? position,
+    NodeViewMode? viewMode,
   }) async {
     try {
       final updatedNode = await _service.updateNode(
@@ -121,6 +122,7 @@ class NodeModel extends ChangeNotifier {
         title: title,
         content: content,
         position: position,
+        viewMode: viewMode,
       );
 
       final index = _nodes.indexWhere((n) => n.id == nodeId);

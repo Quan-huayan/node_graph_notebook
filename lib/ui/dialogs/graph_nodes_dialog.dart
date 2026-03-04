@@ -48,11 +48,11 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
 
     return AlertDialog(
       backgroundColor: theme.backgrounds.primary,
-      title: Row(
+      title: const Row(
         children: [
-          const Icon(Icons.graphic_eq),
-          const SizedBox(width: 8),
-          const Text('Manage Graph Nodes'),
+          Icon(Icons.graphic_eq),
+          SizedBox(width: 8),
+          Text('Manage Graph Nodes'),
         ],
       ),
       content: SizedBox(

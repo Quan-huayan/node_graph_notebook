@@ -62,7 +62,7 @@ The application follows **Clean Architecture** with **Provider** state managemen
 
 ### Dependency Layers (in order)
 
-```
+```txt
 Repository Layer (data access)
     ↓
 Service Layer (business logic)
