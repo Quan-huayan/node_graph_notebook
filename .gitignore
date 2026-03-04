@@ -76,3 +76,6 @@ coverage/
 # OS generated files
 Thumbs.db
 Desktop.ini
+
+# (private? design)
+hyperweb.md
