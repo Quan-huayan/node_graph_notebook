@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/theme_service.dart';
@@ -31,10 +32,42 @@ class GraphView extends StatelessWidget {
     }
 
     if (graphModel.hasError || nodeModel.hasError) {
+      final error = graphModel.error ?? nodeModel.error ?? 'An unknown error occurred';
       return Center(
-        child: Text(
-          'Error: ${graphModel.error ?? nodeModel.error}',
-          style: Theme.of(context).textTheme.bodyLarge,
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Something went wrong',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                error,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  // 尝试重新初始化
+                  final graphModel = context.read<GraphModel>();
+                  graphModel.clearError();
+                  await graphModel.initialize();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try Again'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -176,7 +209,14 @@ class GraphView extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create graph: $e')),
+          SnackBar(
+            content: Text(
+              e is FileSystemException
+                  ? 'Cannot create graph: Data folder is missing. Please restart the application.'
+                  : 'Failed to create graph: $e',
+            ),
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }

@@ -65,9 +65,29 @@ class FileSystemGraphRepository implements GraphRepository {
 
   @override
   Future<void> save(Graph graph) async {
+    final dir = Directory(_graphsDir);
+    if (!dir.existsSync()) {
+      try {
+        await dir.create(recursive: true);
+      } catch (e) {
+        throw RepositoryException(
+          'Data folder does not exist and cannot be created. '
+          'Please check your file system permissions.',
+        );
+      }
+    }
+
     final file = _getGraphFilePath(graph.id);
     final json = graph.toJson();
-    await file.writeAsString(_encodeJson(json));
+
+    try {
+      await file.writeAsString(_encodeJson(json));
+    } on FileSystemException catch (e) {
+      throw RepositoryException(
+        'Cannot write to data folder. The folder may have been deleted or is inaccessible. '
+        'Error: ${e.message}',
+      );
+    }
   }
 
   @override
@@ -79,6 +99,11 @@ class FileSystemGraphRepository implements GraphRepository {
       final content = await file.readAsString();
       final json = _decodeJson(content);
       return Graph.fromJson(json);
+    } on FileSystemException catch (e) {
+      throw RepositoryException(
+        'Cannot read graph data. The data folder may have been deleted or is inaccessible. '
+        'Error: ${e.message}',
+      );
     } catch (e) {
       throw RepositoryException('Failed to load graph $graphId: $e');
     }
@@ -107,7 +132,10 @@ class FileSystemGraphRepository implements GraphRepository {
         await dir.create(recursive: true);
         return [];
       } catch (e) {
-        throw RepositoryException('Failed to create graphs directory: $e');
+        throw RepositoryException(
+          'Data folder does not exist and cannot be created. '
+          'Please check your file system permissions.',
+        );
       }
     }
 
@@ -132,6 +160,11 @@ class FileSystemGraphRepository implements GraphRepository {
           }
         }
       }
+    } on FileSystemException catch (e) {
+      throw RepositoryException(
+        'Cannot access data folder. It may have been deleted or is inaccessible. '
+        'Error: ${e.message}',
+      );
     } catch (e) {
       throw RepositoryException('Failed to list graphs: $e');
     }
@@ -186,6 +219,18 @@ class FileSystemGraphRepository implements GraphRepository {
         return graphs.first;
       }
       return null;
+    } on FileSystemException catch (e) {
+      debugPrint('Failed to load current graph: $e');
+      // 如果读取设置文件失败，尝试清除它
+      try {
+        await _clearCurrent();
+      } catch (e2) {
+        debugPrint('Failed to clear current graph settings: $e2');
+      }
+
+      // 返回第一个可用的图
+      final graphs = await getAll();
+      return graphs.isNotEmpty ? graphs.first : null;
     } catch (e) {
       debugPrint('Failed to load current graph: $e');
       // 如果读取设置文件失败，尝试清除它
