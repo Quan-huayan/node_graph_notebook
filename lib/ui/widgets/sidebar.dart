@@ -162,10 +162,11 @@ class _SidebarState extends State<Sidebar> {
     final nodeBloc = context.read<NodeBloc>();
 
     try {
-      // 发送创建节点事件
+      // 发送创建节点事件，设置isFolder元数据
       nodeBloc.add(const NodeCreateEvent(
         title: 'New Folder',
         content: 'A folder to organize your notes',
+        metadata: {'isFolder': true},
       ));
 
       // 注意：文件夹不自动添加到节点图中，它只是一个组织工具

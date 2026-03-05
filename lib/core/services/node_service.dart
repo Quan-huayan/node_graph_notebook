@@ -12,6 +12,7 @@ abstract class NodeService {
     Offset? position,
     Size? size,
     Map<String, NodeReference>? references,
+    Map<String, dynamic>? metadata,
   });
 
   /// 创建内容节点
@@ -19,6 +20,7 @@ abstract class NodeService {
     required String title,
     required String content,
     Offset? position,
+    Map<String, dynamic>? metadata,
   });
 
   /// 更新节点
@@ -77,6 +79,7 @@ class NodeServiceImpl implements NodeService {
     Offset? position,
     Size? size,
     Map<String, NodeReference>? references,
+    Map<String, dynamic>? metadata,
   }) async {
     // 验证
     _validateTitle(title);
@@ -100,7 +103,7 @@ class NodeServiceImpl implements NodeService {
       viewMode: NodeViewMode.titleWithPreview,
       createdAt: now,
       updatedAt: now,
-      metadata: const {},
+      metadata: metadata ?? const {},
     );
 
     await _repository.save(node);
@@ -112,11 +115,13 @@ class NodeServiceImpl implements NodeService {
     required String title,
     required String content,
     Offset? position,
+    Map<String, dynamic>? metadata,
   }) async {
     return createNode(
       title: title,
       content: content,
       position: position,
+      metadata: metadata,
     );
   }
 

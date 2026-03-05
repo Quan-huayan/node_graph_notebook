@@ -125,11 +125,12 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   }
 
   Widget _buildFolderItem(BuildContext context, Node folder, List<Node> allNodes, int level) {
-    final children = _getFolderChildren(folder, allNodes.where((n) => !n.isFolder).toList());
+    final children = _getFolderChildren(folder, allNodes);
     final isExpanded = _expandedFolders.contains(folder.id);
     final theme = context.watch<ThemeService>().themeData;
     final nodeBloc = context.watch<NodeBloc>();
     final isSelected = nodeBloc.state.selectedNode?.id == folder.id;
+    final isDragging = _draggedNodeId == folder.id;
 
     return DragTarget<String>(
       onAcceptWithDetails: (details) async {
@@ -170,52 +171,87 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           ),
           child: Column(
             children: [
-              InkWell(
-                onTap: () {
+              Draggable<String>(
+                data: folder.id,
+                onDragStarted: () {
                   setState(() {
-                    if (_expandedFolders.contains(folder.id)) {
-                      _expandedFolders.remove(folder.id);
-                    } else {
-                      _expandedFolders.add(folder.id);
-                    }
+                    _draggedNodeId = folder.id;
                   });
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isExpanded ? Icons.expand_more : Icons.chevron_right,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.folder,
-                        size: 16,
-                        color: theme.nodes.folderPrimary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          folder.title,
-                          style: TextStyle(
-                            fontSize: 12,
+                onDragEnd: (details) {
+                  setState(() {
+                    _draggedNodeId = null;
+                  });
+                },
+                feedback: Material(
+                  elevation: 8.0,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.folder,
+                          size: 16,
+                          color: theme.nodes.folderPrimary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(folder.title),
+                      ],
+                    ),
+                  ),
+                ),
+                child: Opacity(
+                  opacity: isDragging ? 0.5 : 1.0,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (_expandedFolders.contains(folder.id)) {
+                          _expandedFolders.remove(folder.id);
+                        } else {
+                          _expandedFolders.add(folder.id);
+                        }
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isExpanded ? Icons.expand_more : Icons.chevron_right,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.folder,
+                            size: 16,
                             color: theme.nodes.folderPrimary,
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              folder.title,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.nodes.folderPrimary,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '(${children.length})',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.more_vert, size: 16),
+                            onPressed: () => _showNodeMenu(context, folder),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '(${children.length})',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.more_vert, size: 16),
-                        onPressed: () => _showNodeMenu(context, folder),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),

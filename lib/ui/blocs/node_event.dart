@@ -34,13 +34,15 @@ class NodeCreateEvent extends NodeEvent {
   const NodeCreateEvent({
     required this.title,
     this.content,
+    this.metadata,
   });
 
   final String title;
   final String? content;
+  final Map<String, dynamic>? metadata;
 
   @override
-  List<Object?> get props => [title, content];
+  List<Object?> get props => [title, content, metadata];
 }
 
 /// 创建内容节点事件
@@ -48,13 +50,15 @@ class NodeCreateContentEvent extends NodeEvent {
   const NodeCreateContentEvent({
     required this.title,
     required this.content,
+    this.metadata,
   });
 
   final String title;
   final String content;
+  final Map<String, dynamic>? metadata;
 
   @override
-  List<Object?> get props => [title, content];
+  List<Object?> get props => [title, content, metadata];
 }
 
 /// 更新节点事件

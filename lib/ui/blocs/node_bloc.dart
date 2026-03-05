@@ -91,6 +91,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       final node = await _nodeService.createNode(
         title: event.title,
         content: event.content,
+        metadata: event.metadata,
       );
 
       final updatedNodes = [...state.nodes, node];
@@ -113,6 +114,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       final node = await _nodeService.createNode(
         title: event.title,
         content: event.content,
+        metadata: event.metadata,
       );
 
       final updatedNodes = [...state.nodes, node];
