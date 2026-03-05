@@ -13,6 +13,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     required this.theme,
     this.bloc,
     this.onTap,
+    this.onDragUpdateCallback,
     this.onDragEndCallback,
     this.onSecondaryTap,
     this.onDoubleTap,
@@ -48,6 +49,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   final AppThemeData theme;
   final GraphBloc? bloc; // 可选的 BLoC，如果提供则使用 BLoC 模式
   final Function(Node)? onTap;
+  final Function(Node, Offset)? onDragUpdateCallback; // 拖拽过程中回调
   final Function(Node, Offset)? onDragEndCallback;
   final Function(Node, Offset)? onSecondaryTap;
   final Function(Node)? onDoubleTap;
@@ -442,6 +444,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   void onDragUpdate(DragUpdateEvent event) {
     super.onDragUpdate(event);
     position += event.localDelta;
+
+    // 拖拽过程中实时通知更新连线位置
+    final currentPosition = Offset(position.x, position.y);
+    onDragUpdateCallback?.call(node, currentPosition);
   }
 
   @override
@@ -499,6 +505,11 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   }
 
   void updateNode(Node newNode) {
+    // 更新位置
+    position = Vector2(
+      newNode.position.dx.toDouble(),
+      newNode.position.dy.toDouble(),
+    );
     // 重新计算尺寸
     size = _calculateSize(newNode);
     // 重新初始化绘制

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import '../../core/models/models.dart';
+import '../core/models/models.dart';
 import '../ui/blocs/blocs.dart';
 import '../core/services/theme/app_theme.dart';
 import '../ui/pages/markdown_editor_page.dart';
@@ -57,7 +57,7 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     // 订阅节点和连接变化
     subscribeToState(
       onnewStateState: (state) {
-        _onNodesChanged(state.nodes);
+        _onNodesChanged(state.nodes, state.graph.nodePositions);
         _onConnectionsChanged(state.connections, state.viewState.showConnections);
       },
       shouldUpdate: (oldState, newState) {
@@ -86,7 +86,7 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   }
 
   /// 处理节点列表变化
-  void _onNodesChanged(List<dynamic> nodes) {
+  void _onNodesChanged(List<dynamic> nodes, Map<String, Offset> nodePositions) {
     final typedNodes = nodes as List<Node>;
     final currentIds = _nodeComponents.keys.toSet();
     final newIds = typedNodes.map((n) => n.id).toSet();
@@ -100,12 +100,25 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
 
     // 添加或更新节点
     for (final node in typedNodes) {
+      // 使用 graph.nodePositions 中的位置更新节点
+      final position = nodePositions[node.id];
+      final updatedNode = position != null
+          ? node.copyWith(position: position)
+          : node;
+
       if (currentIds.contains(node.id)) {
-        _updateNodeComponent(node);
+        _updateNodeComponent(updatedNode);
       } else {
-        _addNodeComponent(node);
+        _addNodeComponent(updatedNode);
       }
     }
+
+    // 更新连线位置（节点位置变化时，连线也需要更新）
+    _connectionRenderer.updateConnections(
+      connections: graphBloc.state.connections,
+      nodePositions: _getNodePositions(),
+      showConnections: graphBloc.state.viewState.showConnections,
+    );
   }
 
   /// 处理连接变化
@@ -126,6 +139,10 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
       viewConfig: graphBloc.state.graph.viewConfig,
       theme: theme,
       bloc: graphBloc,
+      onDragUpdateCallback: (Node node, Offset position) {
+        // 拖拽过程中实时更新连线位置
+        _updateConnectionRenderer();
+      },
       onDoubleTap: (Node node) {
         // 双击节点时打开 Markdown 编辑器
         Navigator.push(
@@ -138,6 +155,24 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     );
     add(component);
     _nodeComponents[node.id] = component;
+  }
+
+  /// 更新连线渲染器位置
+  void _updateConnectionRenderer() {
+    _connectionRenderer.updateConnections(
+      connections: graphBloc.state.connections,
+      nodePositions: _getNodePositionsFromComponents(),
+      showConnections: graphBloc.state.viewState.showConnections,
+    );
+  }
+
+  /// 从组件获取节点位置映射
+  Map<String, Vector2> _getNodePositionsFromComponents() {
+    final positions = <String, Vector2>{};
+    for (final entry in _nodeComponents.entries) {
+      positions[entry.key] = entry.value.position;
+    }
+    return positions;
   }
 
   /// 移除节点组件

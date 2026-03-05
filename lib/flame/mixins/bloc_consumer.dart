@@ -28,23 +28,21 @@ mixin BlocConsumerMixin<T> on Component {
     // 取消之前的订阅
     _stateSubscription?.cancel();
 
-    _stateSubscription = graphBloc.stream.listen((newStateState) {
-      if (_previousState != null) {
-        // 检查是否需要更新
-        final needsUpdate = shouldUpdate?.call(_previousState!, newStateState) ?? true;
-
-        if (needsUpdate && onnewStateState != null) {
-          onnewStateState(newStateState);
-        }
-      }
-      _previousState = newStateState;
-    });
-
     // 立即处理当前状态
     if (listenImmediately) {
       _previousState = graphBloc.state;
       onnewStateState?.call(graphBloc.state);
     }
+
+    _stateSubscription = graphBloc.stream.listen((newStateState) {
+      // 检查是否需要更新
+      final needsUpdate = shouldUpdate?.call(_previousState!, newStateState) ?? true;
+
+      if (needsUpdate && onnewStateState != null) {
+        onnewStateState(newStateState);
+      }
+      _previousState = newStateState;
+    });
   }
 
   /// 订阅特定节点的位置变化
