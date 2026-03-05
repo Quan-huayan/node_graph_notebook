@@ -199,20 +199,30 @@ class GraphServiceImpl implements GraphService {
       algorithm: algorithm,
     );
 
+    // 同时更新节点文件和图的位置映射
+    final updatedNodePositions = Map<String, Offset>.from(graph.nodePositions);
+
     // 更新节点位置
     for (final node in nodes) {
       final newPos = newPositions[node.id];
       if (newPos != null) {
+        // 更新节点文件
         final updatedNode = node.copyWith(position: newPos);
         await _nodeRepository.save(updatedNode);
+
+        // 更新图的位置映射
+        updatedNodePositions[node.id] = newPos;
       }
     }
 
-    // 更新图的布局算法配置
+    // 更新图的布局算法配置和位置映射
     final updatedConfig = graph.viewConfig.copyWith(
       layoutAlgorithm: algorithm,
     );
-    final updatedGraph = graph.copyWith(viewConfig: updatedConfig);
+    final updatedGraph = graph.copyWith(
+      viewConfig: updatedConfig,
+      nodePositions: updatedNodePositions,
+    );
     await _repository.save(updatedGraph);
   }
 

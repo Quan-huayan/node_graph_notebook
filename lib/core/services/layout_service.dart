@@ -271,9 +271,12 @@ class LayoutServiceImpl implements LayoutService {
       // 添加被引用的节点
       for (final refId in node.references.keys) {
         if (!nodeLevel.containsKey(refId)) {
-          final refNode = nodes.firstWhere((n) => n.id == refId);
-          nodeLevel[refId] = level + 1;
-          queue.add((refNode, level + 1));
+          // 先检查节点是否存在
+          final refNode = nodes.where((n) => n.id == refId).firstOrNull;
+          if (refNode != null) {
+            nodeLevel[refId] = level + 1;
+            queue.add((refNode, level + 1));
+          }
         }
       }
     }
@@ -343,10 +346,29 @@ class LayoutServiceImpl implements LayoutService {
 
     final positions = <String, Vector2>{};
 
+    // 首先布局所有概念节点（有引用的节点）
+    final conceptNodes = nodes.where((n) => n.references.isNotEmpty).toList();
+
+    // 使用力导向布局先布局概念节点
+    if (conceptNodes.isNotEmpty) {
+      final radius = 300.0;
+      final center = const Vector2(640.0, 400.0);
+
+      for (int i = 0; i < conceptNodes.length; i++) {
+        final angle = (2 * pi * i) / conceptNodes.length;
+        final x = center.x + radius * cos(angle);
+        final y = center.y + radius * sin(angle);
+        positions[conceptNodes[i].id] = Vector2(x, y);
+      }
+    }
+
     // 布局内容节点（围绕其所属的概念节点）
     for (final contentNode in nodes) {
+      // 跳过已布局的概念节点
+      if (positions.containsKey(contentNode.id)) continue;
+
       // 找到包含此内容节点的概念节点
-      final parentConcepts = nodes.where((concept) {
+      final parentConcepts = conceptNodes.where((concept) {
         return concept.references.containsKey(contentNode.id) &&
             concept.references[contentNode.id]!.type == ReferenceType.contains;
       }).toList();

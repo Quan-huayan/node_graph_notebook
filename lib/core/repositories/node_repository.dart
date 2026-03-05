@@ -271,7 +271,7 @@ class FileSystemNodeRepository implements NodeRepository {
     // Frontmatter
     buffer.writeln('---');
     buffer.writeln('id: ${node.id}');
-    buffer.writeln('title: ${node.title}');
+    buffer.writeln('title: "${node.title}"');
     buffer.writeln('created_at: ${node.createdAt.toIso8601String()}');
     buffer.writeln('updated_at: ${node.updatedAt.toIso8601String()}');
 
@@ -440,6 +440,8 @@ class FileSystemNodeRepository implements NodeRepository {
   String? _parseStringValue(dynamic value) {
     if (value == null) return null;
     if (value is String) return value;
+    // 处理数字类型（如旧格式中的纯数字title）
+    if (value is num) return value.toString();
     return value.toString();
   }
 

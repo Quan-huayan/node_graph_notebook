@@ -5,6 +5,7 @@ import '../core/models/models.dart';
 import '../ui/blocs/blocs.dart';
 import '../core/services/theme/app_theme.dart';
 import '../ui/pages/markdown_editor_page.dart';
+import '../ui/widgets/node_context_menu.dart';
 import 'mixins/bloc_consumer.dart';
 import 'components/node_component.dart';
 import 'components/connection_renderer.dart';
@@ -142,6 +143,10 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
       onDragUpdateCallback: (Node node, Offset position) {
         // 拖拽过程中实时更新连线位置
         _updateConnectionRenderer();
+      },
+      onSecondaryTap: (Node node, Offset position) {
+        // 右键点击显示上下文菜单
+        showNodeContextMenu(context, node: node, position: position);
       },
       onDoubleTap: (Node node) {
         // 双击节点时打开 Markdown 编辑器

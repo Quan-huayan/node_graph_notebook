@@ -21,18 +21,14 @@ Future<void> showNodeContextMenu(
   final nodeBloc = context.read<NodeBloc>();
   final graphBloc = context.read<GraphBloc>();
 
-  // 获取 RenderBox 来计算相对于屏幕的位置
-  final renderBox = context.findRenderObject() as RenderBox;
-  final globalPosition = renderBox.localToGlobal(position);
-
-  // 显示弹出菜单
+  // 显示弹出菜单（position 已经是全局设备坐标）
   final selectedAction = await showMenu<_MenuAction?>(
     context: context,
     position: RelativeRect.fromLTRB(
-      globalPosition.dx,
-      globalPosition.dy,
-      globalPosition.dx + 1,
-      globalPosition.dy + 1,
+      position.dx,
+      position.dy,
+      position.dx + 1,
+      position.dy + 1,
     ),
     items: [
       PopupMenuItem<_MenuAction>(
