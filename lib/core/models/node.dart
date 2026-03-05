@@ -2,38 +2,9 @@ import 'dart:ui';
 import 'package:json_annotation/json_annotation.dart';
 import 'enums.dart';
 import 'node_reference.dart';
+import 'converters.dart';
 
 part 'node.g.dart';
-
-/// Offset 序列化转换器
-class OffsetConverter implements JsonConverter<Offset, Map<String, double>> {
-  const OffsetConverter();
-
-  @override
-  Offset fromJson(Map<String, double> json) {
-    return Offset(json['dx']!, json['dy']!);
-  }
-
-  @override
-  Map<String, double> toJson(Offset object) {
-    return {'dx': object.dx, 'dy': object.dy};
-  }
-}
-
-/// Size 序列化转换器
-class SizeConverter implements JsonConverter<Size, Map<String, double>> {
-  const SizeConverter();
-
-  @override
-  Size fromJson(Map<String, double> json) {
-    return Size(json['width']!, json['height']!);
-  }
-
-  @override
-  Map<String, double> toJson(Size object) {
-    return {'width': object.width, 'height': object.height};
-  }
-}
 
 /// 统一节点模型
 /// 所有元素（内容、关系、概念）都继承自统一的 Node 模型
@@ -41,7 +12,6 @@ class SizeConverter implements JsonConverter<Size, Map<String, double>> {
 class Node {
   const Node({
     required this.id,
-    required this.type,
     required this.title,
     this.content,
     required this.references,
@@ -59,9 +29,6 @@ class Node {
 
   /// 唯一标识符
   final String id;
-
-  /// 节点类型
-  final NodeType type;
 
   /// 节点标题
   final String title;
@@ -98,14 +65,9 @@ class Node {
   /// 转换为JSON
   Map<String, dynamic> toJson() => _$NodeToJson(this);
 
-  /// 便捷方法：类型标签
-  String get typeLabel => type.name;
-
-  /// 便捷方法：是否是概念节点
-  bool get isConcept => type == NodeType.concept;
-
-  /// 便捷方法：是否是内容节点
-  bool get isContent => type == NodeType.content;
+  /// 便捷方法：是否是概念节点（已废弃，统一使用content类型）
+  @Deprecated('All nodes are now content type. Use isFolder to check if node is a folder.')
+  bool get isConcept => false;
 
   /// 便捷方法：是否是文件夹
   bool get isFolder => metadata['isFolder'] == true ||
@@ -122,7 +84,6 @@ class Node {
   /// 复制并更新部分字段
   Node copyWith({
     String? id,
-    NodeType? type,
     String? title,
     String? content,
     Map<String, NodeReference>? references,
@@ -136,7 +97,6 @@ class Node {
   }) {
     return Node(
       id: id ?? this.id,
-      type: type ?? this.type,
       title: title ?? this.title,
       content: content ?? this.content,
       references: references ?? this.references,
@@ -181,5 +141,5 @@ class Node {
 
   @override
   String toString() =>
-      'Node(id: $id, type: $type, title: $title, refs: ${references.length})';
+      'Node(id: $id, title: $title, refs: ${references.length})';
 }

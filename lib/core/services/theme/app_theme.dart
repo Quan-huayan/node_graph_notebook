@@ -7,10 +7,8 @@ class NodeThemeColors {
     return NodeThemeColors(
       folderPrimary: Color(json['folderPrimary'] as int),
       folderBackground: Color(json['folderBackground'] as int),
-      conceptPrimary: Color(json['conceptPrimary'] as int),
-      conceptBackground: Color(json['conceptBackground'] as int),
-      contentPrimary: Color(json['contentPrimary'] as int),
-      contentBackground: Color(json['contentBackground'] as int),
+      nodePrimary: Color(json['nodePrimary'] as int),
+      nodeBackground: Color(json['nodeBackground'] as int),
       selectedOverlay: Color(json['selectedOverlay'] as int),
       hoverBackground: Color(json['hoverBackground'] as int),
     );
@@ -19,40 +17,32 @@ class NodeThemeColors {
   const NodeThemeColors({
     required this.folderPrimary,
     required this.folderBackground,
-    required this.conceptPrimary,
-    required this.conceptBackground,
-    required this.contentPrimary,
-    required this.contentBackground,
+    required this.nodePrimary,
+    required this.nodeBackground,
     required this.selectedOverlay,
     required this.hoverBackground,
   });
 
   final Color folderPrimary;
   final Color folderBackground;
-  final Color conceptPrimary;
-  final Color conceptBackground;
-  final Color contentPrimary;
-  final Color contentBackground;
+  final Color nodePrimary;
+  final Color nodeBackground;
   final Color selectedOverlay;
   final Color hoverBackground;
 
   NodeThemeColors copyWith({
     Color? folderPrimary,
     Color? folderBackground,
-    Color? conceptPrimary,
-    Color? conceptBackground,
-    Color? contentPrimary,
-    Color? contentBackground,
+    Color? nodePrimary,
+    Color? nodeBackground,
     Color? selectedOverlay,
     Color? hoverBackground,
   }) {
     return NodeThemeColors(
       folderPrimary: folderPrimary ?? this.folderPrimary,
       folderBackground: folderBackground ?? this.folderBackground,
-      conceptPrimary: conceptPrimary ?? this.conceptPrimary,
-      conceptBackground: conceptBackground ?? this.conceptBackground,
-      contentPrimary: contentPrimary ?? this.contentPrimary,
-      contentBackground: contentBackground ?? this.contentBackground,
+      nodePrimary: nodePrimary ?? this.nodePrimary,
+      nodeBackground: nodeBackground ?? this.nodeBackground,
       selectedOverlay: selectedOverlay ?? this.selectedOverlay,
       hoverBackground: hoverBackground ?? this.hoverBackground,
     );
@@ -62,10 +52,8 @@ class NodeThemeColors {
     return {
       'folderPrimary': folderPrimary.toARGB32(),
       'folderBackground': folderBackground.toARGB32(),
-      'conceptPrimary': conceptPrimary.toARGB32(),
-      'conceptBackground': conceptBackground.toARGB32(),
-      'contentPrimary': contentPrimary.toARGB32(),
-      'contentBackground': contentBackground.toARGB32(),
+      'nodePrimary': nodePrimary.toARGB32(),
+      'nodeBackground': nodeBackground.toARGB32(),
       'selectedOverlay': selectedOverlay.toARGB32(),
       'hoverBackground': hoverBackground.toARGB32(),
     };
@@ -468,10 +456,8 @@ class AppThemeData {
     nodes: NodeThemeColors(
       folderPrimary: Color(0xFFFFA000), // amber.shade700
       folderBackground: Color(0xFFFFF8E1), // amber.shade50
-      conceptPrimary: Color(0xFFFF5722), // deepOrange
-      conceptBackground: Color(0xFFFFF3E0), // orange.shade50
-      contentPrimary: Color(0xFF1976D2), // blue.shade700
-      contentBackground: Color(0xFFFFFFFF), // white
+      nodePrimary: Color(0xFF1976D2), // blue.shade700
+      nodeBackground: Color(0xFFFFFFFF), // white
       selectedOverlay: Color(0x802196F3), // blue.withValues(alpha: 0.5)
       hoverBackground: Color(0xFFEEEEEE), // grey.shade200
     ),
@@ -522,10 +508,8 @@ class AppThemeData {
     nodes: NodeThemeColors(
       folderPrimary: Color(0xFFFFC107), // amber.shade500
       folderBackground: Color(0xFF3E2723), // dark brown
-      conceptPrimary: Color(0xFFFF7043), // deepOrange.shade300
-      conceptBackground: Color(0xFF4E342E), // dark brownish
-      contentPrimary: Color(0xFF64B5F6), // blue.shade300
-      contentBackground: Color(0xFF212121), // dark grey
+      nodePrimary: Color(0xFF64B5F6), // blue.shade300
+      nodeBackground: Color(0xFF212121), // dark grey
       selectedOverlay: Color(0x80448AFF), // blue.withValues(alpha: 0.5)
       hoverBackground: Color(0xFF424242), // grey.shade800
     ),
@@ -578,10 +562,10 @@ class AppTheme {
   static ThemeData getMaterialTheme(AppThemeData appTheme, Brightness brightness) {
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: appTheme.nodes.contentPrimary,
+        seedColor: appTheme.nodes.nodePrimary,
         brightness: brightness,
-        primary: appTheme.nodes.contentPrimary,
-        secondary: appTheme.nodes.conceptPrimary,
+        primary: appTheme.nodes.nodePrimary,
+        secondary: appTheme.nodes.folderPrimary,
         error: appTheme.status.error,
         surface: appTheme.backgrounds.primary,
         onPrimary: appTheme.text.onDark,

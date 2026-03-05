@@ -375,9 +375,6 @@ class _ConverterPageState extends State<ConverterPage> {
                         subtitle: Text(
                           '${node.content?.length ?? 0} characters, ${node.references.length} references',
                         ),
-                        trailing: Chip(
-                          label: Text(node.type.name),
-                        ),
                       ),
                     );
                   },
@@ -603,7 +600,6 @@ class _ConverterPageState extends State<ConverterPage> {
         final nodeModel = context.read<NodeModel>();
         for (final node in nodes) {
           await nodeModel.createNode(
-            type: node.type,
             title: node.title,
             content: node.content,
           );

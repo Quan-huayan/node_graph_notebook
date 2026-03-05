@@ -38,8 +38,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         return Vector2(250, 120);
       case NodeViewMode.fullContent:
         return Vector2(400, 300);
-      case NodeViewMode.conceptMap:
-        return node.isConcept ? Vector2(200, 100) : Vector2(250, 120);
     }
   }
 
@@ -83,8 +81,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     switch (node.viewMode) {
       case NodeViewMode.compact:
         return 1.5;
-      case NodeViewMode.conceptMap:
-        return node.isConcept ? 3.0 : 2.0;
       default:
         return 2.0;
     }
@@ -177,40 +173,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
           _fullContentPainter.layout(maxWidth: width - 16);
         }
         break;
-      case NodeViewMode.conceptMap:
-        if (node.isConcept) {
-          // 概念节点显示描述
-          _contentPainter = TextPainter(
-            text: TextSpan(
-              text: node.content?.substring(0, 50) ?? '',
-              style: TextStyle(
-                color: theme.text.secondary,
-                fontSize: 11,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-            maxLines: 2,
-            ellipsis: '...',
-          );
-          _contentPainter.layout(maxWidth: width - 16);
-        } else {
-          final preview = _getPreviewText();
-          _contentPainter = TextPainter(
-            text: TextSpan(
-              text: preview,
-              style: TextStyle(
-                color: theme.text.secondary,
-                fontSize: 11,
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-            maxLines: 2,
-            ellipsis: '...',
-          );
-          _contentPainter.layout(maxWidth: width - 16);
-        }
-        break;
     }
   }
 
@@ -225,8 +187,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         return 14;
       case NodeViewMode.fullContent:
         return 16;
-      case NodeViewMode.conceptMap:
-        return node.isConcept ? 16 : 14;
     }
   }
 
@@ -237,14 +197,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     if (node.isFolder) {
       return theme.nodes.folderPrimary;
     }
-    switch (node.viewMode) {
-      case NodeViewMode.conceptMap:
-        return node.isConcept ? theme.nodes.conceptPrimary : theme.nodes.contentPrimary;
-      case NodeViewMode.compact:
-        return node.isConcept ? theme.nodes.conceptPrimary : theme.nodes.contentPrimary;
-      default:
-        return node.isConcept ? theme.nodes.conceptPrimary : theme.nodes.contentPrimary;
-    }
+    return theme.nodes.nodePrimary;
   }
 
   Color _getBackgroundColor() {
@@ -255,15 +208,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
       return theme.nodes.folderBackground;
     }
     switch (node.viewMode) {
-      case NodeViewMode.conceptMap:
-        if (node.isConcept) {
-          return theme.nodes.conceptBackground;
-        }
-        return theme.nodes.contentBackground;
       case NodeViewMode.compact:
         return _getNodeColor();
       default:
-        return theme.nodes.contentBackground;
+        return theme.nodes.nodeBackground;
     }
   }
 
@@ -285,9 +233,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     switch (node.viewMode) {
       case NodeViewMode.compact:
         _renderCompact(canvas);
-        break;
-      case NodeViewMode.conceptMap:
-        _renderConceptMap(canvas);
         break;
       default:
         _renderStandard(canvas);
@@ -403,47 +348,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     }
   }
 
-  void _renderConceptMap(Canvas canvas) {
-    if (node.isConcept) {
-      // 概念节点使用虚线边框的圆角矩形
-      _borderPaint.style = PaintingStyle.stroke;
-      _borderPaint.strokeWidth = 3.0;
-      _backgroundPaint.color = theme.nodes.conceptBackground;
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, 0, width, height),
-          const Radius.circular(12),
-        ),
-        _backgroundPaint,
-      );
-
-      if (_isSelected) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(0, 0, width, height),
-            const Radius.circular(12),
-          ),
-          _selectedPaint,
-        );
-      }
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, 0, width, height),
-          const Radius.circular(12),
-        ),
-        _borderPaint,
-      );
-    } else {
-      // 普通节点
-      _renderStandard(canvas);
-    }
-
-    // 绘制内容
-    _renderContent(canvas);
-  }
-
   void _renderContent(Canvas canvas) {
     switch (node.viewMode) {
       case NodeViewMode.titleOnly:
@@ -462,13 +366,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         // ignore: unnecessary_null_comparison
         if (painter != null) {
           painter.paint(canvas, Offset(8, _titlePainter.height + 12));
-        }
-        break;
-      case NodeViewMode.conceptMap:
-        _titlePainter.paint(canvas, const Offset(8, 8));
-        final text = _contentPainter.text;
-        if (text != null && text.toPlainText().isNotEmpty) {
-          _contentPainter.paint(canvas, Offset(8, _titlePainter.height + 8));
         }
         break;
     }

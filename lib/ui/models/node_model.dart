@@ -25,10 +25,6 @@ class NodeModel extends ChangeNotifier {
       _nodes.where((n) => _selectedNodes.contains(n.id)).toList();
 
   int get nodeCount => _nodes.length;
-  List<Node> get contentNodes =>
-      _nodes.where((n) => n.type == NodeType.content).toList();
-  List<Node> get conceptNodes =>
-      _nodes.where((n) => n.type == NodeType.concept).toList();
 
   bool get hasSelection => _selectedNodes.isNotEmpty;
 
@@ -51,13 +47,11 @@ class NodeModel extends ChangeNotifier {
 
   /// 创建节点
   Future<Node> createNode({
-    required NodeType type,
     required String title,
     String? content,
   }) async {
     try {
       final node = await _service.createNode(
-        type: type,
         title: title,
         content: content,
       );
@@ -79,34 +73,9 @@ class NodeModel extends ChangeNotifier {
     required String content,
   }) async {
     return createNode(
-      type: NodeType.content,
       title: title,
       content: content,
     );
-  }
-
-  /// 创建概念节点
-  Future<Node> createConceptNode({
-    required String title,
-    required String description,
-    required List<String> containedNodeIds,
-  }) async {
-    try {
-      final node = await _service.createConceptNode(
-        title: title,
-        description: description,
-        containedNodeIds: containedNodeIds,
-      );
-
-      _nodes.add(node);
-      notifyListeners();
-
-      return node;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      rethrow;
-    }
   }
 
   /// 更新节点

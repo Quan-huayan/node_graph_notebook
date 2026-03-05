@@ -12,7 +12,6 @@ abstract class AIService {
   /// 生成节点内容
   Future<Node> generateNode({
     required String prompt,
-    NodeType type,
     Map<String, dynamic>? options,
   });
 
@@ -57,7 +56,6 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
   @override
   Future<Node> generateNode({
     required String prompt,
-    NodeType type = NodeType.content,
     Map<String, dynamic>? options,
   }) async {
     if (_provider == null) {
@@ -73,7 +71,6 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
 
     return Node(
       id: _uuid.v4(),
-      type: type,
       title: title,
       content: content,
       references: {},

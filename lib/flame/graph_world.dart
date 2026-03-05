@@ -73,12 +73,25 @@ class GraphWorld extends Component with HasGameReference {
 
   Map<String, Vector2> _getNodePositions() {
     final positions = <String, Vector2>{};
-    for (final node in nodes) {
-      positions[node.id] = Vector2(
-        node.position.dx.toDouble(),
-        node.position.dy.toDouble(),
+
+    // 优先从Graph.nodePositions获取位置
+    for (final entry in graph.nodePositions.entries) {
+      positions[entry.key] = Vector2(
+        entry.value.dx.toDouble(),
+        entry.value.dy.toDouble(),
       );
     }
+
+    // 如果某个节点在Graph.nodePositions中没有位置，使用默认位置
+    for (final node in nodes) {
+      if (!positions.containsKey(node.id)) {
+        positions[node.id] = Vector2(
+          node.position.dx.toDouble(),
+          node.position.dy.toDouble(),
+        );
+      }
+    }
+
     return positions;
   }
 
@@ -178,18 +191,14 @@ class GraphWorld extends Component with HasGameReference {
   /// 更新所有节点
   void updateAllNodes(List<Node> newNodes, List<Connection> newConnections) {
     // 根据 uiModel 过滤要显示的节点和连接
-    final shouldShowConceptNodes = uiModel.showConceptNodes;
     final shouldShowConnections = uiModel.showConnections;
-
-    // 过滤节点：根据视图模式决定是否显示概念节点
-    final filteredNodes = _filterNodesByViewMode(newNodes, shouldShowConceptNodes);
 
     // 过滤连接：根据设置决定是否显示
     final filteredConnections = shouldShowConnections ? newConnections : <Connection>[];
 
     // 获取当前节点ID集合
     final currentIds = _nodeComponents.keys.toSet();
-    final newIds = filteredNodes.map((n) => n.id).toSet();
+    final newIds = newNodes.map((n) => n.id).toSet();
 
     // 移除不在新列表中的节点
     for (final id in currentIds) {
@@ -199,7 +208,7 @@ class GraphWorld extends Component with HasGameReference {
     }
 
     // 添加或更新节点
-    for (final node in filteredNodes) {
+    for (final node in newNodes) {
       if (currentIds.contains(node.id)) {
         // 更新现有节点
         updateNode(node);
@@ -211,22 +220,6 @@ class GraphWorld extends Component with HasGameReference {
 
     // 更新连接
     updateConnections(filteredConnections);
-  }
-
-  /// 根据视图模式过滤节点
-  List<Node> _filterNodesByViewMode(List<Node> allNodes, bool showConceptNodes) {
-    // 如果视图模式是概念地图，显示所有节点
-    if (uiModel.viewMode == ViewModeType.conceptMap) {
-      return allNodes;
-    }
-
-    // 普通模式：根据 showConceptNodes 决定是否显示概念节点
-    if (showConceptNodes) {
-      return allNodes;
-    } else {
-      // 隐藏概念节点
-      return allNodes.where((n) => !n.isConcept).toList();
-    }
   }
 }
 

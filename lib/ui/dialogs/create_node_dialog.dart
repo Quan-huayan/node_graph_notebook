@@ -17,7 +17,6 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
 
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  NodeType _selectedType = NodeType.content;
   bool _isCreating = false;
 
   @override
@@ -29,16 +28,15 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isContent = _selectedType == NodeType.content;
     final theme = context.read<ThemeService>().themeData;
 
     return AlertDialog(
       backgroundColor: theme.backgrounds.primary,
-      title: Row(
+      title: const Row(
         children: [
-          Icon(isContent ? Icons.note : Icons.category),
-          const SizedBox(width: 8),
-          const Text('Create Node'),
+          Icon(Icons.category),
+          SizedBox(width: 8),
+          Text('Create Node'),
         ],
       ),
       content: SizedBox(
@@ -48,77 +46,14 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 节点类型选择
-              Text(
-                'Node Type',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: context.read<ThemeService>().themeData.text.hint,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<NodeType>(
-                segments: const [
-                  ButtonSegment(
-                    value: NodeType.content,
-                    label: Text('Content'),
-                    icon: Icon(Icons.note),
-                  ),
-                  ButtonSegment(
-                    value: NodeType.concept,
-                    label: Text('Concept'),
-                    icon: Icon(Icons.category),
-                  ),
-                ],
-                selected: {_selectedType},
-                onSelectionChanged: (Set<NodeType> selection) {
-                  setState(() {
-                    _selectedType = selection.first;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-
-              // 类型说明
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isContent ? Icons.info_outline : Icons.lightbulb_outline,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        isContent
-                            ? 'Content nodes store your notes and ideas in Markdown format.'
-                            : 'Concept nodes represent relationships or abstract concepts that organize other nodes.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
               // 标题输入
               TextField(
                 controller: _titleController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Title *',
-                  hintText: isContent ? 'Enter note title' : 'Enter concept name',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.title),
+                  hintText: 'Enter note title',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.title),
                 ),
                 textCapitalization: TextCapitalization.sentences,
               ),
@@ -128,47 +63,15 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
               TextField(
                 controller: _contentController,
                 maxLines: 6,
-                decoration: InputDecoration(
-                  labelText: isContent ? 'Content *' : 'Description',
-                  hintText: isContent
-                      ? 'Write your note in Markdown...'
-                      : 'Optional description of this concept...',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: Icon(isContent ? Icons.edit_note : Icons.description),
-                  helperText: isContent ? 'Supports Markdown formatting' : 'Optional',
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  hintText:'Write your note in Markdown...',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.edit_note),
+                  helperText: 'Supports Markdown formatting',
                 ),
                 textCapitalization: TextCapitalization.sentences,
               ),
-
-              // 概念节点的额外提示
-              if (!isContent) ...[
-                const SizedBox(height: 12),
-                Builder(
-                  builder: (context) {
-                    final theme = context.read<ThemeService>().themeData;
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: theme.status.info.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: theme.status.info.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.tips_and_updates, size: 16, color: theme.status.info),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'You can connect other nodes to this concept node after creation.',
-                              style: TextStyle(fontSize: 11),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
             ],
           ),
         ),
@@ -186,7 +89,7 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(isContent ? 'Create Content' : 'Create Concept'),
+              : const Text('Create Node'),
         ),
       ],
     );
@@ -203,12 +106,6 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
       return;
     }
 
-    // 对于内容节点，验证内容
-    if (_selectedType == NodeType.content && content.isEmpty) {
-      _showErrorSnackBar('Content nodes must have content');
-      return;
-    }
-
     setState(() {
       _isCreating = true;
     });
@@ -219,18 +116,10 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
     try {
       Node node;
 
-      if (_selectedType == NodeType.content) {
-        node = await nodeModel.createContentNode(
-          title: title,
-          content: content,
-        );
-      } else {
-        node = await nodeModel.createNode(
-          type: NodeType.concept,
-          title: title,
-          content: content.isEmpty ? '' : content,
-        );
-      }
+      node = await nodeModel.createNode(
+        title: title,
+        content: content.isEmpty ? '' : content,
+      );
 
       // 添加到当前图
       if (graphModel.hasGraph) {

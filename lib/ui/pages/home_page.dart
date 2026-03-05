@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: const GraphView(),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateMenu,
+        onPressed: _showCreateNodeDialog,
         child: const Icon(Icons.add),
       ),
     );
@@ -137,40 +137,6 @@ class _HomePageState extends State<HomePage> {
       builder: (ctx) => ExportDialog(
         graph: graphModel.currentGraph!,
         nodes: nodeModel.nodes,
-      ),
-    );
-  }
-
-  void _showCreateMenu() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.note),
-              title: const Text('Create Content Node'),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => const MarkdownEditorPage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.category),
-              title: const Text('Create Concept Node'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showCreateNodeDialog();
-              },
-            ),
-          ],
-        ),
       ),
     );
   }

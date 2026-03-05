@@ -154,9 +154,8 @@ class _SidebarState extends State<Sidebar> {
   void _createFolder(BuildContext context) async {
     final nodeModel = context.read<NodeModel>();
 
-    // 创建一个概念节点作为文件夹
+    // 创建一个内容节点作为文件夹
     final folder = await nodeModel.createNode(
-      type: NodeType.concept,
       title: 'New Folder',
       content: 'A folder to organize your notes',
     );

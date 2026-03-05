@@ -289,12 +289,10 @@ class _SearchDialogState extends State<SearchDialog> {
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: node.isConcept
-              ? theme.nodes.conceptBackground
-              : theme.nodes.contentBackground,
+          backgroundColor: theme.nodes.nodeBackground,
           child: Icon(
-            node.isConcept ? Icons.category : Icons.note,
-            color: node.isConcept ? theme.nodes.conceptPrimary : theme.nodes.contentPrimary,
+            Icons.note,
+            color: theme.nodes.nodePrimary,
             size: 20,
           ),
         ),
@@ -483,7 +481,6 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _tagsController = TextEditingController();
-  NodeType? _selectedType;
   bool _isSearching = false;
 
   @override
@@ -590,47 +587,6 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // 节点类型过滤
-              DropdownButtonFormField<NodeType?>(
-                initialValue: _selectedType,
-                decoration: InputDecoration(
-                  labelText: 'Node Type',
-                  prefixIcon: const Icon(Icons.category),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                ),
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('All Types'),
-                  ),
-                  ...NodeType.values.map(
-                    (type) => DropdownMenuItem(
-                      value: type,
-                      child: Row(
-                        children: [
-                          Icon(
-                            type == NodeType.content ? Icons.note : Icons.category,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            type == NodeType.content ? 'Content' : 'Concept',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                onChanged: (type) {
-                  setState(() {
-                    _selectedType = type;
-                  });
-                },
-              ),
             ],
           ),
         ),
@@ -641,9 +597,6 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
             _titleController.clear();
             _contentController.clear();
             _tagsController.clear();
-            setState(() {
-              _selectedType = null;
-            });
           },
           icon: const Icon(Icons.clear_all, size: 18),
           label: const Text('Clear All'),
@@ -714,11 +667,6 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
       }).toList();
     }
 
-    // 类型过滤
-    if (_selectedType != null) {
-      results = results.where((n) => n.type == _selectedType).toList();
-    }
-
     setState(() {
       _isSearching = false;
     });
@@ -764,12 +712,12 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
                     final node = results[i];
                     return ListTile(
                       leading: Icon(
-                        node.isConcept ? Icons.category : Icons.note,
-                        color: node.isConcept ? theme.nodes.conceptPrimary : theme.nodes.contentPrimary,
+                        Icons.note,
+                        color: theme.nodes.nodePrimary,
                       ),
                       title: Text(node.title),
                       subtitle: Text(
-                        node.isConcept ? 'Concept' : 'Content',
+                        'Content',
                         style: Theme.of(ctx).textTheme.bodySmall,
                       ),
                       onTap: () {

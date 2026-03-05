@@ -31,11 +31,6 @@ class Toolbar extends StatelessWidget {
               onPressed: () => _showLayoutMenu(context),
             ),
             IconButton(
-              icon: const Icon(Icons.view_module),
-              tooltip: 'View Mode',
-              onPressed: () => _showViewModeMenu(context),
-            ),
-            IconButton(
               icon: Icon(
                 uiModel.showConnections
                     ? Icons.share
@@ -261,53 +256,6 @@ class Toolbar extends StatelessWidget {
         );
       }
     }
-  }
-
-  void _showViewModeMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Consumer<UIModel>(
-          builder: (ctx, uiModel, child) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title: const Text('View Mode'),
-                  tileColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
-                ),
-                ListTile(
-                  leading: Icon(
-                    uiModel.viewMode == ViewModeType.normalGraph
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                  ),
-                  title: const Text('Normal Graph'),
-                  subtitle: const Text('Show connections as arrows'),
-                  onTap: () {
-                    uiModel.setViewMode(ViewModeType.normalGraph);
-                    Navigator.pop(ctx);
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    uiModel.viewMode == ViewModeType.conceptMap
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                  ),
-                  title: const Text('Concept Map'),
-                  subtitle: const Text('Show all nodes with reference arrows'),
-                  onTap: () {
-                    uiModel.setViewMode(ViewModeType.conceptMap);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
   }
 
   String _getLayoutName(LayoutAlgorithm algorithm) {

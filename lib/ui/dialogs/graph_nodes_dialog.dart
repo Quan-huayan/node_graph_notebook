@@ -75,7 +75,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
                       Text(
                         '${_selectedNodeIds.length}',
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: theme.nodes.contentPrimary,
+                          color: theme.nodes.nodePrimary,
                         ),
                       ),
                       Text(
@@ -146,10 +146,8 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
                       ),
                     ),
                     secondary: Icon(
-                      node.isConcept ? Icons.category : Icons.note,
-                      color: node.isConcept
-                          ? theme.nodes.conceptPrimary
-                          : theme.nodes.contentPrimary,
+                      Icons.note,
+                      color: theme.nodes.nodePrimary,
                     ),
                   );
                 },

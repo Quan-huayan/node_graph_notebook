@@ -27,11 +27,23 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   final Set<String> _expandedFolders = {};
   String? _draggedNodeId;
 
-  /// 获取文件夹中的子节点
+  /// 获取文件夹中的直接子节点
   List<Node> _getFolderChildren(Node folder) {
     return widget.nodes.where((node) {
       final ref = folder.references[node.id];
       return ref != null && ref.type == ReferenceType.contains;
+    }).toList();
+  }
+
+  /// 获取顶层文件夹（没有被其他文件夹包含的文件夹）
+  List<Node> _getTopLevelFolders() {
+    return widget.folders.where((folder) {
+      // 检查是否被其他文件夹包含
+      return !widget.folders.any((parent) {
+        if (parent.id == folder.id) return false;
+        final ref = parent.references[folder.id];
+        return ref != null && ref.type == ReferenceType.contains;
+      });
     }).toList();
   }
 
@@ -82,19 +94,20 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   @override
   Widget build(BuildContext context) {
     final rootNodes = _getRootNodes();
-    final folders = widget.folders;
+    final topLevelFolders = _getTopLevelFolders();
+    final allNodes = [...widget.nodes, ...widget.folders];
 
-    if (rootNodes.isEmpty && folders.isEmpty) {
+    if (rootNodes.isEmpty && topLevelFolders.isEmpty) {
       return const Center(child: Text('No nodes yet'));
     }
 
     return ListView(
       children: [
-        // 文件夹列表
-        ...folders.map((folder) => _buildFolderItem(context, folder)),
+        // 顶层文件夹列表
+        ...topLevelFolders.map((folder) => _buildFolderItem(context, folder, allNodes, 0)),
 
         // 分隔线
-        if (folders.isNotEmpty && rootNodes.isNotEmpty)
+        if (topLevelFolders.isNotEmpty && rootNodes.isNotEmpty)
           const Divider(height: 32),
 
         // 根节点列表
@@ -103,7 +116,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     );
   }
 
-  Widget _buildFolderItem(BuildContext context, Node folder) {
+  Widget _buildFolderItem(BuildContext context, Node folder, List<Node> allNodes, int level) {
     final children = _getFolderChildren(folder);
     final isExpanded = _expandedFolders.contains(folder.id);
     final theme = context.watch<ThemeService>().themeData;
@@ -114,8 +127,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       onAcceptWithDetails: (details) async {
         final draggedNodeId = details.data;
         if (draggedNodeId != folder.id) {
-          final node = widget.nodes.firstWhere((n) => n.id == draggedNodeId);
-          await _addToFolder(node, folder);
+          // 从所有节点中查找被拖拽的节点
+          final draggedNode = allNodes.firstWhere((n) => n.id == draggedNodeId);
+          await _addToFolder(draggedNode, folder);
         }
       },
       builder: (context, candidateData, rejected) {
@@ -199,9 +213,16 @@ class _FolderTreeViewState extends State<FolderTreeView> {
               ),
               if (isExpanded && children.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(left: 32),
+                  padding: EdgeInsets.only(left: 32.0 + (level * 16)),
                   child: Column(
-                    children: children.map((child) => _buildNodeItem(context, child, parentFolder: folder)).toList(),
+                    children: children.map((child) {
+                      // 如果子节点是文件夹，递归渲染
+                      if (child.isFolder) {
+                        return _buildFolderItem(context, child, allNodes, level + 1);
+                      } else {
+                        return _buildNodeItem(context, child, parentFolder: folder);
+                      }
+                    }).toList(),
                   ),
                 ),
             ],
@@ -237,10 +258,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                node.isConcept ? Icons.category : Icons.note,
+              const Icon(
+                Icons.note,
                 size: 16,
-                color: node.isConcept ? theme.nodes.conceptPrimary : null,
+                color: null,
               ),
               const SizedBox(width: 8),
               Text(node.title),
@@ -256,7 +277,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
             color: isSelected ? theme.backgrounds.secondary : null,
             border: Border(
               left: BorderSide(
-                color: isSelected ? theme.nodes.conceptPrimary : Colors.transparent,
+                color: isSelected ? theme.nodes.nodePrimary : Colors.transparent,
                 width: 3,
               ),
             ),
@@ -278,10 +299,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
             child: Row(
               children: [
                 if (parentFolder == null) const SizedBox(width: 28),
-                Icon(
-                  node.isConcept ? Icons.category : Icons.note,
+                const Icon(
+                  Icons.note,
                   size: 16,
-                  color: node.isConcept ? theme.nodes.conceptPrimary : null,
+                  color: null,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -532,9 +553,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                       leading: Icon(
                         targetNode.isFolder
                             ? Icons.folder
-                            : (targetNode.isConcept
-                                ? Icons.category
-                                : Icons.note),
+                            : Icons.note,
                         size: 16,
                         color: targetNode.isFolder
                             ? theme.nodes.folderPrimary

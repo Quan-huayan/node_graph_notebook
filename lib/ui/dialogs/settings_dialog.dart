@@ -178,8 +178,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
         return 'Full Content';
       case NodeViewMode.compact:
         return 'Compact';
-      case NodeViewMode.conceptMap:
-        return 'Concept Map';
     }
   }
 

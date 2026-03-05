@@ -209,7 +209,6 @@ $markdown
 
       final response = await _aiService.generateNode(
         prompt: prompt,
-        type: NodeType.content,
       );
 
       // 解析 AI 响应
@@ -625,7 +624,6 @@ $markdown
     final now = DateTime.now();
     return Node(
       id: _uuid.v4(),
-      type: NodeType.content,
       title: title,
       content: content,
       references: {},

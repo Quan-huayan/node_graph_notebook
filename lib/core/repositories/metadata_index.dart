@@ -1,6 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../models/enums.dart';
-
 part 'metadata_index.g.dart';
 
 /// 位置信息（可序列化）
@@ -36,7 +34,6 @@ class SizeInfo {
 class NodeMetadata {
   const NodeMetadata({
     required this.id,
-    required this.type,
     required this.title,
     required this.position,
     required this.size,
@@ -50,7 +47,6 @@ class NodeMetadata {
       _$NodeMetadataFromJson(json);
 
   final String id;
-  final NodeType type;
   final String title;
   final PositionInfo position;
   final SizeInfo size;

@@ -153,17 +153,19 @@ class GraphModel extends ChangeNotifier {
     }
   }
 
-  /// 切换视图模式
-  Future<void> switchViewMode(ViewModeType mode) async {
+  /// 更新节点位置（不重新加载所有数据）
+  Future<void> updateNodePositions(Map<String, Offset> positions) async {
     if (_currentGraph == null) return;
 
     try {
-      await _service.switchViewMode(_currentGraph!.id, mode);
-      final graph = await _service.getGraph(_currentGraph!.id);
-      if (graph != null) {
-        _currentGraph = graph;
-        notifyListeners();
-      }
+      final updatedPositions = Map<String, Offset>.from(_currentGraph!.nodePositions);
+      updatedPositions.addAll(positions);
+
+      _currentGraph = await _service.updateGraph(
+        _currentGraph!.id,
+        nodePositions: updatedPositions,
+      );
+      notifyListeners();
     } catch (e) {
       _error = e.toString();
       notifyListeners();

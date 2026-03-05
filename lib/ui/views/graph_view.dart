@@ -134,12 +134,10 @@ class GraphView extends StatelessWidget {
                       context.read<NodeModel>().selectNode(node.id);
                     },
                     onDragEnd: (node, newPosition) async {
-                      await context.read<NodeModel>().updateNode(
-                        node.id,
-                        position: newPosition,
-                      );
-                      // 刷新图数据
-                      await graphModel.refresh();
+                      // 只更新Graph.nodePositions
+                      await graphModel.updateNodePositions({
+                        node.id: newPosition,
+                      });
                     },
                     onSecondaryTap: (node, position) {
                       showNodeContextMenu(

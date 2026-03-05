@@ -341,35 +341,12 @@ class LayoutServiceImpl implements LayoutService {
   }) async {
     if (nodes.isEmpty) return;
 
-    // final opts = options ?? const ConceptMapOptions();
-
-    // 分离概念节点和内容节点
-    final conceptNodes = nodes.where((n) => n.isConcept).toList();
-    final contentNodes = nodes.where((n) => n.isContent).toList();
-
     final positions = <String, Vector2>{};
 
-    if (conceptNodes.isEmpty) {
-      // 如果没有概念节点，使用环形布局
-      await circularLayout(nodes: nodes);
-      return;
-    }
-
-    // 先布局概念节点（环形）
-    final center = const Vector2(640.0, 400.0);
-    final conceptRadius = 250.0;
-
-    for (int i = 0; i < conceptNodes.length; i++) {
-      final angle = (2 * pi * i) / conceptNodes.length;
-      final x = center.x + conceptRadius * cos(angle);
-      final y = center.y + conceptRadius * sin(angle);
-      positions[conceptNodes[i].id] = Vector2(x, y);
-    }
-
     // 布局内容节点（围绕其所属的概念节点）
-    for (final contentNode in contentNodes) {
+    for (final contentNode in nodes) {
       // 找到包含此内容节点的概念节点
-      final parentConcepts = conceptNodes.where((concept) {
+      final parentConcepts = nodes.where((concept) {
         return concept.references.containsKey(contentNode.id) &&
             concept.references[contentNode.id]!.type == ReferenceType.contains;
       }).toList();

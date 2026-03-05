@@ -10,7 +10,6 @@ enum _MenuAction {
   compact,
   titleWithPreview,
   fullContent,
-  conceptMap,
   delete,
 }
 
@@ -67,14 +66,6 @@ Future<void> showNodeContextMenu(
           icon: Icons.article,
           label: 'Full Content',
           isSelected: node.viewMode == NodeViewMode.fullContent,
-        ),
-      ),
-      PopupMenuItem<_MenuAction>(
-        value: _MenuAction.conceptMap,
-        child: _buildMenuItem(
-          icon: Icons.account_tree,
-          label: 'Concept Map',
-          isSelected: node.viewMode == NodeViewMode.conceptMap,
         ),
       ),
       const PopupMenuDivider(),
@@ -142,7 +133,7 @@ Future<void> showNodeContextMenu(
   } else {
     // 切换显示模式
     final newMode = _actionToViewMode(selectedAction);
-    if (newMode != node.viewMode) {
+    if (newMode != null && newMode != node.viewMode) {
       await nodeModel.updateNode(
         node.id,
         viewMode: newMode,
@@ -152,7 +143,7 @@ Future<void> showNodeContextMenu(
 }
 
 /// 将菜单操作转换为视图模式
-NodeViewMode _actionToViewMode(_MenuAction action) {
+NodeViewMode? _actionToViewMode(_MenuAction action) {
   switch (action) {
     case _MenuAction.titleOnly:
       return NodeViewMode.titleOnly;
@@ -162,10 +153,8 @@ NodeViewMode _actionToViewMode(_MenuAction action) {
       return NodeViewMode.titleWithPreview;
     case _MenuAction.fullContent:
       return NodeViewMode.fullContent;
-    case _MenuAction.conceptMap:
-      return NodeViewMode.conceptMap;
     case _MenuAction.delete:
-      return NodeViewMode.titleOnly; // 不会使用，只是为了完整性
+      return null;
   }
 }
 
@@ -201,8 +190,6 @@ String _getModeLabel(NodeViewMode mode) {
       return 'Title with Preview';
     case NodeViewMode.fullContent:
       return 'Full Content';
-    case NodeViewMode.conceptMap:
-      return 'Concept Map';
   }
 }
 

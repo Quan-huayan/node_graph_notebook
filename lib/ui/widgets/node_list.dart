@@ -17,14 +17,12 @@ class NodeListItem extends StatelessWidget {
     final theme = context.watch<ThemeService>().themeData;
     return ListTile(
       leading: Icon(
-        node.isConcept ? Icons.category : Icons.note,
-        color: node.isConcept
-            ? theme.nodes.conceptPrimary
-            : theme.nodes.contentPrimary,
+        Icons.note,
+        color: theme.nodes.nodePrimary,
       ),
       title: Text(node.title),
       subtitle: Text(
-        node.isConcept ? 'Concept' : 'Content',
+        'Content',
         style: Theme.of(context).textTheme.bodySmall,
       ),
       onTap: () {

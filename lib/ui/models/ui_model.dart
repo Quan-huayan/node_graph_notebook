@@ -3,7 +3,6 @@ import '../../core/models/enums.dart';
 
 /// UI 状态管理
 class UIModel extends ChangeNotifier {
-  ViewModeType _viewMode = ViewModeType.normalGraph;
   NodeViewMode _nodeViewMode = NodeViewMode.titleWithPreview;
   bool _showConnections = true;
   bool _showConceptNodes = true;
@@ -11,7 +10,6 @@ class UIModel extends ChangeNotifier {
   bool _isSidebarOpen = true;
   String _selectedTab = 'nodes';
 
-  ViewModeType get viewMode => _viewMode;
   NodeViewMode get nodeViewMode => _nodeViewMode;
   NodeViewMode get defaultViewMode => _nodeViewMode;
   bool get showConnections => _showConnections;
@@ -19,12 +17,6 @@ class UIModel extends ChangeNotifier {
   BackgroundStyle get backgroundStyle => _backgroundStyle;
   bool get isSidebarOpen => _isSidebarOpen;
   String get selectedTab => _selectedTab;
-
-  /// 切换视图模式
-  void setViewMode(ViewModeType mode) {
-    _viewMode = mode;
-    notifyListeners();
-  }
 
   /// 设置节点显示模式
   void setNodeViewMode(NodeViewMode mode) {

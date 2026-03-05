@@ -7,7 +7,6 @@ import '../repositories/repositories.dart';
 abstract class NodeService {
   /// 创建节点
   Future<Node> createNode({
-    required NodeType type,
     required String title,
     String? content,
     Offset? position,
@@ -20,13 +19,6 @@ abstract class NodeService {
     required String title,
     required String content,
     Offset? position,
-  });
-
-  /// 创建概念节点
-  Future<Node> createConceptNode({
-    required String title,
-    required String description,
-    required List<String> containedNodeIds,
   });
 
   /// 更新节点
@@ -66,14 +58,6 @@ abstract class NodeService {
     required String toNodeId,
   });
 
-  /// 提升关系为概念节点
-  Future<Node> elevateConnectionToConcept({
-    required String fromNodeId,
-    required String toNodeId,
-    required String conceptTitle,
-    required String conceptDescription,
-  });
-
   /// 批量操作
   Future<void> batchUpdate(List<NodeUpdate> updates);
   Future<void> batchDelete(List<String> nodeIds);
@@ -88,7 +72,6 @@ class NodeServiceImpl implements NodeService {
 
   @override
   Future<Node> createNode({
-    required NodeType type,
     required String title,
     String? content,
     Offset? position,
@@ -97,10 +80,6 @@ class NodeServiceImpl implements NodeService {
   }) async {
     // 验证
     _validateTitle(title);
-
-    if (type == NodeType.content && (content == null || content.isEmpty)) {
-      throw const ValidationException('Content node must have content');
-    }
 
     // 创建节点
     final now = DateTime.now();
@@ -113,7 +92,6 @@ class NodeServiceImpl implements NodeService {
 
     final node = Node(
       id: _uuid.v4(),
-      type: type,
       title: title,
       content: content,
       references: references ?? {},
@@ -136,33 +114,9 @@ class NodeServiceImpl implements NodeService {
     Offset? position,
   }) async {
     return createNode(
-      type: NodeType.content,
       title: title,
       content: content,
       position: position,
-    );
-  }
-
-  @override
-  Future<Node> createConceptNode({
-    required String title,
-    required String description,
-    required List<String> containedNodeIds,
-  }) async {
-    final references = <String, NodeReference>{};
-    for (final nodeId in containedNodeIds) {
-      references[nodeId] = NodeReference(
-        nodeId: nodeId,
-        type: ReferenceType.contains,
-        role: 'contained',
-      );
-    }
-
-    return createNode(
-      type: NodeType.concept,
-      title: title,
-      content: description,
-      references: references,
     );
   }
 
@@ -266,38 +220,6 @@ class NodeServiceImpl implements NodeService {
 
     final updatedNode = fromNode.removeReference(toNodeId);
     await _repository.save(updatedNode);
-  }
-
-  @override
-  Future<Node> elevateConnectionToConcept({
-    required String fromNodeId,
-    required String toNodeId,
-    required String conceptTitle,
-    required String conceptDescription,
-  }) async {
-    // 创建概念节点
-    final conceptNode = await createConceptNode(
-      title: conceptTitle,
-      description: conceptDescription,
-      containedNodeIds: [fromNodeId, toNodeId],
-    );
-
-    // 更新原始节点的引用
-    await connectNodes(
-      fromNodeId: fromNodeId,
-      toNodeId: conceptNode.id,
-      type: ReferenceType.partOf,
-      role: 'part_of_concept',
-    );
-
-    await connectNodes(
-      fromNodeId: toNodeId,
-      toNodeId: conceptNode.id,
-      type: ReferenceType.partOf,
-      role: 'part_of_concept',
-    );
-
-    return conceptNode;
   }
 
   @override

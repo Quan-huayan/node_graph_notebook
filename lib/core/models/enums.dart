@@ -1,16 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
 
-/// 节点类型
-enum NodeType {
-  /// 内容节点：存储笔记内容
-  @JsonValue('content')
-  content,
-
-  /// 概念节点：代表关系或抽象概念
-  @JsonValue('concept')
-  concept,
-}
-
 /// 引用类型
 enum ReferenceType {
   /// 提及：在content中提到了该节点
@@ -63,25 +52,6 @@ enum NodeViewMode {
   /// 紧凑模式（小图标）
   @JsonValue('compact')
   compact,
-
-  /// 概念地图模式（特殊样式）
-  @JsonValue('conceptMap')
-  conceptMap,
-}
-
-/// 视图模式类型
-enum ViewModeType {
-  /// 普通图示
-  @JsonValue('normalGraph')
-  normalGraph,
-
-  /// 概念地图
-  @JsonValue('conceptMap')
-  conceptMap,
-
-  /// 混合模式
-  @JsonValue('mixed')
-  mixed,
 }
 
 /// 布局算法

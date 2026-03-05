@@ -241,7 +241,6 @@ class FileSystemNodeRepository implements NodeRepository {
     final index = await getMetadataIndex();
     final metadata = NodeMetadata(
       id: node.id,
-      type: node.type,
       title: node.title,
       position: PositionInfo(dx: node.position.dx, dy: node.position.dy),
       size: SizeInfo(width: node.size.width, height: node.size.height),
@@ -272,7 +271,6 @@ class FileSystemNodeRepository implements NodeRepository {
     // Frontmatter
     buffer.writeln('---');
     buffer.writeln('id: ${node.id}');
-    buffer.writeln('type: ${node.type.name}');
     buffer.writeln('title: ${node.title}');
     buffer.writeln('created_at: ${node.createdAt.toIso8601String()}');
     buffer.writeln('updated_at: ${node.updatedAt.toIso8601String()}');
@@ -400,7 +398,6 @@ class FileSystemNodeRepository implements NodeRepository {
 
     return Node(
       id: _parseStringValue(frontmatter['id']) ?? nodeId,
-      type: _parseNodeType(frontmatter['type']),
       title: title ?? 'Untitled',
       content: content,
       references: references,
@@ -412,30 +409,6 @@ class FileSystemNodeRepository implements NodeRepository {
       createdAt: _parseDateTime(frontmatter['created_at']),
       updatedAt: _parseDateTime(frontmatter['updated_at']),
       metadata: frontmatter['metadata'] as Map<String, dynamic>? ?? {},
-    );
-  }
-
-  NodeType _parseNodeType(dynamic typeValue) {
-    if (typeValue == null) return NodeType.content;
-
-    // 处理不同的类型
-    String typeStr;
-    if (typeValue is String) {
-      typeStr = typeValue;
-    } else if (typeValue is int || typeValue is double) {
-      // 如果是数字，转换为枚举索引
-      final index = typeValue as int;
-      if (index >= 0 && index < NodeType.values.length) {
-        return NodeType.values[index];
-      }
-      return NodeType.content;
-    } else {
-      typeStr = typeValue.toString();
-    }
-
-    return NodeType.values.firstWhere(
-      (e) => e.name == typeStr,
-      orElse: () => NodeType.content,
     );
   }
 

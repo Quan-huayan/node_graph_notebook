@@ -2,6 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'dart:ui' show Offset;
 import 'enums.dart';
 import 'node.dart';
+import 'converters.dart';
 
 part 'graph.g.dart';
 
@@ -9,20 +10,15 @@ part 'graph.g.dart';
 @JsonSerializable()
 class GraphViewConfig {
   const GraphViewConfig({
-    required this.viewMode,
     required this.camera,
     required this.autoLayoutEnabled,
     required this.layoutAlgorithm,
-    required this.showConceptNodes,
     required this.showConnectionLines,
     required this.backgroundStyle,
   });
 
   factory GraphViewConfig.fromJson(Map<String, dynamic> json) =>
       _$GraphViewConfigFromJson(json);
-
-  /// 视图模式
-  final ViewModeType viewMode;
 
   /// 相机位置和缩放
   final Camera camera;
@@ -33,9 +29,6 @@ class GraphViewConfig {
   /// 布局算法
   final LayoutAlgorithm layoutAlgorithm;
 
-  /// 是否显示概念节点
-  final bool showConceptNodes;
-
   /// 是否显示连接线
   final bool showConnectionLines;
 
@@ -44,11 +37,9 @@ class GraphViewConfig {
 
   /// 默认配置
   static const defaultConfig = GraphViewConfig(
-    viewMode: ViewModeType.normalGraph,
     camera: Camera(),
     autoLayoutEnabled: false,
     layoutAlgorithm: LayoutAlgorithm.forceDirected,
-    showConceptNodes: true,
     showConnectionLines: true,
     backgroundStyle: BackgroundStyle.grid,
   );
@@ -56,20 +47,16 @@ class GraphViewConfig {
   Map<String, dynamic> toJson() => _$GraphViewConfigToJson(this);
 
   GraphViewConfig copyWith({
-    ViewModeType? viewMode,
     Camera? camera,
     bool? autoLayoutEnabled,
     LayoutAlgorithm? layoutAlgorithm,
-    bool? showConceptNodes,
     bool? showConnectionLines,
     BackgroundStyle? backgroundStyle,
   }) {
     return GraphViewConfig(
-      viewMode: viewMode ?? this.viewMode,
       camera: camera ?? this.camera,
       autoLayoutEnabled: autoLayoutEnabled ?? this.autoLayoutEnabled,
       layoutAlgorithm: layoutAlgorithm ?? this.layoutAlgorithm,
-      showConceptNodes: showConceptNodes ?? this.showConceptNodes,
       showConnectionLines: showConnectionLines ?? this.showConnectionLines,
       backgroundStyle: backgroundStyle ?? this.backgroundStyle,
     );
@@ -80,11 +67,10 @@ class GraphViewConfig {
       identical(this, other) ||
       other is GraphViewConfig &&
           runtimeType == other.runtimeType &&
-          viewMode == other.viewMode &&
           camera == other.camera;
 
   @override
-  int get hashCode => viewMode.hashCode ^ camera.hashCode;
+  int get hashCode => camera.hashCode;
 }
 
 /// 相机配置

@@ -70,7 +70,7 @@ class FileSystemGraphRepository implements GraphRepository {
       try {
         await dir.create(recursive: true);
       } catch (e) {
-        throw RepositoryException(
+        throw const RepositoryException(
           'Data folder does not exist and cannot be created. '
           'Please check your file system permissions.',
         );
@@ -132,7 +132,7 @@ class FileSystemGraphRepository implements GraphRepository {
         await dir.create(recursive: true);
         return [];
       } catch (e) {
-        throw RepositoryException(
+        throw const RepositoryException(
           'Data folder does not exist and cannot be created. '
           'Please check your file system permissions.',
         );

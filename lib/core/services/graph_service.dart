@@ -41,9 +41,6 @@ abstract class GraphService {
   /// 获取图的连接
   Future<List<Connection>> getGraphConnections(String graphId);
 
-  /// 切换视图模式
-  Future<void> switchViewMode(String graphId, ViewModeType mode);
-
   /// 应用布局算法
   Future<void> applyLayout(String graphId, LayoutAlgorithm algorithm);
 
@@ -108,14 +105,19 @@ class GraphServiceImpl implements GraphService {
       throw GraphNotFoundException(graphId);
     }
 
+    // 合并位置信息
+    final mergedPositions = Map<String, Offset>.from(graph.nodePositions);
+    if (nodePositions != null) {
+      mergedPositions.addAll(nodePositions);
+    }
+
     final updatedGraph = graph.copyWith(
       name: name ?? graph.name,
       nodeIds: nodeIds ?? graph.nodeIds,
       viewConfig: viewConfig ?? graph.viewConfig,
+      nodePositions: mergedPositions,
       updatedAt: DateTime.now(),
     );
-
-    // TODO: 更新图节点的位置。
 
     await _repository.save(updatedGraph);
     return updatedGraph;
@@ -177,18 +179,6 @@ class GraphServiceImpl implements GraphService {
   Future<List<Connection>> getGraphConnections(String graphId) async {
     final nodes = await getGraphNodes(graphId);
     return Connection.calculateConnections(nodes);
-  }
-
-  @override
-  Future<void> switchViewMode(String graphId, ViewModeType mode) async {
-    final graph = await _repository.load(graphId);
-    if (graph == null) {
-      throw GraphNotFoundException(graphId);
-    }
-
-    final updatedConfig = graph.viewConfig.copyWith(viewMode: mode);
-    final updatedGraph = graph.copyWith(viewConfig: updatedConfig);
-    await _repository.save(updatedGraph);
   }
 
   @override
