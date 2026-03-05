@@ -3,7 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/models.dart';
-import '../../core/theme/app_theme.dart';
+import '../core/services/theme/app_theme.dart';
 import '../../ui/models/node_model.dart';
 import '../../ui/models/ui_model.dart';
 import 'graph_world.dart';
@@ -151,7 +151,7 @@ class GraphFlameWidget extends StatefulWidget {
   final Function(Node, Offset)? onSecondaryTap;
   final Function(Node)? onDoubleTap;
   final Function(double)? onZoomChanged;
-  final Function(String nodeId)? onNodeDropped;
+  final Function(String nodeId, Offset position)? onNodeDropped;
 
   @override
   State<GraphFlameWidget> createState() => _GraphFlameWidgetState();
@@ -235,7 +235,33 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
               : constraints.maxHeight,
           child: DragTarget<String>(
             onAcceptWithDetails: (details) {
-              widget.onNodeDropped?.call(details.data);
+              // 将屏幕坐标转换为Flame游戏世界坐标
+              final screenSize = Size(
+                constraints.maxWidth.isInfinite ? MediaQuery.of(context).size.width : constraints.maxWidth,
+                constraints.maxHeight.isInfinite ? MediaQuery.of(context).size.height : constraints.maxHeight,
+              );
+
+              // Flame游戏配置的虚拟分辨率
+              const gameWidth = 4096.0;
+              const gameHeight = 2160.0;
+
+              // 相机中心位置
+              const cameraX = 2048.0;
+              const cameraY = 1080.0;
+
+              // 坐标转换：屏幕坐标 → 游戏世界坐标
+              final gamePosition = Offset(
+                (details.offset.dx / screenSize.width) * gameWidth,
+                (details.offset.dy / screenSize.height) * gameHeight,
+              );
+
+              // 调整相机偏移
+              final worldPosition = Offset(
+                gamePosition.dx + cameraX - gameWidth / 2,
+                gamePosition.dy + cameraY - gameHeight / 2,
+              );
+
+              widget.onNodeDropped?.call(details.data, worldPosition);
             },
             builder: (context, candidateData, rejected) {
               // 检查是否正在拖拽节点

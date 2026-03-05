@@ -299,6 +299,7 @@ class FileSystemGraphRepository implements GraphRepository {
       viewConfig: GraphViewConfig.defaultConfig,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      nodePositions: {}
     );
 
     await save(graph);

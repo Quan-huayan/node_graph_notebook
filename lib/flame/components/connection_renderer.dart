@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../../core/models/models.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/services/theme/app_theme.dart';
 
 /// 连接线渲染组件
 class ConnectionRenderer extends Component {

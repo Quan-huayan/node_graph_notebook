@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' show Offset;
 import 'package:flutter/foundation.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
@@ -99,11 +100,22 @@ class GraphModel extends ChangeNotifier {
   }
 
   /// 添加节点到图
-  Future<void> addNode(String nodeId) async {
+  Future<void> addNode(String nodeId, {Offset? position}) async {
     if (_currentGraph == null) return;
 
     try {
+      // 先更新图中的节点位置（如果提供了位置）
+      if (position != null) {
+        _currentGraph = await _service.updateGraph(
+          _currentGraph!.id,
+          nodePositions: {..._currentGraph!.nodePositions, nodeId: position},
+        );
+      }
+
+      // 然后添加节点到图
       await _service.addNodeToGraph(_currentGraph!.id, nodeId);
+      _currentGraph = await _service.getGraph(_currentGraph!.id);
+
       final node = await _service.getGraphNodes(_currentGraph!.id);
       _graphNodes = node;
       _connections = Connection.calculateConnections(_graphNodes);

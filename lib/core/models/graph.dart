@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'dart:ui' show Offset;
 import 'enums.dart';
+import 'node.dart';
 
 part 'graph.g.dart';
 
@@ -140,6 +142,7 @@ class Graph {
     required this.id,
     required this.name,
     required this.nodeIds,
+    required this.nodePositions,
     required this.viewConfig,
     required this.createdAt,
     required this.updatedAt,
@@ -155,6 +158,10 @@ class Graph {
 
   /// 节点ID列表
   final List<String> nodeIds;
+
+  /// 节点位置映射（节点ID -> 位置）
+  @OffsetConverter()
+  final Map<String, Offset> nodePositions;
 
   /// 视图配置
   final GraphViewConfig viewConfig;
@@ -172,6 +179,7 @@ class Graph {
     String? id,
     String? name,
     List<String>? nodeIds,
+    Map<String, Offset>? nodePositions,
     GraphViewConfig? viewConfig,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -180,6 +188,7 @@ class Graph {
       id: id ?? this.id,
       name: name ?? this.name,
       nodeIds: nodeIds ?? this.nodeIds,
+      nodePositions: nodePositions ?? this.nodePositions,
       viewConfig: viewConfig ?? this.viewConfig,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -187,18 +196,45 @@ class Graph {
   }
 
   /// 添加节点
-  Graph addNode(String nodeId) {
+  Graph addNode(String nodeId, {Offset? position}) {
     final newNodeIds = List<String>.from(nodeIds);
+    final newNodePositions = Map<String, Offset>.from(nodePositions);
+
     if (!newNodeIds.contains(nodeId)) {
       newNodeIds.add(nodeId);
     }
-    return copyWith(nodeIds: newNodeIds);
+
+    // 如果提供了位置，设置它
+    if (position != null) {
+      newNodePositions[nodeId] = position;
+    }
+
+    return copyWith(
+      nodeIds: newNodeIds,
+      nodePositions: newNodePositions,
+    );
   }
 
   /// 移除节点
   Graph removeNode(String nodeId) {
     final newNodeIds = List<String>.from(nodeIds)..remove(nodeId);
-    return copyWith(nodeIds: newNodeIds);
+    final newNodePositions = Map<String, Offset>.from(nodePositions)..remove(nodeId);
+    return copyWith(
+      nodeIds: newNodeIds,
+      nodePositions: newNodePositions,
+    );
+  }
+
+  /// 更新节点位置
+  Graph updateNodePosition(String nodeId, Offset position) {
+    final newNodePositions = Map<String, Offset>.from(nodePositions);
+    newNodePositions[nodeId] = position;
+    return copyWith(nodePositions: newNodePositions);
+  }
+
+  /// 获取节点位置
+  Offset? getNodePosition(String nodeId) {
+    return nodePositions[nodeId];
   }
 
   /// 更新时间戳

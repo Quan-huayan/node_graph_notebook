@@ -1,3 +1,4 @@
+import 'dart:ui';
 import '../models/models.dart';
 import '../repositories/repositories.dart';
 import 'node_service.dart';
@@ -22,6 +23,7 @@ abstract class GraphService {
     String? name,
     List<String>? nodeIds,
     GraphViewConfig? viewConfig,
+    Map<String, Offset>? nodePositions
   });
 
   /// 删除图
@@ -66,6 +68,8 @@ class GraphServiceImpl implements GraphService {
     required String name,
     List<String>? nodeIds,
   }) async {
+    final graphNodes = nodeIds != null ? await _nodeRepository.loadAll(nodeIds) : [];
+
     final graph = Graph(
       id: __generateId(),
       name: name,
@@ -73,6 +77,9 @@ class GraphServiceImpl implements GraphService {
       viewConfig: GraphViewConfig.defaultConfig,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      nodePositions: {
+        for (Node node in graphNodes)
+        node.id: node.position}
     );
 
     await _repository.save(graph);
@@ -94,6 +101,7 @@ class GraphServiceImpl implements GraphService {
     String? name,
     List<String>? nodeIds,
     GraphViewConfig? viewConfig,
+    Map<String,Offset>? nodePositions
   }) async {
     final graph = await _repository.load(graphId);
     if (graph == null) {
@@ -106,6 +114,8 @@ class GraphServiceImpl implements GraphService {
       viewConfig: viewConfig ?? graph.viewConfig,
       updatedAt: DateTime.now(),
     );
+
+    // TODO: 更新图节点的位置。
 
     await _repository.save(updatedGraph);
     return updatedGraph;

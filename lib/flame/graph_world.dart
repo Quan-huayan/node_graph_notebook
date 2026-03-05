@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../../core/models/models.dart';
-import '../../core/theme/app_theme.dart';
+import '../core/services/theme/app_theme.dart';
 import '../../ui/models/ui_model.dart';
 import 'components/node_component.dart';
 import 'components/connection_renderer.dart';

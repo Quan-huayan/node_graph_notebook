@@ -2,7 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart' hide Image;
 import '../../core/models/models.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/services/theme/app_theme.dart';
 
 /// Flame 节点渲染组件
 class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, SecondaryTapCallbacks, DoubleTapCallbacks {

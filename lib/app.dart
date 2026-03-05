@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
-import 'core/theme/app_theme.dart';
+import 'core/services/theme/app_theme.dart';
 import 'ui/models/models.dart';
 import 'ui/pages/home_page.dart';
 

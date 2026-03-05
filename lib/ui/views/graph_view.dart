@@ -156,7 +156,7 @@ class GraphView extends StatelessWidget {
                         ),
                       );
                     },
-                    onNodeDropped: (nodeId) async {
+                    onNodeDropped: (nodeId, position) async {
                       // 检查节点是否已经在图中
                       final alreadyInGraph = graphModel.graphNodes.any((n) => n.id == nodeId);
                       if (alreadyInGraph) {
@@ -172,10 +172,10 @@ class GraphView extends StatelessWidget {
                         return;
                       }
 
-                      // 添加节点到图中
+                      // 添加节点到图中，并设置其位置
                       try {
-                        await graphModel.addNode(nodeId);
-                        // 可选：选择新添加的节点
+                        await graphModel.addNode(nodeId, position: position);
+                        // 选择新添加的节点
                         context.read<NodeModel>().selectNode(nodeId);
                       } catch (e) {
                         if (context.mounted) {
