@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
+import '../../core/services/node_service.dart';
 import '../blocs/blocs.dart';
 import '../pages/markdown_editor_page.dart';
 
@@ -381,16 +382,34 @@ class _SearchDialogState extends State<SearchDialog> {
       _isSearching = true;
     });
 
-    final nodeBloc = context.read<NodeBloc>();
-    nodeBloc.add(NodeSearchEvent(query));
+    try {
+      // 直接从 NodeService 搜索，避免影响 NodeBloc.state.nodes
+      final nodeService = context.read<NodeService>();
+      final results = await nodeService.searchNodes(query);
 
-    // 等待搜索完成
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    setState(() {
-      _results = nodeBloc.state.nodes;
-      _isSearching = false;
-    });
+      if (mounted) {
+        setState(() {
+          _results = results;
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _results = [];
+          _isSearching = false;
+        });
+        // 显示错误提示
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Search failed: $e'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
   }
 }
 
@@ -724,8 +743,10 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
                         style: Theme.of(ctx).textTheme.bodySmall,
                       ),
                       onTap: () {
+                        // 先获取NodeBloc，避免在Navigator.pop后访问已销毁的context
+                        final nodeBloc = context.read<NodeBloc>();
                         Navigator.pop(ctx);
-                        context.read<NodeBloc>().add(NodeSelectEvent(node.id));
+                        nodeBloc.add(NodeSelectEvent(node.id));
 
                         // 打开编辑器
                         Navigator.push(
