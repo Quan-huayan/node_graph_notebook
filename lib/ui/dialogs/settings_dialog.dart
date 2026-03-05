@@ -96,14 +96,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
               },
             ),
             SwitchListTile(
-              title: const Text('Show Concept Nodes'),
-              subtitle: const Text('Display concept nodes in the graph'),
-              value: uiModel.showConceptNodes,
-              onChanged: (value) {
-                uiModel.setConceptNodes(value);
-              },
-            ),
-            SwitchListTile(
               title: const Text('Show Sidebar'),
               subtitle: const Text('Display the node list sidebar'),
               value: uiModel.isSidebarOpen,

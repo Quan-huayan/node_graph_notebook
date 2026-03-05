@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
-import 'markdown_editor_page.dart';
 import '../dialogs/search_dialog.dart';
 import '../dialogs/settings_dialog.dart';
 import '../dialogs/create_node_dialog.dart';

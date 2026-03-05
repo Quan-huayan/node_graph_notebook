@@ -516,31 +516,6 @@ class GraphPage extends StatelessWidget {
 }
 ```
 
-**3. 状态计算规则**：
-
-```dart
-// ✅ 好的做法 - 使用 getter 计算派生状态
-class NodeModel extends ChangeNotifier {
-  List<Node> _nodes = [];
-
-  List<Node> get contentNodes =>
-      _nodes.where((n) => n.type == NodeType.content).toList();
-
-  List<Node> get conceptNodes =>
-      _nodes.where((n) => n.type == NodeType.concept).toList();
-
-  int get nodeCount => _nodes.length;
-}
-
-// ❌ 避免 - 缓存派生状态
-class NodeModel extends ChangeNotifier {
-  List<Node> _nodes = [];
-  List<Node>? _contentNodes;  // 不必要的缓存
-
-  List<Node> get contentNodes => _contentNodes ??= ...;
-}
-```
-
 ## Flame 引擎规范
 
 ### 组件规范

@@ -1,7 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'dart:ui' show Offset;
 import 'enums.dart';
-import 'node.dart';
 import 'converters.dart';
 
 part 'graph.g.dart';

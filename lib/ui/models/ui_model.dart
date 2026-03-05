@@ -5,7 +5,6 @@ import '../../core/models/enums.dart';
 class UIModel extends ChangeNotifier {
   NodeViewMode _nodeViewMode = NodeViewMode.titleWithPreview;
   bool _showConnections = true;
-  bool _showConceptNodes = true;
   BackgroundStyle _backgroundStyle = BackgroundStyle.grid;
   bool _isSidebarOpen = true;
   String _selectedTab = 'nodes';
@@ -13,7 +12,6 @@ class UIModel extends ChangeNotifier {
   NodeViewMode get nodeViewMode => _nodeViewMode;
   NodeViewMode get defaultViewMode => _nodeViewMode;
   bool get showConnections => _showConnections;
-  bool get showConceptNodes => _showConceptNodes;
   BackgroundStyle get backgroundStyle => _backgroundStyle;
   bool get isSidebarOpen => _isSidebarOpen;
   String get selectedTab => _selectedTab;
@@ -39,18 +37,6 @@ class UIModel extends ChangeNotifier {
   /// 设置连接线显示
   void setConnections(bool show) {
     _showConnections = show;
-    notifyListeners();
-  }
-
-  /// 切换概念节点显示
-  void toggleConceptNodes() {
-    _showConceptNodes = !_showConceptNodes;
-    notifyListeners();
-  }
-
-  /// 设置概念节点显示
-  void setConceptNodes(bool show) {
-    _showConceptNodes = show;
     notifyListeners();
   }
 

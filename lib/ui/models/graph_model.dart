@@ -35,7 +35,7 @@ class GraphModel extends ChangeNotifier {
         await _loadGraphData(_currentGraph!);
       }
       _error = null;
-    } on FileSystemException catch (e) {
+    } on FileSystemException catch (_) {
       _error = 'Data folder not found or inaccessible. Please restart the application to recover.';
     } catch (e) {
       _error = 'Failed to load graph: ${e.toString()}';
@@ -121,7 +121,7 @@ class GraphModel extends ChangeNotifier {
       _connections = Connection.calculateConnections(_graphNodes);
       _error = null;
       notifyListeners();
-    } on FileSystemException catch (e) {
+    } on FileSystemException catch (_) {
       _error = 'Cannot save changes: Data folder is missing or inaccessible.';
       notifyListeners();
       rethrow;
@@ -142,7 +142,7 @@ class GraphModel extends ChangeNotifier {
       _connections = Connection.calculateConnections(_graphNodes);
       _error = null;
       notifyListeners();
-    } on FileSystemException catch (e) {
+    } on FileSystemException catch (_) {
       _error = 'Cannot save changes: Data folder is missing or inaccessible.';
       notifyListeners();
       rethrow;
@@ -202,7 +202,7 @@ class GraphModel extends ChangeNotifier {
       _graphNodes = await _service.getGraphNodes(graph.id);
       _connections = Connection.calculateConnections(_graphNodes);
       _error = null;
-    } on FileSystemException catch (e) {
+    } on FileSystemException catch (_) {
       _error = 'Data files not found. Some nodes may be missing.';
       _graphNodes = [];
       _connections = [];

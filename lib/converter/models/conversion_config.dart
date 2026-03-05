@@ -4,11 +4,9 @@ import 'conversion_rule.dart';
 class ConversionConfig {
   const ConversionConfig({
     required this.rule,
-    this.createConceptNodes = false,
     this.preserveOriginalFiles = true,
   });
 
   final ConversionRule rule;
-  final bool createConceptNodes;
   final bool preserveOriginalFiles;
 }

@@ -42,13 +42,6 @@ class Toolbar extends StatelessWidget {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.category),
-              tooltip: 'Toggle Concept Nodes',
-              onPressed: () {
-                uiModel.toggleConceptNodes();
-              },
-            ),
-            IconButton(
               icon: Icon(
                 uiModel.isSidebarOpen
                     ? Icons.menu_open
