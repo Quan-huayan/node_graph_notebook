@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
-import '../models/models.dart';
+import '../blocs/blocs.dart';
 import '../pages/markdown_editor_page.dart';
 
 /// 搜索对话框
@@ -282,7 +282,7 @@ class _SearchDialogState extends State<SearchDialog> {
   }
 
   Widget _buildResultTile(BuildContext context, Node node, int index) {
-    final nodeModel = context.read<NodeModel>();
+    final nodeBloc = context.read<NodeBloc>();
     final theme = context.watch<ThemeService>().themeData;
 
     return Card(
@@ -346,7 +346,7 @@ class _SearchDialogState extends State<SearchDialog> {
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           Navigator.pop(context);
-          nodeModel.selectNode(node.id);
+          nodeBloc.add(NodeSelectEvent(node.id));
 
           // 打开编辑器
           Navigator.push(
@@ -381,11 +381,14 @@ class _SearchDialogState extends State<SearchDialog> {
       _isSearching = true;
     });
 
-    final nodeModel = context.read<NodeModel>();
-    await nodeModel.searchNodes(query);
+    final nodeBloc = context.read<NodeBloc>();
+    nodeBloc.add(NodeSearchEvent(query));
+
+    // 等待搜索完成
+    await Future.delayed(const Duration(milliseconds: 100));
 
     setState(() {
-      _results = nodeModel.nodes;
+      _results = nodeBloc.state.nodes;
       _isSearching = false;
     });
   }
@@ -433,7 +436,7 @@ class _SearchBarState extends State<SearchBar> {
   }
 
   Widget _buildExpandedSearch() {
-    final nodeModel = context.watch<NodeModel>();
+    final nodeBloc = context.watch<NodeBloc>();
 
     return TextField(
       controller: _controller,
@@ -445,7 +448,7 @@ class _SearchBarState extends State<SearchBar> {
           icon: const Icon(Icons.close),
           onPressed: () {
             _controller.clear();
-            nodeModel.clearError();
+            nodeBloc.add(const NodeClearErrorEvent());
             setState(() {
               _isExpanded = false;
             });
@@ -460,9 +463,9 @@ class _SearchBarState extends State<SearchBar> {
       onChanged: (value) {
         if (value.trim().isEmpty) {
           // 重新加载所有节点
-          nodeModel.loadNodes();
+          nodeBloc.add(const NodeLoadEvent());
         } else {
-          nodeModel.searchNodes(value.trim());
+          nodeBloc.add(NodeSearchEvent(value.trim()));
         }
       },
     );
@@ -630,10 +633,10 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
       _isSearching = true;
     });
 
-    final nodeModel = context.read<NodeModel>();
+    final nodeBloc = context.read<NodeBloc>();
 
     // 构建搜索条件
-    List<Node> results = nodeModel.nodes;
+    List<Node> results = nodeBloc.state.nodes;
 
     // 标题过滤
     if (_titleController.text.trim().isNotEmpty) {
@@ -722,7 +725,7 @@ class _AdvancedSearchDialogState extends State<AdvancedSearchDialog> {
                       ),
                       onTap: () {
                         Navigator.pop(ctx);
-                        context.read<NodeModel>().selectNode(node.id);
+                        context.read<NodeBloc>().add(NodeSelectEvent(node.id));
 
                         // 打开编辑器
                         Navigator.push(

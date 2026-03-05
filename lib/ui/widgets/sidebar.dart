@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../models/models.dart';
+import '../blocs/blocs.dart';
 import '../views/folder_tree_view.dart';
 
 /// 侧边栏
@@ -42,11 +42,12 @@ class _SidebarState extends State<Sidebar> {
   Future<void> _deleteSelectedNode() async {
     if (_selectedNodeId == null) return;
 
-    final nodeModel = context.read<NodeModel>();
-    final graphModel = context.read<GraphModel>();
-    final node = nodeModel.nodes.firstWhere(
+    final nodeBloc = context.read<NodeBloc>();
+    final graphBloc = context.read<GraphBloc>();
+    final nodeState = nodeBloc.state;
+    final node = nodeState.nodes.firstWhere(
       (n) => n.id == _selectedNodeId,
-      orElse: () => nodeModel.nodes.first,
+      orElse: () => nodeState.nodes.first,
     );
 
     final confirmed = await showDialog<bool>(
@@ -70,10 +71,11 @@ class _SidebarState extends State<Sidebar> {
     );
 
     if (confirmed == true && mounted) {
-      if (graphModel.hasGraph) {
-        await graphModel.removeNode(node.id);
+      final state = graphBloc.state;
+      if (state.hasGraph) {
+        graphBloc.add(NodeDeleteEvent(node.id));
       }
-      await nodeModel.deleteNode(node.id);
+      nodeBloc.add(NodeDeleteEvent(node.id));
       setState(() {
         _selectedNodeId = null;
       });
@@ -82,104 +84,103 @@ class _SidebarState extends State<Sidebar> {
 
   @override
   Widget build(BuildContext context) {
-    // 分离文件夹和普通节点
-    final folders = widget.nodes.where((n) => n.isFolder).toList();
-    final regularNodes = widget.nodes.where((n) => !n.isFolder).toList();
+    return BlocBuilder<NodeBloc, NodeState>(
+      builder: (context, nodeState) {
+        // 从 NodeBloc 状态中获取最新的节点
+        final allNodes = nodeState.nodes;
+        final folders = allNodes.where((n) => n.isFolder).toList();
+        final regularNodes = allNodes.where((n) => !n.isFolder).toList();
 
-    return KeyboardListener(
-      focusNode: _focusNode,
-      onKeyEvent: _handleKeyPress,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            right: BorderSide(
-              color: Theme.of(context).dividerColor,
-              width: 1,
-            ),
-          ),
-        ),
-        child: Column(
-          children: [
-            // 标题栏
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                  ),
+        return KeyboardListener(
+          focusNode: _focusNode,
+          onKeyEvent: _handleKeyPress,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                right: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 1,
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(Icons.graphic_eq),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.graph.name,
-                        style: Theme.of(context).textTheme.titleMedium,
-                        overflow: TextOverflow.ellipsis,
+            ),
+            child: Column(
+              children: [
+                // 标题栏
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).dividerColor,
                       ),
                     ),
-                    // 创建文件夹按钮
-                    IconButton(
-                      icon: const Icon(Icons.create_new_folder),
-                      tooltip: 'Create New Folder',
-                      onPressed: () => _createFolder(context),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.graphic_eq),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.graph.name,
+                            style: Theme.of(context).textTheme.titleMedium,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // 创建文件夹按钮
+                        IconButton(
+                          icon: const Icon(Icons.create_new_folder),
+                          tooltip: 'Create New Folder',
+                          onPressed: () => _createFolder(context),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            // 节点列表（文件夹树形视图）
-            Expanded(
-              child: FolderTreeView(
-                nodes: regularNodes,
-                folders: folders,
-                onNodeSelected: (nodeId) {
-                  setState(() {
-                    _selectedNodeId = nodeId;
-                  });
-                },
-              ),
+                // 节点列表（文件夹树形视图）
+                Expanded(
+                  child: FolderTreeView(
+                    nodes: regularNodes,
+                    folders: folders,
+                    onNodeSelected: (nodeId) {
+                      setState(() {
+                        _selectedNodeId = nodeId;
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   void _createFolder(BuildContext context) async {
-    final nodeModel = context.read<NodeModel>();
+    final nodeBloc = context.read<NodeBloc>();
 
-    // 创建一个内容节点作为文件夹
-    final folder = await nodeModel.createNode(
-      title: 'New Folder',
-      content: 'A folder to organize your notes',
-    );
+    try {
+      // 发送创建节点事件
+      nodeBloc.add(const NodeCreateEvent(
+        title: 'New Folder',
+        content: 'A folder to organize your notes',
+      ));
 
-    // 标记为文件夹
-    final updatedFolder = folder.copyWith(
-      metadata: {...folder.metadata, 'isFolder': true},
-    );
-    await nodeModel.replaceNode(updatedFolder);
+      // 注意：文件夹不自动添加到节点图中，它只是一个组织工具
 
-    // 注意：文件夹不自动添加到节点图中，它只是一个组织工具
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('New folder created')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('New folder created')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create folder: $e')),
+        );
+      }
     }
-  }
-}
-
-/// Node 扩展 - 检查是否为文件夹
-extension NodeExtension on Node {
-  bool get isFolder {
-    return metadata['isFolder'] == true ||
-        (metadata['isFolder'] is bool && metadata['isFolder'] as bool);
   }
 }

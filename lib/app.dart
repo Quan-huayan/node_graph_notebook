@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
-import 'ui/models/models.dart';
+import 'ui/blocs/blocs.dart';
 import 'ui/pages/home_page.dart';
 
 class NodeGraphNotebookApp extends StatefulWidget {
@@ -114,15 +115,25 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           ),
         ),
 
-        // 3. Model 层
-        ChangeNotifierProvider<NodeModel>(
-          create: (ctx) => NodeModel(ctx.read<NodeService>())..loadNodes(),
+        // 2.1 Undo Manager
+        ChangeNotifierProvider<UndoManager>(
+          create: (_) => UndoManager(),
         ),
-        ChangeNotifierProvider<GraphModel>(
-          create: (ctx) => GraphModel(ctx.read<GraphService>())..initialize(),
+
+        // 2.2 BLoC 层
+        BlocProvider<GraphBloc>(
+          create: (ctx) => GraphBloc(
+            graphService: ctx.read<GraphService>(),
+            undoManager: ctx.read<UndoManager>(),
+          )..add(const GraphInitializeEvent()),
         ),
-        ChangeNotifierProvider<UIModel>(
-          create: (_) => UIModel(),
+        BlocProvider<NodeBloc>(
+          create: (ctx) => NodeBloc(
+            nodeService: ctx.read<NodeService>(),
+          )..add(const NodeLoadEvent()),
+        ),
+        BlocProvider<UIBloc>(
+          create: (_) => UIBloc(),
         ),
       ],
       child: Consumer2<SettingsService, ThemeService>(

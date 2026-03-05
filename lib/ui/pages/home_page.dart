@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/models.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../dialogs/search_dialog.dart';
 import '../dialogs/settings_dialog.dart';
 import '../dialogs/create_node_dialog.dart';
 import '../views/graph_view.dart';
 import '../../core/services/export_service.dart';
+import '../blocs/blocs.dart';
 
 /// 主页面
 class HomePage extends StatefulWidget {
@@ -58,8 +58,8 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              context.read<NodeModel>().loadNodes();
-              context.read<GraphModel>().refresh();
+              context.read<NodeBloc>().add(const NodeLoadEvent());
+              context.read<GraphBloc>().add(const GraphInitializeEvent());
             },
             tooltip: 'Refresh',
           ),
@@ -121,10 +121,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showExportDialog(BuildContext context) {
-    final graphModel = context.read<GraphModel>();
-    final nodeModel = context.read<NodeModel>();
+    final blocState = context.watch<GraphBloc>().state;
+    final nodeState = context.watch<NodeBloc>().state;
 
-    if (!graphModel.hasGraph) {
+    if (!blocState.hasGraph) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No graph to export')),
       );
@@ -134,8 +134,8 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (ctx) => ExportDialog(
-        graph: graphModel.currentGraph!,
-        nodes: nodeModel.nodes,
+        graph: blocState.graph,
+        nodes: nodeState.nodes,
       ),
     );
   }

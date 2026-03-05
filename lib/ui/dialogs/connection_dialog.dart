@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
-import '../models/models.dart';
+import '../../ui/blocs/blocs.dart';
 
 /// 创建连接对话框
 class ConnectionDialog extends StatefulWidget {
@@ -168,18 +168,21 @@ class _ConnectionDialogState extends State<ConnectionDialog> {
       _isCreating = true;
     });
 
-    final nodeModel = context.read<NodeModel>();
+    final nodeBloc = context.read<NodeBloc>();
     final role = _roleController.text.trim().isEmpty
         ? null
         : _roleController.text.trim();
 
     try {
-      await nodeModel.connectNodes(
+      nodeBloc.add(NodeConnectEvent(
         fromNodeId: widget.sourceNode.id,
         toNodeId: _selectedTargetNode!.id,
         type: _selectedType,
         role: role,
-      );
+      ));
+
+      // 等待连接创建完成
+      await Future.delayed(const Duration(milliseconds: 100));
 
       if (mounted) {
         Navigator.pop(context);
@@ -254,13 +257,16 @@ class DisconnectDialog extends StatelessWidget {
   }
 
   Future<void> _disconnect(BuildContext context, Node targetNode) async {
-    final nodeModel = context.read<NodeModel>();
+    final nodeBloc = context.read<NodeBloc>();
 
     try {
-      await nodeModel.disconnectNodes(
+      nodeBloc.add(NodeDisconnectEvent(
         fromNodeId: sourceNode.id,
         toNodeId: targetNode.id,
-      );
+      ));
+
+      // 等待连接断开完成
+      await Future.delayed(const Duration(milliseconds: 100));
 
       if (context.mounted) {
         Navigator.pop(context);

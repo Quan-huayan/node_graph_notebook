@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../../ui/models/models.dart';
+import '../../ui/blocs/blocs.dart';
 
 /// Markdown 编辑器页面
 class MarkdownEditorPage extends StatefulWidget {
@@ -257,23 +257,26 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
       _isSaving = true;
     });
 
-    final nodeModel = context.read<NodeModel>();
+    final nodeBloc = context.read<NodeBloc>();
 
     try {
       if (widget.node == null) {
         // 创建新节点
-        await nodeModel.createContentNode(
+        nodeBloc.add(NodeCreateContentEvent(
           title: _titleController.text.trim(),
           content: _contentController.text.trim(),
-        );
+        ));
       } else {
         // 更新现有节点
-        await nodeModel.updateNode(
+        nodeBloc.add(NodeUpdateEvent(
           widget.node!.id,
           title: _titleController.text.trim(),
           content: _contentController.text.trim(),
-        );
+        ));
       }
+
+      // 等待操作完成
+      await Future.delayed(const Duration(milliseconds: 100));
 
       if (mounted) {
         Navigator.pop(context);

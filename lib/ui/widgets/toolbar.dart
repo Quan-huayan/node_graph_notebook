@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:node_graph_notebook/core/services/services.dart';
+import '../blocs/blocs.dart';
 import '../../core/models/models.dart';
-import '../../core/services/services.dart';
-import '../models/models.dart';
 import '../dialogs/graph_nodes_dialog.dart';
 
 /// 工具栏
 class Toolbar extends StatelessWidget {
   const Toolbar({
     super.key,
-    required this.graphModel,
-    required this.uiModel,
+    required this.uiState,
   });
 
-  final GraphModel graphModel;
-  final UIModel uiModel;
+  final UIState uiState;
 
   @override
   Widget build(BuildContext context) {
@@ -32,24 +30,24 @@ class Toolbar extends StatelessWidget {
             ),
             IconButton(
               icon: Icon(
-                uiModel.showConnections
+                context.read<GraphBloc>().state.viewState.showConnections
                     ? Icons.share
                     : Icons.share_outlined,
               ),
               tooltip: 'Toggle Connections',
               onPressed: () {
-                uiModel.toggleConnections();
+                context.read<GraphBloc>().add(const ViewToggleConnectionsEvent());
               },
             ),
             IconButton(
               icon: Icon(
-                uiModel.isSidebarOpen
+                uiState.isSidebarOpen
                     ? Icons.menu_open
                     : Icons.menu,
               ),
               tooltip: 'Toggle Sidebar',
               onPressed: () {
-                uiModel.toggleSidebar();
+                context.read<UIBloc>().add(const UIToggleSidebarEvent());
               },
             ),
             const Divider(),
@@ -128,11 +126,10 @@ class Toolbar extends StatelessWidget {
     BuildContext context,
     LayoutAlgorithm algorithm,
   ) async {
-    final nodeModel = context.read<NodeModel>();
-    final graphModel = context.read<GraphModel>();
+    final bloc = context.read<GraphBloc>();
 
     // 检查是否有节点
-    if (nodeModel.nodes.isEmpty) {
+    if (bloc.state.nodes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -144,134 +141,30 @@ class Toolbar extends StatelessWidget {
       return;
     }
 
-    // 保存旧位置以便撤销
-    final oldPositions = <String, Offset>{};
-    for (final node in nodeModel.nodes) {
-      oldPositions[node.id] = node.position;
-    }
+    // 应用布局
+    bloc.add(LayoutApplyEvent(algorithm));
+  }
 
-    // 显示加载提示
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: 16),
-            Text('Applying ${_getLayoutName(algorithm)} layout...'),
-          ],
-        ),
-        duration: const Duration(seconds: 10),
+  void _showGraphNodesDialog(BuildContext context) {
+    final bloc = context.read<GraphBloc>();
+    final nodeBloc = context.read<NodeBloc>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => GraphNodesDialog(
+        graphBloc: bloc,
+        nodeBloc: nodeBloc,
       ),
     );
-
-    try {
-      // 应用布局
-      final layoutService = LayoutServiceImpl();
-      final newPositions = await layoutService.applyLayout(
-        nodes: nodeModel.nodes,
-        algorithm: algorithm,
-      );
-
-      // 保存所有新位置
-      for (final entry in newPositions.entries) {
-        await nodeModel.updateNode(
-          entry.key,
-          position: entry.value,
-        );
-      }
-
-      // 刷新图
-      await graphModel.refresh();
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Applied ${_getLayoutName(algorithm)} layout to ${newPositions.length} nodes'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () => _undoLayout(context, nodeModel, graphModel, oldPositions),
-            ),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        final theme = context.read<ThemeService>().themeData;
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to apply layout: $e'),
-            backgroundColor: theme.status.error,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _undoLayout(
-    BuildContext context,
-    NodeModel nodeModel,
-    GraphModel graphModel,
-    Map<String, Offset> oldPositions,
-  ) async {
-    try {
-      for (final entry in oldPositions.entries) {
-        await nodeModel.updateNode(
-          entry.key,
-          position: entry.value,
-        );
-      }
-
-      await graphModel.refresh();
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Layout undone'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        final theme = context.read<ThemeService>().themeData;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to undo layout: $e'),
-            backgroundColor: theme.status.error,
-          ),
-        );
-      }
-    }
-  }
-
-  String _getLayoutName(LayoutAlgorithm algorithm) {
-    switch (algorithm) {
-      case LayoutAlgorithm.forceDirected:
-        return 'Force Directed';
-      case LayoutAlgorithm.hierarchical:
-        return 'Hierarchical';
-      case LayoutAlgorithm.circular:
-        return 'Circular';
-      case LayoutAlgorithm.conceptMap:
-        return 'Concept Map';
-      case LayoutAlgorithm.free:
-        return 'Free';
-    }
   }
 
   Future<void> _deleteSelectedNode(BuildContext context) async {
-    final nodeModel = context.read<NodeModel>();
-    final graphModel = context.read<GraphModel>();
+    final bloc = context.read<GraphBloc>();
+    final nodeBloc = context.read<NodeBloc>();
+    final nodeState = nodeBloc.state;
 
     // 检查是否有选中的节点
-    if (nodeModel.selectedNode == null) {
+    if (nodeState.selectedNode == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No node selected. Click a node to select it first.'),
@@ -281,7 +174,7 @@ class Toolbar extends StatelessWidget {
       return;
     }
 
-    final node = nodeModel.selectedNode!;
+    final node = nodeState.selectedNode!;
 
     // 确认删除
     final confirmed = await showDialog<bool>(
@@ -308,13 +201,11 @@ class Toolbar extends StatelessWidget {
 
     if (confirmed == true) {
       try {
-        // 先从图中移除
-        if (graphModel.hasGraph) {
-          await graphModel.removeNode(node.id);
-        }
+        // 从图中删除节点
+        bloc.add(NodeDeleteEvent(node.id));
 
         // 再删除节点本身
-        await nodeModel.deleteNode(node.id);
+        nodeBloc.add(NodeDeleteEvent(node.id));
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -336,19 +227,6 @@ class Toolbar extends StatelessWidget {
         }
       }
     }
-  }
-
-  void _showGraphNodesDialog(BuildContext context) {
-    final nodeModel = context.read<NodeModel>();
-    final graphModel = context.read<GraphModel>();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => GraphNodesDialog(
-        graphModel: graphModel,
-        nodeModel: nodeModel,
-      ),
-    );
   }
 }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
-import '../models/models.dart';
+import '../blocs/blocs.dart';
 import '../pages/markdown_editor_page.dart';
 import '../dialogs/connection_dialog.dart';
 
@@ -26,7 +26,7 @@ class NodeListItem extends StatelessWidget {
         style: Theme.of(context).textTheme.bodySmall,
       ),
       onTap: () {
-        context.read<NodeModel>().selectNode(node.id);
+        context.read<NodeBloc>().add(NodeSelectEvent(node.id));
 
         // 打开编辑器
         Navigator.push(
@@ -47,13 +47,8 @@ class NodeListItem extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
-        child: Consumer<NodeModel>(
-          builder: (ctx, nodeModel, child) {
-            // 找出已连接的节点
-            final connectedNodes = nodeModel.nodes
-                .where((n) => node.references.containsKey(n.id))
-                .toList();
-
+        child: BlocBuilder<NodeBloc, NodeState>(
+          builder: (ctx, nodeState) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -80,30 +75,11 @@ class NodeListItem extends StatelessWidget {
                       context: context,
                       builder: (ctx) => ConnectionDialog(
                         sourceNode: node,
-                        availableNodes: nodeModel.nodes,
+                        availableNodes: nodeState.nodes,
                       ),
                     );
                   },
                 ),
-                if (connectedNodes.isNotEmpty)
-                  ListTile(
-                    leading: const Icon(Icons.link_off),
-                    title: const Text('Disconnect from...'),
-                    trailing: Chip(
-                      label: Text('${connectedNodes.length}'),
-                      padding: EdgeInsets.zero,
-                    ),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      showDialog(
-                        context: context,
-                        builder: (ctx) => DisconnectDialog(
-                          sourceNode: node,
-                          connectedNodes: connectedNodes,
-                        ),
-                      );
-                    },
-                  ),
                 ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: const Text('References'),
@@ -141,15 +117,16 @@ class NodeListItem extends StatelessWidget {
 
                     if (confirmed == true && ctx.mounted) {
                       Navigator.pop(ctx);
-                      final graphModel = context.read<GraphModel>();
+                      final graphBloc = context.read<GraphBloc>();
 
                       // 先从图中移除
-                      if (graphModel.hasGraph) {
-                        await graphModel.removeNode(node.id);
+                      final state = graphBloc.state;
+                      if (state.hasGraph) {
+                        graphBloc.add(NodeDeleteEvent(node.id));
                       }
 
                       // 再删除节点本身
-                      await context.read<NodeModel>().deleteNode(node.id);
+                      context.read<NodeBloc>().add(NodeDeleteEvent(node.id));
                     }
                   },
                 ),
@@ -164,47 +141,50 @@ class NodeListItem extends StatelessWidget {
   void _showReferencesInfo(BuildContext context, Node node) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('References: ${node.title}'),
-        content: SizedBox(
-          width: 400,
-          child: node.references.isEmpty
-              ? const Text('No references yet.')
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: node.references.entries.map((entry) {
-                    final ref = entry.value;
-                    final nodeModel = context.read<NodeModel>();
-                    final targetNode = nodeModel.nodes.firstWhere(
-                      (n) => n.id == entry.key,
-                      orElse: () => ref as Node,
-                    );
+      builder: (ctx) => BlocBuilder<NodeBloc, NodeState>(
+        builder: (ctx, nodeState) {
+          return AlertDialog(
+            title: Text('References: ${node.title}'),
+            content: SizedBox(
+              width: 400,
+              child: node.references.isEmpty
+                  ? const Text('No references yet.')
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: node.references.entries.map((entry) {
+                        final ref = entry.value;
+                        final targetNode = nodeState.nodes.firstWhere(
+                          (n) => n.id == entry.key,
+                          orElse: () => ref as Node,
+                        );
 
-                    return ListTile(
-                      leading: Icon(
-                        targetNode.isConcept
-                            ? Icons.category
-                            : Icons.note,
-                        size: 16,
-                      ),
-                      title: Text(entry.key),
-                      subtitle: Text(_getReferenceTypeLabel(ref.type)),
-                      trailing: ref.role != null
-                          ? Chip(
-                              label: Text(ref.role!),
-                              padding: EdgeInsets.zero,
-                            )
-                          : null,
-                    );
-                  }).toList(),
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
+                        return ListTile(
+                          leading: Icon(
+                            targetNode.isConcept
+                                ? Icons.category
+                                : Icons.note,
+                            size: 16,
+                          ),
+                          title: Text(entry.key),
+                          subtitle: Text(_getReferenceTypeLabel(ref.type)),
+                          trailing: ref.role != null
+                              ? Chip(
+                                  label: Text(ref.role!),
+                                  padding: EdgeInsets.zero,
+                                )
+                              : null,
+                        );
+                      }).toList(),
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../models/node_model.dart';
-import '../models/graph_model.dart';
+import '../blocs/blocs.dart';
 
 /// 菜单操作类型
 enum _MenuAction {
@@ -19,8 +18,8 @@ Future<void> showNodeContextMenu(
   required Node node,
   required Offset position,
 }) async {
-  final nodeModel = context.read<NodeModel>();
-  final graphModel = context.read<GraphModel>();
+  final nodeBloc = context.read<NodeBloc>();
+  final graphBloc = context.read<GraphBloc>();
 
   // 获取 RenderBox 来计算相对于屏幕的位置
   final renderBox = context.findRenderObject() as RenderBox;
@@ -125,19 +124,20 @@ Future<void> showNodeContextMenu(
     );
 
     if (confirmed == true && context.mounted) {
-      if (graphModel.hasGraph) {
-        await graphModel.removeNode(node.id);
+      final state = graphBloc.state;
+      if (state.hasGraph) {
+        graphBloc.add(NodeDeleteEvent(node.id));
       }
-      await nodeModel.deleteNode(node.id);
+      nodeBloc.add(NodeDeleteEvent(node.id));
     }
   } else {
     // 切换显示模式
     final newMode = _actionToViewMode(selectedAction);
     if (newMode != null && newMode != node.viewMode) {
-      await nodeModel.updateNode(
+      nodeBloc.add(NodeUpdateEvent(
         node.id,
         viewMode: newMode,
-      );
+      ));
     }
   }
 }

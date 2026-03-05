@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../converter/converter_service_impl.dart';
 import '../../core/models/models.dart';
 import '../../core/repositories/repositories.dart';
-import '../../ui/models/models.dart';
+import '../blocs/blocs.dart';
 import '../../converter/models/models.dart';
 
 /// 转换配置页面
@@ -470,8 +470,8 @@ class _ConverterPageState extends State<ConverterPage> {
       }
     } else {
       // Nodes → MD 模式：选择节点
-      final nodeModel = context.read<NodeModel>();
-      final nodes = nodeModel.nodes;
+      final nodeBloc = context.read<NodeBloc>();
+      final nodes = nodeBloc.state.nodes;
 
       if (nodes.isEmpty) {
         if (mounted) {
@@ -588,7 +588,7 @@ class _ConverterPageState extends State<ConverterPage> {
           );
 
           // 刷新节点列表
-          context.read<NodeModel>().loadNodes();
+          context.read<NodeBloc>().add(const NodeLoadEvent());
         }
       } else {
         // 单文件转换
@@ -597,12 +597,14 @@ class _ConverterPageState extends State<ConverterPage> {
           rule: _rule,
         );
 
-        final nodeModel = context.read<NodeModel>();
+        final nodeBloc = context.read<NodeBloc>();
         for (final node in nodes) {
-          await nodeModel.createNode(
+          nodeBloc.add(NodeCreateEvent(
             title: node.title,
             content: node.content,
-          );
+          ));
+          // 等待一点时间，确保事件被处理
+          await Future.delayed(const Duration(milliseconds: 50));
         }
 
         if (mounted) {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/models/models.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:node_graph_notebook/core/models/models.dart';
 import '../../core/services/theme_service.dart';
-import '../models/models.dart';
+import '../blocs/blocs.dart';
 
 // 创建节点对话框
 class CreateNodeDialog extends StatefulWidget {
@@ -110,25 +110,33 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
       _isCreating = true;
     });
 
-    final nodeModel = context.read<NodeModel>();
-    final graphModel = context.read<GraphModel>();
+    final nodeBloc = context.read<NodeBloc>();
+    final graphBloc = context.read<GraphBloc>();
 
     try {
-      Node node;
-
-      node = await nodeModel.createNode(
+      // 发送创建节点事件
+      nodeBloc.add(NodeCreateEvent(
         title: title,
         content: content.isEmpty ? '' : content,
+      ));
+
+      // 等待节点创建完成
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // 获取新创建的节点
+      final Node newNode = nodeBloc.state.nodes.lastWhere(
+        (n) => n.title == title
       );
 
       // 添加到当前图
-      if (graphModel.hasGraph) {
-        await graphModel.addNode(node.id);
+      final state = graphBloc.state;
+      if (state.hasGraph) {
+        graphBloc.add(NodeAddEvent(newNode.id));
       }
 
       if (mounted) {
         Navigator.pop(context);
-        _showSuccessSnackBar('Created: ${node.title}');
+        _showSuccessSnackBar('Created: ${newNode.title}');
       }
     } catch (e) {
       if (mounted) {

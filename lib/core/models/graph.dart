@@ -134,6 +134,20 @@ class Graph {
   });
 
   factory Graph.fromJson(Map<String, dynamic> json) => _$GraphFromJson(json);
+  
+  /// 创建一个空的图实例
+  factory Graph.empty(String id) {
+    final now = DateTime.now();
+    return Graph(
+      id: id,
+      name: '',
+      nodeIds: const [],
+      nodePositions: const {},
+      viewConfig: GraphViewConfig.defaultConfig,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
 
   /// 图ID
   final String id;

@@ -1,0 +1,218 @@
+import 'dart:ui';
+import '../../core/models/models.dart';
+import 'graph_event.dart';
+
+/// 节点事件基类
+abstract class NodeEvent extends GraphEvent {
+  const NodeEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+// 加载事件
+
+/// 加载节点列表事件
+class NodeLoadEvent extends NodeEvent {
+  const NodeLoadEvent();
+}
+
+/// 搜索节点事件
+class NodeSearchEvent extends NodeEvent {
+  const NodeSearchEvent(this.query);
+
+  final String query;
+
+  @override
+  List<Object?> get props => [query];
+}
+
+// 节点操作事件
+
+/// 创建节点事件
+class NodeCreateEvent extends NodeEvent {
+  const NodeCreateEvent({
+    required this.title,
+    this.content,
+  });
+
+  final String title;
+  final String? content;
+
+  @override
+  List<Object?> get props => [title, content];
+}
+
+/// 创建内容节点事件
+class NodeCreateContentEvent extends NodeEvent {
+  const NodeCreateContentEvent({
+    required this.title,
+    required this.content,
+  });
+
+  final String title;
+  final String content;
+
+  @override
+  List<Object?> get props => [title, content];
+}
+
+/// 更新节点事件
+class NodeUpdateEvent extends NodeEvent {
+  const NodeUpdateEvent(
+    this.nodeId,
+    {
+      this.title,
+      this.content,
+      this.position,
+      this.viewMode,
+    }
+  );
+
+  final String nodeId;
+  final String? title;
+  final String? content;
+  final Offset? position;
+  final NodeViewMode? viewMode;
+
+  @override
+  List<Object?> get props => [nodeId, title, content, position, viewMode];
+}
+
+/// 替换节点事件
+class NodeReplaceEvent extends NodeEvent {
+  const NodeReplaceEvent(this.node);
+
+  final Node node;
+
+  @override
+  List<Object?> get props => [node];
+}
+
+/// 删除节点事件
+class NodeDeleteEvent extends NodeEvent {
+  const NodeDeleteEvent(this.nodeId);
+
+  final String nodeId;
+
+  @override
+  List<Object?> get props => [nodeId];
+}
+
+// 节点连接事件
+
+/// 连接节点事件
+class NodeConnectEvent extends NodeEvent {
+  const NodeConnectEvent({
+    required this.fromNodeId,
+    required this.toNodeId,
+    required this.type,
+    this.role,
+  });
+
+  final String fromNodeId;
+  final String toNodeId;
+  final ReferenceType type;
+  final String? role;
+
+  @override
+  List<Object?> get props => [fromNodeId, toNodeId, type, role];
+}
+
+/// 断开节点连接事件
+class NodeDisconnectEvent extends NodeEvent {
+  const NodeDisconnectEvent({
+    required this.fromNodeId,
+    required this.toNodeId,
+  });
+
+  final String fromNodeId;
+  final String toNodeId;
+
+  @override
+  List<Object?> get props => [fromNodeId, toNodeId];
+}
+
+// 选择事件
+
+/// 选择节点事件
+class NodeSelectEvent extends NodeEvent {
+  const NodeSelectEvent(this.nodeId, {this.addToSelection = false});
+
+  final String nodeId;
+  final bool addToSelection;
+
+  @override
+  List<Object?> get props => [nodeId, addToSelection];
+}
+
+/// 切换节点选择状态事件
+class NodeToggleSelectionEvent extends NodeEvent {
+  const NodeToggleSelectionEvent(this.nodeId);
+
+  final String nodeId;
+
+  @override
+  List<Object?> get props => [nodeId];
+}
+
+/// 选择多个节点事件
+class NodeMultiSelectEvent extends NodeEvent {
+  const NodeMultiSelectEvent(this.nodeIds);
+
+  final Set<String> nodeIds;
+
+  @override
+  List<Object?> get props => [nodeIds];
+}
+
+/// 清空选择事件
+class NodeClearSelectionEvent extends NodeEvent {
+  const NodeClearSelectionEvent();
+}
+
+/// 清除选择事件（用于GraphBloc）
+class SelectionClearEvent extends NodeEvent {
+  const SelectionClearEvent();
+}
+
+// 错误处理事件
+
+/// 清除错误事件
+class NodeClearErrorEvent extends NodeEvent {
+  const NodeClearErrorEvent();
+}
+
+// 节点操作事件
+
+/// 添加节点事件
+class NodeAddEvent extends NodeEvent {
+  const NodeAddEvent(this.nodeId, {this.position});
+
+  final String nodeId;
+  final Offset? position;
+
+  @override
+  List<Object?> get props => [nodeId, position];
+}
+
+/// 移动节点事件（单个）
+class NodeMoveEvent extends NodeEvent {
+  const NodeMoveEvent(this.nodeId, this.newPosition);
+
+  final String nodeId;
+  final Offset newPosition;
+
+  @override
+  List<Object?> get props => [nodeId, newPosition];
+}
+
+/// 移动节点事件（批量）
+class NodeMultiMoveEvent extends NodeEvent {
+  const NodeMultiMoveEvent(this.movements);
+
+  final Map<String, Offset> movements;
+
+  @override
+  List<Object?> get props => [movements];
+}

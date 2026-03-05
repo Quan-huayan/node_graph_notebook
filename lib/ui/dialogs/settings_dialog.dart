@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:node_graph_notebook/ui/blocs/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
-import '../models/models.dart';
 
 /// 设置对话框
 class SettingsDialog extends StatefulWidget {
@@ -17,7 +17,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final uiModel = context.watch<UIModel>();
+    final uiBloc = context.watch<UIBloc>();
+    final uiState = uiBloc.state;
     final settingsService = context.watch<SettingsService>();
     final theme = context.watch<ThemeService>().themeData;
 
@@ -90,17 +91,17 @@ class _SettingsDialogState extends State<SettingsDialog> {
             SwitchListTile(
               title: const Text('Show Connections'),
               subtitle: const Text('Display connection lines between nodes'),
-              value: uiModel.showConnections,
+              value: uiState.showConnections,
               onChanged: (value) {
-                uiModel.setConnections(value);
+                uiBloc.add(UISetConnectionsEvent(value));
               },
             ),
             SwitchListTile(
               title: const Text('Show Sidebar'),
               subtitle: const Text('Display the node list sidebar'),
-              value: uiModel.isSidebarOpen,
+              value: uiState.isSidebarOpen,
               onChanged: (value) {
-                uiModel.setSidebar(value);
+                uiBloc.add(UISetSidebarEvent(value));
               },
             ),
 
@@ -110,7 +111,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             _buildSectionHeader('Node Settings'),
             ListTile(
               title: const Text('Default View Mode'),
-              subtitle: Text(_getViewModeLabel(uiModel.defaultViewMode)),
+              subtitle: Text(_getViewModeLabel(uiState.defaultViewMode)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showViewModeSelector(context),
             ),
@@ -174,6 +175,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   void _showViewModeSelector(BuildContext context) {
+    final uiBloc = context.read<UIBloc>();
+    final currentMode = uiBloc.state.nodeViewMode;
+
     showDialog(
       context: context,
       builder: (ctx) {
@@ -181,14 +185,23 @@ class _SettingsDialogState extends State<SettingsDialog> {
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
           title: const Text('Select Default View Mode'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: NodeViewMode.values.map((mode) {
-              return RadioListTile<NodeViewMode>(
-                title: Text(_getViewModeLabel(mode)),
-                value: mode
-              );
-            }).toList(),
+          content: RadioGroup<NodeViewMode>(
+            groupValue: currentMode,
+            onChanged: (value) {
+              if (value != null) {
+                uiBloc.add(UISetDefaultViewModeEvent(value));
+                Navigator.pop(ctx);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: NodeViewMode.values.map((mode) {
+                return RadioListTile<NodeViewMode>(
+                  title: Text(_getViewModeLabel(mode)),
+                  value: mode,
+                );
+              }).toList(),
+            ),
           ),
           actions: [
             TextButton(
@@ -440,52 +453,53 @@ class _SettingsDialogState extends State<SettingsDialog> {
           backgroundColor: theme.backgrounds.primary,
           title: const Text('Select Theme'),
           content: RadioGroup<ThemeMode>(
-          groupValue: settingsService.themeMode,
-          onChanged: (value) {
-            if (value != null) {
-              settingsService.setThemeMode(value);
-              Navigator.pop(ctx);
-            }
-          },
-          child: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ThemeMode>(
-                title: Text('Light'),
-                subtitle: Text('Always use light theme'),
-                value: ThemeMode.light,
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text('Dark'),
-                subtitle: Text('Always use dark theme'),
-                value: ThemeMode.dark,
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text('System'),
-                subtitle: Text('Follow system settings'),
-                value: ThemeMode.system,
-              ),
-            ],
+            groupValue: settingsService.themeMode,
+            onChanged: (value) {
+              if (value != null) {
+                settingsService.setThemeMode(value);
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: Text('Light'),
+                  subtitle: Text('Always use light theme'),
+                  value: ThemeMode.light,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('Dark'),
+                  subtitle: Text('Always use dark theme'),
+                  value: ThemeMode.dark,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('System'),
+                  subtitle: Text('Follow system settings'),
+                  value: ThemeMode.system,
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-        ],
-      );
-    });
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      }
+    );
   }
+}
 
-  String _getThemeModeLabel(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.dark:
-        return 'Dark';
-      case ThemeMode.system:
-        return 'System';
-    }
+String _getThemeModeLabel(ThemeMode mode) {
+  switch (mode) {
+    case ThemeMode.light:
+      return 'Light';
+    case ThemeMode.dark:
+      return 'Dark';
+    case ThemeMode.system:
+      return 'System';
   }
 }

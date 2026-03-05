@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../blocs/blocs.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/settings_service.dart';
-import '../models/models.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/sidebar.dart';
-import '../widgets/node_context_menu.dart';
-import '../pages/markdown_editor_page.dart';
 import '../../flame/flame.dart';
 
 
@@ -17,9 +15,12 @@ class GraphView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final graphModel = context.watch<GraphModel>();
-    final nodeModel = context.watch<NodeModel>();
-    final uiModel = context.watch<UIModel>();
+    final bloc = context.watch<GraphBloc>();
+    final state = bloc.state;
+    final nodeBloc = context.watch<NodeBloc>();
+    final nodeState = nodeBloc.state;
+    final uiBloc = context.watch<UIBloc>();
+    final uiState = uiBloc.state;
     final themeService = context.watch<ThemeService>();
     final settings = context.watch<SettingsService>();
     final theme = themeService.getThemeForMode(
@@ -27,12 +28,12 @@ class GraphView extends StatelessWidget {
       MediaQuery.of(context).platformBrightness,
     );
 
-    if (graphModel.isLoading || nodeModel.isLoading) {
+    if (state.isLoading || nodeState.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (graphModel.hasError || nodeModel.hasError) {
-      final error = graphModel.error ?? nodeModel.error ?? 'An unknown error occurred';
+    if (state.hasError || nodeState.hasError) {
+      final error = state.error ?? nodeState.error ?? 'An unknown error occurred';
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -59,9 +60,9 @@ class GraphView extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () async {
                   // 尝试重新初始化
-                  final graphModel = context.read<GraphModel>();
-                  graphModel.clearError();
-                  await graphModel.initialize();
+                  bloc.add(const ErrorClearEvent());
+                  bloc.add(const GraphInitializeEvent());
+                  nodeBloc.add(const NodeLoadEvent());
                 },
                 icon: const Icon(Icons.refresh),
                 label: const Text('Try Again'),
@@ -72,7 +73,7 @@ class GraphView extends StatelessWidget {
       );
     }
 
-    if (!graphModel.hasGraph) {
+    if (!state.hasGraph) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -103,12 +104,12 @@ class GraphView extends StatelessWidget {
     return Row(
       children: [
         // 侧边栏
-        if (uiModel.isSidebarOpen)
+        if (uiState.isSidebarOpen)
           SizedBox(
             width: 300,
             child: Sidebar(
-              graph: graphModel.currentGraph!,
-              nodes: nodeModel.nodes,
+              graph: state.graph,
+              nodes: nodeState.nodes,
             ),
           ),
 
@@ -124,39 +125,14 @@ class GraphView extends StatelessWidget {
                 Positioned.fill(
                   child: GraphFlameWidget(
                     key: ValueKey(theme.backgrounds.canvas.toARGB32()), // 使用主题背景色作为 key，主题变化时重建
-                    graph: graphModel.currentGraph!,
-                    nodes: graphModel.graphNodes,
-                    connections: graphModel.connections,
-                    viewConfig: graphModel.currentGraph!.viewConfig,
-                    uiModel: uiModel,
+                    uiState: uiState,
                     theme: theme,
-                    onTap: (node) {
-                      context.read<NodeModel>().selectNode(node.id);
-                    },
-                    onDragEnd: (node, newPosition) async {
-                      // 只更新Graph.nodePositions
-                      await graphModel.updateNodePositions({
-                        node.id: newPosition,
-                      });
-                    },
-                    onSecondaryTap: (node, position) {
-                      showNodeContextMenu(
-                        context,
-                        node: node,
-                        position: position,
-                      );
-                    },
-                    onDoubleTap: (node) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => MarkdownEditorPage(node: node),
-                        ),
-                      );
+                    onZoomChanged: (zoomLevel) {
+                      // Zoom 在 BLoC 中解决
                     },
                     onNodeDropped: (nodeId, position) async {
                       // 检查节点是否已经在图中
-                      final alreadyInGraph = graphModel.graphNodes.any((n) => n.id == nodeId);
+                      final alreadyInGraph = state.nodes.any((n) => n.id == nodeId);
                       if (alreadyInGraph) {
                         // 节点已经在图中，显示提示
                         if (context.mounted) {
@@ -170,11 +146,12 @@ class GraphView extends StatelessWidget {
                         return;
                       }
 
-                      // 添加节点到图中，并设置其位置
-                      try {
-                        await graphModel.addNode(nodeId, position: position);
+                      try
+                      {
+                        // 添加节点到图中，并设置其位置
+                        bloc.add(NodeAddEvent(nodeId, position: position));
                         // 选择新添加的节点
-                        context.read<NodeModel>().selectNode(nodeId);
+                        nodeBloc.add(NodeSelectEvent(nodeId));
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +167,7 @@ class GraphView extends StatelessWidget {
                 Positioned(
                   top: 16,
                   right: 16,
-                  child: Toolbar(graphModel: graphModel, uiModel: uiModel),
+                  child: Toolbar(uiState: uiState),
                 ),
               ],
             ),
@@ -201,9 +178,9 @@ class GraphView extends StatelessWidget {
   }
 
   void _createGraph(BuildContext context) async {
-    final graphModel = context.read<GraphModel>();
+    final bloc = context.read<GraphBloc>();
     try {
-      await graphModel.createGraph('My First Graph');
+      bloc.add(const GraphCreateEvent('My First Graph'));
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

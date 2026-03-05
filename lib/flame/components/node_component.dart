@@ -1,15 +1,17 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart' hide Image;
+import 'package:node_graph_notebook/ui/blocs/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme/app_theme.dart';
 
-/// Flame 节点渲染组件
+/// Flame 节点渲染组件（BLoC 集成版本）
 class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, SecondaryTapCallbacks, DoubleTapCallbacks {
   NodeComponent({
     required this.node,
     required this.viewConfig,
     required this.theme,
+    this.bloc,
     this.onTap,
     this.onDragEndCallback,
     this.onSecondaryTap,
@@ -44,6 +46,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   final Node node;
   final GraphViewConfig viewConfig;
   final AppThemeData theme;
+  final GraphBloc? bloc; // 可选的 BLoC，如果提供则使用 BLoC 模式
   final Function(Node)? onTap;
   final Function(Node, Offset)? onDragEndCallback;
   final Function(Node, Offset)? onSecondaryTap;
@@ -445,7 +448,16 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   void onDragEnd(DragEndEvent event) {
     super.onDragEnd(event);
     _backgroundPaint.color = _getBackgroundColor();
-    onDragEndCallback?.call(node, Offset(position.x, position.y));
+
+    final newPosition = Offset(position.x, position.y);
+
+    // 如果有 BLoC，分发移动事件
+    if (bloc != null) {
+      bloc!.add(NodeMoveEvent(node.id, newPosition));
+    }
+
+    // 保留旧回调以兼容非 BLoC 模式
+    onDragEndCallback?.call(node, newPosition);
   }
 
   @override
@@ -456,6 +468,12 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   @override
   void onTapUp(TapUpEvent event) {
     _isSelected = !_isSelected;
+
+    // 如果有 BLoC，分发选择事件
+    if (bloc != null) {
+      bloc!.add(NodeSelectEvent(node.id));
+    }
+
     onTap?.call(node);
     _isHovered = false;
   }

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/settings_service.dart';
-import '../models/models.dart';
+import '../blocs/blocs.dart';
 
 /// 图节点管理对话框
 /// 允许用户选择哪些节点显示在节点图中
 class GraphNodesDialog extends StatefulWidget {
   const GraphNodesDialog({
     super.key,
-    required this.graphModel,
-    required this.nodeModel,
+    required this.graphBloc,
+    required this.nodeBloc,
   });
 
-  final GraphModel graphModel;
-  final NodeModel nodeModel;
+  final GraphBloc graphBloc;
+  final NodeBloc nodeBloc;
 
   @override
   State<GraphNodesDialog> createState() => _GraphNodesDialogState();
@@ -27,7 +27,8 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
   void initState() {
     super.initState();
     // 初始化选中的节点ID - 当前图中所有节点的ID
-    _selectedNodeIds = widget.graphModel.graphNodes
+    final state = widget.graphBloc.state;
+    _selectedNodeIds = state.nodes
         .map((n) => n.id)
         .toSet();
   }
@@ -42,7 +43,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
     );
 
     // 过滤掉文件夹节点 - 文件夹不应该显示在节点图中
-    final availableNodes = widget.nodeModel.nodes
+    final availableNodes = widget.nodeBloc.state.nodes
         .where((n) => !n.isFolder)
         .toList();
 
@@ -170,10 +171,9 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
   }
 
   Future<void> _applyChanges() async {
-    final currentGraph = widget.graphModel.currentGraph;
-    if (currentGraph == null) return;
+    final state = widget.graphBloc.state;
 
-    final currentIds = widget.graphModel.graphNodes.map((n) => n.id).toSet();
+    final currentIds = state.nodes.map((n) => n.id).toSet();
 
     // 找出需要添加的节点
     final toAdd = _selectedNodeIds.difference(currentIds);
@@ -183,12 +183,12 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
     try {
       // 移除节点
       for (final nodeId in toRemove) {
-        await widget.graphModel.removeNode(nodeId);
+        widget.graphBloc.add(NodeDeleteEvent(nodeId));
       }
 
       // 添加节点
       for (final nodeId in toAdd) {
-        await widget.graphModel.addNode(nodeId);
+        widget.graphBloc.add(NodeAddEvent(nodeId));
       }
 
       if (mounted) {

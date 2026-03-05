@@ -10,20 +10,26 @@ class ConnectionRenderer extends Component {
     required List<Connection> connections,
     required Map<String, Vector2> nodePositions,
     required this.theme,
+    this.showConnections = true,
   })  : _connections = connections,
         _nodePositions = nodePositions;
 
   List<Connection> _connections;
   Map<String, Vector2> _nodePositions;
   final AppThemeData theme;
+  bool showConnections;
 
   /// 更新连接和节点位置
   void updateConnections({
     required List<Connection> connections,
     required Map<String, Vector2> nodePositions,
+    bool? showConnections,
   }) {
     _connections = connections;
     _nodePositions = nodePositions;
+    if (showConnections != null) {
+      this.showConnections = showConnections;
+    }
   }
 
   List<Connection> get connections => _connections;
@@ -31,6 +37,8 @@ class ConnectionRenderer extends Component {
 
   @override
   void render(Canvas canvas) {
+    if (!showConnections) return;
+    
     for (final connection in connections) {
       _drawConnection(canvas, connection);
     }

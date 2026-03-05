@@ -134,7 +134,17 @@ class Node {
       identical(this, other) ||
       other is Node &&
           runtimeType == other.runtimeType &&
-          id == other.id;
+          id == other.id &&
+          title == other.title &&
+          content == other.content &&
+          _mapEquals(references, other.references) &&
+          position == other.position &&
+          size == other.size &&
+          viewMode == other.viewMode &&
+          color == other.color &&
+          createdAt == other.createdAt &&
+          updatedAt == other.updatedAt &&
+          _mapEquals(metadata, other.metadata);
 
   @override
   int get hashCode => id.hashCode;
@@ -142,4 +152,14 @@ class Node {
   @override
   String toString() =>
       'Node(id: $id, title: $title, refs: ${references.length})';
+
+  /// 辅助方法：比较两个 Map 是否相等
+  bool _mapEquals<K, V>(Map<K, V>? a, Map<K, V>? b) {
+    if (a == null) return b == null;
+    if (b == null || a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key) || a[key] != b[key]) return false;
+    }
+    return true;
+  }
 }
