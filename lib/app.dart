@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'converter/converter_service.dart';
+import 'converter/converter_service_impl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -138,6 +140,20 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
             ctx.read<GraphService>(),
           ),
         ),
+        Provider<SearchPresetService>(
+          create: (ctx) => SearchPresetServiceImpl(),
+        ),
+        Provider<ImportExportService>(
+          create: (ctx) => ImportExportServiceImpl(
+            ctx.read<ConverterService>(),
+            ctx.read<NodeService>(),
+          ),
+        ),
+        Provider<ConverterService>(
+          create: (ctx) => ConverterServiceImpl(
+            ctx.read<NodeRepository>(),
+          ),
+        ),
         ChangeNotifierProvider<AIServiceImpl>(
           create: (ctx) {
             final ai = AIServiceImpl();
@@ -184,6 +200,17 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         ),
         BlocProvider<UIBloc>(
           create: (_) => UIBloc(),
+        ),
+        BlocProvider<SearchBloc>(
+          create: (ctx) => SearchBloc(
+            nodeService: ctx.read<NodeService>(),
+            presetService: ctx.read<SearchPresetService>(),
+          ),
+        ),
+        BlocProvider<ConverterBloc>(
+          create: (ctx) => ConverterBloc(
+            importExportService: ctx.read<ImportExportService>(),
+          ),
         ),
         BlocProvider<SearchBloc>(
           create: (ctx) => SearchBloc(

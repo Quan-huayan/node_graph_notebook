@@ -621,7 +621,6 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       emit(state.copyWith(error: 'Failed to rename graph: ${e.toString()}'));
     }
   }
-
   /// 聚焦节点
   Future<void> _onFocusNode(
     FocusNodeEvent event,

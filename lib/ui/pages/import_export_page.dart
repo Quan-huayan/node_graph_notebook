@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/ui/dialogs/export_markdown_dialog.dart';
-import '../../bloc/blocs.dart';
+import '../blocs/blocs.dart';
 import '../dialogs/export_dialog.dart';
 import '../dialogs/import_markdown_dialog.dart';
+import '../dialogs/export_markdown_dialog.dart';
+import '../dialogs/batch_operation_dialog.dart';
 
 /// 导入导出页面
 class ImportExportPage extends StatelessWidget {
@@ -60,6 +61,12 @@ class ImportExportPage extends StatelessWidget {
                       leading: const Icon(Icons.folder_open),
                       title: const Text('Batch Import'),
                       subtitle: const Text('Import multiple Markdown files'),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => const BatchOperationDialog(),
+                        );
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.file_upload),

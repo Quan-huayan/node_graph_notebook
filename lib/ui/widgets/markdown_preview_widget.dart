@@ -58,51 +58,43 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
               children: [
                 const Icon(Icons.visibility, size: 16),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Preview',
-                    style: Theme.of(context).textTheme.titleSmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                Text(
+                  'Preview',
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-                // 使用图标按钮节省空间，添加工具提示说明功能
-                // 使用 style 替代 isSelected 以确保更好的兼容性
-                IconButton(
-                  icon: Icon(_isRenderMode ? Icons.visibility : Icons.code),
-                  iconSize: 16,
-                  tooltip: _isRenderMode ? 'Switch to Text' : 'Switch to Render',
-                  padding: const EdgeInsets.all(4),
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  onPressed: _toggleMode,
-                  style: IconButton.styleFrom(
-                    backgroundColor: _isRenderMode
-                        ? Theme.of(context).colorScheme.secondaryContainer
-                        : null,
-                    foregroundColor: _isRenderMode
-                        ? Theme.of(context).colorScheme.onSecondaryContainer
-                        : null,
-                  ),
+                const Spacer(),
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(
+                      value: false,
+                      label: Text('Text'),
+                      icon: Icon(Icons.code, size: 16),
+                    ),
+                    ButtonSegment(
+                      value: true,
+                      label: Text('Render'),
+                      icon: Icon(Icons.visibility, size: 16),
+                    ),
+                  ],
+                  selected: {_isRenderMode},
+                  onSelectionChanged: (Set<bool> selected) {
+                    _toggleMode();
+                  },
                 ),
               ],
             ),
           ),
         ),
 
-        // 内容区域 - 使用 Flexible 而非 Expanded，避免过度约束
-        // 当父组件有明确高度约束时，Flexible 可以正确处理内容溢出
-        Flexible(
+        // 内容区域
+        Expanded(
           child: widget.markdown.isEmpty
               ? const Center(child: Text('No preview available'))
               : _isRenderMode
-                  ? SingleChildScrollView(
+                  ? Markdown(
+                      data: widget.markdown,
                       padding: const EdgeInsets.all(16),
-                      child: MarkdownBody(
-                        data: widget.markdown,
-                        selectable: true,
-                        onTapLink: (text, href, title) {
-                          // 可选：处理链接点击
-                        },
-                      ),
+                      selectable: true,
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(16),

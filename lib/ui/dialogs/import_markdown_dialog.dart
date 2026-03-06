@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/models/node.dart';
-import '../../bloc/blocs.dart';
+import '../blocs/blocs.dart';
 import '../widgets/node_selector_widget.dart';
 import '../widgets/graph_preview_widget.dart';
 import '../../converter/models/models.dart';
@@ -49,282 +49,171 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BlocListener<ConverterBloc, ConverterState>(
-      listener: (context, state) {
-        // 监听导入完成
-        if (state.conversionResult != null) {
-          final result = state.conversionResult!;
-          final graphBloc = context.read<GraphBloc>();
+    return AlertDialog(
+      title: const Text('Import Markdown'),
+      content: SizedBox(
+        width: 800,
+        height: 500,
+        child: Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  // 左列：模式选择
+                  SizedBox(
+                    width: 150,
+                    child: _buildModeSelector(theme),
+                  ),
 
-          if (result.errors.isEmpty) {
-            // 导入成功：刷新图显示
-            graphBloc.add(const GraphInitializeEvent());
+                  const VerticalDivider(width: 1),
 
-            // 显示成功消息
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Successfully imported ${result.successCount} nodes'),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
+                  // 中列：节点选择
+                  Expanded(
+                    child: _buildNodeSelector(),
+                  ),
+
+                  const VerticalDivider(width: 1),
+
+                  // 右列：图形预览
+                  SizedBox(
+                    width: 200,
+                    child: _buildGraphPreview(),
+                  ),
+                ],
               ),
-            );
-
-            // 关闭对话框
-            Navigator.pop(context);
-          } else {
-            // 导入部分成功或失败：显示错误
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Imported ${result.successCount} nodes with ${result.errors.length} errors',
-                ),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 3),
-                action: SnackBarAction(
-                  label: 'Details',
-                  textColor: Colors.white,
-                  onPressed: () {
-                    // 显示详细错误
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Import Errors'),
-                        content: SizedBox(
-                          width: 500,
-                          height: 300,
-                          child: ListView.builder(
-                            itemCount: result.errors.length,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                child: Text('• ${result.errors[index]}'),
-                              );
-                            },
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            );
-
-            // 如果有成功导入的节点，仍然刷新图并关闭对话框
-            if (result.successCount > 0) {
-              graphBloc.add(const GraphInitializeEvent());
-              Navigator.pop(context);
-            }
-          }
-        }
-      },
-      child: AlertDialog(
-        title: const Text('Import Markdown'),
-        content: SizedBox(
-          width: 800,
-          height: 500,
-          child: Column(
-            children: [
-              Flexible(
-                child: Row(
-                  children: [
-                    // 左列：模式选择
-                    SizedBox(
-                      width: 150,
-                      child: _buildModeSelector(theme),
-                    ),
-
-                    const VerticalDivider(width: 1),
-
-                    // 中列：节点选择
-                    Flexible(
-                      child: _buildNodeSelector(),
-                    ),
-
-                    const VerticalDivider(width: 1),
-
-                    // 右列：图形预览
-                    SizedBox(
-                      width: 200,
-                      child: _buildGraphPreview(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: _canImport()
-                ? () => _importSelected(context)
-                : null,
-            child: Text('Import Selected (${_selectedIndices.length})'),
-          ),
-        ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _canImport()
+              ? () => _importSelected(context)
+              : null,
+          child: Text('Import Selected (${_selectedIndices.length})'),
+        ),
+      ],
     );
   }
 
   Widget _buildModeSelector(ThemeData theme) {
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              'Mode',
-              style: theme.textTheme.titleSmall,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            'Mode',
+            style: theme.textTheme.titleSmall,
           ),
-          const Divider(height: 1),
-          Expanded(
-            child: ListView.builder(
-              key: const ValueKey('mode-selector'),
-              itemCount: _rules.length,
-              itemBuilder: (context, index) {
-                final rule = _rules[index];
-                final isSelected = _selectedRule == rule;
+        ),
+        const Divider(height: 1),
+        ListView.builder(
+          shrinkWrap: true,
+          itemCount: _rules.length,
+          itemBuilder: (context, index) {
+            final rule = _rules[index];
+            final isSelected = _selectedRule == rule;
 
-                String label;
-                IconData icon;
-                switch (rule.splitStrategy) {
-                  case SplitStrategy.heading:
-                    label = 'Split by H2';
-                    icon = Icons.title;
-                    break;
-                  case SplitStrategy.separator:
-                    label = 'Split by Sep';
-                    icon = Icons.more_vert;
-                    break;
-                  case SplitStrategy.aiSmart:
-                    label = 'AI Smart';
-                    icon = Icons.psychology;
-                    break;
-                  default:
-                    label = 'Custom';
-                    icon = Icons.settings;
-                }
+            String label;
+            IconData icon;
+            switch (rule.splitStrategy) {
+              case SplitStrategy.heading:
+                label = 'Split by H2';
+                icon = Icons.title;
+                break;
+              case SplitStrategy.separator:
+                label = 'Split by Sep';
+                icon = Icons.more_vert;
+                break;
+              case SplitStrategy.aiSmart:
+                label = 'AI Smart';
+                icon = Icons.psychology;
+                break;
+              default:
+                label = 'Custom';
+                icon = Icons.settings;
+            }
 
-                return ListTile(
-                  leading: Icon(icon, size: 16),
-                  title: Text(
-                    label,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  selected: isSelected,
-                  onTap: () {
-                    setState(() {
-                      _selectedRule = rule;
-                      if (_filePath != null) {
-                        _loadPreview();
-                      }
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: ElevatedButton.icon(
-              onPressed: _selectFile,
-              icon: const Icon(Icons.folder_open, size: 16),
-              label: const Text('Select File'),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(32),
+            return ListTile(
+              leading: Icon(icon, size: 16),
+              title: Text(
+                label,
+                style: theme.textTheme.bodySmall,
               ),
+              selected: isSelected,
+              onTap: () {
+                setState(() {
+                  _selectedRule = rule;
+                  if (_filePath != null) {
+                    _loadPreview();
+                  }
+                });
+              },
+            );
+          },
+        ),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: ElevatedButton.icon(
+            onPressed: _selectFile,
+            icon: const Icon(Icons.folder_open, size: 16),
+            label: const Text('Select File'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(32),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildNodeSelector() {
     return BlocBuilder<ConverterBloc, ConverterState>(
       builder: (context, state) {
-        // 关键修复：所有分支都返回相同的基础结构（包含 Expanded）
-        // 避免在 Expanded 内部动态切换不同类型的 widget
-
         if (state.isLoading) {
-          return const Column(
-            key: ValueKey('loading'),
-            children: [
-              Expanded(child: Center(child: CircularProgressIndicator())),
-            ],
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (state.error != null) {
-          return Column(
-            key: const ValueKey('error'),
-            children: [
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 8),
-                      Text('Error: ${state.error}'),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 8),
+                Text('Error: ${state.error}'),
+              ],
+            ),
           );
         }
 
         if (!state.hasImportPreview) {
-          return const Column(
-            key: ValueKey('empty'),
-            children: [
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.upload_file, size: 48, color: Colors.grey),
-                      SizedBox(height: 8),
-                      Text('Select a file to preview'),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.upload_file, size: 48, color: Colors.grey),
+                SizedBox(height: 8),
+                Text('Select a file to preview'),
+              ],
+            ),
           );
         }
 
-        // 正常状态也使用 Column + Expanded 包裹，保持结构一致
-        return Column(
-          key: ValueKey('nodes-${state.importPreviewNodes.length}'),
-          children: [
-            Expanded(
-              child: NodeSelectorWidget(
-                nodes: state.importPreviewNodes,
-                selectedIndices: _selectedIndices,
-                onSelectionChanged: (indices) {
-                  setState(() {
-                    _selectedIndices = indices;
-                  });
-                },
-              ),
-            ),
-          ],
+        return NodeSelectorWidget(
+          nodes: state.importPreviewNodes,
+          selectedIndices: _selectedIndices,
+          onSelectionChanged: (indices) {
+            setState(() {
+              _selectedIndices = indices;
+            });
+          },
         );
       },
     );
@@ -340,16 +229,7 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
           }
         }
 
-        // 关键修复：所有分支都返回相同的基础结构（包含 Expanded）
-        // 这样无论 nodes 是否为空，结构都一致
-        return Column(
-          key: ValueKey('graph-preview-${selectedNodes.length}'),
-          children: [
-            Expanded(
-              child: GraphPreviewWidget(nodes: selectedNodes),
-            ),
-          ],
-        );
+        return GraphPreviewWidget(nodes: selectedNodes);
       },
     );
   }
@@ -391,8 +271,17 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
             _filePath!,
             _selectedRule!,
             sortedIndices,
-            addToGraph: true, // 命名参数
           ),
         );
+
+    // 显示完成提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Importing ${_selectedIndices.length} nodes...'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    Navigator.pop(context);
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../bloc/blocs.dart';
+import '../blocs/blocs.dart';
 import '../../converter/models/models.dart';
 
 /// 批量操作预设
@@ -111,173 +111,171 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
               });
             }
           },
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 预设选择
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: theme.dividerColor),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Import Preset',
-                          style: theme.textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<BatchPreset>(
-                          initialValue: _selectedPreset,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          items: _presets.map((preset) {
-                            return DropdownMenuItem(
-                              value: preset,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(preset.name),
-                                  Text(
-                                    preset.description,
-                                    style: theme.textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedPreset = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 预设选择
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: theme.dividerColor),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-
-                const SizedBox(height: 16),
-
-                // 文件选择
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: theme.dividerColor),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Files',
-                              style: theme.textTheme.titleSmall,
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: _isProcessing ? null : _selectFiles,
-                              icon: const Icon(Icons.folder_open, size: 16),
-                              label: const Text('Add Files'),
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(32),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${_selectedFiles.length} files selected',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 8),
-                        // 文件列表
-                        SizedBox(
-                          height: 150,
-                          child: _selectedFiles.isEmpty
-                              ? const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: Text('No files selected'),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  key: ValueKey('files-${_selectedFiles.length}'),
-                                  itemCount: _selectedFiles.length,
-                                  itemBuilder: (context, index) {
-                                    final file = _selectedFiles[index];
-                                    final fileName = file.split('\\').last.split('/').last;
-                                    return ListTile(
-                                      dense: true,
-                                      leading: const Icon(Icons.description, size: 16),
-                                      title: Text(fileName, style: theme.textTheme.bodySmall),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.close, size: 16),
-                                        onPressed: _isProcessing
-                                            ? null
-                                            : () {
-                                                setState(() {
-                                                  _selectedFiles.removeAt(index);
-                                                });
-                                              },
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // 进度显示 - 使用 Offstage 避免布局问题
-                BlocBuilder<ConverterBloc, ConverterState>(
-                  key: const ValueKey('progress-builder'),
-                  builder: (context, state) {
-                    final current = state.currentProgress ?? 0;
-                    final total = state.totalProgress ?? 1;
-
-                    return Offstage(
-                      offstage: !_isProcessing,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: theme.dividerColor),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            children: [
-                              LinearProgressIndicator(
-                                value: total > 0 ? current / total : 0,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Processing: $current / $total',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Import Preset',
+                        style: theme.textTheme.titleSmall,
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<BatchPreset>(
+                        initialValue: _selectedPreset,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        items: _presets.map((preset) {
+                          return DropdownMenuItem(
+                            value: preset,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(preset.name),
+                                Text(
+                                  preset.description,
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPreset = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 文件选择
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: theme.dividerColor),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Files',
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: _isProcessing ? null : _selectFiles,
+                            icon: const Icon(Icons.folder_open, size: 16),
+                            label: const Text('Add Files'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(32),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${_selectedFiles.length} files selected',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 8),
+                      // 文件列表
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 150),
+                        child: _selectedFiles.isEmpty
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Text('No files selected'),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _selectedFiles.length,
+                                itemBuilder: (context, index) {
+                                  final file = _selectedFiles[index];
+                                  final fileName = file.split('\\').last.split('/').last;
+                                  return ListTile(
+                                    dense: true,
+                                    leading: const Icon(Icons.description, size: 16),
+                                    title: Text(fileName, style: theme.textTheme.bodySmall),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.close, size: 16),
+                                      onPressed: _isProcessing
+                                          ? null
+                                          : () {
+                                              setState(() {
+                                                _selectedFiles.removeAt(index);
+                                              });
+                                            },
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 进度显示
+              BlocBuilder<ConverterBloc, ConverterState>(
+                builder: (context, state) {
+                  if (!_isProcessing) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final current = state.currentProgress ?? 0;
+                  final total = state.totalProgress ?? 1;
+
+                  return DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: theme.dividerColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        children: [
+                          LinearProgressIndicator(
+                            value: total > 0 ? current / total : 0,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Processing: $current / $total',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
+      ),
       actions: [
         TextButton(
           onPressed: _isProcessing ? null : () => Navigator.pop(context),

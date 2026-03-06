@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../bloc/blocs.dart';
+import '../blocs/blocs.dart';
 import '../widgets/node_selector_widget.dart';
 import '../widgets/markdown_preview_widget.dart';
 import '../../converter/models/models.dart';
-
-// 暂时弃用。
 
 /// 导出 Markdown 对话框
 class ExportMarkdownDialog extends StatefulWidget {
@@ -71,15 +69,14 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
 
                   // 中列：节点选择
                   Expanded(
-                    flex: 2,
                     child: _buildNodeSelector(),
                   ),
 
                   const VerticalDivider(width: 1),
 
                   // 右列：Markdown 预览
-                  Expanded(
-                    flex: 1,
+                  SizedBox(
+                    width: 250,
                     child: _buildMarkdownPreview(),
                   ),
                 ],
@@ -196,46 +193,26 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
   Widget _buildMarkdownPreview() {
     return BlocBuilder<ConverterBloc, ConverterState>(
       builder: (context, state) {
-        // 关键修复：所有分支都返回相同的基础结构（包含 Expanded）
-        // 避免在 Expanded 内部动态切换不同类型的 widget
-
         if (state.isLoading) {
-          return const Column(
-            children: [
-              Expanded(child: Center(child: CircularProgressIndicator())),
-            ],
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (state.error != null) {
-          return Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 8),
-                      Text('Error: ${state.error}'),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 8),
+                Text('Error: ${state.error}'),
+              ],
+            ),
           );
         }
 
-        // 正常状态也使用 Column + Expanded 包裹，保持结构一致
-        return Column(
-          children: [
-            Expanded(
-              child: MarkdownPreviewWidget(
-                markdown: state.exportPreviewMarkdown,
-                isRenderMode: _isRenderMode,
-              ),
-            ),
-          ],
+        return MarkdownPreviewWidget(
+          markdown: state.exportPreviewMarkdown,
+          isRenderMode: _isRenderMode,
         );
       },
     );

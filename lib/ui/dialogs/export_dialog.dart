@@ -28,40 +28,36 @@ class _ExportDialogState extends State<ExportDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Export Graph'),
-      // 使用 SingleChildScrollView 确保对话框内容不会溢出
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Format:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<ExportFormat>(
-              initialValue: _selectedFormat,
-              isExpanded: true, // 确保下拉框在窄对话框中不会溢出
-              items: ExportFormat.values.map((format) {
-                return DropdownMenuItem(
-                  value: format,
-                  child: Text(_getFormatLabel(format)),
-                );
-              }).toList(),
-              onChanged: (format) {
-                setState(() {
-                  _selectedFormat = format!;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Graph: ${widget.graph.name}',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            Text(
-              'Nodes: ${widget.nodes.length}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Format:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<ExportFormat>(
+            initialValue: _selectedFormat,
+            items: ExportFormat.values.map((format) {
+              return DropdownMenuItem(
+                value: format,
+                child: Text(_getFormatLabel(format)),
+              );
+            }).toList(),
+            onChanged: (format) {
+              setState(() {
+                _selectedFormat = format!;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Graph: ${widget.graph.name}',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          Text(
+            'Nodes: ${widget.nodes.length}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
       ),
       actions: [
         TextButton(
