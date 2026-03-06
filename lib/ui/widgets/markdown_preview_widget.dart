@@ -58,21 +58,23 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
               children: [
                 const Icon(Icons.visibility, size: 16),
                 const SizedBox(width: 8),
-                Text(
-                  'Preview',
-                  style: Theme.of(context).textTheme.titleSmall,
+                Expanded(
+                  child: Text(
+                    'Preview',
+                    style: Theme.of(context).textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const Spacer(),
                 SegmentedButton<bool>(
                   segments: const [
                     ButtonSegment(
                       value: false,
-                      label: Text('Text'),
+                      label: Text('Text', style: TextStyle(fontSize: 12)),
                       icon: Icon(Icons.code, size: 16),
                     ),
                     ButtonSegment(
                       value: true,
-                      label: Text('Render'),
+                      label: Text('Render', style: TextStyle(fontSize: 12)),
                       icon: Icon(Icons.visibility, size: 16),
                     ),
                   ],
@@ -91,19 +93,28 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
           child: widget.markdown.isEmpty
               ? const Center(child: Text('No preview available'))
               : _isRenderMode
-                  ? Markdown(
-                      data: widget.markdown,
+                  ? SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
-                      selectable: true,
+                      // 添加水平滚动支持
+                      child: Markdown(
+                        data: widget.markdown,
+                        selectable: true,
+                        // 移除 padding，让外层 SingleChildScrollView 控制
+                        padding: EdgeInsets.zero,
+                      ),
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
-                      child: SelectableText(
-                        widget.markdown,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface,
+                      // 同时支持水平和垂直滚动
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SelectableText(
+                          widget.markdown,
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
