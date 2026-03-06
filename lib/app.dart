@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
+import 'ai/ai_service.dart';
 import 'ui/blocs/blocs.dart';
 import 'ui/pages/home_page.dart';
 
@@ -113,6 +114,32 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
             ctx.read<GraphRepository>(),
             ctx.read<NodeRepository>(),
           ),
+        ),
+        ChangeNotifierProvider<AIServiceImpl>(
+          create: (ctx) {
+            final ai = AIServiceImpl();
+            final settings = ctx.read<SettingsService>();
+            void update() {
+              if (settings.isAIConfigured) {
+                final provider = settings.aiProvider == 'anthropic'
+                    ? AnthropicProvider(
+                        apiKey: settings.aiApiKey!,
+                        model: settings.aiModel,
+                        baseUrl: settings.aiBaseUrl,
+                      )
+                    : OpenAIProvider(
+                        apiKey: settings.aiApiKey!,
+                        model: settings.aiModel,
+                        baseUrl: settings.aiBaseUrl,
+                      );
+                ai.setProvider(provider);
+              }
+            }
+            // initial config and listen for changes
+            update();
+            settings.addListener(update);
+            return ai;
+          },
         ),
 
         // 2.1 Undo Manager

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/ui/blocs/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
+import 'ai_config_dialog.dart';
+import 'ai_test_dialog.dart';
 
 /// 设置对话框
 class SettingsDialog extends StatefulWidget {
@@ -115,6 +117,30 @@ class _SettingsDialogState extends State<SettingsDialog> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showViewModeSelector(context),
             ),
+
+            const Divider(height: 32),
+
+            // AI 配置部分
+            _buildSectionHeader('AI Configuration'),
+            ListTile(
+              leading: const Icon(Icons.smart_toy_outlined),
+              title: const Text('AI Settings'),
+              subtitle: Text(
+                settingsService.isAIConfigured
+                    ? '${settingsService.aiProvider} - ${settingsService.aiModel}'
+                    : 'Not configured',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showAIConfigDialog(context, settingsService),
+            ),
+            if (settingsService.isAIConfigured)
+              ListTile(
+                leading: const Icon(Icons.chat_bubble_outline),
+                title: const Text('Test AI Connection'),
+                subtitle: const Text('Chat with AI to test the configuration'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showAITestDialog(context),
+              ),
 
             const Divider(height: 32),
 
@@ -489,6 +515,20 @@ class _SettingsDialogState extends State<SettingsDialog> {
           ],
         );
       }
+    );
+  }
+
+  void _showAIConfigDialog(BuildContext context, SettingsService settingsService) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AIConfigDialog(settingsService: settingsService),
+    );
+  }
+
+  void _showAITestDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => const AITestDialog(),
     );
   }
 }

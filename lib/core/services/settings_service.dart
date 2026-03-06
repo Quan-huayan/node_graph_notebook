@@ -15,17 +15,29 @@ class SettingsService with ChangeNotifier {
   static const String _storagePathKey = 'storage_path';
   static const String _themeModeKey = 'theme_mode';
   static const String _defaultViewModeKey = 'default_view_mode';
+  static const String _aiProviderKey = 'ai_provider';
+  static const String _aiBaseUrlKey = 'ai_base_url';
+  static const String _aiModelKey = 'ai_model';
+  static const String _aiApiKeyKey = 'ai_api_key';
 
   // 私有字段
   String? _customStoragePath;
   ThemeMode _themeMode = ThemeMode.system;
   String? _defaultViewMode;
+  String _aiProvider = 'openai'; // openai or anthropic
+  String _aiBaseUrl = 'https://api.openai.com/v1';
+  String _aiModel = 'gpt-4';
+  String? _aiApiKey;
 
   /// 初始化设置
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _customStoragePath = prefs.getString(_storagePathKey);
     _defaultViewMode = prefs.getString(_defaultViewModeKey);
+    _aiProvider = prefs.getString(_aiProviderKey) ?? 'openai';
+    _aiBaseUrl = prefs.getString(_aiBaseUrlKey) ?? 'https://api.openai.com/v1';
+    _aiModel = prefs.getString(_aiModelKey) ?? 'gpt-4';
+    _aiApiKey = prefs.getString(_aiApiKeyKey);
 
     final themeModeStr = prefs.getString(_themeModeKey);
     if (themeModeStr != null) {
@@ -234,10 +246,18 @@ class SettingsService with ChangeNotifier {
     await prefs.remove(_storagePathKey);
     await prefs.remove(_themeModeKey);
     await prefs.remove(_defaultViewModeKey);
+    await prefs.remove(_aiProviderKey);
+    await prefs.remove(_aiBaseUrlKey);
+    await prefs.remove(_aiModelKey);
+    await prefs.remove(_aiApiKeyKey);
 
     _customStoragePath = null;
     _themeMode = ThemeMode.system;
     _defaultViewMode = null;
+    _aiProvider = 'openai';
+    _aiBaseUrl = 'https://api.openai.com/v1';
+    _aiModel = 'gpt-4';
+    _aiApiKey = null;
 
     notifyListeners();
   }
@@ -247,6 +267,59 @@ class SettingsService with ChangeNotifier {
 
   /// 获取当前自定义路径（如果有的话）
   String? get customStoragePath => _customStoragePath;
+
+  // ============ AI 配置相关 ============
+
+  /// 获取 AI 提供商
+  String get aiProvider => _aiProvider;
+
+  /// 设置 AI 提供商
+  Future<void> setAIProvider(String provider) async {
+    _aiProvider = provider;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_aiProviderKey, provider);
+    notifyListeners();
+  }
+
+  /// 获取 AI Base URL
+  String get aiBaseUrl => _aiBaseUrl;
+
+  /// 设置 AI Base URL
+  Future<void> setAIBaseUrl(String baseUrl) async {
+    _aiBaseUrl = baseUrl;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_aiBaseUrlKey, baseUrl);
+    notifyListeners();
+  }
+
+  /// 获取 AI Model
+  String get aiModel => _aiModel;
+
+  /// 设置 AI Model
+  Future<void> setAIModel(String model) async {
+    _aiModel = model;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_aiModelKey, model);
+    notifyListeners();
+  }
+
+  /// 获取 AI API Key
+  String? get aiApiKey => _aiApiKey;
+
+  /// 设置 AI API Key
+  Future<void> setAIApiKey(String? apiKey) async {
+    _aiApiKey = apiKey;
+    final prefs = await SharedPreferences.getInstance();
+    if (apiKey == null || apiKey.isEmpty) {
+      await prefs.remove(_aiApiKeyKey);
+    } else {
+      await prefs.setString(_aiApiKeyKey, apiKey);
+    }
+    notifyListeners();
+  }
+
+  /// 是否已配置 AI
+  bool get isAIConfigured => _aiApiKey != null && _aiApiKey!.isNotEmpty;
 }
 
 /// 存储使用情况
