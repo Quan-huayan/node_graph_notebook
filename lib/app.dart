@@ -5,7 +5,7 @@ import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
 import 'ai/ai_service.dart';
-import 'ui/blocs/blocs.dart';
+import 'bloc/blocs.dart';
 import 'ui/pages/home_page.dart';
 
 class NodeGraphNotebookApp extends StatefulWidget {

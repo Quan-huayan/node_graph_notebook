@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/bloc/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
 import 'ai_config_dialog.dart';
