@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../repositories/repositories.dart';
@@ -12,14 +13,6 @@ abstract class NodeService {
     Offset? position,
     Size? size,
     Map<String, NodeReference>? references,
-    Map<String, dynamic>? metadata,
-  });
-
-  /// 创建内容节点
-  Future<Node> createContentNode({
-    required String title,
-    required String content,
-    Offset? position,
     Map<String, dynamic>? metadata,
   });
 
@@ -108,21 +101,6 @@ class NodeServiceImpl implements NodeService {
 
     await _repository.save(node);
     return node;
-  }
-
-  @override
-  Future<Node> createContentNode({
-    required String title,
-    required String content,
-    Offset? position,
-    Map<String, dynamic>? metadata,
-  }) async {
-    return createNode(
-      title: title,
-      content: content,
-      position: position,
-      metadata: metadata,
-    );
   }
 
   @override

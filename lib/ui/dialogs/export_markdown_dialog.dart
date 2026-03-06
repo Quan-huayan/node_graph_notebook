@@ -6,6 +6,8 @@ import '../widgets/node_selector_widget.dart';
 import '../widgets/markdown_preview_widget.dart';
 import '../../converter/models/models.dart';
 
+// 暂时弃用。
+
 /// 导出 Markdown 对话框
 class ExportMarkdownDialog extends StatefulWidget {
   const ExportMarkdownDialog({super.key});
@@ -69,14 +71,15 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
 
                   // 中列：节点选择
                   Expanded(
+                    flex: 2,
                     child: _buildNodeSelector(),
                   ),
 
                   const VerticalDivider(width: 1),
 
                   // 右列：Markdown 预览
-                  SizedBox(
-                    width: 250,
+                  Expanded(
+                    flex: 1,
                     child: _buildMarkdownPreview(),
                   ),
                 ],

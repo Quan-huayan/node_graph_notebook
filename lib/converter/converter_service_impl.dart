@@ -8,6 +8,20 @@ import '../ai/ai_service.dart';
 import 'models/models.dart';
 import 'converter_service.dart';
 
+/// 标题节点辅助类，用于构建层级关系
+class _HeadingNode {
+  _HeadingNode({
+    required this.level,
+    required this.title,
+    required this.content,
+  });
+
+  final int level;
+  final String title;
+  final List<String> content;
+  final children = <_HeadingNode>[];
+}
+
 /// 转换服务实现
 class ConverterServiceImpl implements ConverterService {
   ConverterServiceImpl(
@@ -286,11 +300,11 @@ $markdown
 
   /// 按标题拆分
   List<Node> _splitByHeading(String markdown, HeadingSplitRule rule) {
-    final nodes = <Node>[];
     final lines = markdown.split('\n');
 
-    String? currentTitle;
-    final List<String> currentContent = [];
+    // 标题栈，用于维护当前打开的标题层级
+    final headingStack = <_HeadingNode>[];
+    final topHeadings = <_HeadingNode>[]; // 存储所有顶级标题
 
     for (final line in lines) {
       // 检查是否是标题
@@ -299,44 +313,126 @@ $markdown
         final level = headingMatch.group(1)!.length;
         final title = headingMatch.group(2)!;
 
-        // 保存之前的节点
-        if (currentTitle != null &&
-            (currentContent.isNotEmpty || rule.keepOriginalHeading)) {
-          nodes.add(_createNode(
-            currentTitle,
-            currentContent.join('\n'),
-            rule.keepOriginalHeading,
-          ));
+        // 创建新的标题节点
+        final headingNode = _HeadingNode(
+          level: level,
+          title: title,
+          content: [],
+        );
+
+        // 如果需要保留原始标题，添加到内容
+        if (rule.keepOriginalHeading) {
+          headingNode.content.add(line);
         }
 
-        // 检查是否是目标级别的标题
-        if (level == rule.level ||
-            (rule.minContentLength == null || level <= rule.level)) {
-          currentTitle = title;
-          currentContent.clear();
-
-          if (rule.keepOriginalHeading) {
-            currentContent.add(line);
-          }
-        } else if (currentTitle != null) {
-          // 子标题，添加到内容
-          currentContent.add(line);
+        // 弹出栈中级别大于等于当前级别的标题
+        while (headingStack.isNotEmpty && headingStack.last.level >= level) {
+          headingStack.removeLast();
         }
-      } else if (currentTitle != null) {
-        currentContent.add(line);
+
+        // 将新标题添加到栈中
+        if (headingStack.isNotEmpty) {
+          // 作为子节点添加到父标题
+          headingStack.last.children.add(headingNode);
+        } else {
+          // 顶级标题
+          topHeadings.add(headingNode);
+        }
+
+        headingStack.add(headingNode);
+      } else {
+        // 普通内容行，添加到当前最近的标题节点
+        if (headingStack.isNotEmpty) {
+          headingStack.last.content.add(line);
+        }
       }
     }
 
-    // 保存最后一个节点
-    if (currentTitle != null) {
-      nodes.add(_createNode(
-        currentTitle,
-        currentContent.join('\n'),
-        rule.keepOriginalHeading,
-      ));
+    // 将 _HeadingNode 树转换为 Node 对象
+    final result = _convertHeadingTreeToNodes(topHeadings);
+
+    debugPrint('=== _splitByHeading returning ===');
+    debugPrint('Total nodes to return: ${result.length}');
+
+    return result;
+  }
+
+  /// 将标题树转换为节点列表，建立引用关系
+  /// 返回所有节点（包括父节点和所有子节点），父节点通过 references 引用子节点
+  List<Node> _convertHeadingTreeToNodes(List<_HeadingNode> headingNodes) {
+    debugPrint('=== _convertHeadingTreeToNodes ===');
+    debugPrint('Input: ${headingNodes.length} top-level headings');
+
+    final result = <Node>[];
+
+    for (final heading in headingNodes) {
+      final nodeAndChildren = _createNodeFromHeading(heading);
+      final node = nodeAndChildren['node'] as Node;
+      final children = nodeAndChildren['children'] as List<Node>;
+
+      debugPrint('Top node: ${node.title}, refs: ${node.references.length}, children: ${children.length}');
+
+      // 添加父节点
+      result.add(node);
+
+      // 添加所有子节点（包括后代节点）
+      result.addAll(children);
+
+      debugPrint('  Added top-level node + ${children.length} children, total now: ${result.length}');
     }
 
-    return nodes;
+    debugPrint('Output: ${result.length} nodes total (all nodes)');
+
+    // 验证：打印最终结果中的所有节点及其引用数
+    for (final node in result) {
+      debugPrint('Final node: ${node.title}, refs: ${node.references.length}');
+    }
+
+    return result;
+  }
+
+  /// 递归创建节点及其子节点
+  /// 返回 Map 包含 'node' (当前节点) 和 'children' (所有后代节点列表)
+  Map<String, dynamic> _createNodeFromHeading(_HeadingNode heading) {
+    // 创建当前节点（不包含引用）
+    final node = _createNode(
+      heading.title,
+      heading.content.join('\n').trim(),
+      false, // 不需要保留原始标题，因为已经在内容中了
+    );
+
+    final allChildren = <Node>[];
+
+    // 递归处理所有子节点，并创建引用
+    Node currentNode = node;
+    for (final child in heading.children) {
+      final childResult = _createNodeFromHeading(child);
+      final childNode = childResult['node'] as Node;
+      final childDescendants = childResult['children'] as List<Node>;
+
+      // 使用 addReference 方法创建 contains 类型的引用（父节点包含子节点）
+      currentNode = currentNode.addReference(
+        childNode.id,
+        NodeReference(
+          nodeId: childNode.id,
+          type: ReferenceType.contains,
+        ),
+      );
+
+      // 调试输出
+      debugPrint('Created reference: ${currentNode.title} -> ${childNode.title} (${currentNode.references.length} refs)');
+
+      // 收集所有后代节点
+      allChildren.add(childNode);
+      allChildren.addAll(childDescendants);
+    }
+
+    debugPrint('Node ${currentNode.title} has ${currentNode.references.length} references');
+
+    return {
+      'node': currentNode, // 使用包含所有引用的节点
+      'children': allChildren,
+    };
   }
 
   /// 按分隔符拆分

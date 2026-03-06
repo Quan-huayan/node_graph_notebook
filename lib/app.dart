@@ -123,17 +123,18 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         Provider<SearchPresetService>(
           create: (ctx) => SearchPresetServiceImpl(
             ctx.read<SharedPreferencesAsync>()
-            ),
-        ),
-        Provider<ImportExportService>(
-          create: (ctx) => ImportExportServiceImpl(
-            ctx.read<ConverterService>(),
-            ctx.read<NodeService>(),
           ),
         ),
         Provider<ConverterService>(
           create: (ctx) => ConverterServiceImpl(
             ctx.read<NodeRepository>(),
+          ),
+        ),
+        Provider<ImportExportService>(
+          create: (ctx) => ImportExportServiceImpl(
+            ctx.read<ConverterService>(),
+            ctx.read<NodeService>(),
+            ctx.read<GraphService>(), // 添加 GraphService 依赖
           ),
         ),
 

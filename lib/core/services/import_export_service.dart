@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
 import '../models/models.dart';
 import '../../converter/converter_service.dart';
@@ -43,10 +44,15 @@ abstract class ImportExportService {
 
 /// 导入导出服务实现
 class ImportExportServiceImpl implements ImportExportService {
-  ImportExportServiceImpl(this._converterService, this._nodeService);
+  ImportExportServiceImpl(
+    this._converterService,
+    this._nodeService,
+    this._graphService,
+  );
 
   final ConverterService _converterService;
   final NodeService _nodeService;
+  final GraphService _graphService; // 必需依赖：用于管理图中的节点
   final Stopwatch _stopwatch = Stopwatch();
 
   @override
@@ -88,16 +94,82 @@ class ImportExportServiceImpl implements ImportExportService {
     final createdNodeIds = <String>[];
     final errors = <String>[];
 
+    // === 关键修复：维护 ID 映射表 ===
+    // 说明：从 converter 返回的节点使用临时 UUID，但 createNode 会生成新的 UUID。
+    // 因此需要建立临时 ID 到真实 ID 的映射，并在创建所有节点后更新引用。
+    final idMapping = <String, String>{}; // 临时ID -> 真实ID
+
+    // 第一步：创建所有节点，建立映射关系
     for (final node in selectedNodes) {
       try {
-        final created = await _nodeService.createContentNode(
+        // 创建节点时不传递 references，稍后通过映射表更新
+        final created = await _nodeService.createNode(
           title: node.title,
           content: node.content ?? '',
           metadata: node.metadata,
+          references: {}, // 先创建空引用，稍后更新
         );
         createdNodeIds.add(created.id);
+        idMapping[node.id] = created.id; // 记录临时ID到真实ID的映射
       } catch (e) {
         errors.add('Failed to create node "${node.title}": ${e.toString()}');
+      }
+    }
+
+    // 第二步：更新所有节点的引用关系
+    for (final node in selectedNodes) {
+      final newId = idMapping[node.id];
+      if (newId == null) continue; // 节点创建失败，跳过
+
+      // 如果节点有引用，需要更新引用的节点ID
+      if (node.references.isNotEmpty) {
+        final updatedReferences = <String, NodeReference>{};
+
+        for (final entry in node.references.entries) {
+          final oldRefId = entry.key;
+          final reference = entry.value;
+
+          // 查找被引用节点的新ID
+          final newRefId = idMapping[oldRefId];
+          if (newRefId != null) {
+            // 找到映射，使用新的ID创建引用
+            updatedReferences[newRefId] = NodeReference(
+              nodeId: newRefId,
+              type: reference.type,
+              role: reference.role,
+            );
+          } else {
+            // 被引用的节点可能没有被选中导入，忽略此引用
+            debugPrint('Reference $oldRefId not found in imported nodes, skipping');
+          }
+        }
+
+        // 更新节点的引用
+        try {
+          await _nodeService.updateNode(
+            newId,
+            references: updatedReferences.isNotEmpty ? updatedReferences : {},
+          );
+        } catch (e) {
+          errors.add('Failed to update references for "${node.title}": ${e.toString()}');
+        }
+      }
+    }
+
+    // 如果需要，将创建的节点添加到当前图
+    if (addToGraph && createdNodeIds.isNotEmpty) {
+      try {
+        final currentGraph = await _graphService.getCurrentGraph();
+        if (currentGraph != null) {
+          for (final nodeId in createdNodeIds) {
+            await _graphService.addNodeToGraph(currentGraph.id, nodeId);
+          }
+          debugPrint('Added ${createdNodeIds.length} nodes to graph ${currentGraph.id}');
+        } else {
+          errors.add('No active graph found. Nodes were created but not added to any graph.');
+        }
+      } catch (e) {
+        errors.add('Failed to add nodes to graph: ${e.toString()}');
       }
     }
 
@@ -185,15 +257,22 @@ class ImportExportServiceImpl implements ImportExportService {
           rule: config.rule,
         );
 
-        // 创建所有节点
+        // === 关键修复：维护 ID 映射表 ===
+        // 说明：批量导入时也需要处理临时ID到真实ID的映射
+        final idMapping = <String, String>{};
+        final currentFileNodeIds = <String>[];
+
+        // 第一步：创建所有节点，建立映射关系
         for (final node in allNodes) {
           try {
-            final created = await _nodeService.createContentNode(
+            final created = await _nodeService.createNode(
               title: node.title,
               content: node.content ?? '',
               metadata: node.metadata,
+              references: {}, // 先创建空引用，稍后更新
             );
-            createdNodeIds.add(created.id);
+            currentFileNodeIds.add(created.id);
+            idMapping[node.id] = created.id;
             successCount++;
           } catch (e) {
             errors.add('Failed to create node from $filePath: ${e.toString()}');
@@ -201,11 +280,65 @@ class ImportExportServiceImpl implements ImportExportService {
           }
         }
 
+        // 第二步：更新所有节点的引用关系
+        for (final node in allNodes) {
+          final newId = idMapping[node.id];
+          if (newId == null) continue;
+
+          if (node.references.isNotEmpty) {
+            final updatedReferences = <String, NodeReference>{};
+
+            for (final entry in node.references.entries) {
+              final oldRefId = entry.key;
+              final reference = entry.value;
+
+              final newRefId = idMapping[oldRefId];
+              if (newRefId != null) {
+                updatedReferences[newRefId] = NodeReference(
+                  nodeId: newRefId,
+                  type: reference.type,
+                  role: reference.role,
+                );
+              }
+            }
+
+            if (updatedReferences.isNotEmpty) {
+              try {
+                await _nodeService.updateNode(
+                  newId,
+                  references: updatedReferences,
+                );
+              } catch (e) {
+                errors.add('Failed to update references for "${node.title}": ${e.toString()}');
+              }
+            }
+          }
+        }
+
+        createdNodeIds.addAll(currentFileNodeIds);
+
         // 报告进度
         onProgress?.call(createdNodeIds.length, filePaths.length);
       } catch (e) {
         errors.add('$filePath: ${e.toString()}');
         failureCount++;
+      }
+    }
+
+    // 批量导入默认也添加到当前图
+    if (createdNodeIds.isNotEmpty) {
+      try {
+        final currentGraph = await _graphService.getCurrentGraph();
+        if (currentGraph != null) {
+          for (final nodeId in createdNodeIds) {
+            await _graphService.addNodeToGraph(currentGraph.id, nodeId);
+          }
+          debugPrint('Added ${createdNodeIds.length} nodes to graph ${currentGraph.id}');
+        } else {
+          errors.add('No active graph found. Nodes were created but not added to any graph.');
+        }
+      } catch (e) {
+        errors.add('Failed to add nodes to graph: ${e.toString()}');
       }
     }
 

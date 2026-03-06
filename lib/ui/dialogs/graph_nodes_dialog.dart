@@ -180,15 +180,31 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
     // 找出需要移除的节点
     final toRemove = currentIds.difference(_selectedNodeIds);
 
+    if (toAdd.isEmpty && toRemove.isEmpty) {
+      // 没有变化，直接关闭对话框
+      if (mounted) {
+        Navigator.pop(context);
+      }
+      return;
+    }
+
     try {
-      // 移除节点
+      // 构建批量事件列表
+      final events = <GraphEvent>[];
+
+      // 先添加所有移除事件
       for (final nodeId in toRemove) {
-        widget.graphBloc.add(NodeDeleteEvent(nodeId));
+        events.add(NodeDeleteEvent(nodeId));
       }
 
-      // 添加节点
+      // 再添加所有添加事件
       for (final nodeId in toAdd) {
-        widget.graphBloc.add(NodeAddEvent(nodeId));
+        events.add(NodeAddEvent(nodeId));
+      }
+
+      // 使用批量事件一次性执行
+      if (events.isNotEmpty) {
+        widget.graphBloc.add(BatchEvent(events));
       }
 
       if (mounted) {

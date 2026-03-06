@@ -49,54 +49,129 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AlertDialog(
-      title: const Text('Import Markdown'),
-      content: SizedBox(
-        width: 800,
-        height: 500,
-        child: Column(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  // 左列：模式选择
-                  SizedBox(
-                    width: 150,
-                    child: _buildModeSelector(theme),
-                  ),
+    return BlocListener<ConverterBloc, ConverterState>(
+      listener: (context, state) {
+        // 监听导入完成
+        if (state.conversionResult != null) {
+          final result = state.conversionResult!;
+          final graphBloc = context.read<GraphBloc>();
 
-                  const VerticalDivider(width: 1),
+          if (result.errors.isEmpty) {
+            // 导入成功：刷新图显示
+            graphBloc.add(const GraphInitializeEvent());
 
-                  // 中列：节点选择
-                  Expanded(
-                    child: _buildNodeSelector(),
-                  ),
-
-                  const VerticalDivider(width: 1),
-
-                  // 右列：图形预览
-                  SizedBox(
-                    width: 200,
-                    child: _buildGraphPreview(),
-                  ),
-                ],
+            // 显示成功消息
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Successfully imported ${result.successCount} nodes'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
               ),
-            ),
-          ],
+            );
+
+            // 关闭对话框
+            Navigator.pop(context);
+          } else {
+            // 导入部分成功或失败：显示错误
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Imported ${result.successCount} nodes with ${result.errors.length} errors',
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+                action: SnackBarAction(
+                  label: 'Details',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    // 显示详细错误
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Import Errors'),
+                        content: SizedBox(
+                          width: 500,
+                          height: 300,
+                          child: ListView.builder(
+                            itemCount: result.errors.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Text('• ${result.errors[index]}'),
+                              );
+                            },
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
+
+            // 如果有成功导入的节点，仍然刷新图并关闭对话框
+            if (result.successCount > 0) {
+              graphBloc.add(const GraphInitializeEvent());
+              Navigator.pop(context);
+            }
+          }
+        }
+      },
+      child: AlertDialog(
+        title: const Text('Import Markdown'),
+        content: SizedBox(
+          width: 800,
+          height: 500,
+          child: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    // 左列：模式选择
+                    SizedBox(
+                      width: 150,
+                      child: _buildModeSelector(theme),
+                    ),
+
+                    const VerticalDivider(width: 1),
+
+                    // 中列：节点选择
+                    Expanded(
+                      child: _buildNodeSelector(),
+                    ),
+
+                    const VerticalDivider(width: 1),
+
+                    // 右列：图形预览
+                    SizedBox(
+                      width: 200,
+                      child: _buildGraphPreview(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: _canImport()
+                ? () => _importSelected(context)
+                : null,
+            child: Text('Import Selected (${_selectedIndices.length})'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _canImport()
-              ? () => _importSelected(context)
-              : null,
-          child: Text('Import Selected (${_selectedIndices.length})'),
-        ),
-      ],
     );
   }
 
@@ -271,17 +346,8 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
             _filePath!,
             _selectedRule!,
             sortedIndices,
+            addToGraph: true, // 命名参数
           ),
         );
-
-    // 显示完成提示
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Importing ${_selectedIndices.length} nodes...'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    Navigator.pop(context);
   }
 }

@@ -75,6 +75,24 @@ class GraphGame extends FlameGame {
   void _onStateChanged(GraphState state) {
     // 注意：这里只做增量更新，不重新创建整个 world
     // 具体的更新逻辑在 GraphWorld 中通过订阅实现
+
+    // === 相机状态同步 ===
+    // 说明：由于 GraphWorld 无法访问 Flame 相机实例，相机相关的状态
+    // 同步（缩放、位置等）需要在 GraphGame 层处理。
+
+    final cameraState = state.viewState.camera;
+
+    // 应用相机位置
+    final newPosition = Vector2(cameraState.position.dx, cameraState.position.dy);
+    if (camera.viewport.position != newPosition) {
+      camera.viewport.position = newPosition;
+    }
+
+    // 应用相机缩放级别
+    final newZoom = cameraState.zoom;
+    if (camera.viewfinder.zoom != newZoom) {
+      camera.viewfinder.zoom = newZoom;
+    }
   }
 
   /// 处理滚轮缩放
@@ -82,7 +100,9 @@ class GraphGame extends FlameGame {
     if (_graphWorld == null) return;
 
     // 缩放系数
-    const zoomFactor = 0.1;
+    // 使用较小的系数以获得更平滑的缩放体验
+    // 滚轮每次滚动产生的 delta 约为 100-200，乘以 0.001 后每次滚动变化约 10-20%
+    const zoomFactor = 0.001;
     final zoomChange = delta * zoomFactor;
 
     // 计算新的缩放级别

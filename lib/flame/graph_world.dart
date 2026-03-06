@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import '../core/models/models.dart';
 import '../bloc/blocs.dart';
@@ -32,8 +33,8 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // 添加背景组件
-    add(_BackgroundComponent(theme: theme));
+    // 添加背景组件（处理空白区域拖拽）
+    add(_BackgroundComponent(theme: theme, graphBloc: graphBloc));
 
     // 创建连接渲染器（先添加，在底层）
     _connectionRenderer = ConnectionRenderer(
@@ -222,11 +223,21 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   }
 }
 
-/// 背景组件 - 绘制网格背景
-class _BackgroundComponent extends Component {
-  _BackgroundComponent({required this.theme});
+/// 背景组件 - 绘制网格背景并处理空白区域拖拽
+class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGameReference {
+  _BackgroundComponent({required this.theme, required this.graphBloc});
 
   final AppThemeData theme;
+  final GraphBloc graphBloc;
+
+  @override
+  void onLoad() async {
+    await super.onLoad();
+    // 设置足够大的尺寸以覆盖整个游戏世界
+    size = Vector2(10000, 10000);
+    // 将背景定位到原点，这样坐标转换更简单
+    position = Vector2.zero();
+  }
 
   @override
   void render(Canvas canvas) {
@@ -235,19 +246,25 @@ class _BackgroundComponent extends Component {
       ..color = theme.flame.gridLine
       ..strokeWidth = 0.5;
 
-    // 绘制网格
-    for (double x = -2000; x <= 2000; x += gridSize) {
+    // 绘制网格（在组件局部坐标系中）
+    // 组件位置是 (0, 0)，尺寸是 (10000, 10000)
+    // 在 (5000, 5000) 处绘制世界原点
+    const centerX = 5000.0;
+    const centerY = 5000.0;
+
+    // 绘制网格线，以世界原点为中心
+    for (double x = centerX - 2000; x <= centerX + 2000; x += gridSize) {
       canvas.drawLine(
-        Offset(x, -2000),
-        Offset(x, 2000),
+        Offset(x, 0),
+        Offset(x, size.y),
         paint,
       );
     }
 
-    for (double y = -2000; y <= 2000; y += gridSize) {
+    for (double y = centerY - 2000; y <= centerY + 2000; y += gridSize) {
       canvas.drawLine(
-        Offset(-2000, y),
-        Offset(2000, y),
+        Offset(0, y),
+        Offset(size.x, y),
         paint,
       );
     }
@@ -258,14 +275,37 @@ class _BackgroundComponent extends Component {
       ..strokeWidth = 2.0;
 
     canvas.drawLine(
-      const Offset(-50, 0),
-      const Offset(50, 0),
+      const Offset(centerX - 50, centerY),
+      const Offset(centerX + 50, centerY),
       originPaint,
     );
     canvas.drawLine(
-      const Offset(0, -50),
-      const Offset(0, 50),
+      const Offset(centerX, centerY - 50),
+      const Offset(centerX, centerY + 50),
       originPaint,
     );
+  }
+
+  @override
+  void onDragUpdate(DragUpdateEvent event) {
+    super.onDragUpdate(event);
+    // 拖拽背景时移动相机
+    // 注意：这个事件只有在未命中节点组件时才会触发
+    // 因为节点组件后添加，会优先处理拖拽事件
+    // 根据缩放级别调整移动速度
+    final zoom = game.camera.viewfinder.zoom;
+    // 移动相机（拖拽时相机应该跟随鼠标移动）
+    game.camera.viewport.position += event.localDelta / zoom;
+  }
+
+  @override
+  void onDragEnd(DragEndEvent event) {
+    super.onDragEnd(event);
+    // 拖拽结束时，同步相机位置到 BLoC
+    final cameraPosition = game.camera.viewport.position;
+    // 将相机位置同步到 BLoC 状态以实现持久化
+    // 使用 Offset 从 Vector2 创建位置
+    final position = Offset(cameraPosition.x, cameraPosition.y);
+    graphBloc.add(ViewMoveEvent(position));
   }
 }

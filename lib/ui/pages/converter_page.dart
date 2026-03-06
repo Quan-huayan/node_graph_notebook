@@ -597,15 +597,44 @@ class _ConverterPageState extends State<ConverterPage> {
           rule: _rule,
         );
 
-        final nodeBloc = context.read<NodeBloc>();
+        debugPrint('==== Import Debug ====');
+        debugPrint('Created ${nodes.length} nodes from fileToNodes');
+
+        // 检查每个节点的引用
         for (final node in nodes) {
-          nodeBloc.add(NodeCreateEvent(
-            title: node.title,
-            content: node.content,
-          ));
-          // 等待一点时间，确保事件被处理
-          await Future.delayed(const Duration(milliseconds: 50));
+          debugPrint('Node: ${node.title}, id: ${node.id}, refs: ${node.references.length}');
+          node.references.forEach((id, ref) {
+            debugPrint('  -> $id (${ref.type})');
+          });
         }
+
+        debugPrint('About to save nodes...');
+
+        final nodeBloc = context.read<NodeBloc>();
+        final graphBloc = context.read<GraphBloc>();
+        final nodeRepository = context.read<NodeRepository>();
+
+        // 批量保存所有节点到文件
+        await nodeRepository.saveAll(nodes);
+        debugPrint('Nodes saved to files');
+
+        // 刷新节点列表
+        nodeBloc.add(const NodeLoadEvent());
+        debugPrint('NodeLoadEvent sent');
+
+        // 等待节点列表更新完成
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // 将所有节点添加到图中（批量操作）
+        final events = nodes.map((node) => NodeAddEvent(node.id)).toList();
+        debugPrint('Adding ${events.length} nodes to graph...');
+        graphBloc.add(BatchEvent(events));
+
+        // 等待 GraphBloc 处理完成
+        await Future.delayed(const Duration(milliseconds: 1000));
+
+        debugPrint('BatchEvent sent, current nodes in graph: ${graphBloc.state.nodes.length}');
+        debugPrint('Current connections in graph: ${graphBloc.state.connections.length}');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -6,6 +6,8 @@ import '../../core/services/node_service.dart';
 import '../../bloc/blocs.dart';
 import '../pages/markdown_editor_page.dart';
 
+// 目前弃用
+
 /// 搜索对话框
 class SearchDialog extends StatefulWidget {
   const SearchDialog({super.key});

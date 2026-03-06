@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:equatable/equatable.dart';
 import '../../core/models/models.dart';
 
@@ -78,6 +79,16 @@ class ViewZoomEvent extends GraphEvent {
 
   @override
   List<Object?> get props => [zoomLevel];
+}
+
+/// 移动相机位置事件
+class ViewMoveEvent extends GraphEvent {
+  const ViewMoveEvent(this.position);
+
+  final Offset position;
+
+  @override
+  List<Object?> get props => [position];
 }
 
 /// 切换连接线显示事件
