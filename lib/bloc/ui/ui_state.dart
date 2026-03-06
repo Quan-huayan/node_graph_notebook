@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import '../../../core/models/enums.dart';
+import '../../core/models/enums.dart';
 
 /// UI 状态 - 整个 UI 管理的不可变快照
 @immutable

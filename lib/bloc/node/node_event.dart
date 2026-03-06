@@ -1,5 +1,5 @@
 import 'dart:ui';
-import '../../../core/models/models.dart';
+import '../../core/models/models.dart';
 import '../graph/graph_event.dart';
 
 /// 节点事件基类

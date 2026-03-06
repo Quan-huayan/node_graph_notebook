@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../../core/models/models.dart';
 import '../dialogs/graph_nodes_dialog.dart';
 

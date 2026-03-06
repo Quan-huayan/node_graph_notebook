@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import '../../../core/models/models.dart';
+import '../../core/models/models.dart';
 
 /// 图状态 - 整个图的不可变快照
 @immutable

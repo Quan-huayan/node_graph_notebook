@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import '../../../core/models/models.dart';
-import '../../models/search_preset_model.dart';
-import '../../models/search_query.dart';
+import '../../core/models/models.dart';
+import '../../ui/models/search_preset_model.dart';
+import '../../ui/models/search_query.dart';
 
 /// 搜索状态基类
 @immutable

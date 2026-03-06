@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 
 /// 菜单操作类型
 enum _MenuAction {

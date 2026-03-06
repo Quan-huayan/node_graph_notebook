@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../converter/converter_service_impl.dart';
 import '../../core/models/models.dart';
 import '../../core/repositories/repositories.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../../converter/models/models.dart';
 
 /// 转换配置页面

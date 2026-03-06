@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../dialogs/export_dialog.dart';
 import '../dialogs/import_markdown_dialog.dart';
 import '../dialogs/export_markdown_dialog.dart';

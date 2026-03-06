@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/node_service.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../pages/markdown_editor_page.dart';
 
 /// 搜索对话框

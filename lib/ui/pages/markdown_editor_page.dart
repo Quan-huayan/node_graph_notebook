@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../../ui/blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 
 /// Markdown 编辑器页面
 class MarkdownEditorPage extends StatefulWidget {

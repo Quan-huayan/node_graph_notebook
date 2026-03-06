@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
-import '../../../core/services/services.dart';
+import '../../core/services/services.dart';
 import 'node_event.dart';
 import 'node_state.dart';
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/settings_service.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 
 /// 图节点管理对话框
 /// 允许用户选择哪些节点显示在节点图中

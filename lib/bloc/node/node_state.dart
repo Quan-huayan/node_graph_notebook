@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import '../../../core/models/models.dart';
+import '../../core/models/models.dart';
 
 /// 节点状态 - 整个节点管理的不可变快照
 @immutable

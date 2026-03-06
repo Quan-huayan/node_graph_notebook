@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../views/folder_tree_view.dart';
 import '../dialogs/search_sidebar_panel.dart';
 

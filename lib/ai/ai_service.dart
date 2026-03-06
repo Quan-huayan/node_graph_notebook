@@ -37,15 +37,12 @@ class ConnectionSuggestion {
   ConnectionSuggestion.withSourceTarget({
     required String sourceId,
     required String targetId,
-    required String reason,
-    required double confidence,
-    String relationType = 'relates_to',
+    required this.reason,
+    required this.confidence,
+    String this.relationType = 'relates_to',
   })  : fromNodeId = sourceId,
         toNodeId = targetId,
-        reason = reason,
-        confidence = confidence,
-        referenceType = ReferenceType.relatesTo,
-        relationType = relationType;
+        referenceType = ReferenceType.relatesTo;
 
   final String fromNodeId;
   final String toNodeId;

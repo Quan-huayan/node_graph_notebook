@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:node_graph_notebook/ui/blocs/blocs.dart';
+import 'package:node_graph_notebook/bloc/blocs.dart';
 import 'performance_manager.dart';
 
 /// 优化的 GraphBloc 扩展

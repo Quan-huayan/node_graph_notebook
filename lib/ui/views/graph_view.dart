@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/settings_service.dart';
 import '../widgets/toolbar.dart';

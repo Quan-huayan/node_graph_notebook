@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../ui/blocs/graph/graph_bloc.dart';
-import '../../ui/blocs/graph/graph_event.dart';
+import '../../bloc/graph/graph_bloc.dart';
+import '../../bloc/graph/graph_event.dart';
 import '../../plugins/hooks/graph_plugin.dart';
-import '../../ui/blocs/graph/graph_state.dart';
+import '../../bloc/graph/graph_state.dart';
 import '../models/models.dart';
 import '../services/ai_integration_service.dart';
 

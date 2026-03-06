@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart' hide Image;
-import 'package:node_graph_notebook/ui/blocs/blocs.dart';
+import 'package:node_graph_notebook/bloc/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme/app_theme.dart';
 

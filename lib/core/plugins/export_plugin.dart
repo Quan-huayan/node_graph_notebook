@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import '../../ui/blocs/graph/graph_bloc.dart';
+import '../../bloc/graph/graph_bloc.dart';
 import '../../plugins/hooks/graph_plugin.dart';
-import '../../ui/blocs/graph/graph_state.dart';
+import '../../bloc/graph/graph_state.dart';
 
 /// 导出插件
 /// 支持将图导出为各种格式

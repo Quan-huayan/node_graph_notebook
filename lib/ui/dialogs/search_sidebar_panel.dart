@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/node.dart';
-import '../blocs/search/search_bloc.dart';
-import '../blocs/search/search_event.dart';
-import '../blocs/search/search_state.dart';
-import '../blocs/node/node_bloc.dart';
-import '../blocs/node/node_event.dart';
-import '../blocs/graph/graph_bloc.dart';
+import '../../bloc/search/search_bloc.dart';
+import '../../bloc/search/search_event.dart';
+import '../../bloc/search/search_state.dart';
+import '../../bloc/node/node_bloc.dart';
+import '../../bloc/node/node_event.dart';
+import '../../bloc/graph/graph_bloc.dart';
 import '../models/search_query.dart';
 import '../models/search_preset_model.dart';
 

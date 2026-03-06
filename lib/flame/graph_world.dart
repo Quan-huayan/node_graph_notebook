@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../core/models/models.dart';
-import '../ui/blocs/blocs.dart';
+import '../bloc/blocs.dart';
 import '../core/services/theme/app_theme.dart';
 import '../ui/pages/markdown_editor_page.dart';
 import '../ui/menus/node_context_menu.dart';

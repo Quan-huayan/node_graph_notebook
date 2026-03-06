@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'converter/converter_service.dart';
 import 'converter/converter_service_impl.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
-import 'ui/blocs/blocs.dart';
+import 'bloc/blocs.dart';
 import 'ui/pages/home_page.dart';
 
 class NodeGraphNotebookApp extends StatefulWidget {
@@ -101,6 +102,9 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         ChangeNotifierProvider<ThemeService>.value(
           value: widget.themeService,
         ),
+        Provider<SharedPreferencesAsync>(
+          create: (_) => SharedPreferencesAsync(),
+        ),
 
         // 1. Repository 层
         Provider<NodeRepository>.value(value: _nodeRepository),
@@ -117,7 +121,9 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           ),
         ),
         Provider<SearchPresetService>(
-          create: (ctx) => SearchPresetServiceImpl(),
+          create: (ctx) => SearchPresetServiceImpl(
+            ctx.read<SharedPreferencesAsync>()
+            ),
         ),
         Provider<ImportExportService>(
           create: (ctx) => ImportExportServiceImpl(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import '../../core/services/theme_service.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 
 // 创建节点对话框
 class CreateNodeDialog extends StatefulWidget {

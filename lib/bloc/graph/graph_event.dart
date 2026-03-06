@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../core/models/models.dart';
+import '../../core/models/models.dart';
 
 /// 图事件基类
 abstract class GraphEvent extends Equatable {

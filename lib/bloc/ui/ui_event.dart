@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../core/models/enums.dart';
+import '../../core/models/enums.dart';
 
 /// UI 事件基类
 abstract class UIEvent extends Equatable {
