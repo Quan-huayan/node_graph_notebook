@@ -17,7 +17,7 @@ class ConverterServiceImpl implements ConverterService {
 
   final NodeRepository _nodeRepository;
   final AIService? _aiService;
-  final Uuid _uuid = const Uuid();
+  final _uuid = const Uuid();
 
   @override
   Future<List<Node>> markdownToNodes({

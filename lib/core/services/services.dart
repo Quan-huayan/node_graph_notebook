@@ -11,3 +11,5 @@ export 'theme_service.dart';
 export 'data_recovery_service.dart';
 export 'shortcut_manager.dart';
 export 'undo_manager.dart';
+export 'search_preset_service.dart';
+export 'import_export_service.dart';

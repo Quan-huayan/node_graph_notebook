@@ -98,3 +98,32 @@ class UISelectTabEvent extends UIEvent {
   @override
   List<Object?> get props => [tab];
 }
+
+// 侧边栏宽度事件
+
+/// 设置侧边栏宽度事件
+class UISetSidebarWidthEvent extends UIEvent {
+  const UISetSidebarWidthEvent(this.width);
+
+  final double width;
+
+  @override
+  List<Object?> get props => [width];
+}
+
+// 工具栏事件
+
+/// 切换工具栏展开状态事件
+class UIToggleToolbarEvent extends UIEvent {
+  const UIToggleToolbarEvent();
+}
+
+/// 设置工具栏展开状态事件
+class UISetToolbarEvent extends UIEvent {
+  const UISetToolbarEvent(this.expanded);
+
+  final bool expanded;
+
+  @override
+  List<Object?> get props => [expanded];
+}

@@ -59,8 +59,66 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     }).toList();
   }
 
+  /// 检测是否存在循环 contains 关系
+  bool _hasCircularContains(Node node, Node folder, List<Node> allNodes) {
+    // 检查是否将节点拖拽到自身
+    if (node.id == folder.id) {
+      return true;
+    }
+
+    // 检查是否将文件夹拖拽到其子文件夹中
+    if (node.isFolder) {
+      // 检查目标文件夹是否是当前节点的子文件夹
+      return _isChildFolder(folder, node, allNodes);
+    }
+
+    return false;
+  }
+
+  /// 检查 folder 是否是 parentFolder 的子文件夹
+  bool _isChildFolder(Node folder, Node parentFolder, List<Node> allNodes) {
+    // 检查 folder 是否直接或间接被 parentFolder 包含
+    if (parentFolder.references.containsKey(folder.id)) {
+      final ref = parentFolder.references[folder.id];
+      if (ref != null && ref.type == ReferenceType.contains) {
+        return true;
+      }
+    }
+
+    // 递归检查 parentFolder 的所有直接子文件夹
+    for (final entry in parentFolder.references.entries) {
+      if (entry.value.type == ReferenceType.contains) {
+        final childNode = allNodes.firstWhere((n) => n.id == entry.key);
+        if (childNode.id.isNotEmpty && childNode.isFolder && _isChildFolder(folder, childNode, allNodes)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   /// 将节点添加到文件夹
   Future<void> _addToFolder(Node node, Node folder) async {
+    final nodeBloc = context.read<NodeBloc>();
+    final allNodes = nodeBloc.state.nodes;
+
+    // 检测循环 contains 关系
+    if (_hasCircularContains(node, folder, allNodes)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot create circular folder structure')),
+        );
+      }
+      return;
+    }
+
+    // 从旧文件夹中移除节点
+    final oldParent = _getParentFolder(node);
+    if (oldParent != null) {
+      await _removeFromFolder(node, oldParent);
+    }
+
     // 创建新的引用
     final newReferences = Map<String, NodeReference>.from(folder.references);
     newReferences[node.id] = NodeReference(
@@ -69,7 +127,6 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     );
 
     final updatedFolder = folder.copyWith(references: newReferences);
-    final nodeBloc = context.read<NodeBloc>();
     nodeBloc.add(NodeReplaceEvent(updatedFolder));
 
     if (mounted) {
@@ -138,7 +195,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         if (draggedNodeId != folder.id) {
           // 从所有节点中查找被拖拽的节点
           final draggedNode = allNodes.firstWhere((n) => n.id == draggedNodeId);
-          await _addToFolder(draggedNode, folder);
+          if (draggedNode.id.isNotEmpty) {
+            await _addToFolder(draggedNode, folder);
+          }
         }
       },
       builder: (context, candidateData, rejected) {

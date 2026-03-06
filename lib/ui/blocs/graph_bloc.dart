@@ -19,6 +19,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<GraphLoadEvent>(_onLoadGraph);
     on<GraphCreateEvent>(_onCreateGraph);
     on<GraphSwitchEvent>(_onSwitchGraph);
+    on<GraphRenameEvent>(_onRenameGraph);
     on<GraphUpdateConfigEvent>(_onUpdateConfig);
     on<NodeAddEvent>(_onNodeAdd);
     on<NodeUpdateEvent>(_onNodeUpdate);
@@ -490,6 +491,24 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     } catch (e) {
       // 静默失败，不影响用户体验
       debugPrint('Failed to persist node positions: $e');
+    }
+  }
+
+  /// 重命名图
+  Future<void> _onRenameGraph(
+    GraphRenameEvent event,
+    Emitter<GraphState> emit,
+  ) async {
+    if (state.graph.id.isEmpty) return;
+
+    try {
+      final updatedGraph = await _graphService.updateGraph(
+        state.graph.id,
+        name: event.name,
+      );
+      emit(state.copyWith(graph: updatedGraph));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to rename graph: ${e.toString()}'));
     }
   }
 }

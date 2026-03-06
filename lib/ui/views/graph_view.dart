@@ -105,12 +105,34 @@ class GraphView extends StatelessWidget {
       children: [
         // 侧边栏
         if (uiState.isSidebarOpen)
-          SizedBox(
-            width: 300,
-            child: Sidebar(
-              graph: state.graph,
-              nodes: nodeState.nodes,
-            ),
+          Row(
+            children: [
+              SizedBox(
+                width: uiState.sidebarWidth,
+                child: Sidebar(
+                  graph: state.graph,
+                  nodes: nodeState.nodes,
+                ),
+              ),
+              // 侧边栏宽度调整把手
+              GestureDetector(
+                onPanUpdate: (details) {
+                  final newWidth = uiState.sidebarWidth + details.delta.dx;
+                  context.read<UIBloc>().add(UISetSidebarWidthEvent(newWidth));
+                },
+                child: Container(
+                  width: 5,
+                  color: Colors.transparent,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.resizeLeftRight,
+                    child: Container(
+                      width: 1,
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
 
         // 主内容区 - 占据剩余全部空间

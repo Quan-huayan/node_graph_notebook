@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../ui/blocs/blocs.dart';
@@ -77,19 +78,39 @@ class GraphGame extends FlameGame {
   }
 
   /// 处理滚轮缩放
-  void handleZoom(double delta) {
+  void handleZoom(double delta, Offset? localPosition) {
     if (_graphWorld == null) return;
 
     // 缩放系数
-    const zoomFactor = 0.001;
+    const zoomFactor = 0.1;
     final zoomChange = delta * zoomFactor;
 
     // 计算新的缩放级别
     final currentZoom = bloc.state.viewState.zoomLevel;
-    var newZoom = currentZoom + zoomChange;
+    var newZoom = currentZoom * (1 + zoomChange);
 
     // 限制缩放范围
     newZoom = newZoom.clamp(0.1, 5.0);
+
+    // 如果提供了鼠标位置，以鼠标位置为中心进行缩放
+    if (localPosition != null) {
+      // 计算鼠标在游戏世界中的位置
+      final worldPosition = camera.localToGlobal(
+        Vector2(localPosition.dx, localPosition.dy));
+
+      // 计算缩放前后的差异
+      final zoomRatio = newZoom / currentZoom;
+
+      // 调整相机位置，使鼠标位置保持在屏幕上的同一位置
+      final cameraPosition = camera.viewport.position;
+      final newCameraPosition = Vector2(
+        worldPosition.x - (worldPosition.x - cameraPosition.x) * zoomRatio,
+        worldPosition.y - (worldPosition.y - cameraPosition.y) * zoomRatio,
+      );
+
+      // 更新相机位置
+      camera.viewport.position = newCameraPosition;
+    }
 
     // 分发缩放事件到 BLoC
     bloc.add(ViewZoomEvent(newZoom));
@@ -215,8 +236,30 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
                         ),
                       )
                     : const BoxDecoration(), // TODO: 这可能是异常的。
-                child: GameWidget(
-                  game: _game,
+                child: Listener(
+                  onPointerSignal: (pointerSignal) {
+                    if (pointerSignal is PointerScrollEvent) {
+                      // 处理鼠标滚轮事件
+                      _game.handleZoom(
+                        pointerSignal.scrollDelta.dy,
+                        pointerSignal.localPosition,
+                      );
+                    }
+                  },
+                  child: GestureDetector(
+                    onScaleUpdate: (details) {
+                      // 处理触摸缩放
+                      if (details.scale != 1.0) {
+                        _game.handleZoom(
+                          details.scale - 1.0,
+                          details.localFocalPoint,
+                        );
+                      }
+                    },
+                    child: GameWidget(
+                      game: _game,
+                    ),
+                  ),
                 ),
               );
             },

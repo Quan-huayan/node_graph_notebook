@@ -202,6 +202,9 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     if (node.isFolder) {
       return theme.nodes.folderPrimary;
     }
+    if (node.metadata.containsKey('isAI') && node.metadata['isAI'] == true) {
+      return theme.status.info;
+    }
     return theme.nodes.nodePrimary;
   }
 
@@ -211,6 +214,14 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     }
     if (node.isFolder) {
       return theme.nodes.folderBackground;
+    }
+    if (node.metadata.containsKey('isAI') && node.metadata['isAI'] == true) {
+      switch (node.viewMode) {
+        case NodeViewMode.compact:
+          return _getNodeColor();
+        default:
+          return theme.backgrounds.secondary;
+      }
     }
     switch (node.viewMode) {
       case NodeViewMode.compact:

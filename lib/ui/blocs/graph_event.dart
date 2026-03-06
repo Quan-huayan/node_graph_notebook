@@ -48,6 +48,16 @@ class GraphSwitchEvent extends GraphEvent {
   List<Object?> get props => [graphId];
 }
 
+/// 重命名图事件
+class GraphRenameEvent extends GraphEvent {
+  const GraphRenameEvent(this.name);
+
+  final String name;
+
+  @override
+  List<Object?> get props => [name];
+}
+
 /// 更新图配置事件
 class GraphUpdateConfigEvent extends GraphEvent {
   const GraphUpdateConfigEvent(this.config);

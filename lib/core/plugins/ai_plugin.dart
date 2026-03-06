@@ -114,12 +114,14 @@ class AIIntegrationPlugin extends BasePlugin {
     if (!aiService.isAvailable) return;
 
     try {
-      final suggestions = await aiService.suggestConnections(bloc.state.nodes);
+      final suggestions = await aiService.suggestConnections(
+        nodes: bloc.state.nodes,
+      );
 
       for (final suggestion in suggestions) {
         if (suggestion.confidence > 0.7) {
           debugPrint(
-            'Suggested connection: ${suggestion.sourceId} -> ${suggestion.targetId} '
+            'Suggested connection: ${suggestion.fromNodeId} -> ${suggestion.toNodeId} '
             '(${suggestion.reason}, confidence: ${suggestion.confidence})',
           );
         }
