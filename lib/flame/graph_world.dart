@@ -5,7 +5,7 @@ import '../core/models/models.dart';
 import '../ui/blocs/blocs.dart';
 import '../core/services/theme/app_theme.dart';
 import '../ui/pages/markdown_editor_page.dart';
-import '../ui/widgets/node_context_menu.dart';
+import '../ui/menus/node_context_menu.dart';
 import 'mixins/bloc_consumer.dart';
 import 'components/node_component.dart';
 import 'components/connection_renderer.dart';

@@ -3,8 +3,8 @@ import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/ui/blocs/blocs.dart';
-import '../../core/models/models.dart';
-import '../../core/services/services.dart';
+import '../../../core/models/models.dart';
+import '../../../core/services/services.dart';
 
 /// Graph BLoC - 图状态管理核心
 class GraphBloc extends Bloc<GraphEvent, GraphState> {

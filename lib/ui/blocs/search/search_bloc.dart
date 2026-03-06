@@ -3,8 +3,8 @@ import 'package:uuid/uuid.dart';
 import '../../../core/models/node.dart';
 import '../../../core/services/node_service.dart';
 import '../../../core/services/search_preset_service.dart';
-import '../../../ui/models/search_preset_model.dart';
-import '../../../ui/models/search_query.dart';
+import '../../models/search_preset_model.dart';
+import '../../models/search_query.dart';
 import 'search_event.dart';
 import 'search_state.dart';
 

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'graph_bloc.dart';
-import 'graph_event.dart';
-import 'graph_state.dart';
+import '../../ui/blocs/graph/graph_bloc.dart';
+import '../../ui/blocs/graph/graph_event.dart';
+import '../../ui/blocs/graph/graph_state.dart';
 
 /// Graph Plugin 接口
 abstract class GraphPlugin {

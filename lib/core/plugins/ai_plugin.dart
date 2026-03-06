@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../ui/blocs/graph_bloc.dart';
-import '../../ui/blocs/graph_plugin.dart';
-import '../../ui/blocs/graph_state.dart';
+import '../../ui/blocs/graph/graph_bloc.dart';
+import '../../plugins/hooks/graph_plugin.dart';
+import '../../ui/blocs/graph/graph_state.dart';
 import '../models/models.dart';
 import '../services/ai_integration_service.dart';
 

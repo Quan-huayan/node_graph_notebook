@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/models/models.dart';
-import '../../core/services/services.dart';
-import '../../core/services/commands/command.dart';
+import '../../models/models.dart';
+import '../services.dart';
+import 'command.dart';
 
 /// Graph Command 接口
 /// 扩展基础 Command 接口以支持 BLoC 特性

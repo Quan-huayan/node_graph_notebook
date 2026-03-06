@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../../ui/models/search_query.dart';
-import '../../../ui/models/search_preset_model.dart';
+import '../../models/search_query.dart';
+import '../../models/search_preset_model.dart';
 
 /// 搜索事件基类
 abstract class SearchEvent extends Equatable {
