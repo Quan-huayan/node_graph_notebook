@@ -11,6 +11,8 @@ class UIState extends Equatable {
     required this.backgroundStyle,
     required this.isSidebarOpen,
     required this.selectedTab,
+    required this.sidebarWidth,
+    required this.isToolbarExpanded,
   });
 
   /// 初始状态
@@ -21,6 +23,8 @@ class UIState extends Equatable {
       backgroundStyle: BackgroundStyle.grid,
       isSidebarOpen: true,
       selectedTab: 'nodes',
+      sidebarWidth: 300.0,
+      isToolbarExpanded: true,
     );
   }
 
@@ -30,6 +34,8 @@ class UIState extends Equatable {
   final BackgroundStyle backgroundStyle;
   final bool isSidebarOpen;
   final String selectedTab;
+  final double sidebarWidth;
+  final bool isToolbarExpanded;
 
   /// 便捷方法
   NodeViewMode get defaultViewMode => nodeViewMode;
@@ -41,6 +47,8 @@ class UIState extends Equatable {
     BackgroundStyle? backgroundStyle,
     bool? isSidebarOpen,
     String? selectedTab,
+    double? sidebarWidth,
+    bool? isToolbarExpanded,
   }) {
     return UIState(
       nodeViewMode: nodeViewMode ?? this.nodeViewMode,
@@ -48,6 +56,8 @@ class UIState extends Equatable {
       backgroundStyle: backgroundStyle ?? this.backgroundStyle,
       isSidebarOpen: isSidebarOpen ?? this.isSidebarOpen,
       selectedTab: selectedTab ?? this.selectedTab,
+      sidebarWidth: sidebarWidth ?? this.sidebarWidth,
+      isToolbarExpanded: isToolbarExpanded ?? this.isToolbarExpanded,
     );
   }
 
@@ -58,5 +68,7 @@ class UIState extends Equatable {
         backgroundStyle,
         isSidebarOpen,
         selectedTab,
+        sidebarWidth,
+        isToolbarExpanded,
       ];
 }

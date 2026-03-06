@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../views/folder_tree_view.dart';
+import '../dialogs/search_sidebar_panel.dart';
 
 /// 侧边栏
 class Sidebar extends StatefulWidget {
@@ -22,11 +23,17 @@ class Sidebar extends StatefulWidget {
 
 class _SidebarState extends State<Sidebar> {
   final FocusNode _focusNode = FocusNode();
+  final FocusNode _editFocusNode = FocusNode();
+  final TextEditingController _editController = TextEditingController();
   String? _selectedNodeId;
+  bool _showSearch = false;
+  bool _isEditingName = false;
 
   @override
   void dispose() {
     _focusNode.dispose();
+    _editFocusNode.dispose();
+    _editController.dispose();
     super.dispose();
   }
 
@@ -118,29 +125,77 @@ class _SidebarState extends State<Sidebar> {
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        const Icon(Icons.graphic_eq),
+                        // 切换按钮
+                        IconButton(
+                          icon: Icon(_showSearch ? Icons.list : Icons.search),
+                          tooltip: _showSearch ? 'Show Nodes' : 'Show Search',
+                          onPressed: () {
+                            setState(() {
+                              _showSearch = !_showSearch;
+                            });
+                          },
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            widget.graph.name,
-                            style: Theme.of(context).textTheme.titleMedium,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: _showSearch
+                              ? const Text(
+                                  'Search',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : _isEditingName
+                                  ? TextField(
+                                      controller: _editController,
+                                      focusNode: _editFocusNode,
+                                      style: Theme.of(context).textTheme.titleMedium,
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        contentPadding: EdgeInsets.zero,
+                                      ),
+                                      onSubmitted: _saveGraphName,
+                                      onEditingComplete: _saveGraphName,
+                                      onTapOutside: (event) => _saveGraphName(_editController.text),
+                                    )
+                                  : GestureDetector(
+                                      onDoubleTap: () {
+                                        setState(() {
+                                          _isEditingName = true;
+                                          _editController.text = widget.graph.name;
+                                          // 延迟一下再请求焦点，确保 TextField 已经渲染
+                                          Future.delayed(const Duration(milliseconds: 100), () {
+                                            FocusScope.of(context).requestFocus(_editFocusNode);
+                                            // 选择全部文本
+                                            _editController.selection = TextSelection(
+                                              baseOffset: 0,
+                                              extentOffset: widget.graph.name.length,
+                                            );
+                                          });
+                                        });
+                                      },
+                                      child: Text(
+                                        widget.graph.name,
+                                        style: Theme.of(context).textTheme.titleMedium,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
                         ),
                         // 创建文件夹按钮
-                        IconButton(
-                          icon: const Icon(Icons.create_new_folder),
-                          tooltip: 'Create New Folder',
-                          onPressed: () => _createFolder(context),
-                        ),
+                        if (!_showSearch)
+                          IconButton(
+                            icon: const Icon(Icons.create_new_folder),
+                            tooltip: 'Create New Folder',
+                            onPressed: () => _createFolder(context),
+                          ),
                       ],
                     ),
                   ),
                 ),
 
-                // 节点列表（文件夹树形视图）
+                // 内容区域
                 Expanded(
-                  child: FolderTreeView(
+                  child: _showSearch ? _buildSearchContent() : FolderTreeView(
                     nodes: regularNodes,
                     folders: folders,
                     onNodeSelected: (nodeId) {
@@ -183,5 +238,24 @@ class _SidebarState extends State<Sidebar> {
         );
       }
     }
+  }
+
+  void _saveGraphName([String? name]) {
+    final newName = name ?? _editController.text.trim();
+    if (newName.isNotEmpty) {
+      context.read<GraphBloc>().add(GraphRenameEvent(newName));
+    }
+    setState(() {
+      _isEditingName = false;
+    });
+  }
+
+  /// 构建搜索内容
+  Widget _buildSearchContent() {
+    // 使用 Key 确保每次切换时都会重新创建 SearchSidebarPanel
+    return KeyedSubtree(
+      key: UniqueKey(),
+      child: const SearchSidebarPanel(),
+    );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:equatable/equatable.dart';
 import '../../core/models/models.dart';
 
@@ -48,6 +49,16 @@ class GraphSwitchEvent extends GraphEvent {
   List<Object?> get props => [graphId];
 }
 
+/// 重命名图事件
+class GraphRenameEvent extends GraphEvent {
+  const GraphRenameEvent(this.name);
+
+  final String name;
+
+  @override
+  List<Object?> get props => [name];
+}
+
 /// 更新图配置事件
 class GraphUpdateConfigEvent extends GraphEvent {
   const GraphUpdateConfigEvent(this.config);
@@ -68,6 +79,16 @@ class ViewZoomEvent extends GraphEvent {
 
   @override
   List<Object?> get props => [zoomLevel];
+}
+
+/// 移动相机位置事件
+class ViewMoveEvent extends GraphEvent {
+  const ViewMoveEvent(this.position);
+
+  final Offset position;
+
+  @override
+  List<Object?> get props => [position];
 }
 
 /// 切换连接线显示事件

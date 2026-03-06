@@ -103,9 +103,12 @@ class FileSystemNodeRepository implements NodeRepository {
 
   @override
   Future<void> saveAll(List<Node> nodes) async {
+    debugPrint('=== saveAll ===');
     for (final node in nodes) {
+      debugPrint('Saving node: ${node.title} with ${node.references.length} references');
       await save(node);
     }
+    debugPrint('saveAll completed');
   }
 
   @override
@@ -486,6 +489,15 @@ class FileSystemNodeRepository implements NodeRepository {
         return '"$value"';
       }
       return value;
+    }
+    if (value is Map) {
+      // Map类型需要在外部调用处处理嵌套，这里返回占位符
+      // 注意：实际上这个方法不应该被Map类型调用，因为Map需要特殊处理
+      return value.toString();
+    }
+    if (value is List) {
+      // List类型也需要特殊处理
+      return value.toString();
     }
     return value.toString();
   }

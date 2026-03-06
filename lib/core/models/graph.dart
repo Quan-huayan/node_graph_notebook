@@ -76,8 +76,8 @@ class GraphViewConfig {
 @JsonSerializable()
 class Camera {
   const Camera({
-    this.x = 0,
-    this.y = 0,
+    this.x = 2048,
+    this.y = 1080,
     this.zoom = 1.0,
   });
 

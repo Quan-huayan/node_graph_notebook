@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../../core/models/models.dart';
 import '../dialogs/graph_nodes_dialog.dart';
 
@@ -22,47 +22,63 @@ class Toolbar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 布局按钮
+            // 收起/展开按钮
             IconButton(
-              icon: const Icon(Icons.account_tree),
-              tooltip: 'Layout',
-              onPressed: () => _showLayoutMenu(context),
-            ),
-            IconButton(
-              icon: Icon(
-                context.read<GraphBloc>().state.viewState.showConnections
-                    ? Icons.share
-                    : Icons.share_outlined,
-              ),
-              tooltip: 'Toggle Connections',
+              icon: Icon(uiState.isToolbarExpanded ? Icons.expand_less : Icons.expand_more),
+              tooltip: uiState.isToolbarExpanded ? 'Collapse Toolbar' : 'Expand Toolbar',
               onPressed: () {
-                context.read<GraphBloc>().add(const ViewToggleConnectionsEvent());
+                context.read<UIBloc>().add(const UIToggleToolbarEvent());
               },
             ),
-            IconButton(
-              icon: Icon(
-                uiState.isSidebarOpen
-                    ? Icons.menu_open
-                    : Icons.menu,
-              ),
-              tooltip: 'Toggle Sidebar',
-              onPressed: () {
-                context.read<UIBloc>().add(const UIToggleSidebarEvent());
-              },
-            ),
-            const Divider(),
-            // 管理图节点按钮
-            IconButton(
-              icon: const Icon(Icons.playlist_add_check),
-              tooltip: 'Manage Graph Nodes',
-              onPressed: () => _showGraphNodesDialog(context),
-            ),
-            // 删除按钮
-            IconButton(
-              icon: const Icon(Icons.delete),
-              tooltip: 'Delete Selected Node',
-              onPressed: () => _deleteSelectedNode(context),
-            ),
+            if (uiState.isToolbarExpanded)
+              ...[
+                // 布局按钮
+                IconButton(
+                  icon: const Icon(Icons.account_tree),
+                  tooltip: 'Layout',
+                  onPressed: () => _showLayoutMenu(context),
+                ),
+                IconButton(
+                  icon: Icon(
+                    context.read<GraphBloc>().state.viewState.showConnections
+                        ? Icons.share
+                        : Icons.share_outlined,
+                  ),
+                  tooltip: 'Toggle Connections',
+                  onPressed: () {
+                    context.read<GraphBloc>().add(const ViewToggleConnectionsEvent());
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    uiState.isSidebarOpen
+                        ? Icons.menu_open
+                        : Icons.menu,
+                  ),
+                  tooltip: 'Toggle Sidebar',
+                  onPressed: () {
+                    context.read<UIBloc>().add(const UIToggleSidebarEvent());
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh',
+                  onPressed: () => _refreshData(context),
+                ),
+                const Divider(),
+                // 管理图节点按钮
+                IconButton(
+                  icon: const Icon(Icons.playlist_add_check),
+                  tooltip: 'Manage Graph Nodes',
+                  onPressed: () => _showGraphNodesDialog(context),
+                ),
+                // 删除按钮
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  tooltip: 'Delete Selected Node',
+                  onPressed: () => _deleteSelectedNode(context),
+                ),
+              ],
           ],
         ),
       ),
@@ -227,6 +243,12 @@ class Toolbar extends StatelessWidget {
         }
       }
     }
+  }
+
+  void _refreshData(BuildContext context) {
+    // 刷新节点和图数据
+    context.read<NodeBloc>().add(const NodeLoadEvent());
+    context.read<GraphBloc>().add(const GraphInitializeEvent());
   }
 }
 

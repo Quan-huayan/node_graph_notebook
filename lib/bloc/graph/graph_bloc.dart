@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/ui/blocs/blocs.dart';
+import 'package:node_graph_notebook/bloc/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
 
@@ -19,6 +19,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<GraphLoadEvent>(_onLoadGraph);
     on<GraphCreateEvent>(_onCreateGraph);
     on<GraphSwitchEvent>(_onSwitchGraph);
+    on<GraphRenameEvent>(_onRenameGraph);
     on<GraphUpdateConfigEvent>(_onUpdateConfig);
     on<NodeAddEvent>(_onNodeAdd);
     on<NodeUpdateEvent>(_onNodeUpdate);
@@ -29,6 +30,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<SelectionClearEvent>(_onSelectionClear);
     on<NodeMultiSelectEvent>(_onNodeMultiSelect);
     on<ViewZoomEvent>(_onViewZoom);
+    on<ViewMoveEvent>(_onViewMove);
     on<ViewToggleConnectionsEvent>(_onToggleConnections);
     on<ViewToggleGridEvent>(_onToggleGrid);
     on<LayoutApplyEvent>(_onApplyLayout);
@@ -331,6 +333,47 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     ));
   }
 
+  /// 移动相机位置
+  Future<void> _onViewMove(
+    ViewMoveEvent event,
+    Emitter<GraphState> emit,
+  ) async {
+    if (state.graph.id.isEmpty) return;
+
+    try {
+      // 先持久化相机配置到文件
+      final updatedConfig = state.graph.viewConfig.copyWith(
+        camera: Camera(
+          x: event.position.dx,
+          y: event.position.dy,
+          zoom: state.viewState.camera.zoom,
+        ),
+      );
+
+      final updatedGraph = await _graphService.updateGraph(
+        state.graph.id,
+        viewConfig: updatedConfig,
+      );
+
+      // 更新状态（使用更新后的 graph 和新的 viewState）
+      emit(state.copyWith(
+        graph: updatedGraph,
+        viewState: state.viewState.copyWith(
+          camera: state.viewState.camera.copyWith(position: event.position),
+        ),
+      ));
+    } catch (e) {
+      // 持久化失败不影响内存状态的更新
+      debugPrint('Failed to persist camera position: $e');
+      // 即使持久化失败，也要更新内存状态
+      emit(state.copyWith(
+        viewState: state.viewState.copyWith(
+          camera: state.viewState.camera.copyWith(position: event.position),
+        ),
+      ));
+    }
+  }
+
   /// 切换连接线显示
   void _onToggleConnections(
     ViewToggleConnectionsEvent event,
@@ -378,10 +421,64 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     BatchEvent event,
     Emitter<GraphState> emit,
   ) async {
-    // 批量执行事件，中间不触发 emit
-    for (final graphEvent in event.events) {
-      add(graphEvent);
-      await Future.delayed(Duration.zero); // 让事件循环处理
+    if (state.graph.id.isEmpty) return;
+
+    try {
+      debugPrint('=== _onBatch ===');
+      debugPrint('Processing ${event.events.length} events');
+
+      // 收集所有要添加和删除的节点ID
+      final nodeIdsToAdd = <String>[];
+      final nodeIdsToRemove = <String>[];
+
+      // 遍历所有事件，提取节点ID
+      for (final graphEvent in event.events) {
+        if (graphEvent is NodeAddEvent) {
+          nodeIdsToAdd.add(graphEvent.nodeId);
+        } else if (graphEvent is NodeDeleteEvent) {
+          nodeIdsToRemove.add(graphEvent.nodeId);
+        }
+      }
+
+      debugPrint('To add: ${nodeIdsToAdd.length}, to remove: ${nodeIdsToRemove.length}');
+
+      // 如果没有操作，直接返回
+      if (nodeIdsToAdd.isEmpty && nodeIdsToRemove.isEmpty) {
+        return;
+      }
+
+      // 一次性更新图的节点ID列表
+      final currentNodeIds = List<String>.from(state.graph.nodeIds);
+
+      // 移除节点
+      for (final nodeId in nodeIdsToRemove) {
+        currentNodeIds.remove(nodeId);
+      }
+
+      // 添加节点（去重）
+      for (final nodeId in nodeIdsToAdd) {
+        if (!currentNodeIds.contains(nodeId)) {
+          currentNodeIds.add(nodeId);
+        }
+      }
+
+      debugPrint('Updated nodeIds count: ${currentNodeIds.length}');
+
+      // 保存到文件
+      final savedGraph = await _graphService.updateGraph(
+        state.graph.id,
+        nodeIds: currentNodeIds,
+      );
+
+      debugPrint('Graph saved to file');
+
+      // 重新加载图数据（包括节点和连接）
+      await _loadGraphData(savedGraph, emit);
+
+      debugPrint('Graph reloaded: ${state.nodes.length} nodes, ${state.connections.length} connections');
+    } catch (e) {
+      debugPrint('Error in _onBatch: $e');
+      emit(state.copyWith(error: 'Failed to process batch operations: ${e.toString()}'));
     }
   }
 
@@ -443,10 +540,23 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       final nodes = await _graphService.getGraphNodes(graph.id);
       final connections = Connection.calculateConnections(nodes);
 
+      // 从 graph.viewConfig 中读取相机配置并更新 viewState
+      final cameraState = CameraState(
+        position: Offset(
+          graph.viewConfig.camera.x,
+          graph.viewConfig.camera.y,
+        ),
+        zoom: graph.viewConfig.camera.zoom,
+      );
+
       emit(state.copyWith(
         graph: graph,
         nodes: nodes,
         connections: connections,
+        viewState: state.viewState.copyWith(
+          camera: cameraState,
+          zoomLevel: graph.viewConfig.camera.zoom,
+        ),
         loadingState: LoadingState.loaded,
         error: null,
       ));
@@ -490,6 +600,24 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     } catch (e) {
       // 静默失败，不影响用户体验
       debugPrint('Failed to persist node positions: $e');
+    }
+  }
+
+  /// 重命名图
+  Future<void> _onRenameGraph(
+    GraphRenameEvent event,
+    Emitter<GraphState> emit,
+  ) async {
+    if (state.graph.id.isEmpty) return;
+
+    try {
+      final updatedGraph = await _graphService.updateGraph(
+        state.graph.id,
+        name: event.name,
+      );
+      emit(state.copyWith(graph: updatedGraph));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to rename graph: ${e.toString()}'));
     }
   }
 }

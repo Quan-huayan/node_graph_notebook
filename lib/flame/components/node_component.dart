@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart' hide Image;
-import 'package:node_graph_notebook/ui/blocs/blocs.dart';
+import 'package:node_graph_notebook/bloc/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme/app_theme.dart';
 
@@ -202,6 +202,9 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     if (node.isFolder) {
       return theme.nodes.folderPrimary;
     }
+    if (node.metadata.containsKey('isAI') && node.metadata['isAI'] == true) {
+      return theme.status.info;
+    }
     return theme.nodes.nodePrimary;
   }
 
@@ -211,6 +214,14 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     }
     if (node.isFolder) {
       return theme.nodes.folderBackground;
+    }
+    if (node.metadata.containsKey('isAI') && node.metadata['isAI'] == true) {
+      switch (node.viewMode) {
+        case NodeViewMode.compact:
+          return _getNodeColor();
+        default:
+          return theme.backgrounds.secondary;
+      }
     }
     switch (node.viewMode) {
       case NodeViewMode.compact:

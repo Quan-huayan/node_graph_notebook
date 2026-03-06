@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/theme_service.dart';
-import '../../ui/blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 
 /// 创建连接对话框
 class ConnectionDialog extends StatefulWidget {

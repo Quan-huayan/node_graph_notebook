@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flame/components.dart' hide Timer;
 import 'package:flutter/material.dart';
-import '../../ui/blocs/graph_bloc.dart';
-import '../../ui/blocs/graph_event.dart';
-import '../../ui/blocs/graph_state.dart';
+import '../../bloc/graph/graph_bloc.dart';
+import '../../bloc/graph/graph_event.dart';
+import '../../bloc/graph/graph_state.dart';
 
 /// Flame 组件的 BLoC 消费者混入
 /// 允许 Flame 组件订阅和消费 BLoC 状态变化

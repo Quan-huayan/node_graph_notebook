@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../ui/blocs/blocs.dart';
+import '../bloc/blocs.dart';
 import '../core/services/theme/app_theme.dart';
 import 'graph_world.dart';
 
@@ -74,22 +75,62 @@ class GraphGame extends FlameGame {
   void _onStateChanged(GraphState state) {
     // 注意：这里只做增量更新，不重新创建整个 world
     // 具体的更新逻辑在 GraphWorld 中通过订阅实现
+
+    // === 相机状态同步 ===
+    // 说明：由于 GraphWorld 无法访问 Flame 相机实例，相机相关的状态
+    // 同步（缩放、位置等）需要在 GraphGame 层处理。
+
+    final cameraState = state.viewState.camera;
+
+    // 应用相机位置
+    final newPosition = Vector2(cameraState.position.dx, cameraState.position.dy);
+    if (camera.viewport.position != newPosition) {
+      camera.viewport.position = newPosition;
+    }
+
+    // 应用相机缩放级别
+    final newZoom = cameraState.zoom;
+    if (camera.viewfinder.zoom != newZoom) {
+      camera.viewfinder.zoom = newZoom;
+    }
   }
 
   /// 处理滚轮缩放
-  void handleZoom(double delta) {
+  void handleZoom(double delta, Offset? localPosition) {
     if (_graphWorld == null) return;
 
     // 缩放系数
+    // 使用较小的系数以获得更平滑的缩放体验
+    // 滚轮每次滚动产生的 delta 约为 100-200，乘以 0.001 后每次滚动变化约 10-20%
     const zoomFactor = 0.001;
     final zoomChange = delta * zoomFactor;
 
     // 计算新的缩放级别
     final currentZoom = bloc.state.viewState.zoomLevel;
-    var newZoom = currentZoom + zoomChange;
+    var newZoom = currentZoom * (1 + zoomChange);
 
     // 限制缩放范围
     newZoom = newZoom.clamp(0.1, 5.0);
+
+    // 如果提供了鼠标位置，以鼠标位置为中心进行缩放
+    if (localPosition != null) {
+      // 计算鼠标在游戏世界中的位置
+      final worldPosition = camera.localToGlobal(
+        Vector2(localPosition.dx, localPosition.dy));
+
+      // 计算缩放前后的差异
+      final zoomRatio = newZoom / currentZoom;
+
+      // 调整相机位置，使鼠标位置保持在屏幕上的同一位置
+      final cameraPosition = camera.viewport.position;
+      final newCameraPosition = Vector2(
+        worldPosition.x - (worldPosition.x - cameraPosition.x) * zoomRatio,
+        worldPosition.y - (worldPosition.y - cameraPosition.y) * zoomRatio,
+      );
+
+      // 更新相机位置
+      camera.viewport.position = newCameraPosition;
+    }
 
     // 分发缩放事件到 BLoC
     bloc.add(ViewZoomEvent(newZoom));
@@ -215,8 +256,30 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
                         ),
                       )
                     : const BoxDecoration(), // TODO: 这可能是异常的。
-                child: GameWidget(
-                  game: _game,
+                child: Listener(
+                  onPointerSignal: (pointerSignal) {
+                    if (pointerSignal is PointerScrollEvent) {
+                      // 处理鼠标滚轮事件
+                      _game.handleZoom(
+                        pointerSignal.scrollDelta.dy,
+                        pointerSignal.localPosition,
+                      );
+                    }
+                  },
+                  child: GestureDetector(
+                    onScaleUpdate: (details) {
+                      // 处理触摸缩放
+                      if (details.scale != 1.0) {
+                        _game.handleZoom(
+                          details.scale - 1.0,
+                          details.localFocalPoint,
+                        );
+                      }
+                    },
+                    child: GameWidget(
+                      game: _game,
+                    ),
+                  ),
                 ),
               );
             },

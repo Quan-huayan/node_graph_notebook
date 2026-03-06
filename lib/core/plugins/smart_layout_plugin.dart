@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../ui/blocs/graph_bloc.dart';
-import '../../ui/blocs/graph_event.dart';
-import '../../ui/blocs/graph_plugin.dart';
-import '../../ui/blocs/graph_state.dart';
+import '../../bloc/graph/graph_bloc.dart';
+import '../../bloc/graph/graph_event.dart';
+import '../../plugins/hooks/graph_plugin.dart';
+import '../../bloc/graph/graph_state.dart';
 import '../models/models.dart';
 import '../services/ai_integration_service.dart';
 
@@ -78,14 +78,16 @@ class SmartLayoutPlugin extends GraphPlugin {
     if (!aiService.isAvailable) return;
 
     try {
-      final suggestions = await aiService.suggestConnections(state.nodes);
+      final suggestions = await aiService.suggestConnections(
+        nodes: state.nodes,
+      );
       _suggestions.clear();
       _suggestions.addAll(suggestions);
 
       for (final suggestion in suggestions) {
         if (suggestion.confidence > 0.8) {
           debugPrint(
-            'SmartLayout: Suggested connection ${suggestion.sourceId} -> ${suggestion.targetId} '
+            'SmartLayout: Suggested connection ${suggestion.fromNodeId} -> ${suggestion.toNodeId} '
             '(confidence: ${suggestion.confidence})',
           );
         }
@@ -101,8 +103,8 @@ class SmartLayoutPlugin extends GraphPlugin {
       if (suggestion.confidence > 0.8) {
         bloc.add(
           PluginExecuteEvent('connect_nodes', data: {
-            'sourceId': suggestion.sourceId,
-            'targetId': suggestion.targetId,
+            'sourceId': suggestion.fromNodeId,
+            'targetId': suggestion.toNodeId,
             'reason': suggestion.reason,
           }),
         );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 
 /// 菜单操作类型
 enum _MenuAction {
@@ -9,6 +9,9 @@ enum _MenuAction {
   compact,
   titleWithPreview,
   fullContent,
+  editMetadata,
+  manageConnections,
+  addIcon,
   delete,
 }
 
@@ -61,6 +64,37 @@ Future<void> showNodeContextMenu(
           icon: Icons.article,
           label: 'Full Content',
           isSelected: node.viewMode == NodeViewMode.fullContent,
+        ),
+      ),
+      const PopupMenuDivider(),
+      const PopupMenuItem<_MenuAction>(
+        value: _MenuAction.editMetadata,
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, size: 18),
+            SizedBox(width: 12),
+            Text('Edit Metadata'),
+          ],
+        ),
+      ),
+      const PopupMenuItem<_MenuAction>(
+        value: _MenuAction.manageConnections,
+        child: Row(
+          children: [
+            Icon(Icons.link, size: 18),
+            SizedBox(width: 12),
+            Text('Manage Connections'),
+          ],
+        ),
+      ),
+      const PopupMenuItem<_MenuAction>(
+        value: _MenuAction.addIcon,
+        child: Row(
+          children: [
+            Icon(Icons.image, size: 18),
+            SizedBox(width: 12),
+            Text('Add Icon'),
+          ],
         ),
       ),
       const PopupMenuDivider(),
@@ -126,6 +160,24 @@ Future<void> showNodeContextMenu(
       }
       nodeBloc.add(NodeDeleteEvent(node.id));
     }
+  } else if (selectedAction == _MenuAction.editMetadata) {
+    // 编辑元数据
+    // TODO: 实现编辑元数据的对话框
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Edit Metadata feature - Coming soon!')),
+    );
+  } else if (selectedAction == _MenuAction.manageConnections) {
+    // 管理连接
+    // TODO: 实现管理连接的对话框
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Manage Connections feature - Coming soon!')),
+    );
+  } else if (selectedAction == _MenuAction.addIcon) {
+    // 添加图标
+    // TODO: 实现添加图标的功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Add Icon feature - Coming soon!')),
+    );
   } else {
     // 切换显示模式
     final newMode = _actionToViewMode(selectedAction);
@@ -149,7 +201,7 @@ NodeViewMode? _actionToViewMode(_MenuAction action) {
       return NodeViewMode.titleWithPreview;
     case _MenuAction.fullContent:
       return NodeViewMode.fullContent;
-    case _MenuAction.delete:
+    default:
       return null;
   }
 }

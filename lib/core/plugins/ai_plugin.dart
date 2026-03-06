@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../ui/blocs/graph_bloc.dart';
-import '../../ui/blocs/graph_plugin.dart';
-import '../../ui/blocs/graph_state.dart';
+import '../../bloc/graph/graph_bloc.dart';
+import '../../plugins/hooks/graph_plugin.dart';
+import '../../bloc/graph/graph_state.dart';
 import '../models/models.dart';
 import '../services/ai_integration_service.dart';
 
@@ -114,12 +114,14 @@ class AIIntegrationPlugin extends BasePlugin {
     if (!aiService.isAvailable) return;
 
     try {
-      final suggestions = await aiService.suggestConnections(bloc.state.nodes);
+      final suggestions = await aiService.suggestConnections(
+        nodes: bloc.state.nodes,
+      );
 
       for (final suggestion in suggestions) {
         if (suggestion.confidence > 0.7) {
           debugPrint(
-            'Suggested connection: ${suggestion.sourceId} -> ${suggestion.targetId} '
+            'Suggested connection: ${suggestion.fromNodeId} -> ${suggestion.toNodeId} '
             '(${suggestion.reason}, confidence: ${suggestion.confidence})',
           );
         }

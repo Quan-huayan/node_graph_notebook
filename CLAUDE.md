@@ -205,6 +205,37 @@ class NodeComponent extends PositionComponent {
 - One class per file
 - Import order: Dart SDK → Flutter → Third-party → Project imports → Relative imports
 
+### Documentation & Comments
+
+**MANDATORY: All code must include complete comments explaining architectural intent**
+
+- **Public APIs MUST have documentation comments** explaining purpose, parameters, and return values
+- **Complex logic MUST include inline comments** explaining the "why" (not just the "what")
+- **Architectural decisions MUST be documented** - explain why code is structured a certain way
+- **Non-obvious implementations MUST be explained** - if you override existing comments or patterns, explain why
+
+**Example:**
+
+```dart
+/// 处理 BLoC 状态变化
+  void _onStateChanged(GraphState state) {
+    // 注意：这里只做增量更新，不重新创建整个 world
+    // 具体的更新逻辑在 GraphWorld 中通过订阅实现
+
+    // === 相机缩放同步 ===
+    // 说明：由于 GraphWorld 无法访问 Flame 相机实例，相机相关的状态
+    // 同步（缩放、位置等）需要在 GraphGame 层处理。
+
+    // ... 相机缩放逻辑代码
+  }
+```
+
+**Why this matters:**
+- Future maintainers (including yourself) need to understand architectural decisions
+- Comments explaining "why" prevent accidental removal of important code
+- Architectural intent is often lost without explicit documentation
+
+
 ## Code Analysis
 
 ### Third-Party Plugin Warnings

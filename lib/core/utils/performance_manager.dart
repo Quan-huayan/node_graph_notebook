@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../ui/blocs/graph_bloc.dart';
-import '../../ui/blocs/graph_event.dart';
+import '../../bloc/graph/graph_bloc.dart';
+import '../../bloc/graph/graph_event.dart';
 import '../models/models.dart';
 
 /// 批量持久化管理器

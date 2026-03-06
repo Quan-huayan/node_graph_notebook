@@ -16,6 +16,9 @@ class UIBloc extends Bloc<UIEvent, UIState> {
     on<UIOpenSidebarEvent>(_onOpenSidebar);
     on<UICloseSidebarEvent>(_onCloseSidebar);
     on<UISelectTabEvent>(_onSelectTab);
+    on<UISetSidebarWidthEvent>(_onSetSidebarWidth);
+    on<UIToggleToolbarEvent>(_onToggleToolbar);
+    on<UISetToolbarEvent>(_onSetToolbar);
   }
 
   /// 设置节点显示模式
@@ -96,5 +99,31 @@ class UIBloc extends Bloc<UIEvent, UIState> {
     Emitter<UIState> emit,
   ) {
     emit(state.copyWith(selectedTab: event.tab));
+  }
+
+  /// 设置侧边栏宽度
+  void _onSetSidebarWidth(
+    UISetSidebarWidthEvent event,
+    Emitter<UIState> emit,
+  ) {
+    // 限制侧边栏宽度范围
+    final width = event.width.clamp(150.0, 500.0);
+    emit(state.copyWith(sidebarWidth: width));
+  }
+
+  /// 切换工具栏展开状态
+  void _onToggleToolbar(
+    UIToggleToolbarEvent event,
+    Emitter<UIState> emit,
+  ) {
+    emit(state.copyWith(isToolbarExpanded: !state.isToolbarExpanded));
+  }
+
+  /// 设置工具栏展开状态
+  void _onSetToolbar(
+    UISetToolbarEvent event,
+    Emitter<UIState> emit,
+  ) {
+    emit(state.copyWith(isToolbarExpanded: event.expanded));
   }
 }
