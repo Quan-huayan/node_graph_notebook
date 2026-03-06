@@ -22,15 +22,14 @@ abstract class SearchPresetService {
 
 /// 搜索预设服务实现
 class SearchPresetServiceImpl implements SearchPresetService {
-  SearchPresetServiceImpl({SharedPreferences? prefs})
-      : _prefs = prefs ?? SharedPreferences.getInstance() as SharedPreferences;
+  SearchPresetServiceImpl(SharedPreferencesAsync prefs) : _prefs = prefs;
 
-  final SharedPreferences _prefs;
+  final SharedPreferencesAsync _prefs;
   static const String _key = 'search_presets';
 
   @override
   Future<List<SearchPreset>> getAllPresets() async {
-    final jsonString = _prefs.getString(_key);
+    final jsonString = await _prefs.getString(_key);
     if (jsonString == null) return [];
 
     try {

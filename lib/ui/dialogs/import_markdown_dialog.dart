@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/models/node.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../widgets/node_selector_widget.dart';
 import '../widgets/graph_preview_widget.dart';
 import '../../converter/models/models.dart';

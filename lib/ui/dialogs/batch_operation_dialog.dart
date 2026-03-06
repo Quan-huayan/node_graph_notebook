@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 import '../../converter/models/models.dart';
 
 /// 批量操作预设

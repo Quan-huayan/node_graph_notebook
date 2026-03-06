@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'converter/converter_service.dart';
 import 'converter/converter_service_impl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'converter/converter_service.dart';
-import 'converter/converter_service_impl.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
@@ -125,23 +123,8 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         ),
         Provider<SearchPresetService>(
           create: (ctx) => SearchPresetServiceImpl(
-            ctx.read<SharedPreferencesAsync>(),
-          ),
-        ),
-        Provider<ConverterService>(
-          create: (ctx) => ConverterServiceImpl(
-            ctx.read<NodeRepository>(),
-          ),
-        ),
-        Provider<ImportExportService>(
-          create: (ctx) => ImportExportServiceImpl(
-            ctx.read<ConverterService>(),
-            ctx.read<NodeService>(),
-            ctx.read<GraphService>(),
-          ),
-        ),
-        Provider<SearchPresetService>(
-          create: (ctx) => SearchPresetServiceImpl(),
+            ctx.read<SharedPreferencesAsync>()
+            ),
         ),
         Provider<ImportExportService>(
           create: (ctx) => ImportExportServiceImpl(
@@ -200,17 +183,6 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         ),
         BlocProvider<UIBloc>(
           create: (_) => UIBloc(),
-        ),
-        BlocProvider<SearchBloc>(
-          create: (ctx) => SearchBloc(
-            nodeService: ctx.read<NodeService>(),
-            presetService: ctx.read<SearchPresetService>(),
-          ),
-        ),
-        BlocProvider<ConverterBloc>(
-          create: (ctx) => ConverterBloc(
-            importExportService: ctx.read<ImportExportService>(),
-          ),
         ),
         BlocProvider<SearchBloc>(
           create: (ctx) => SearchBloc(

@@ -5,7 +5,7 @@ import '../dialogs/create_node_dialog.dart';
 import '../views/graph_view.dart';
 import 'import_export_page.dart';
 import 'plugin_market_page.dart';
-import '../blocs/blocs.dart';
+import '../../bloc/blocs.dart';
 
 /// 主页面
 class HomePage extends StatefulWidget {

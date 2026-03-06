@@ -3,10 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/graph/graph_bloc.dart';
 import '../../bloc/graph/graph_event.dart';
-import '../hooks/graph_plugin.dart';
+import '../../plugins/hooks/graph_plugin.dart';
 import '../../bloc/graph/graph_state.dart';
-import '../../core/models/models.dart';
-import '../../core/services/ai_integration_service.dart';
+import '../models/models.dart';
+import '../services/ai_integration_service.dart';
 
 /// AI 智能布局插件
 /// 使用 AI 分析节点关系并建议最佳布局
