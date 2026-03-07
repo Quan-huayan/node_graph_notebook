@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import '../../bloc/graph/graph_bloc.dart';
-import '../../plugins/hooks/graph_plugin.dart';
+import '../hooks/graph_plugin.dart';
 import '../../bloc/graph/graph_state.dart';
 
 /// 导出插件
