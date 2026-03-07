@@ -63,7 +63,14 @@ class Node {
   final Map<String, dynamic> metadata;
 
   /// 转换为JSON
-  Map<String, dynamic> toJson() => _$NodeToJson(this);
+  Map<String, dynamic> toJson() {
+    final json = _$NodeToJson(this);
+    // Serialize NodeReference objects in the references map
+    json['references'] = references.map(
+      (key, value) => MapEntry(key, value.toJson()),
+    );
+    return json;
+  }
 
   /// 便捷方法：是否是概念节点（已废弃，统一使用content类型）
   @Deprecated('All nodes are now content type. Use isFolder to check if node is a folder.')

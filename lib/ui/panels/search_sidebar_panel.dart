@@ -1,13 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:node_graph_notebook/bloc/blocs.dart';
 import 'package:node_graph_notebook/ui/items/searched_node_item.dart';
-import '../blocs/search_bloc/search_bloc.dart';
-import '../blocs/search_bloc/search_event.dart';
-import '../blocs/search_bloc/search_state.dart';
-import '../../bloc/node/node_bloc.dart';
-import '../../bloc/node/node_event.dart';
-import '../../bloc/graph/graph_bloc.dart';
 import '../models/search_query.dart';
 import '../models/search_preset_model.dart';
 
@@ -441,13 +436,13 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                           node: node,
                           query: state.currentQuery?.searchText ?? state.currentQuery?.titleQuery ?? state.currentQuery?.contentQuery,
                           onTap: () {
-                            context.read<NodeBloc>().add(NodeSelectEvent(node.id));
                             context.read<GraphBloc>().add(
                               NodeAddEvent(
                                 node.id,
                                 position: node.position,
                               ),
                             );
+                            context.read<GraphBloc>().add(NodeSelectEvent(node.id));
                           },
                         );
                       },

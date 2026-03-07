@@ -403,3 +403,89 @@ class ApplyLayoutCommand extends GraphCommand {
   @override
   String get description => 'Apply ${algorithm.name} Layout';
 }
+
+/// 移动视图命令
+///
+/// 用于记录视图平移操作，支持撤销/重做。
+/// 保存拖拽前后的相机位置，实现视图位置的恢复。
+class ViewMoveCommand extends GraphCommand {
+  ViewMoveCommand({
+    required this.graphService,
+    required this.graphId,
+    required this.newPosition,
+    required this.zoom,
+  });
+
+  final GraphService graphService;
+  final String graphId;
+  final Offset newPosition;
+  final double zoom;
+  GraphViewConfig? _oldViewConfig;
+  bool _executedSuccessfully = false;
+
+  @override
+  Future<void> execute() async {
+    try {
+      // 保存旧的视图配置
+      final graph = await graphService.getGraph(graphId);
+      if (graph != null) {
+        _oldViewConfig = graph.viewConfig;
+
+        // 更新相机位置
+        await graphService.updateGraph(
+          graphId,
+          viewConfig: graph.viewConfig.copyWith(
+            camera: Camera(
+              x: newPosition.dx,
+              y: newPosition.dy,
+              zoom: zoom,
+              centerWidth: graph.viewConfig.camera.centerWidth,
+              centerHeight: graph.viewConfig.camera.centerHeight,
+            ),
+          ),
+        );
+        _executedSuccessfully = true;
+      }
+    } catch (e) {
+      // 如果执行失败，静默处理，避免影响用户体验
+      debugPrint('ViewMoveCommand execute failed: $e');
+      _executedSuccessfully = false;
+    }
+  }
+
+  @override
+  Future<void> undo() async {
+    if (_executedSuccessfully && _oldViewConfig != null) {
+      try {
+        await graphService.updateGraph(
+          graphId,
+          viewConfig: _oldViewConfig!,
+        );
+      } catch (e) {
+        debugPrint('ViewMoveCommand undo failed: $e');
+      }
+    }
+  }
+
+  @override
+  String get description => 'Move View';
+
+  @override
+  bool get canBeBatched => true;
+
+  @override
+  GraphCommand? merge(GraphCommand other) {
+    // 视图移动命令可以合并，只保留最终位置
+    if (other is ViewMoveCommand &&
+        other.graphId == graphId &&
+        other.zoom == zoom) {
+      return ViewMoveCommand(
+        graphService: graphService,
+        graphId: graphId,
+        newPosition: other.newPosition,
+        zoom: zoom,
+      );
+    }
+    return null;
+  }
+}

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
@@ -5,14 +6,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/bloc/blocs.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
+import '../../core/events/app_events.dart';
 
 /// Graph BLoC - 图状态管理核心
+///
+/// 职责：
+/// - 图的 CRUD 操作（创建、加载、切换、重命名）
+/// - 节点在图中的位置管理（视图层）
+/// - 节点选择状态（视图层）
+/// - 视图状态（缩放、平移、网格、连接线显示）
+/// - 订阅事件总线，响应节点数据变化
+///
+/// 不再负责：
+/// - 节点数据的 CRUD（由 NodeBloc 管理）
+/// - 直接订阅 NodeBloc（通过事件总线解耦）
 class GraphBloc extends Bloc<GraphEvent, GraphState> {
   GraphBloc({
     required GraphService graphService,
     required UndoManager undoManager,
+    required AppEventBus eventBus,
   })  : _graphService = graphService,
         _undoManager = undoManager,
+        _eventBus = eventBus,
         super(GraphState.initial()) {
     // 注册事件处理器
     on<GraphInitializeEvent>(_onInitialize);
@@ -22,10 +37,9 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<GraphRenameEvent>(_onRenameGraph);
     on<GraphUpdateConfigEvent>(_onUpdateConfig);
     on<NodeAddEvent>(_onNodeAdd);
-    on<NodeUpdateEvent>(_onNodeUpdate);
-    on<NodeDeleteEvent>(_onNodeDelete);
     on<NodeMoveEvent>(_onNodeMove);
     on<NodeMultiMoveEvent>(_onNodeMultiMove);
+    on<NodeMoveOutEvent>(_onNodeMoveOut);
     on<NodeSelectEvent>(_onNodeSelect);
     on<SelectionClearEvent>(_onSelectionClear);
     on<NodeMultiSelectEvent>(_onNodeMultiSelect);
@@ -40,10 +54,20 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<ErrorClearEvent>(_onErrorClear);
     on<RetryEvent>(_onRetry);
     on<FocusNodeEvent>(_onFocusNode);
+    on<_NodeSyncedEvent>(_onNodeSynced);
+
+    // 订阅事件总线，响应节点数据变化
+    _subscribeToEvents();
   }
 
   final GraphService _graphService;
   final UndoManager _undoManager;
+  final AppEventBus _eventBus;
+
+  /// 暴露 GraphService 供命令使用
+  GraphService get graphService => _graphService;
+
+  StreamSubscription<AppEvent>? _eventBusSubscription;
 
   /// 初始化
   Future<void> _onInitialize(
@@ -180,52 +204,6 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     }
   }
 
-  /// 更新节点
-  Future<void> _onNodeUpdate(
-    NodeUpdateEvent event,
-    Emitter<GraphState> emit,
-  ) async {
-    final updatedNodes = state.nodes.map((n) {
-      if (n.id == event.nodeId) {
-        return n.copyWith(
-          title: event.title ?? n.title,
-          content: event.content ?? n.content,
-          position: event.position ?? n.position,
-          viewMode: event.viewMode ?? n.viewMode,
-        );
-      }
-      return n;
-    }).toList();
-
-    emit(state.copyWith(nodes: updatedNodes));
-  }
-
-  /// 删除节点
-  Future<void> _onNodeDelete(
-    NodeDeleteEvent event,
-    Emitter<GraphState> emit,
-  ) async {
-    if (state.graph.id.isEmpty) return;
-
-    try {
-      await _graphService.removeNodeFromGraph(state.graph.id, event.nodeId);
-
-      final updatedNodes = state.nodes.where((n) => n.id != event.nodeId).toList();
-      final updatedConnections = Connection.calculateConnections(updatedNodes);
-
-      emit(state.copyWith(
-        nodes: updatedNodes,
-        connections: updatedConnections,
-      ));
-    } on FileSystemException catch (_) {
-      emit(state.copyWith(
-        error: 'Cannot save changes: Data folder is missing or inaccessible.',
-      ));
-    } catch (e) {
-      emit(state.copyWith(error: 'Failed to remove node: ${e.toString()}'));
-    }
-  }
-
   /// 移动节点（乐观更新）
   Future<void> _onNodeMove(
     NodeMoveEvent event,
@@ -252,20 +230,46 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     NodeMultiMoveEvent event,
     Emitter<GraphState> emit,
   ) async {
-    if (state.graph.id.isEmpty) return;
+    final currentState = state;
+    if (currentState.graph.id.isEmpty) return;
 
     // 乐观更新 - 立即更新所有节点位置
-    final updatedPositions = Map<String, Offset>.from(state.graph.nodePositions);
+    final updatedPositions = Map<String, Offset>.from(currentState.graph.nodePositions);
     updatedPositions.addAll(event.movements);
 
-    final updatedGraph = state.graph.copyWith(
+    final updatedGraph = currentState.graph.copyWith(
       nodePositions: updatedPositions,
     );
 
-    emit(state.copyWith(graph: updatedGraph));
+    emit(currentState.copyWith(graph: updatedGraph));
 
     // 持久化位置（不阻塞 UI）
     _persistNodePositions(event.movements);
+  }
+
+  /// 移出节点（从图中移除，但保留节点数据）
+  ///
+  /// 将指定节点从当前图中移除，但节点数据文件仍然保留。
+  /// 这与删除节点不同：移出只是改变节点的图归属，而删除会移除节点数据。
+  Future<void> _onNodeMoveOut(
+    NodeMoveOutEvent event,
+    Emitter<GraphState> emit,
+  ) async {
+    if (state.graph.id.isEmpty) return;
+
+    try {
+      // 从图中移除节点
+      await _graphService.removeNodeFromGraph(state.graph.id, event.nodeId);
+
+      // 重新加载图数据
+      await _loadGraphData(state.graph, emit);
+    } on FileSystemException catch (_) {
+      emit(state.copyWith(
+        error: 'Cannot save changes: Data folder is missing or inaccessible.',
+      ));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to remove node from graph: ${e.toString()}'));
+    }
   }
 
   /// 选择节点
@@ -428,23 +432,23 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       debugPrint('=== _onBatch ===');
       debugPrint('Processing ${event.events.length} events');
 
-      // 收集所有要添加和删除的节点ID
+      // 收集所有要添加和移出的节点ID
       final nodeIdsToAdd = <String>[];
-      final nodeIdsToRemove = <String>[];
+      final nodeIdsToMoveOut = <String>[];
 
       // 遍历所有事件，提取节点ID
       for (final graphEvent in event.events) {
         if (graphEvent is NodeAddEvent) {
           nodeIdsToAdd.add(graphEvent.nodeId);
-        } else if (graphEvent is NodeDeleteEvent) {
-          nodeIdsToRemove.add(graphEvent.nodeId);
+        } else if (graphEvent is NodeMoveOutEvent) {
+          nodeIdsToMoveOut.add(graphEvent.nodeId);
         }
       }
 
-      debugPrint('To add: ${nodeIdsToAdd.length}, to remove: ${nodeIdsToRemove.length}');
+      debugPrint('To add: ${nodeIdsToAdd.length}, to remove: ${nodeIdsToMoveOut.length}');
 
       // 如果没有操作，直接返回
-      if (nodeIdsToAdd.isEmpty && nodeIdsToRemove.isEmpty) {
+      if (nodeIdsToAdd.isEmpty && nodeIdsToMoveOut.isEmpty) {
         return;
       }
 
@@ -452,7 +456,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       final currentNodeIds = List<String>.from(state.graph.nodeIds);
 
       // 移除节点
-      for (final nodeId in nodeIdsToRemove) {
+      for (final nodeId in nodeIdsToMoveOut) {
         currentNodeIds.remove(nodeId);
       }
 
@@ -609,18 +613,31 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     GraphRenameEvent event,
     Emitter<GraphState> emit,
   ) async {
-    if (state.graph.id.isEmpty) return;
+    final currentState = state;
+    if (currentState.graph.id.isEmpty) return;
 
     try {
       final updatedGraph = await _graphService.updateGraph(
-        state.graph.id,
+        currentState.graph.id,
         name: event.name,
       );
-      emit(state.copyWith(graph: updatedGraph));
+      emit(currentState.copyWith(graph: updatedGraph));
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to rename graph: ${e.toString()}'));
+      emit(currentState.copyWith(error: 'Failed to rename graph: ${e.toString()}'));
     }
   }
+
+  /// 处理 NodeBloc 同步完成事件
+  void _onNodeSynced(
+    _NodeSyncedEvent event,
+    Emitter<GraphState> emit,
+  ) {
+    emit(state.copyWith(
+      nodes: event.nodes,
+      connections: event.connections,
+    ));
+  }
+
   /// 聚焦节点
   Future<void> _onFocusNode(
     FocusNodeEvent event,
@@ -665,4 +682,92 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       emit(state.copyWith(error: 'Failed to focus node: ${e.toString()}'));
     }
   }
+
+  /// 订阅事件总线，响应节点数据变化
+  ///
+  /// 通过事件总线监听 NodeBloc 发布的节点变化事件，
+  /// 实现图视图与节点数据的同步。
+  void _subscribeToEvents() {
+    _eventBusSubscription = _eventBus.stream.listen((event) {
+      if (event is NodeDataChangedEvent) {
+        _handleNodeDataChanged(event);
+      }
+    });
+  }
+
+  /// 处理节点数据变化事件
+  ///
+  /// 根据变化类型更新图中的节点数据：
+  /// - delete: 从图中移除已删除的节点
+  /// - create/update: 更新图中节点的数据
+  void _handleNodeDataChanged(NodeDataChangedEvent event) {
+    // 只在图已加载时同步
+    if (state.graph.id.isEmpty) return;
+
+    // 获取当前图中的节点 ID 集合
+    final graphNodeIds = state.graph.nodeIds.toSet();
+
+    switch (event.action) {
+      case DataChangeAction.delete:
+        // 从图中移除已删除的节点
+        final deletedNodeIds = event.changedNodes.map((n) => n.id).toSet();
+
+        final updatedNodes = state.nodes
+            .where((n) => !deletedNodeIds.contains(n.id))
+            .toList();
+
+        final updatedConnections = Connection.calculateConnections(updatedNodes);
+
+        // 使用 add 而不是 emit，因为我们在 stream 回调中
+        add(_NodeSyncedEvent(
+          nodes: updatedNodes,
+          connections: updatedConnections,
+        ));
+        break;
+
+      case DataChangeAction.update:
+      case DataChangeAction.create:
+        // 更新当前图中的节点数据
+        final affectedNodes = event.changedNodes
+            .where((n) => graphNodeIds.contains(n.id))
+            .toList();
+
+        if (affectedNodes.isEmpty) return;
+
+        // 正确的替换逻辑：移除旧版本，添加新版本
+        final affectedNodeIds = affectedNodes.map((n) => n.id).toSet();
+        final updatedNodes = [
+          ...state.nodes.where((n) => !affectedNodeIds.contains(n.id)),
+          ...affectedNodes,
+        ];
+
+        final updatedConnections = Connection.calculateConnections(updatedNodes);
+
+        add(_NodeSyncedEvent(
+          nodes: updatedNodes,
+          connections: updatedConnections,
+        ));
+        break;
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _eventBusSubscription?.cancel();
+    return super.close();
+  }
+}
+
+/// 内部事件：NodeBloc 同步完成
+class _NodeSyncedEvent extends GraphEvent {
+  const _NodeSyncedEvent({
+    required this.nodes,
+    required this.connections,
+  });
+
+  final List<Node> nodes;
+  final List<Connection> connections;
+
+  @override
+  List<Object?> get props => [nodes, connections];
 }

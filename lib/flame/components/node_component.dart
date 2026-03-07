@@ -572,7 +572,6 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
 
     if (isAINode && onAIChatTap != null) {
       // AI 节点：打开聊天对话框
-      final position = Offset(event.devicePosition.x, event.devicePosition.y);
       onAIChatTap!(node);
       _isHovered = false;
       return;

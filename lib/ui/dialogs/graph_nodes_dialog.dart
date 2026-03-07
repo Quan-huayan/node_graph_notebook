@@ -203,7 +203,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
 
       // 先添加所有移除事件
       for (final nodeId in toRemove) {
-        events.add(NodeDeleteEvent(nodeId));
+        events.add(NodeMoveOutEvent(nodeId));
       }
 
       // 再添加所有添加事件

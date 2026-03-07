@@ -58,7 +58,7 @@ flutter pub run build_runner build --delete-conflicting-outputs
 
 ## Architecture
 
-The application follows **Clean Architecture** with **Provider** state management. The dependency injection order is critical:
+The application follows **Clean Architecture** with a **hybrid BLoC + Provider** state management pattern. The dependency injection order is critical:
 
 ### Dependency Layers (in order)
 
@@ -67,10 +67,12 @@ Repository Layer (data access)
     ↓
 Service Layer (business logic)
     ↓
-Model Layer (state management)
+BLoC Layer (state management)
     ↓
 UI Layer (widgets)
 ```
+
+**Note:** Provider is still used for services and some models, while BLoC manages complex state logic.
 
 ### Key Architectural Patterns
 
@@ -81,44 +83,169 @@ UI Layer (widgets)
 - Relationships managed through `NodeReference` objects
 - Position and size tracked for visual layout
 
-**2. Provider Organization** (see `lib/app.dart:91-127`)
+**2. Provider/BLoC Organization** (see `lib/app.dart:97-213`)
 
 ```dart
 MultiProvider(
   providers: [
-    // 1. Settings services (global state)
+    // 0. Settings & Theme Services
     ChangeNotifierProvider<SettingsService>,
     ChangeNotifierProvider<ThemeService>,
+    Provider<SharedPreferencesAsync>,
 
-    // 2. Repository layer (data access)
+    // 1. Repository Layer
     Provider<NodeRepository>,
     Provider<GraphRepository>,
 
-    // 3. Service layer (business logic)
+    // 2. Service Layer
     Provider<NodeService>,
     Provider<GraphService>,
+    Provider<SearchPresetService>,
+    Provider<ConverterService>,
+    Provider<ImportExportService>,
+    ChangeNotifierProvider<AIServiceImpl>,
+    ChangeNotifierProvider<UndoManager>,
+    Provider<AppEventBus>,
 
-    // 4. Model layer (state management)
-    ChangeNotifierProvider<NodeModel>,
-    ChangeNotifierProvider<GraphModel>,
-    ChangeNotifierProvider<UIModel>,
+    // 3. BLoC Layer
+    BlocProvider<NodeBloc>,
+    BlocProvider<GraphBloc>,
+    BlocProvider<UIBloc>,
+    BlocProvider<SearchBloc>,
+    BlocProvider<ConverterBloc>,
   ],
 )
 ```
 
-**3. Provider Usage Rules**
+**3. Provider/BLoC Usage Rules**
 
+**Provider:**
 - `context.watch<T>()` - when widget needs to rebuild on state changes
 - `context.read<T>()` - for callbacks/event handlers (no rebuild)
 - `context.select<T, R>()` - watch specific properties only
+
+**BLoC:**
+- `context.watch<BlocCubit<T>>()` - rebuild on state changes
+- `context.read<BlocCubit<T>>()` - access bloc without rebuild (for event handlers)
+- Use `BlocBuilder` for rebuilding widgets based on bloc state
+- Use `BlocListener` for side effects (navigation, showing dialogs)
+- Use `BlocConsumer` when both rebuilding and side effects are needed
+
+### BLoC Architecture
+
+The application uses **BLoC (Business Logic Component)** pattern for state management, organized by domain:
+
+**BLoC Structure** (`lib/bloc/`):
+
+- `NodeBloc` - Manages node state (CRUD operations, loading)
+- `GraphBloc` - Manages graph state and node relationships
+- `UIBloc` - Manages UI state (sidebar, panels, dialogs)
+- `SearchBloc` - Manages search functionality and presets
+- `ConverterBloc` - Manages import/export operations
+
+**Event Bus Pattern** (`lib/core/events/app_events.dart`):
+
+The `AppEventBus` enables **cross-BLoC communication** without direct dependencies:
+
+```dart
+// Singleton event bus for pub-sub communication
+final eventBus = AppEventBus();
+
+// NodeBloc publishes node changes
+eventBus.publish(NodeDataChangedEvent(
+  changedNodes: nodes,
+  action: DataChangeAction.update,
+));
+
+// GraphBloc subscribes to node changes
+eventBus.stream.listen((event) {
+  if (event is NodeDataChangedEvent) {
+    // Update graph visualization
+  }
+});
+```
+
+**Key Benefits:**
+- **Decoupling**: NodeBloc and GraphBloc communicate without direct dependencies
+- **Scalability**: Easy to add new BLoCs that subscribe to events
+- **Testability**: Each BLoC can be tested independently
+
+**Event Types:**
+- `NodeDataChangedEvent` - Published when nodes are created/updated/deleted
+- `GraphNodeRelationChangedEvent` - Published when node-graph relationships change
+
+**4. Command Pattern (Undo/Redo)**
+
+The UndoManager uses the Command pattern for undoable operations:
+
+```dart
+// Define a command
+class AddNodeCommand extends Command {
+  final Node node;
+  AddNodeCommand(this.node);
+
+  @override
+  Future<void> execute() async {
+    // Add node logic
+  }
+
+  @override
+  Future<void> undo() async {
+    // Remove node logic
+  }
+}
+
+// Execute with undo support
+await context.read<UndoManager>().execute(AddNodeCommand(newNode));
+
+// Undo last operation
+await context.read<UndoManager>().undo();
+```
+
+**Command Locations:**
+- `lib/core/services/commands/command.dart` - Base Command interface
+- `lib/core/services/commands/node_commands.dart` - Node-related commands
+- `lib/core/services/commands/graph_command.dart` - Graph-related commands
+
+**Usage Guidelines:**
+- Implement `execute()` and `undo()` methods for all commands
+- Commands should be idempotent (can be executed multiple times safely)
+- UndoManager maintains a stack of up to 50 commands
+- Commands are automatically added to the undo stack when executed
 
 ### Core Components
 
 **Data Layer** (`lib/core/`)
 
-- `models/` - Core data models (Node, Graph, NodeReference, etc.)
+- `models/` - Core data models (Node, Graph, NodeReference, Connection, etc.)
+  - `Connection` - Defines relationships between nodes (computed from NodeReference)
 - `repositories/` - File-based data persistence (FileSystemNodeRepository, FileSystemGraphRepository)
-- `services/` - Business logic (NodeService, GraphService, SettingsService, ThemeService, ExportService)
+  - `MetadataIndex` - Efficient node metadata indexing for fast lookups
+- `services/` - Business logic services:
+  - `NodeService` - Node CRUD operations
+  - `GraphService` - Graph management operations
+  - `SearchPresetService` - Saved search configurations
+  - `ConverterService` - Format conversion (internal ↔ external formats)
+  - `ImportExportService` - Data import/export functionality
+  - `UndoManager` - Command pattern for undo/redo operations
+  - `LayoutService` - Graph layout algorithms
+  - `DataRecoveryService` - Automatic data repair on corruption
+  - `AIIntegrationService` - AI service integration layer
+  - `SettingsService` - App configuration management
+  - `ThemeService` - Theme customization
+- `events/` - Event bus system for cross-BLoC communication
+  - `AppEventBus` - Singleton broadcast stream for decoupled communication
+
+**Converter Layer** (`lib/converter/`)
+
+- `ConverterService` - Converts between internal node format and external formats
+- Supports markdown with YAML frontmatter for round-trip editing
+
+**BLoC Layer** (`lib/bloc/`)
+
+- Domain-specific BLoCs for state management
+- Each BLoC has corresponding Event and State classes
+- Uses flutter_bloc library for BLoC implementation
 
 **UI Layer** (`lib/ui/`)
 
@@ -126,6 +253,7 @@ MultiProvider(
 - `pages/` - Full-screen pages
 - `widgets/` - Reusable components
 - `dialogs/` - Dialogs and modals
+- `views/` - View widgets (graph view, folder tree, etc.)
 
 **Visualization** (`lib/flame/`)
 
@@ -134,14 +262,16 @@ MultiProvider(
 
 **AI Integration** (`lib/ai/`)
 
-- Placeholder for OpenAI/Anthropic clients
+- `AIServiceImpl` - Main AI service implementation
+- Supports OpenAI and Anthropic providers
 - Requires API keys configuration
 
 ### Data Persistence
 
 - **Nodes**: Stored as Markdown files with JSON metadata in `data/nodes/`
 - **Graphs**: JSON files defining node connections in `data/graphs/`
-- **Settings**: SharedPreferences for app configuration
+- **Settings**: SharedPreferences (async) for app configuration
+- **Search Presets**: Stored in SharedPreferences via SearchPresetService
 
 ## Coding Standards
 
@@ -257,17 +387,61 @@ bash scripts/analyze.sh    # Filters third-party warnings
 
 ## Testing
 
-Tests are located in `test/` directory:
+Tests are organized by layer and functionality in `test/` directory:
 
-- Widget tests: `test/widget_test.dart`
+```
+test/
+├── bloc/             # BLoC unit tests
+│   ├── graph/       # GraphBloc tests
+│   ├── node/        # NodeBloc tests
+│   └── ui/          # UIBloc tests
+├── core/            # Core logic tests
+│   ├── events/      # Event bus tests
+│   ├── models/      # Model tests (Node, Graph, Connection, etc.)
+│   ├── repositories/ # Repository tests
+│   └── services/    # Service tests (NodeService, UndoManager, etc.)
+├── ui/              # UI interaction tests
+│   ├── cross_bloc_ui_update_test.dart
+│   └── ui_responsive_update_test.dart
+├── performance/     # Performance benchmarks
+│   └── ui_update_performance_test.dart
+└── widget/          # Widget tests
+    ├── app_widget_test.dart
+    ├── graph_view_ui_update_test.dart
+    └── user_interaction_ui_update_test.dart
+```
+
+**Key Test Files:**
+- `test_helpers.dart` - Common test utilities and mocks
+- Mock files generated with `@GenerateMocks` annotation (e.g., `*.mocks.dart`)
+
+**Running Tests:**
+```bash
+# Run all tests
+flutter test
+
+# Run specific test file
+flutter test test/bloc/graph/graph_bloc_test.dart
+
+# Run with coverage
+flutter test --coverage
+```
+
+**Testing Guidelines:**
 - Use Mockito for mocking dependencies
-- Run with: `flutter test`
+- Test BLoCs in isolation with mock services
+- Test widget interactions with `WidgetTester`
+- Performance tests measure UI update efficiency
 
 ## Important Notes
 
 1. **Always regenerate code** after modifying models with `@JsonSerializable` annotation
-2. **Provider dependency order matters** - repositories → services → models
+2. **Provider/BLoC dependency order matters** - repositories → services → event bus → BLoCs
 3. **Don't use `print()`** - use `debugPrint()` or a logging service
 4. **File I/O should be async** - avoid blocking the UI thread with sync operations
 5. **Flame performance** - cache Paint/Text objects, don't allocate in `render()` method
 6. **Error recovery** - app has built-in data recovery on initialization failures
+7. **BLoC event handling** - always add initial events when creating BLoCs (e.g., `..add(const NodeLoadEvent())`)
+8. **Event bus usage** - use AppEventBus for cross-BLoC communication, avoid direct BLoC-to-BLoC dependencies
+9. **Command pattern** - use UndoManager for undoable operations (define commands in `lib/core/services/commands/`)
+10. **SharedPreferences async** - use `SharedPreferencesAsync` for non-blocking preference access

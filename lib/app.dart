@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
+import 'core/events/app_events.dart';
 import 'ai/ai_service.dart';
 import 'bloc/blocs.dart';
 import 'ui/pages/home_page.dart';
@@ -175,17 +176,26 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           create: (_) => UndoManager(),
         ),
 
-        // 2.2 BLoC 层
+        // 2.2 事件总线（在 BLoC 之前注入，供 BLoC 使用）
+        Provider<AppEventBus>(
+          create: (_) => AppEventBus(),
+          dispose: (_, bus) => bus.dispose(),
+        ),
+
+        // 2.3 BLoC 层
+        // 注意：NodeBloc 和 GraphBloc 通过事件总线解耦，不再有直接依赖
+        BlocProvider<NodeBloc>(
+          create: (ctx) => NodeBloc(
+            nodeService: ctx.read<NodeService>(),
+            eventBus: ctx.read<AppEventBus>(),
+          )..add(const NodeLoadEvent()),
+        ),
         BlocProvider<GraphBloc>(
           create: (ctx) => GraphBloc(
             graphService: ctx.read<GraphService>(),
             undoManager: ctx.read<UndoManager>(),
+            eventBus: ctx.read<AppEventBus>(),
           )..add(const GraphInitializeEvent()),
-        ),
-        BlocProvider<NodeBloc>(
-          create: (ctx) => NodeBloc(
-            nodeService: ctx.read<NodeService>(),
-          )..add(const NodeLoadEvent()),
         ),
         BlocProvider<UIBloc>(
           create: (_) => UIBloc(),

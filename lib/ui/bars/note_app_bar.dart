@@ -29,7 +29,7 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (ctx) => PluginMarketPage()),
+              MaterialPageRoute(builder: (ctx) => const PluginMarketPage()),
             );
           },
           tooltip: 'Plugin Market',

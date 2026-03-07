@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:node_graph_notebook/flame/graph_widget.dart';
 import '../core/models/models.dart';
 import '../bloc/blocs.dart';
 import '../core/services/theme/app_theme.dart';
@@ -35,7 +36,16 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     await super.onLoad();
 
     // 添加背景组件（处理空白区域拖拽）
-    add(_BackgroundComponent(theme: theme, graphBloc: graphBloc));
+    add(_BackgroundComponent(
+      theme: theme,
+      graphBloc: graphBloc,
+      onDraggingStateChanged: (isDragging) {
+        // 通知 GraphGame 拖拽状态变化
+        if (game is GraphGame) {
+          (game as GraphGame).setDraggingState(isDragging);
+        }
+      },
+    ));
 
     // 创建连接渲染器（先添加，在底层）
     _connectionRenderer = ConnectionRenderer(
@@ -271,17 +281,25 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
 
 /// 背景组件 - 绘制网格背景并处理空白区域拖拽
 class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGameReference {
-  _BackgroundComponent({required this.theme, required this.graphBloc});
+  _BackgroundComponent({
+    required this.theme,
+    required this.graphBloc,
+    this.onDraggingStateChanged,
+  });
 
   final AppThemeData theme;
   final GraphBloc graphBloc;
+  final Function(bool isDragging)? onDraggingStateChanged;
+
+  Offset? _dragStartPosition;
+  bool _isDragging = false;
 
   @override
   void onLoad() async {
     await super.onLoad();
     // 设置足够大的尺寸以覆盖整个游戏世界
     size = Vector2(10000, 10000);
-    // 将背景定位到原点，这样坐标转换更简单
+    // 固定位置，确保组件本身不会被移动
     position = Vector2.zero();
   }
 
@@ -293,7 +311,7 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
       ..strokeWidth = 0.5;
 
     // 绘制网格（在组件局部坐标系中）
-    // 组件位置是 (0, 0)，尺寸是 (10000, 10000)
+    // 组件位置固定在 (0, 0)，尺寸是 (10000, 10000)
     // 在 (5000, 5000) 处绘制世界原点
     const centerX = 5000.0;
     const centerY = 5000.0;
@@ -333,25 +351,90 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
   }
 
   @override
+  void onDragStart(DragStartEvent event) {
+    super.onDragStart(event);
+    position = Vector2.zero();//固定位置
+    _isDragging = true;
+    // 记录拖拽起始位置
+    final cameraPosition = game.camera.viewport.position;
+    _dragStartPosition = Offset(cameraPosition.x, cameraPosition.y);
+
+    // 通知外部开始拖拽
+    onDraggingStateChanged?.call(true);
+  }
+
+  @override
   void onDragUpdate(DragUpdateEvent event) {
-    super.onDragUpdate(event);
+    // 不调用 super.onDragUpdate()！这会阻止默认的组件位置移动
+    if (!_isDragging) return;
+
     // 拖拽背景时移动相机
     // 注意：这个事件只有在未命中节点组件时才会触发
     // 因为节点组件后添加，会优先处理拖拽事件
-    // 根据缩放级别调整移动速度
-    final zoom = game.camera.viewfinder.zoom;
+
     // 移动相机（拖拽时相机应该跟随鼠标移动）
-    game.camera.viewport.position += event.localDelta / zoom;
+    // 不需要除以 zoom，因为 viewfinder.position 是世界坐标，已经考虑了缩放
+    game.camera.viewfinder.position -= event.localDelta;
+
+    // 不再实时同步到 BLoC，避免循环更新
+    // 只在拖拽结束时同步一次
   }
 
   @override
   void onDragEnd(DragEndEvent event) {
-    super.onDragEnd(event);
+    // 不调用 super.onDragEnd()，避免默认行为
+
     // 拖拽结束时，同步相机位置到 BLoC
-    final cameraPosition = game.camera.viewport.position;
-    // 将相机位置同步到 BLoC 状态以实现持久化
-    // 使用 Offset 从 Vector2 创建位置
-    final position = Offset(cameraPosition.x, cameraPosition.y);
-    graphBloc.add(ViewMoveEvent(position));
+    final cameraPosition = game.camera.viewfinder.position;
+    final finalPosition = Offset(cameraPosition.x, cameraPosition.y);
+
+    // 只有位置真正改变时才同步
+    if (_dragStartPosition != null &&
+        (_dragStartPosition! - finalPosition).distance > 1) {
+      // 使用简单的 ViewMoveEvent，不使用命令模式
+      // 避免命令执行导致的重新加载和状态循环
+      graphBloc.add(ViewMoveEvent(finalPosition));
+
+      // 在后台异步持久化相机位置
+      final zoom = game.camera.viewfinder.zoom;
+
+      // 延迟执行，避免阻塞 UI 和导致状态循环
+      Future.microtask(() async {
+        try {
+          // 检查图是否存在，避免持久化到不存在的图
+          final graphId = graphBloc.state.graph.id;
+          if (graphId.isEmpty) return;
+
+          final graph = await graphBloc.graphService.getGraph(graphId);
+          if (graph == null) {
+            // 图不存在，跳过持久化
+            return;
+          }
+
+          // 直接更新持久化
+          await graphBloc.graphService.updateGraph(
+            graphId,
+            viewConfig: graph.viewConfig.copyWith(
+              camera: Camera(
+                x: finalPosition.dx,
+                y: finalPosition.dy,
+                zoom: zoom,
+                centerWidth: graph.viewConfig.camera.centerWidth,
+                centerHeight: graph.viewConfig.camera.centerHeight,
+              ),
+            ),
+          );
+        } catch (e) {
+          // 静默失败，不影响用户体验
+          // 只在调试模式下打印
+          debugPrint('Failed to persist camera position: $e');
+        }
+      });
+    }
+
+    // 清除拖拽状态，通知 GraphGame
+    _dragStartPosition = null;
+    _isDragging = false;
+    onDraggingStateChanged?.call(false);
   }
 }

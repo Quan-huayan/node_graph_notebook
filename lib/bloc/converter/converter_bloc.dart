@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/services/import_export_service.dart';
-import '../../../converter/models/models.dart';
+import '../../core/services/import_export_service.dart';
+import '../../converter/models/models.dart';
 import 'converter_event.dart';
 import 'converter_state.dart';
 

@@ -1,14 +1,26 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/core/models/models.dart';
 import '../../core/services/services.dart';
+import '../../core/events/app_events.dart';
 import 'node_event.dart';
 import 'node_state.dart';
 
-/// 节点 BLoC - 节点状态管理核心
+/// 节点 BLoC - 节点数据管理核心
+///
+/// 职责：
+/// - 节点数据的 CRUD 操作（创建、读取、更新、删除）
+/// - 节点连接管理
+/// - 节点搜索和加载
+/// - 发布数据变化事件到事件总线
+///
+/// 不再负责：
+/// - 节点选择状态（由 GraphBloc 管理）
+/// - 节点在视图中的位置（由 GraphBloc 管理）
 class NodeBloc extends Bloc<NodeEvent, NodeState> {
   NodeBloc({
     required NodeService nodeService,
+    required AppEventBus eventBus,
   })  : _nodeService = nodeService,
+        _eventBus = eventBus,
         super(NodeState.initial()) {
     // 注册事件处理器
     on<NodeLoadEvent>(_onLoadNodes);
@@ -20,18 +32,11 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     on<NodeDeleteEvent>(_onDeleteNode);
     on<NodeConnectEvent>(_onConnectNodes);
     on<NodeDisconnectEvent>(_onDisconnectNodes);
-    on<NodeSelectEvent>(_onSelectNode);
-    on<NodeToggleSelectionEvent>(_onToggleSelection);
-    on<NodeMultiSelectEvent>(_onMultiSelect);
-    on<NodeClearSelectionEvent>(_onClearSelection);
-    on<SelectionClearEvent>(_onSelectionClear);
-    on<NodeAddEvent>(_onNodeAdd);
-    on<NodeMoveEvent>(_onNodeMove);
-    on<NodeMultiMoveEvent>(_onNodeMultiMove);
     on<NodeClearErrorEvent>(_onClearError);
   }
 
   final NodeService _nodeService;
+  final AppEventBus _eventBus;
 
   /// 加载节点列表
   Future<void> _onLoadNodes(
@@ -101,9 +106,15 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         nodes: updatedNodes,
         error: null,
       ));
+
+      // 发布节点创建事件到总线
+      _eventBus.publish(NodeDataChangedEvent(
+        changedNodes: [node],
+        action: DataChangeAction.create,
+      ));
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
-      rethrow;
+      // Do not rethrow - the error is already handled by emitting an error state
     }
   }
 
@@ -124,9 +135,15 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         nodes: updatedNodes,
         error: null,
       ));
+
+      // 发布节点创建事件到总线
+      _eventBus.publish(NodeDataChangedEvent(
+        changedNodes: [node],
+        action: DataChangeAction.create,
+      ));
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
-      rethrow;
+      // Do not rethrow - the error is already handled by emitting an error state
     }
   }
 
@@ -154,9 +171,15 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         nodes: updatedNodes,
         error: null,
       ));
+
+      // 发布节点更新事件到总线
+      _eventBus.publish(NodeDataChangedEvent(
+        changedNodes: [updatedNode],
+        action: DataChangeAction.update,
+      ));
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
-      rethrow;
+      // Do not rethrow - the error is already handled by emitting an error state
     }
   }
 
@@ -186,9 +209,15 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         nodes: updatedNodes,
         error: null,
       ));
+
+      // 发布节点更新事件到总线
+      _eventBus.publish(NodeDataChangedEvent(
+        changedNodes: [updatedNode],
+        action: DataChangeAction.update,
+      ));
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
-      rethrow;
+      // Do not rethrow - the error is already handled by emitting an error state
     }
   }
 
@@ -198,6 +227,9 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     Emitter<NodeState> emit,
   ) async {
     try {
+      // 获取要删除的节点，用于发布事件
+      final deletedNode = state.getNode(event.nodeId);
+
       await _nodeService.deleteNode(event.nodeId);
 
       final updatedNodes = state.nodes.where((n) => n.id != event.nodeId).toList();
@@ -210,9 +242,17 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         selectedNode: updatedSelectedNode,
         error: null,
       ));
+
+      // 发布节点删除事件到总线
+      if (deletedNode != null) {
+        _eventBus.publish(NodeDataChangedEvent(
+          changedNodes: [deletedNode],
+          action: DataChangeAction.delete,
+        ));
+      }
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
-      rethrow;
+      // Do not rethrow - the error is already handled by emitting an error state
     }
   }
 
@@ -243,7 +283,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       }
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
-      rethrow;
+      // Do not rethrow - the error is already handled by emitting an error state
     }
   }
 
@@ -272,57 +312,8 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       }
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
-      rethrow;
+      // Do not rethrow - the error is already handled by emitting an error state
     }
-  }
-
-  /// 选择节点
-  void _onSelectNode(
-    NodeSelectEvent event,
-    Emitter<NodeState> emit,
-  ) {
-    final selectedNode = state.getNode(event.nodeId);
-    emit(state.copyWith(
-      selectedNode: selectedNode,
-    ));
-  }
-
-  /// 切换节点选择状态
-  void _onToggleSelection(
-    NodeToggleSelectionEvent event,
-    Emitter<NodeState> emit,
-  ) {
-    final updatedSelectedIds = Set<String>.from(state.selectedNodeIds);
-    if (updatedSelectedIds.contains(event.nodeId)) {
-      updatedSelectedIds.remove(event.nodeId);
-    } else {
-      updatedSelectedIds.add(event.nodeId);
-    }
-
-    emit(state.copyWith(
-      selectedNodeIds: updatedSelectedIds,
-    ));
-  }
-
-  /// 选择多个节点
-  void _onMultiSelect(
-    NodeMultiSelectEvent event,
-    Emitter<NodeState> emit,
-  ) {
-    emit(state.copyWith(
-      selectedNodeIds: event.nodeIds,
-    ));
-  }
-
-  /// 清空选择
-  void _onClearSelection(
-    NodeClearSelectionEvent event,
-    Emitter<NodeState> emit,
-  ) {
-    emit(state.copyWith(
-      selectedNodeIds: {},
-      selectedNode: null,
-    ));
   }
 
   /// 清除错误
@@ -331,88 +322,5 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     Emitter<NodeState> emit,
   ) {
     emit(state.copyWith(error: null));
-  }
-
-  /// 清除选择（用于GraphBloc）
-  void _onSelectionClear(
-    SelectionClearEvent event,
-    Emitter<NodeState> emit,
-  ) {
-    emit(state.copyWith(
-      selectedNodeIds: {},
-      selectedNode: null,
-    ));
-  }
-
-  /// 添加节点
-  Future<void> _onNodeAdd(
-    NodeAddEvent event,
-    Emitter<NodeState> emit,
-  ) async {
-    // 节点添加逻辑已在GraphBloc中处理
-    // 这里可以添加额外的节点状态更新逻辑
-  }
-
-  /// 移动节点（单个）
-  Future<void> _onNodeMove(
-    NodeMoveEvent event,
-    Emitter<NodeState> emit,
-  ) async {
-    try {
-      // 更新节点位置
-      final updatedNode = await _nodeService.updateNode(
-        event.nodeId,
-        position: event.newPosition,
-      );
-
-      // 更新节点列表中的位置
-      final updatedNodes = state.nodes.map((n) {
-        if (n.id == event.nodeId) {
-          return updatedNode;
-        }
-        return n;
-      }).toList();
-
-      emit(state.copyWith(
-        nodes: updatedNodes,
-        error: null,
-      ));
-    } catch (e) {
-      emit(state.copyWith(error: e.toString()));
-    }
-  }
-
-  /// 移动节点（批量）
-  Future<void> _onNodeMultiMove(
-    NodeMultiMoveEvent event,
-    Emitter<NodeState> emit,
-  ) async {
-    try {
-      // 批量更新节点位置
-      final updatedNodesList = <Node>[];
-      for (final entry in event.movements.entries) {
-        final updatedNode = await _nodeService.updateNode(
-          entry.key,
-          position: entry.value,
-        );
-        updatedNodesList.add(updatedNode);
-      }
-
-      // 更新节点列表中的位置
-      final updatedNodes = state.nodes.map((n) {
-        final updatedNode = updatedNodesList.firstWhere(
-          (u) => u.id == n.id,
-          orElse: () => n,
-        );
-        return updatedNode;
-      }).toList();
-
-      emit(state.copyWith(
-        nodes: updatedNodes,
-        error: null,
-      ));
-    } catch (e) {
-      emit(state.copyWith(error: e.toString()));
-    }
   }
 }

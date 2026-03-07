@@ -182,15 +182,15 @@ class FileSystemNodeRepository implements NodeRepository {
     final allNodes = await queryAll();
     var results = allNodes;
 
-    if (title != null) {
-      results = results.where((n) =>
-          n.title.toLowerCase().contains(title.toLowerCase())).toList();
-    }
-
-    if (content != null) {
-      results = results.where((n) =>
-          n.content?.toLowerCase().contains(content.toLowerCase()) ?? false)
-          .toList();
+    // Combine title and content search with OR logic
+    if (title != null || content != null) {
+      results = results.where((n) {
+        final titleMatch = title != null &&
+            n.title.toLowerCase().contains(title.toLowerCase());
+        final contentMatch = content != null &&
+            n.content?.toLowerCase().contains(content.toLowerCase()) == true;
+        return titleMatch || contentMatch;
+      }).toList();
     }
 
     if (tags != null && tags.isNotEmpty) {
@@ -318,10 +318,11 @@ class FileSystemNodeRepository implements NodeRepository {
     }
 
     buffer.writeln('---');
-    buffer.writeln();
 
     // 不添加 # title，直接保存内容
-    buffer.writeln(node.content ?? '');
+    if (node.content != null && node.content!.isNotEmpty) {
+      buffer.write(node.content);
+    }
 
     return buffer.toString();
   }
@@ -351,10 +352,18 @@ class FileSystemNodeRepository implements NodeRepository {
     String? title = _parseStringValue(frontmatter['title']);
     String content = '';
 
-    if (contentLines.isNotEmpty) {
+    // Skip leading empty/whitespace lines after frontmatter
+    int contentStartOffset = 0;
+    while (contentStartOffset < contentLines.length &&
+        contentLines[contentStartOffset].trim().isEmpty) {
+      contentStartOffset++;
+    }
+    final trimmedContentLines = contentLines.skip(contentStartOffset).toList();
+
+    if (trimmedContentLines.isNotEmpty) {
       // 只查找一级标题（单个 # 号）
       int contentStartIndex = 0;
-      for (int i = 0; i < contentLines.length; i++) {
+      for (int i = 0; i < trimmedContentLines.length; i++) {
         final line = contentLines[i];
         final trimmed = line.trim();
 
@@ -367,8 +376,8 @@ class FileSystemNodeRepository implements NodeRepository {
             title = match.group(1)!.trim();
             contentStartIndex = i + 1;
             // 跳过标题后的空行
-            while (contentStartIndex < contentLines.length &&
-                   contentLines[contentStartIndex].trim().isEmpty) {
+            while (contentStartIndex < trimmedContentLines.length &&
+                   trimmedContentLines[contentStartIndex].trim().isEmpty) {
               contentStartIndex++;
             }
             break;
@@ -378,9 +387,9 @@ class FileSystemNodeRepository implements NodeRepository {
 
       // 如果没有找到标题，使用整个内容
       if (contentStartIndex == 0) {
-        content = contentLines.join('\n');
+        content = trimmedContentLines.join('\n').trimRight();
       } else {
-        content = contentLines.skip(contentStartIndex).join('\n');
+        content = trimmedContentLines.skip(contentStartIndex).join('\n').trimRight();
       }
     }
 

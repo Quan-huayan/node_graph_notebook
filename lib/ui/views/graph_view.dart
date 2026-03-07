@@ -173,7 +173,7 @@ class GraphView extends StatelessWidget {
                         // 添加节点到图中，并设置其位置
                         bloc.add(NodeAddEvent(nodeId, position: position));
                         // 选择新添加的节点
-                        nodeBloc.add(NodeSelectEvent(nodeId));
+                        bloc.add(NodeSelectEvent(nodeId));
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

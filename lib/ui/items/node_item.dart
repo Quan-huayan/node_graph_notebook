@@ -73,7 +73,7 @@ class NodeItem extends StatelessWidget {
           child: InkWell(
             onTap: () {
               onNodeSelected?.call(node.id);
-              context.read<NodeBloc>().add(NodeSelectEvent(node.id));
+              context.read<GraphBloc>().add(NodeSelectEvent(node.id));
             },
             onDoubleTap: () {
               Navigator.push(

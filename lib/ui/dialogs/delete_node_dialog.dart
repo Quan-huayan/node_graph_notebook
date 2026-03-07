@@ -5,7 +5,6 @@ import '../../bloc/blocs.dart';
 
 class DeleteNodeDialog {
   static Future<void> show(BuildContext context) async {
-    final bloc = context.read<GraphBloc>();
     final nodeBloc = context.read<NodeBloc>();
     final nodeState = nodeBloc.state;
 
@@ -47,9 +46,6 @@ class DeleteNodeDialog {
 
     if (confirmed == true) {
       try {
-        // 从图中删除节点
-        bloc.add(NodeDeleteEvent(node.id));
-
         // 再删除节点本身
         nodeBloc.add(NodeDeleteEvent(node.id));
 

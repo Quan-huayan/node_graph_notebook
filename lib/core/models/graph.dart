@@ -1,5 +1,5 @@
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'dart:ui' show Offset;
 import 'enums.dart';
 import 'converters.dart';
 
@@ -43,7 +43,8 @@ class GraphViewConfig {
     backgroundStyle: BackgroundStyle.grid,
   );
 
-  Map<String, dynamic> toJson() => _$GraphViewConfigToJson(this);
+  Map<String, dynamic> toJson() => _$GraphViewConfigToJson(this)
+    ..['camera'] = camera.toJson();
 
   GraphViewConfig copyWith({
     Camera? camera,
@@ -76,13 +77,23 @@ class GraphViewConfig {
 @JsonSerializable()
 class Camera {
   const Camera({
-    this.x = 2048,
-    this.y = 1080,
+    this.x = 0,
+    this.y = 0,
     this.zoom = 1.0,
+    this.centerWidth = 4096,
+    this.centerHeight = 2160,
   });
 
-  factory Camera.fromJson(Map<String, dynamic> json) =>
-      _$CameraFromJson(json);
+  factory Camera.fromJson(Map<String, dynamic> json) {
+    // 兼容旧格式：如果缺少 centerWidth/centerHeight，使用默认值
+    return Camera(
+      x: (json['x'] as num?)?.toDouble() ?? 0,
+      y: (json['y'] as num?)?.toDouble() ?? 0,
+      zoom: (json['zoom'] as num?)?.toDouble() ?? 1.0,
+      centerWidth: (json['centerWidth'] as num?)?.toDouble() ?? 4096,
+      centerHeight: (json['centerHeight'] as num?)?.toDouble() ?? 2160,
+    );
+  }
 
   /// X 坐标
   final double x;
@@ -93,17 +104,30 @@ class Camera {
   /// 缩放级别
   final double zoom;
 
+  /// 虚拟分辨率宽度（用于计算中心位置）
+  final double centerWidth;
+
+  /// 虚拟分辨率高度（用于计算中心位置）
+  final double centerHeight;
+
+  /// 获取中心位置坐标
+  Offset get centerPosition => Offset(centerWidth / 2, centerHeight / 2);
+
   Map<String, dynamic> toJson() => _$CameraToJson(this);
 
   Camera copyWith({
     double? x,
     double? y,
     double? zoom,
+    double? centerWidth,
+    double? centerHeight,
   }) {
     return Camera(
       x: x ?? this.x,
       y: y ?? this.y,
       zoom: zoom ?? this.zoom,
+      centerWidth: centerWidth ?? this.centerWidth,
+      centerHeight: centerHeight ?? this.centerHeight,
     );
   }
 
@@ -114,10 +138,12 @@ class Camera {
           runtimeType == other.runtimeType &&
           x == other.x &&
           y == other.y &&
-          zoom == other.zoom;
+          zoom == other.zoom &&
+          centerWidth == other.centerWidth &&
+          centerHeight == other.centerHeight;
 
   @override
-  int get hashCode => x.hashCode ^ y.hashCode ^ zoom.hashCode;
+  int get hashCode => Object.hash(x, y, zoom, centerWidth, centerHeight);
 }
 
 /// 图结构模型
@@ -171,7 +197,8 @@ class Graph {
   /// 更新时间
   final DateTime updatedAt;
 
-  Map<String, dynamic> toJson() => _$GraphToJson(this);
+  Map<String, dynamic> toJson() => _$GraphToJson(this)
+    ..['viewConfig'] = viewConfig.toJson();
 
   /// 复制并更新部分字段
   Graph copyWith({
@@ -246,10 +273,42 @@ class Graph {
       identical(this, other) ||
       other is Graph &&
           runtimeType == other.runtimeType &&
-          id == other.id;
+          id == other.id &&
+          name == other.name &&
+          createdAt == other.createdAt &&
+          updatedAt == other.updatedAt &&
+          _listEquals(nodeIds, other.nodeIds) &&
+          _mapEquals(nodePositions, other.nodePositions) &&
+          viewConfig == other.viewConfig;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(
+        id,
+        name,
+        createdAt,
+        updatedAt,
+        nodeIds.length,
+        nodePositions.length,
+        viewConfig,
+      );
+
+  /// 辅助方法：比较两个列表是否相等
+  bool _listEquals<T>(List<T> a, List<T> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  /// 辅助方法：比较两个 Map 是否相等
+  bool _mapEquals<K, V>(Map<K, V> a, Map<K, V> b) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key) || a[key] != b[key]) return false;
+    }
+    return true;
+  }
 
   @override
   String toString() => 'Graph(id: $id, name: $name, nodes: ${nodeIds.length})';

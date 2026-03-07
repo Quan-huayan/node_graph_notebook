@@ -187,7 +187,7 @@ class ViewState extends Equatable {
 @immutable
 class CameraState extends Equatable {
   const CameraState({
-    this.position = const Offset(2048, 1080),
+    this.position = Offset.zero,
     this.zoom = 1.0,
   });
 

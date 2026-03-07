@@ -35,6 +35,11 @@ class GraphGame extends FlameGame {
   GraphWorld? _graphWorld;
   StreamSubscription? _blocSubscription;
 
+  // 标识是否正在拖拽，避免状态同步覆盖当前位置
+  bool _isDragging = false;
+  Vector2? _positionBeforeDrag;
+  Vector2? _pendingPosition; // 拖拽结束时的待处理位置
+
   /// 获取 graph world
   GraphWorld? get graphWorld => _graphWorld;
 
@@ -48,14 +53,18 @@ class GraphGame extends FlameGame {
     // 如果已经初始化，不再重复添加
     if (_graphWorld != null) return;
 
-    // 配置相机组件 - 使用更大的分辨率以容纳更多节点
+    // 从配置中读取相机中心位置
+    final cameraConfig = viewConfig.camera;
+
+    // 配置相机组件 - 使用配置的分辨率
     camera = CameraComponent.withFixedResolution(
-      width: 4096,
-      height: 2160,
+      width: cameraConfig.centerWidth,
+      height: cameraConfig.centerHeight,
     );
 
-    // 设置相机位置到中心
-    camera.viewport.position = Vector2(2048, 1080);
+    // 设置相机初始位置到配置的中心
+    final centerPos = cameraConfig.centerPosition;
+    camera.viewport.position = Vector2(centerPos.dx.toDouble(), centerPos.dy.toDouble());
 
     // 创建 GraphWorld 并添加到 FlameGame 的 world 中
     _graphWorld = GraphWorld(
@@ -82,16 +91,44 @@ class GraphGame extends FlameGame {
 
     final cameraState = state.viewState.camera;
 
-    // 应用相机位置
-    final newPosition = Vector2(cameraState.position.dx, cameraState.position.dy);
-    if (camera.viewport.position != newPosition) {
-      camera.viewport.position = newPosition;
+    // 检查是否有待处理的位置（拖拽刚结束）
+    if (_pendingPosition != null) {
+      final pending = _pendingPosition!;
+      final statePosition = Vector2(cameraState.position.dx, cameraState.position.dy);
+
+      // 如果新状态位置与待处理位置一致，说明拖拽状态已同步
+      if ((pending - statePosition).length < 1.0) {
+        _pendingPosition = null;
+        _isDragging = false;
+      }
+    }
+
+    // 只在非拖拽状态下同步位置，避免覆盖用户正在拖拽的位置
+    if (!_isDragging && _pendingPosition == null) {
+      // 应用相机位置
+      final newPosition = Vector2(cameraState.position.dx, cameraState.position.dy);
+      if (camera.viewport.position != newPosition) {
+        camera.viewport.position = newPosition;
+      }
     }
 
     // 应用相机缩放级别
     final newZoom = cameraState.zoom;
     if (camera.viewfinder.zoom != newZoom) {
       camera.viewfinder.zoom = newZoom;
+    }
+  }
+
+  /// 设置拖拽状态（由 BackgroundComponent 调用）
+  void setDraggingState(bool isDragging) {
+    if (isDragging) {
+      _isDragging = true;
+      _positionBeforeDrag = camera.viewport.position.clone();
+      _pendingPosition = null;
+    } else {
+      // 拖拽结束时，记录当前位置为待处理位置
+      _pendingPosition = camera.viewport.position.clone();
+      // 不要立即设置 _isDragging = false，等待状态同步
     }
   }
 

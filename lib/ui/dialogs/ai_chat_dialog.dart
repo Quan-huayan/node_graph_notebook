@@ -330,7 +330,7 @@ Extension Commands:
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: theme.status.info.withOpacity(0.2),
+                      color: theme.status.info.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -358,7 +358,7 @@ Extension Commands:
                           'Connected to ${widget.connectedNodes.length} node(s)',
                           style: TextStyle(
                             fontSize: 12,
-                            color: theme.text.onDark.withOpacity(0.7),
+                            color: theme.text.onDark.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -386,13 +386,13 @@ Extension Commands:
                             Icon(
                               Icons.smart_toy,
                               size: 64,
-                              color: theme.ui.icon.withOpacity(0.3),
+                              color: theme.ui.icon.withValues(alpha: 0.3),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'Start a conversation with AI',
                               style: TextStyle(
-                                color: theme.text.onDark.withOpacity(0.5),
+                                color: theme.text.onDark.withValues(alpha:0.5),
                               ),
                             ),
                           ],

@@ -400,7 +400,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           child: InkWell(
             onTap: () {
               widget.onNodeSelected?.call(node.id);
-              context.read<NodeBloc>().add(NodeSelectEvent(node.id));
+              context.read<GraphBloc>().add(NodeSelectEvent(node.id));
             },
             onDoubleTap: () {
               Navigator.push(
@@ -558,10 +558,6 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
                     if (confirmed == true) {
                       if (context.mounted) {
-                        final graphBloc = context.read<GraphBloc>();
-                        if (graphBloc.state.hasGraph) {
-                          graphBloc.add(NodeDeleteEvent(node.id));
-                        }
                         context.read<NodeBloc>().add(NodeDeleteEvent(node.id));
                       }
                     }

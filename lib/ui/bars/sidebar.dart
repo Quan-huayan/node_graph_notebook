@@ -50,7 +50,6 @@ class _SidebarState extends State<Sidebar> {
     if (_selectedNodeId == null) return;
 
     final nodeBloc = context.read<NodeBloc>();
-    final graphBloc = context.read<GraphBloc>();
     final nodeState = nodeBloc.state;
     final node = nodeState.nodes.firstWhere(
       (n) => n.id == _selectedNodeId,
@@ -78,10 +77,6 @@ class _SidebarState extends State<Sidebar> {
     );
 
     if (confirmed == true && mounted) {
-      final state = graphBloc.state;
-      if (state.hasGraph) {
-        graphBloc.add(NodeDeleteEvent(node.id));
-      }
       nodeBloc.add(NodeDeleteEvent(node.id));
       setState(() {
         _selectedNodeId = null;

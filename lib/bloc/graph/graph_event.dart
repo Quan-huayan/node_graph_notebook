@@ -69,6 +69,79 @@ class GraphUpdateConfigEvent extends GraphEvent {
   List<Object?> get props => [config];
 }
 
+// 节点视图操作事件
+
+/// 添加节点事件
+class NodeAddEvent extends GraphEvent {
+  const NodeAddEvent(this.nodeId, {this.position});
+
+  final String nodeId;
+  final Offset? position;
+
+  @override
+  List<Object?> get props => [nodeId, position];
+}
+
+/// 移动节点事件（单个）
+class NodeMoveEvent extends GraphEvent {
+  const NodeMoveEvent(this.nodeId, this.newPosition);
+
+  final String nodeId;
+  final Offset newPosition;
+
+  @override
+  List<Object?> get props => [nodeId, newPosition];
+}
+
+/// 移动节点事件（批量）
+class NodeMultiMoveEvent extends GraphEvent {
+  const NodeMultiMoveEvent(this.movements);
+
+  final Map<String, Offset> movements;
+
+  @override
+  List<Object?> get props => [movements];
+}
+
+/// 移出节点事件
+class NodeMoveOutEvent extends GraphEvent {
+  const NodeMoveOutEvent(this.nodeId);
+
+  final String nodeId;
+
+  @override
+  List<Object?> get props => [nodeId];
+}
+
+
+// 选择事件
+
+/// 选择节点事件
+class NodeSelectEvent extends GraphEvent {
+  const NodeSelectEvent(this.nodeId, {this.addToSelection = false});
+
+  final String nodeId;
+  final bool addToSelection;
+
+  @override
+  List<Object?> get props => [nodeId, addToSelection];
+}
+
+/// 选择多个节点事件
+class NodeMultiSelectEvent extends GraphEvent {
+  const NodeMultiSelectEvent(this.nodeIds);
+
+  final Set<String> nodeIds;
+
+  @override
+  List<Object?> get props => [nodeIds];
+}
+
+/// 清除选择事件
+class SelectionClearEvent extends GraphEvent {
+  const SelectionClearEvent();
+}
+
 // 视图操作事件
 
 /// 缩放事件

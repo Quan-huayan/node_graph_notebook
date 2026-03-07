@@ -1,9 +1,13 @@
 import 'dart:ui';
+import 'package:equatable/equatable.dart';
 import '../../core/models/models.dart';
-import '../graph/graph_event.dart';
 
 /// 节点事件基类
-abstract class NodeEvent extends GraphEvent {
+///
+/// 不再继承 GraphEvent，实现事件体系的解耦。
+/// NodeEvent 专注于节点数据的 CRUD 操作。
+/// 节点视图层的选择、移动等交互事件由 GraphBloc 处理。
+abstract class NodeEvent extends Equatable {
   const NodeEvent();
 
   @override
@@ -145,19 +149,6 @@ class NodeDisconnectEvent extends NodeEvent {
   List<Object?> get props => [fromNodeId, toNodeId];
 }
 
-// 选择事件
-
-/// 选择节点事件
-class NodeSelectEvent extends NodeEvent {
-  const NodeSelectEvent(this.nodeId, {this.addToSelection = false});
-
-  final String nodeId;
-  final bool addToSelection;
-
-  @override
-  List<Object?> get props => [nodeId, addToSelection];
-}
-
 /// 切换节点选择状态事件
 class NodeToggleSelectionEvent extends NodeEvent {
   const NodeToggleSelectionEvent(this.nodeId);
@@ -168,63 +159,10 @@ class NodeToggleSelectionEvent extends NodeEvent {
   List<Object?> get props => [nodeId];
 }
 
-/// 选择多个节点事件
-class NodeMultiSelectEvent extends NodeEvent {
-  const NodeMultiSelectEvent(this.nodeIds);
-
-  final Set<String> nodeIds;
-
-  @override
-  List<Object?> get props => [nodeIds];
-}
-
-/// 清空选择事件
-class NodeClearSelectionEvent extends NodeEvent {
-  const NodeClearSelectionEvent();
-}
-
-/// 清除选择事件（用于GraphBloc）
-class SelectionClearEvent extends NodeEvent {
-  const SelectionClearEvent();
-}
 
 // 错误处理事件
 
 /// 清除错误事件
 class NodeClearErrorEvent extends NodeEvent {
   const NodeClearErrorEvent();
-}
-
-// 节点操作事件
-
-/// 添加节点事件
-class NodeAddEvent extends NodeEvent {
-  const NodeAddEvent(this.nodeId, {this.position});
-
-  final String nodeId;
-  final Offset? position;
-
-  @override
-  List<Object?> get props => [nodeId, position];
-}
-
-/// 移动节点事件（单个）
-class NodeMoveEvent extends NodeEvent {
-  const NodeMoveEvent(this.nodeId, this.newPosition);
-
-  final String nodeId;
-  final Offset newPosition;
-
-  @override
-  List<Object?> get props => [nodeId, newPosition];
-}
-
-/// 移动节点事件（批量）
-class NodeMultiMoveEvent extends NodeEvent {
-  const NodeMultiMoveEvent(this.movements);
-
-  final Map<String, Offset> movements;
-
-  @override
-  List<Object?> get props => [movements];
 }

@@ -86,15 +86,6 @@ void showNodeMenu(BuildContext context, Node node) {
 
                   if (confirmed == true && ctx.mounted) {
                     Navigator.pop(ctx);
-                    final graphBloc = context.read<GraphBloc>();
-
-                    // 先从图中移除
-                    final state = graphBloc.state;
-                    if (state.hasGraph) {
-                      graphBloc.add(NodeDeleteEvent(node.id));
-                    }
-
-                    // 再删除节点本身
                     context.read<NodeBloc>().add(NodeDeleteEvent(node.id));
                   }
                 },
