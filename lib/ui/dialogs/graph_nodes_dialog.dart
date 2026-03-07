@@ -42,10 +42,19 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
       MediaQuery.of(context).platformBrightness,
     );
 
-    // 过滤掉文件夹节点 - 文件夹不应该显示在节点图中
-    final availableNodes = widget.nodeBloc.state.nodes
-        .where((n) => !n.isFolder)
-        .toList();
+    // 过滤掉文件夹节点和 AI 节点
+    // 文件夹不应该显示在节点图中，AI 节点通过特殊方式添加
+    final availableNodes = widget.nodeBloc.state.nodes.where((n) {
+      // 排除文件夹
+      if (n.isFolder) return false;
+
+      // 检查是否是 AI 节点
+      final isAI = n.metadata['isAI'];
+      if (isAI == true) return false;
+      if (isAI == 'true') return false;
+
+      return true;
+    }).toList();
 
     return AlertDialog(
       backgroundColor: theme.backgrounds.primary,

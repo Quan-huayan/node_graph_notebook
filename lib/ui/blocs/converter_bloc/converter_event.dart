@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../converter/models/models.dart';
+import '../../../converter/models/models.dart';
 
 /// 转换器事件基类
 abstract class ConverterEvent extends Equatable {

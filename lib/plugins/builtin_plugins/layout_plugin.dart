@@ -4,7 +4,7 @@ import '../../bloc/graph/graph_bloc.dart';
 import '../../bloc/graph/graph_event.dart';
 import '../../plugins/hooks/graph_plugin.dart';
 import '../../bloc/graph/graph_state.dart';
-import '../models/models.dart';
+import '../../core/models/models.dart';
 
 /// 自动布局插件
 /// 当节点数量发生变化时自动应用布局算法

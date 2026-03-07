@@ -96,7 +96,19 @@ class _SidebarState extends State<Sidebar> {
     final nodeState = context.select((NodeBloc bloc) => bloc.state);
     final allNodes = nodeState.nodes;
     final folders = allNodes.where((n) => n.isFolder).toList();
-    final regularNodes = allNodes.where((n) => !n.isFolder).toList();
+
+    // 过滤掉 AI 节点，不在左侧边栏显示
+    final regularNodes = allNodes.where((n) {
+      // 排除文件夹
+      if (n.isFolder) return false;
+
+      // 检查是否是 AI 节点（支持 bool 和 String 类型）
+      final isAI = n.metadata['isAI'];
+      if (isAI == true) return false;
+      if (isAI == 'true') return false;
+
+      return true;
+    }).toList();
 
     return KeyboardListener(
       focusNode: _focusNode,

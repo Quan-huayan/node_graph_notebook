@@ -6,7 +6,15 @@
       "WebSearch",
       "Bash(dart analyze:*)",
       "Bash(findstr:*)",
-      "Bash(flutter pub run build_runner build:*)"
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(.\\\\scripts\\\\analyze.bat:*)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter build:*)",
+      "Bash(tasklist:*)",
+      "Bash(flutter run:*)",
+      "Bash(taskkill:*)",
+      "Bash(flutter:*)",
+      "Bash(start:*)"
     ]
   }
 }

@@ -7,6 +7,7 @@ import '../bloc/blocs.dart';
 import '../core/services/theme/app_theme.dart';
 import '../ui/pages/markdown_editor_page.dart';
 import '../ui/menus/node_context_menu.dart';
+import '../ui/dialogs/ai_chat_dialog.dart';
 import 'mixins/bloc_consumer.dart';
 import 'components/node_component.dart';
 import 'components/connection_renderer.dart';
@@ -136,6 +137,10 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   void _addNodeComponent(Node node) {
     if (_nodeComponents.containsKey(node.id)) return;
 
+    // === 架构说明：节点事件处理 ===
+    // 设计意图：为不同类型的节点提供不同的交互行为
+    // AI 节点：点击打开聊天对话框
+    // 常规节点：双击打开编辑器，右键显示上下文菜单
     final component = NodeComponent(
       node: node,
       viewConfig: graphBloc.state.graph.viewConfig,
@@ -150,13 +155,17 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
         showNodeContextMenu(context, node: node, position: position);
       },
       onDoubleTap: (Node node) {
-        // 双击节点时打开 Markdown 编辑器
+        // 双击节点时打开 Markdown 编辑器（AI 节点也可以编辑内容）
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (ctx) => MarkdownEditorPage(node: node),
           ),
         );
+      },
+      onAIChatTap: (Node node) {
+        // AI 节点点击时显示聊天对话框
+        _showAIChatDialog(node);
       },
     );
     add(component);
@@ -220,6 +229,43 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     }
 
     return positions;
+  }
+
+  /// === 架构说明：AI 聊天对话框 ===
+  /// 设计意图：为 AI 节点提供专用交互界面
+  /// 功能：
+  /// - 显示聊天对话框
+  /// - 传递连接的节点作为上下文
+  /// - 支持扩展：可添加更多 AI 功能
+  ///
+  /// 实现说明：
+  /// - 收集与 AI 节点连接的所有节点
+  /// - 这些节点作为上下文传递给 AI，使其理解关联内容
+  void _showAIChatDialog(Node aiNode) {
+    // 获取与 AI 节点连接的所有节点
+    final connections = graphBloc.state.connections;
+    final connectedNodeIds = <String>{};
+
+    for (final connection in connections) {
+      if (connection.fromNodeId == aiNode.id) {
+        connectedNodeIds.add(connection.toNodeId);
+      } else if (connection.toNodeId == aiNode.id) {
+        connectedNodeIds.add(connection.fromNodeId);
+      }
+    }
+
+    // 获取连接的节点对象
+    final allNodes = graphBloc.state.nodes;
+    final connectedNodes = allNodes.where((n) => connectedNodeIds.contains(n.id)).toList();
+
+    // 显示对话框
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AIChatDialog(
+        aiNode: aiNode,
+        connectedNodes: connectedNodes,
+      ),
+    );
   }
 }
 

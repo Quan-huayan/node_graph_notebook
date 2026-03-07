@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import '../../converter/models/models.dart';
-import '../../core/models/models.dart';
+import '../../../converter/models/models.dart';
+import '../../../core/models/models.dart';
 
 /// 转换器状态基类
 @immutable

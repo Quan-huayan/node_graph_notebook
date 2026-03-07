@@ -135,6 +135,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           create: (ctx) => ImportExportServiceImpl(
             ctx.read<ConverterService>(),
             ctx.read<NodeService>(),
+            ctx.read<GraphService>(),
           ),
         ),
         Provider<ConverterService>(

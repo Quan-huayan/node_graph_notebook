@@ -17,6 +17,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     this.onDragEndCallback,
     this.onSecondaryTap,
     this.onDoubleTap,
+    this.onAIChatTap,
     Vector2? position,
   }) : super(
           position: position ??
@@ -53,6 +54,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   final Function(Node, Offset)? onDragEndCallback;
   final Function(Node, Offset)? onSecondaryTap;
   final Function(Node)? onDoubleTap;
+  final Function(Node)? onAIChatTap; // AI 节点点击回调
 
   bool _isSelected = false;
   bool _isHovered = false;
@@ -242,11 +244,23 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
 
   @override
   void render(Canvas canvas) {
+    // === 架构说明：节点类型渲染路由 ===
+    // 设计意图：不同类型的节点使用不同的渲染方式
+    // 实现方式：通过节点元数据判断类型，路由到对应的渲染方法
+    // 扩展性：可添加更多特殊节点类型的渲染
+
+    // AI 节点使用特殊渲染（显示 smart_toy 图标）
+    if (node.metadata.containsKey('isAI') && node.metadata['isAI'] == true) {
+      _renderAI(canvas);
+      return;
+    }
+
     // 文件夹节点使用特殊渲染
     if (node.isFolder) {
       _renderFolder(canvas);
       return;
     }
+
     // 根据视图模式渲染不同形状
     switch (node.viewMode) {
       case NodeViewMode.compact:
@@ -293,6 +307,71 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     _contentPainter.paint(canvas, Offset(36, _titlePainter.height + 14));
 
     // 绘制引用计数
+    _drawReferenceCount(canvas);
+  }
+
+  /// === 架构说明：AI 节点渲染 ===
+  /// 设计意图：AI 节点使用机器人图标（Icons.smart_toy）而非方框
+  /// 功能：
+  /// - 绘制圆形背景
+  /// - 绘制机器人图标
+  /// - 保持与其他节点一致的视觉风格
+  ///
+  /// 扩展性：可添加更多 AI 特定的视觉元素（如状态指示器等）
+  void _renderAI(Canvas canvas) {
+    final centerX = width / 2;
+    final centerY = height / 2;
+    final iconSize = width * 0.6; // 图标占节点 60% 大小
+
+    // === 架构说明：AI 节点背景 ===
+    // 设计意图：使用圆形背景突出 AI 节点
+    // 颜色方案：使用主题色中的 info 色（通常为蓝色）
+    canvas.drawCircle(
+      Offset(centerX, centerY),
+      width / 2 - 2,
+      _backgroundPaint,
+    );
+
+    // 绘制选中状态
+    if (_isSelected) {
+      canvas.drawCircle(
+        Offset(centerX, centerY),
+        width / 2 - 2,
+        _selectedPaint,
+      );
+    }
+
+    // 绘制边框
+    canvas.drawCircle(
+      Offset(centerX, centerY),
+      width / 2 - 2,
+      _borderPaint,
+    );
+
+    // === 架构说明：AI 图标绘制 ===
+    // 实现方式：使用 TextPainter 绘制 IconData
+    // 说明：Flutter 的 Icons 通过 TextPainter 渲染到 Canvas
+    final iconPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(Icons.smart_toy.codePoint),
+        style: TextStyle(
+          color: _getNodeColor(),
+          fontSize: iconSize,
+          fontFamily: Icons.smart_toy.fontFamily,
+          package: Icons.smart_toy.fontPackage,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    iconPainter.layout();
+
+    // 居中绘制图标
+    iconPainter.paint(
+      canvas,
+      Offset(centerX - iconPainter.width / 2, centerY - iconPainter.height / 2),
+    );
+
+    // 绘制引用计数（AI 节点也可能有连接）
     _drawReferenceCount(canvas);
   }
 
@@ -486,6 +565,20 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
 
   @override
   void onTapUp(TapUpEvent event) {
+    // === 架构说明：AI 节点特殊处理 ===
+    // 设计意图：AI 节点点击时打开聊天对话框，而不是常规选择
+    // 实现方式：通过 onAIChatTap 回调通知外部显示对话框
+    final isAINode = node.metadata.containsKey('isAI') && node.metadata['isAI'] == true;
+
+    if (isAINode && onAIChatTap != null) {
+      // AI 节点：打开聊天对话框
+      final position = Offset(event.devicePosition.x, event.devicePosition.y);
+      onAIChatTap!(node);
+      _isHovered = false;
+      return;
+    }
+
+    // 常规节点：正常选择
     _isSelected = !_isSelected;
 
     // 如果有 BLoC，分发选择事件

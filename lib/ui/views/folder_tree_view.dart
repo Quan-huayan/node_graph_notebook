@@ -154,8 +154,20 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         // 从 NodeBloc 状态中获取最新的节点和文件夹
         final allNodes = nodeState.nodes;
         final folders = allNodes.where((n) => n.isFolder).toList();
-        final nodes = allNodes.where((n) => !n.isFolder).toList();
-        
+
+        // 过滤掉 AI 节点
+        final nodes = allNodes.where((n) {
+          // 排除文件夹
+          if (n.isFolder) return false;
+
+          // 检查是否是 AI 节点
+          final isAI = n.metadata['isAI'];
+          if (isAI == true) return false;
+          if (isAI == 'true') return false;
+
+          return true;
+        }).toList();
+
         final rootNodes = _getRootNodes(nodes, folders);
         final topLevelFolders = _getTopLevelFolders(folders);
         final allNodesList = [...nodes, ...folders];

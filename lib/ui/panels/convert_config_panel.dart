@@ -341,9 +341,19 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
         }
       }
     } else {
-      // Nodes → MD 模式：选择节点
+      // Nodes → MD 模式：选择节点（过滤掉 AI 节点和文件夹）
       final nodeBloc = context.read<NodeBloc>();
-      final nodes = nodeBloc.state.nodes;
+      final nodes = nodeBloc.state.nodes.where((n) {
+        // 排除文件夹
+        if (n.isFolder) return false;
+
+        // 检查是否是 AI 节点
+        final isAI = n.metadata['isAI'];
+        if (isAI == true) return false;
+        if (isAI == 'true') return false;
+
+        return true;
+      }).toList();
 
       if (nodes.isEmpty) {
         if (mounted) {

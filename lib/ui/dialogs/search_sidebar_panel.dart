@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/node.dart';
-import '../../bloc/search/search_bloc.dart';
-import '../../bloc/search/search_event.dart';
-import '../../bloc/search/search_state.dart';
+import '../blocs/search_bloc/search_bloc.dart';
+import '../blocs/search_bloc/search_event.dart';
+import '../blocs/search_bloc/search_state.dart';
 import '../../bloc/node/node_bloc.dart';
 import '../../bloc/node/node_event.dart';
 import '../../bloc/graph/graph_bloc.dart';
