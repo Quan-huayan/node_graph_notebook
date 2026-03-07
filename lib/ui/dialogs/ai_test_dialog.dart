@@ -126,7 +126,7 @@ class _AITestDialogState extends State<AITestDialog> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: theme.ui.divider.withOpacity(0.5),
+                    color: theme.ui.divider.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -155,7 +155,7 @@ class _AITestDialogState extends State<AITestDialog> {
 
             // Chat Area
             Expanded(
-              child: Container(
+              child: ColoredBox(
                 color: theme.backgrounds.secondary,
                 child: _messages.isEmpty
                     ? Center(
@@ -181,7 +181,7 @@ class _AITestDialogState extends State<AITestDialog> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: theme.ui.divider.withOpacity(0.5),
+                    color: theme.ui.divider.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -284,13 +284,13 @@ class _AITestDialogState extends State<AITestDialog> {
 }
 
 class _ChatMessage {
-  final String text;
-  final bool isUser;
-  final bool isSystem;
-
   _ChatMessage({
     required this.text,
     required this.isUser,
     required this.isSystem,
   });
+
+  final String text;
+  final bool isUser;
+  final bool isSystem;
 }

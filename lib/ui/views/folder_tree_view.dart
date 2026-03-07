@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../ui/items/folder_item.dart';
 import '../../core/models/models.dart';
-import '../../core/services/theme_service.dart';
 import '../../bloc/blocs.dart';
-import '../pages/markdown_editor_page.dart';
-import '../dialogs/connection_dialog.dart';
+import '../items/node_item.dart';
 
 /// 文件夹树形视图
 class FolderTreeView extends StatefulWidget {
@@ -24,8 +23,27 @@ class FolderTreeView extends StatefulWidget {
 }
 
 class _FolderTreeViewState extends State<FolderTreeView> {
-  final Set<String> _expandedFolders = {};
+  Set<String> _expandedFolders = {};
   String? _draggedNodeId;
+
+  // 缓存计算结果以提高性能
+  final Map<String, bool> _childFolderCache = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // 预先展开所有顶层文件夹
+    _expandedFolders = widget.folders.map((f) => f.id).toSet();
+  }
+
+  @override
+  void didUpdateWidget(FolderTreeView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当文件夹列表变化时，清空缓存
+    if (oldWidget.folders != widget.folders || oldWidget.nodes != widget.nodes) {
+      _childFolderCache.clear();
+    }
+  }
 
   /// 获取文件夹中的直接子节点
   List<Node> _getFolderChildren(Node folder, List<Node> nodes) {
@@ -75,22 +93,57 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     return false;
   }
 
-  /// 检查 folder 是否是 parentFolder 的子文件夹
+  /// 检查 folder 是否是 parentFolder 的子文件夹（优化版本，使用缓存避免重复计算）
   bool _isChildFolder(Node folder, Node parentFolder, List<Node> allNodes) {
-    // 检查 folder 是否直接或间接被 parentFolder 包含
-    if (parentFolder.references.containsKey(folder.id)) {
-      final ref = parentFolder.references[folder.id];
-      if (ref != null && ref.type == ReferenceType.contains) {
-        return true;
-      }
+    // 创建缓存键
+    final cacheKey = '${folder.id}_${parentFolder.id}';
+
+    // 检查缓存
+    if (_childFolderCache.containsKey(cacheKey)) {
+      return _childFolderCache[cacheKey]!;
     }
 
-    // 递归检查 parentFolder 的所有直接子文件夹
-    for (final entry in parentFolder.references.entries) {
-      if (entry.value.type == ReferenceType.contains) {
-        final childNode = allNodes.firstWhere((n) => n.id == entry.key);
-        if (childNode.id.isNotEmpty && childNode.isFolder && _isChildFolder(folder, childNode, allNodes)) {
+    // 使用迭代替代递归，提高性能
+    final result = _isChildFolderIterative(folder, parentFolder, allNodes);
+
+    // 缓存结果
+    _childFolderCache[cacheKey] = result;
+
+    return result;
+  }
+
+  /// 使用迭代方式检查子文件夹关系（避免递归栈溢出）
+  bool _isChildFolderIterative(Node folder, Node parentFolder, List<Node> allNodes) {
+    // 使用队列进行广度优先搜索
+    final queue = <Node>[parentFolder];
+    final visited = <String>{};
+
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+
+      // 避免循环
+      if (visited.contains(current.id)) {
+        continue;
+      }
+      visited.add(current.id);
+
+      // 检查是否找到目标文件夹
+      if (current.references.containsKey(folder.id)) {
+        final ref = current.references[folder.id];
+        if (ref != null && ref.type == ReferenceType.contains) {
           return true;
+        }
+      }
+
+      // 将所有子文件夹加入队列
+      for (final entry in current.references.entries) {
+        if (entry.value.type == ReferenceType.contains) {
+          final childNode = allNodes.firstWhere(
+            (n) => n.id == entry.key,
+          );
+          if (childNode.id.isNotEmpty && childNode.isFolder) {
+            queue.add(childNode);
+          }
         }
       }
     }
@@ -147,464 +200,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     nodeBloc.add(NodeReplaceEvent(updatedFolder));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<NodeBloc, NodeState>(
-      builder: (context, nodeState) {
-        // 从 NodeBloc 状态中获取最新的节点和文件夹
-        final allNodes = nodeState.nodes;
-        final folders = allNodes.where((n) => n.isFolder).toList();
-        final nodes = allNodes.where((n) => !n.isFolder).toList();
-        
-        final rootNodes = _getRootNodes(nodes, folders);
-        final topLevelFolders = _getTopLevelFolders(folders);
-        final allNodesList = [...nodes, ...folders];
-
-        if (rootNodes.isEmpty && topLevelFolders.isEmpty) {
-          return const Center(child: Text('No nodes yet'));
-        }
-
-        return ListView(
-          children: [
-            // 顶层文件夹列表
-            ...topLevelFolders.map((folder) => _buildFolderItem(context, folder, allNodesList, 0)),
-
-            // 分隔线
-            if (topLevelFolders.isNotEmpty && rootNodes.isNotEmpty)
-              const Divider(height: 32),
-
-            // 根节点列表
-            ...rootNodes.map((node) => _buildNodeItem(context, node)),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildFolderItem(BuildContext context, Node folder, List<Node> allNodes, int level) {
-    final children = _getFolderChildren(folder, allNodes);
-    final isExpanded = _expandedFolders.contains(folder.id);
-    final theme = context.watch<ThemeService>().themeData;
-    final nodeBloc = context.watch<NodeBloc>();
-    final isSelected = nodeBloc.state.selectedNode?.id == folder.id;
-    final isDragging = _draggedNodeId == folder.id;
-
-    return DragTarget<String>(
-      onAcceptWithDetails: (details) async {
-        final draggedNodeId = details.data;
-        if (draggedNodeId != folder.id) {
-          // 从所有节点中查找被拖拽的节点
-          final draggedNode = allNodes.firstWhere((n) => n.id == draggedNodeId);
-          if (draggedNode.id.isNotEmpty) {
-            await _addToFolder(draggedNode, folder);
-          }
-        }
-      },
-      builder: (context, candidateData, rejected) {
-        // candidateData 是 Iterable<Object?>，需要提取数据
-        final isDraggingOver = candidateData.isNotEmpty;
-
-        // 提取第一个拖拽的节点ID
-        String? draggedNodeId;
-        if (candidateData.isNotEmpty) {
-          final first = candidateData.first;
-          // 如果 first 本身就是 String，直接使用
-          if (first is String) {
-            draggedNodeId = first;
-          }
-        }
-
-        final isValidTarget = isDraggingOver && draggedNodeId != null && draggedNodeId != folder.id;
-
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: isValidTarget
-                ? Colors.blue.withValues(alpha: 0.2)
-                : null,
-            border: Border(
-              left: BorderSide(
-                color: isSelected ? theme.nodes.folderPrimary : Colors.transparent,
-                width: 3,
-              ),
-            ),
-          ),
-          child: Column(
-            children: [
-              Draggable<String>(
-                data: folder.id,
-                onDragStarted: () {
-                  setState(() {
-                    _draggedNodeId = folder.id;
-                  });
-                },
-                onDragEnd: (details) {
-                  setState(() {
-                    _draggedNodeId = null;
-                  });
-                },
-                feedback: Material(
-                  elevation: 8.0,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.folder,
-                          size: 16,
-                          color: theme.nodes.folderPrimary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(folder.title),
-                      ],
-                    ),
-                  ),
-                ),
-                child: Opacity(
-                  opacity: isDragging ? 0.5 : 1.0,
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        if (_expandedFolders.contains(folder.id)) {
-                          _expandedFolders.remove(folder.id);
-                        } else {
-                          _expandedFolders.add(folder.id);
-                        }
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isExpanded ? Icons.expand_more : Icons.chevron_right,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.folder,
-                            size: 16,
-                            color: theme.nodes.folderPrimary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              folder.title,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.nodes.folderPrimary,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '(${children.length})',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.more_vert, size: 16),
-                            onPressed: () => _showNodeMenu(context, folder),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (isExpanded && children.isNotEmpty)
-                Padding(
-                  padding: EdgeInsets.only(left: 32.0 + (level * 16)),
-                  child: Column(
-                    children: children.map((child) {
-                      // 如果子节点是文件夹，递归渲染
-                      if (child.isFolder) {
-                        return _buildFolderItem(context, child, allNodes, level + 1);
-                      } else {
-                        return _buildNodeItem(context, child, parentFolder: folder);
-                      }
-                    }).toList(),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildNodeItem(BuildContext context, Node node, {Node? parentFolder}) {
-    final theme = context.watch<ThemeService>().themeData;
-    final nodeBloc = context.watch<NodeBloc>();
-    final isSelected = nodeBloc.state.selectedNode?.id == node.id;
-    final isDragging = _draggedNodeId == node.id;
-
-    return Draggable<String>(
-      data: node.id,
-      onDragStarted: () {
-        setState(() {
-          _draggedNodeId = node.id;
-        });
-      },
-      onDragEnd: (details) {
-        setState(() {
-          _draggedNodeId = null;
-        });
-      },
-      feedback: Material(
-        elevation: 8.0,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.note,
-                size: 16,
-                color: null,
-              ),
-              const SizedBox(width: 8),
-              Text(node.title),
-            ],
-          ),
-        ),
-      ),
-      child: Opacity(
-        opacity: isDragging ? 0.5 : 1.0,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: isSelected ? theme.backgrounds.secondary : null,
-            border: Border(
-              left: BorderSide(
-                color: isSelected ? theme.nodes.nodePrimary : Colors.transparent,
-                width: 3,
-              ),
-            ),
-          ),
-          child: InkWell(
-            onTap: () {
-              widget.onNodeSelected?.call(node.id);
-              context.read<NodeBloc>().add(NodeSelectEvent(node.id));
-            },
-            onDoubleTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => MarkdownEditorPage(node: node),
-                ),
-              );
-            },
-            onLongPress: () => _showNodeMenu(context, node),
-            child: Row(
-              children: [
-                if (parentFolder == null) const SizedBox(width: 28),
-                const Icon(
-                  Icons.note,
-                  size: 16,
-                  color: null,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    node.title,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-                if (parentFolder != null)
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, size: 16),
-                    tooltip: 'Remove from folder',
-                    onPressed: () async {
-                      await _removeFromFolder(node, parentFolder);
-                    },
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.more_vert, size: 16),
-                  onPressed: () => _showNodeMenu(context, node),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showNodeMenu(BuildContext context, Node node) {
-    // 使用传入的文件夹列表
-    final nodeBloc = context.read<NodeBloc>();
-    final folders = nodeBloc.state.nodes.where((n) => n.isFolder).toList();
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: BlocBuilder<NodeBloc, NodeState>(
-          builder: (ctx, nodeState) {
-            // 合并所有节点来查找连接的节点
-            final allNodes = nodeState.nodes;
-            final connectedNodes = allNodes
-                .where((n) => node.references.containsKey(n.id))
-                .toList();
-
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Edit'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (ctx) => MarkdownEditorPage(node: node),
-                      ),
-                    );
-                  },
-                ),
-                if (!node.isFolder && folders.isNotEmpty)
-                  ListTile(
-                    leading: const Icon(Icons.folder_open),
-                    title: const Text('Move to Folder...'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _showFolderSelector(context, node, folders);
-                    },
-                  ),
-                ListTile(
-                  leading: const Icon(Icons.link),
-                  title: const Text('Connect to...'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => ConnectionDialog(
-                        sourceNode: node,
-                        availableNodes: nodeState.nodes,
-                      ),
-                    );
-                  },
-                ),
-                if (connectedNodes.isNotEmpty)
-                  ListTile(
-                    leading: const Icon(Icons.link_off),
-                    title: const Text('Disconnect from...'),
-                    trailing: Chip(
-                      label: Text('${connectedNodes.length}'),
-                      padding: EdgeInsets.zero,
-                    ),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      // TODO: Implement disconnect functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Disconnect feature coming soon')),
-                      );
-                    },
-                  ),
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('References'),
-                  trailing: Chip(
-                    label: Text('${node.references.length}'),
-                    padding: EdgeInsets.zero,
-                  ),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showReferencesInfo(context, node);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text('Delete'),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogCtx) {
-                        return AlertDialog(
-                          title: const Text('Delete Node'),
-                          content: Text('Are you sure you want to delete "${node.title}"?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogCtx, false),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogCtx, true),
-                              child: const Text('Delete'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-
-                    if (confirmed == true) {
-                      if (context.mounted) {
-                        final graphBloc = context.read<GraphBloc>();
-                        if (graphBloc.state.hasGraph) {
-                          graphBloc.add(NodeDeleteEvent(node.id));
-                        }
-                        context.read<NodeBloc>().add(NodeDeleteEvent(node.id));
-                      }
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showFolderSelector(BuildContext context, Node node, List<Node> folders) {
-    final theme = context.read<ThemeService>().themeData;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: theme.backgrounds.primary,
-        title: const Text('Select Folder'),
-        content: SizedBox(
-          width: 300,
-          height: 300,
-          child: ListView.builder(
-            itemCount: folders.length,
-            itemBuilder: (ctx, i) {
-              final folder = folders[i];
-              return ListTile(
-                leading: Icon(Icons.folder, color: theme.nodes.folderPrimary),
-                title: Text(folder.title),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  // 从旧文件夹移除
-                  final oldParent = _getParentFolder(node);
-                  if (oldParent != null) {
-                    await _removeFromFolder(node, oldParent);
-                  }
-                  // 添加到新文件夹
-                  await _addToFolder(node, folder);
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
-
+  /// 获取节点的父文件夹
   Node? _getParentFolder(Node node) {
     final nodeBloc = context.read<NodeBloc>();
     final folders = nodeBloc.state.nodes.where((n) => n.isFolder).toList();
@@ -617,106 +213,74 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     return null;
   }
 
-  void _showReferencesInfo(BuildContext context, Node node) {
-    final theme = context.read<ThemeService>().themeData;
+  @override
+  Widget build(BuildContext context) {
+    // 使用 context.select 进行细粒度状态订阅，避免不必要的重建
+    final nodeState = context.select((NodeBloc bloc) => bloc.state);
 
-    showDialog(
-      context: context,
-      builder: (ctx) => BlocBuilder<NodeBloc, NodeState>(
-        builder: (ctx, nodeState) {
-          // 合并所有节点来查找所有可能的节点
-          final allNodes = nodeState.nodes;
+    // 从 NodeBloc 状态中获取最新的节点和文件夹
+    final allNodes = nodeState.nodes;
+    final folders = allNodes.where((n) => n.isFolder).toList();
+    final nodes = allNodes.where((n) => !n.isFolder).toList();
 
-          return AlertDialog(
-            backgroundColor: theme.backgrounds.primary,
-            title: Text('References: ${node.title}'),
-            content: SizedBox(
-              width: 400,
-              child: node.references.isEmpty
-                  ? const Text('No references yet.')
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: node.references.entries.map((entry) {
-                        final ref = entry.value;
-                        // 使用 allNodes 来查找节点，包括文件夹
-                        final matchingNodes = allNodes.where((n) => n.id == entry.key);
-                        final targetNode = matchingNodes.isNotEmpty ? matchingNodes.first : null;
+    final rootNodes = _getRootNodes(nodes, folders);
+    final topLevelFolders = _getTopLevelFolders(folders);
+    final allNodesList = [...nodes, ...folders];
 
-                        // 如果找不到目标节点，显示简化信息
-                        if (targetNode == null) {
-                          return ListTile(
-                            leading: const Icon(Icons.help_outline, size: 16),
-                            title: Text('Unknown Node (${entry.key})'),
-                            subtitle: Text(_getReferenceTypeLabel(ref.type)),
-                            trailing: ref.role != null
-                                ? Chip(
-                                    label: Text(ref.role!),
-                                    padding: EdgeInsets.zero,
-                                  )
-                                : null,
-                          );
-                        }
+    if (rootNodes.isEmpty && topLevelFolders.isEmpty) {
+      return const Center(child: Text('No nodes yet'));
+    }
 
-                        return ListTile(
-                          leading: Icon(
-                            targetNode.isFolder
-                                ? Icons.folder
-                                : Icons.note,
-                            size: 16,
-                            color: targetNode.isFolder
-                                ? theme.nodes.folderPrimary
-                                : null,
-                          ),
-                          title: Text(targetNode.title),
-                          subtitle: Text(_getReferenceTypeLabel(ref.type)),
-                          trailing: ref.role != null
-                              ? Chip(
-                                  label: Text(ref.role!),
-                                  padding: EdgeInsets.zero,
-                                )
-                              : null,
-                        );
-                      }).toList(),
-                    ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Close'),
-              ),
-            ],
-          );
-        },
-      ),
+    return ListView(
+      children: [
+        // 顶层文件夹列表
+        ...topLevelFolders.map((folder) => FolderItem(
+          folder: folder,
+          allNodes: allNodesList,
+          level: 0,
+          expandedFolders: _expandedFolders,
+          onExpandedFoldersChanged: (folders) {
+            setState(() {
+              _expandedFolders = folders;
+            });
+          },
+          draggedNodeId: _draggedNodeId,
+          onDragStarted: (nodeId) {
+            setState(() {
+              _draggedNodeId = nodeId;
+            });
+          },
+          onDragEnd: (details) {
+            setState(() {
+              _draggedNodeId = null;
+            });
+          },
+          onNodeSelected: widget.onNodeSelected,
+        )),
+
+        // 分隔线
+        if (topLevelFolders.isNotEmpty && rootNodes.isNotEmpty)
+          const Divider(height: 32),
+
+        // 根节点列表
+        ...rootNodes.map((node) => NodeItem(
+          node: node,
+          onNodeSelected: widget.onNodeSelected,
+          draggedNodeId: _draggedNodeId,
+          onDragStarted: (nodeId) {
+            setState(() {
+              _draggedNodeId = nodeId;
+            });
+          },
+          onDragEnd: (details) {
+            setState(() {
+              _draggedNodeId = null;
+            });
+          },
+        )),
+      ],
     );
   }
-
-  String _getReferenceTypeLabel(ReferenceType type) {
-    switch (type) {
-      case ReferenceType.mentions:
-        return 'Mentions';
-      case ReferenceType.contains:
-        return 'Contains';
-      case ReferenceType.dependsOn:
-        return 'Depends On';
-      case ReferenceType.causes:
-        return 'Causes';
-      case ReferenceType.partOf:
-        return 'Part Of';
-      case ReferenceType.relatesTo:
-        return 'Related';
-      case ReferenceType.references:
-        return 'References';
-      case ReferenceType.instanceOf:
-        return 'Instance Of';
-    }
-  }
 }
 
-/// Node 扩展 - 检查是否为文件夹
-extension NodeExtension on Node {
-  bool get isFolder {
-    return metadata['isFolder'] == true ||
-        (metadata['isFolder'] is bool && metadata['isFolder'] as bool);
-  }
-}
+

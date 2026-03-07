@@ -12,19 +12,6 @@ class GraphPreviewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (nodes.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.account_tree, size: 48, color: Colors.grey),
-            SizedBox(height: 8),
-            Text('No nodes to preview'),
-          ],
-        ),
-      );
-    }
-
     return Column(
       children: [
         // 标题栏
@@ -58,10 +45,21 @@ class GraphPreviewWidget extends StatelessWidget {
 
         // 预览区域
         Expanded(
-          child: CustomPaint(
-            painter: _GraphPreviewPainter(nodes),
-            child: const SizedBox.expand(),
-          ),
+          child: nodes.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.account_tree, size: 48, color: Colors.grey),
+                      SizedBox(height: 8),
+                      Text('No nodes to preview'),
+                    ],
+                  ),
+                )
+              : CustomPaint(
+                  painter: _GraphPreviewPainter(nodes),
+                  child: const SizedBox.expand(),
+                ),
         ),
       ],
     );

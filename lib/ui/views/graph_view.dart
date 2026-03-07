@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/blocs.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/settings_service.dart';
-import '../widgets/toolbar.dart';
-import '../widgets/sidebar.dart';
+import '../bars/toolbar.dart';
+import '../bars/sidebar.dart';
 import '../../flame/flame.dart';
 
 

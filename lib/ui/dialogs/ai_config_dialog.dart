@@ -180,10 +180,10 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: theme.status.info.withOpacity(0.1),
+                  color: theme.status.info.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: theme.status.info.withOpacity(0.5),
+                    color: theme.status.info.withValues(alpha:0.5),
                   ),
                 ),
                 child: Column(

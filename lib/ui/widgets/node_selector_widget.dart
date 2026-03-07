@@ -67,93 +67,99 @@ class _NodeSelectorWidgetState extends State<NodeSelectorWidget> {
     final filteredNodes = _filteredNodes;
     final allSelected = widget.selectedIndices.length == widget.nodes.length;
 
-    return Column(
-      children: [
-        // 搜索框
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              labelText: 'Search',
-              hintText: widget.searchHint,
-              prefixIcon: const Icon(Icons.search),
-              border: const OutlineInputBorder(),
-              isDense: true,
-            ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-            },
-          ),
-        ),
-
-        // 操作按钮
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            children: [
-              Checkbox(
-                value: allSelected,
-                tristate: true,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          children: [
+            // 搜索框
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'Search',
+                  hintText: widget.searchHint,
+                  prefixIcon: const Icon(Icons.search),
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
                 onChanged: (value) {
-                  _toggleAll(value ?? false);
+                  setState(() {
+                    _searchQuery = value;
+                  });
                 },
               ),
-              TextButton(
-                onPressed: () => _toggleAll(true),
-                child: const Text('Select All'),
-              ),
-              TextButton(
-                onPressed: () => widget.onSelectionChanged({}),
-                child: const Text('Clear'),
-              ),
-              const Spacer(),
-              Text(
-                '${widget.selectedIndices.length} selected',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
+            ),
 
-        const Divider(height: 1),
+            // 操作按钮
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: allSelected,
+                    tristate: true,
+                    onChanged: (value) {
+                      _toggleAll(value ?? false);
+                    },
+                  ),
+                  TextButton(
+                    onPressed: () => _toggleAll(true),
+                    child: const Text('Select All'),
+                  ),
+                  TextButton(
+                    onPressed: () => widget.onSelectionChanged({}),
+                    child: const Text('Clear'),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${widget.selectedIndices.length} selected',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
 
-        // 节点列表
-        Expanded(
-          child: filteredNodes.isEmpty
-              ? const Center(child: Text('No nodes found'))
-              : ListView.builder(
-                  itemCount: filteredNodes.length,
-                  itemBuilder: (context, index) {
-                    final node = filteredNodes[index];
-                    final originalIndex = widget.nodes.indexOf(node);
-                    final isSelected = widget.selectedIndices.contains(originalIndex);
+            const Divider(height: 1),
 
-                    return CheckboxListTile(
-                      value: isSelected,
-                      onChanged: (_) => _toggleIndex(originalIndex),
-                      title: Text(
-                        node.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: node.content != null && node.content!.isNotEmpty
-                          ? Text(
-                              node.content!.length > 50
-                                  ? '${node.content!.substring(0, 50)}...'
-                                  : node.content!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                          : null,
-                      dense: true,
-                    );
-                  },
-                ),
-        ),
-      ],
+            // 节点列表 - 始终返回相同类型的 widget
+            Expanded(
+              child: filteredNodes.isEmpty
+                  ? const Center(child: Text('No nodes found'))
+                  : ListView.builder(
+                      key: ValueKey('nodes-${filteredNodes.length}'),
+                      itemCount: filteredNodes.length,
+                      itemExtent: 60, // 固定每个 item 的高度，避免重新计算
+                      itemBuilder: (context, index) {
+                        final node = filteredNodes[index];
+                        final originalIndex = widget.nodes.indexOf(node);
+                        final isSelected = widget.selectedIndices.contains(originalIndex);
+
+                        return CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (_) => _toggleIndex(originalIndex),
+                          title: Text(
+                            node.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: node.content != null && node.content!.isNotEmpty
+                              ? Text(
+                                  node.content!.length > 50
+                                      ? '${node.content!.substring(0, 50)}...'
+                                      : node.content!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              : null,
+                          dense: true,
+                        );
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -93,28 +93,21 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
           child: widget.markdown.isEmpty
               ? const Center(child: Text('No preview available'))
               : _isRenderMode
-                  ? SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      // 添加水平滚动支持
-                      child: Markdown(
-                        data: widget.markdown,
-                        selectable: true,
-                        // 移除 padding，让外层 SingleChildScrollView 控制
-                        padding: EdgeInsets.zero,
-                      ),
+                  ? MarkdownBody(
+                      data: widget.markdown,
+                      selectable: true,
+                      onTapLink: (text, href, title) {
+                        // 可选：处理链接点击
+                      },
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
-                      // 同时支持水平和垂直滚动
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SelectableText(
-                          widget.markdown,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                      child: SelectableText(
+                        widget.markdown,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),

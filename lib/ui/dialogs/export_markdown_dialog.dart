@@ -196,26 +196,46 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
   Widget _buildMarkdownPreview() {
     return BlocBuilder<ConverterBloc, ConverterState>(
       builder: (context, state) {
-        if (state.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        // 关键修复：所有分支都返回相同的基础结构（包含 Expanded）
+        // 避免在 Expanded 内部动态切换不同类型的 widget
 
-        if (state.error != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 8),
-                Text('Error: ${state.error}'),
-              ],
-            ),
+        if (state.isLoading) {
+          return const Column(
+            children: [
+              Expanded(child: Center(child: CircularProgressIndicator())),
+            ],
           );
         }
 
-        return MarkdownPreviewWidget(
-          markdown: state.exportPreviewMarkdown,
-          isRenderMode: _isRenderMode,
+        if (state.error != null) {
+          return Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const SizedBox(height: 8),
+                      Text('Error: ${state.error}'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
+        // 正常状态也使用 Column + Expanded 包裹，保持结构一致
+        return Column(
+          children: [
+            Expanded(
+              child: MarkdownPreviewWidget(
+                markdown: state.exportPreviewMarkdown,
+                isRenderMode: _isRenderMode,
+              ),
+            ),
+          ],
         );
       },
     );

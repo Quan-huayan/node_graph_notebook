@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/models/node.dart';
+import 'package:node_graph_notebook/ui/items/searched_node_item.dart';
 import '../../bloc/search/search_bloc.dart';
 import '../../bloc/search/search_event.dart';
 import '../../bloc/search/search_state.dart';
@@ -29,14 +30,12 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
   List<String> _selectedTags = [];
   SearchPreset? _selectedPreset;
 
-  @override
-  void initState() {
-    super.initState();
-    _searchFocusNode.requestFocus();
-  }
+  // 防抖定时器，避免频繁搜索
+  Timer? _debounceTimer;
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _titleController.dispose();
     _contentController.dispose();
@@ -45,7 +44,34 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.requestFocus();
+  }
+
   void _performSearch() {
+    // 取消之前的定时器
+    _debounceTimer?.cancel();
+
+    // 设置新的防抖定时器（500毫秒后执行搜索）
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      final query = SearchQuery(
+        searchText: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
+        titleQuery: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
+        contentQuery: _contentController.text.trim().isEmpty ? null : _contentController.text.trim(),
+        tags: _selectedTags.isEmpty ? null : _selectedTags,
+      );
+
+      context.read<SearchBloc>().add(SearchPerformEvent(query));
+    });
+  }
+
+  /// 立即执行搜索（用于用户提交时）
+  void _performImmediateSearch() {
+    // 取消之前的定时器
+    _debounceTimer?.cancel();
+
     final query = SearchQuery(
       searchText: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
       titleQuery: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
@@ -167,6 +193,8 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     setState(() {
       _selectedTags.remove(tag);
     });
+    // 删除标签后触发搜索
+    _performSearch();
   }
 
   @override
@@ -185,37 +213,28 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
               labelText: 'Search',
               hintText: 'Enter search query...',
               prefixIcon: const Icon(Icons.search),
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_selectedPreset != null)
-                    IconButton(
-                      icon: const Icon(Icons.star),
-                      color: Colors.amber,
-                      tooltip: _selectedPreset!.name,
-                      onPressed: () {},
+              suffixIcon: _selectedPreset != null
+                  ? const Icon(Icons.star, color: Colors.amber)
+                  : PopupMenuButton<String>(
+                      icon: const Icon(Icons.star_border),
+                      tooltip: 'Saved searches',
+                      onSelected: (presetId) {
+                        // 这个会在下面的 BlocBuilder 中处理
+                      },
+                      itemBuilder: (context) {
+                        return [
+                          const PopupMenuItem(
+                            enabled: false,
+                            child: Text('Saved Searches'),
+                          ),
+                          const PopupMenuDivider(),
+                        ];
+                      },
                     ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.star_border),
-                    tooltip: 'Saved searches',
-                    onSelected: (presetId) {
-                      // 这个会在下面的 BlocBuilder 中处理
-                    },
-                    itemBuilder: (context) {
-                      return [
-                        const PopupMenuItem(
-                          enabled: false,
-                          child: Text('Saved Searches'),
-                        ),
-                        const PopupMenuDivider(),
-                      ];
-                    },
-                  ),
-                ],
-              ),
               border: const OutlineInputBorder(),
             ),
-            onSubmitted: (_) => _performSearch(),
+            onChanged: (_) => _performSearch(), // 添加防抖搜索
+            onSubmitted: (_) => _performImmediateSearch(), // 提交时立即搜索
           ),
         ),
 
@@ -271,6 +290,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
+                      onChanged: (_) => _performSearch(), // 添加防抖搜索
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -280,6 +300,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
+                      onChanged: (_) => _performSearch(), // 添加防抖搜索
                     ),
                     const SizedBox(height: 8),
                     // 标签选择
@@ -416,9 +437,9 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                       itemCount: state.results.length,
                       itemBuilder: (context, index) {
                         final node = state.results[index];
-                        return _SearchResultTile(
+                        return SearchedNodeItem(
                           node: node,
-                          query: state.currentQuery,
+                          query: state.currentQuery?.searchText ?? state.currentQuery?.titleQuery ?? state.currentQuery?.contentQuery,
                           onTap: () {
                             context.read<NodeBloc>().add(NodeSelectEvent(node.id));
                             context.read<GraphBloc>().add(
@@ -450,107 +471,4 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
   }
 }
 
-/// 搜索结果项
-class _SearchResultTile extends StatelessWidget {
-  const _SearchResultTile({
-    required this.node,
-    required this.query,
-    required this.onTap,
-  });
 
-  final Node node;
-  final SearchQuery? query;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(node.isFolder ? Icons.folder : Icons.description),
-      title: _HighlightText(
-        text: node.title,
-        query: query?.searchText ?? query?.titleQuery,
-      ),
-      subtitle: node.content != null && node.content!.isNotEmpty
-          ? _HighlightText(
-              text: node.content!.length > 100
-                  ? '${node.content!.substring(0, 100)}...'
-                  : node.content!,
-              query: query?.searchText ?? query?.contentQuery,
-              maxLines: 2,
-            )
-          : null,
-      onTap: onTap,
-    );
-  }
-}
-
-/// 高亮文本组件
-class _HighlightText extends StatelessWidget {
-  const _HighlightText({
-    required this.text,
-    required this.query,
-    this.maxLines,
-  });
-
-  final String text;
-  final String? query;
-  final int? maxLines;
-
-  @override
-  Widget build(BuildContext context) {
-    if (query == null || query!.isEmpty) {
-      return Text(
-        text,
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    final matches = RegExp(query!, caseSensitive: false).allMatches(text);
-
-    if (matches.isEmpty) {
-      return Text(
-        text,
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    final List<TextSpan> spans = [];
-    int lastIndex = 0;
-
-    for (final match in matches) {
-      // 添加匹配前的文本
-      if (match.start > lastIndex) {
-        spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
-      }
-
-      // 添加高亮的匹配文本
-      spans.add(
-        TextSpan(
-          text: text.substring(match.start, match.end),
-          style: TextStyle(
-            backgroundColor: Colors.yellow.shade200,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-
-      lastIndex = match.end;
-    }
-
-    // 添加剩余文本
-    if (lastIndex < text.length) {
-      spans.add(TextSpan(text: text.substring(lastIndex)));
-    }
-
-    return RichText(
-      text: TextSpan(
-        style: DefaultTextStyle.of(context).style,
-        children: spans,
-      ),
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-}

@@ -240,18 +240,3 @@ String _getModeLabel(NodeViewMode mode) {
       return 'Full Content';
   }
 }
-
-/// 空的 overlay widget，用于保持兼容性
-class NodeContextMenuOverlay extends StatelessWidget {
-  const NodeContextMenuOverlay({
-    super.key,
-    required this.child,
-  });
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return child;
-  }
-}
