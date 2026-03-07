@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:node_graph_notebook/ui/dialogs/node_connections_dialog.dart';
 import '../../core/models/models.dart';
 import '../../bloc/blocs.dart';
 import '../pages/markdown_editor_page.dart';
 import '../dialogs/connection_dialog.dart';
-import '../dialogs/node_references_dialog.dart';
 
 /// 显示节点菜单
 void showNodeMenu(BuildContext context, Node node) {
@@ -53,7 +53,12 @@ void showNodeMenu(BuildContext context, Node node) {
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
-                  showReferencesInfo(context, node);
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => NodeConnectionsDialog(
+                      node: node,
+                    ),
+                  );
                 },
               ),
               ListTile(

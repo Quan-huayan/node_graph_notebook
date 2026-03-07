@@ -35,14 +35,18 @@ class NodeCreateEvent extends NodeEvent {
     required this.title,
     this.content,
     this.metadata,
+    this.position,
+    this.color,
   });
 
   final String title;
   final String? content;
   final Map<String, dynamic>? metadata;
+  final Offset? position;
+  final String? color;
 
   @override
-  List<Object?> get props => [title, content, metadata];
+  List<Object?> get props => [title, content, metadata, position, color];
 }
 
 /// 创建内容节点事件
@@ -70,6 +74,8 @@ class NodeUpdateEvent extends NodeEvent {
       this.content,
       this.position,
       this.viewMode,
+      this.color,
+      this.metadata,
     }
   );
 
@@ -78,9 +84,11 @@ class NodeUpdateEvent extends NodeEvent {
   final String? content;
   final Offset? position;
   final NodeViewMode? viewMode;
+  final String? color;
+  final Map<String, dynamic>? metadata;
 
   @override
-  List<Object?> get props => [nodeId, title, content, position, viewMode];
+  List<Object?> get props => [nodeId, title, content, position, viewMode, color, metadata];
 }
 
 /// 替换节点事件

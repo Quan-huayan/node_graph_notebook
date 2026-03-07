@@ -12,6 +12,7 @@ abstract class NodeService {
     String? content,
     Offset? position,
     Size? size,
+    String? color,
     Map<String, NodeReference>? references,
     Map<String, dynamic>? metadata,
   });
@@ -23,6 +24,7 @@ abstract class NodeService {
     Offset? position,
     Size? size,
     NodeViewMode? viewMode,
+    String? color,
     Map<String, NodeReference>? references,
     Map<String, dynamic>? metadata,
   });
@@ -71,6 +73,7 @@ class NodeServiceImpl implements NodeService {
     String? content,
     Offset? position,
     Size? size,
+    String? color,
     Map<String, NodeReference>? references,
     Map<String, dynamic>? metadata,
   }) async {
@@ -94,6 +97,7 @@ class NodeServiceImpl implements NodeService {
       position: defaultPosition,
       size: size ?? const Size(200, 250),  // 减小默认尺寸
       viewMode: NodeViewMode.titleWithPreview,
+      color: color,
       createdAt: now,
       updatedAt: now,
       metadata: metadata ?? const {},
@@ -110,6 +114,7 @@ class NodeServiceImpl implements NodeService {
     Offset? position,
     Size? size,
     NodeViewMode? viewMode,
+    String? color,
     Map<String, NodeReference>? references,
     Map<String, dynamic>? metadata,
   }) async {
@@ -129,6 +134,7 @@ class NodeServiceImpl implements NodeService {
       position: position ?? node.position,
       size: size ?? node.size,
       viewMode: viewMode ?? node.viewMode,
+      color: color ?? node.color,
       references: references ?? node.references,
       metadata: metadata ?? node.metadata,
       updatedAt: DateTime.now(),

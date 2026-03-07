@@ -91,6 +91,8 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       final node = await _nodeService.createNode(
         title: event.title,
         content: event.content,
+        position: event.position,
+        color: event.color,
         metadata: event.metadata,
       );
 
@@ -140,6 +142,8 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         content: event.content,
         position: event.position,
         viewMode: event.viewMode,
+        color: event.color,
+        metadata: event.metadata,
       );
 
       final updatedNodes = state.nodes.map((n) {

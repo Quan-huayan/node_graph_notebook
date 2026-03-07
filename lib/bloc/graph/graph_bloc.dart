@@ -39,6 +39,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<RedoEvent>(_onRedo);
     on<ErrorClearEvent>(_onErrorClear);
     on<RetryEvent>(_onRetry);
+    on<FocusNodeEvent>(_onFocusNode);
   }
 
   final GraphService _graphService;
@@ -618,6 +619,51 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       emit(state.copyWith(graph: updatedGraph));
     } catch (e) {
       emit(state.copyWith(error: 'Failed to rename graph: ${e.toString()}'));
+    }
+  }
+
+  /// 聚焦节点
+  Future<void> _onFocusNode(
+    FocusNodeEvent event,
+    Emitter<GraphState> emit,
+  ) async {
+    if (state.graph.id.isEmpty) return;
+
+    try {
+      // 查找目标节点
+      final targetNode = state.nodes.firstWhere(
+        (n) => n.id == event.nodeId,
+        orElse: () => state.nodes.first,
+      );
+
+      // 计算新的相机位置（将节点居中）
+      // 这里我们假设需要基于节点的位置来计算相机位置
+      // 具体实现取决于 Flame 引擎的坐标系统
+      final nodePosition = state.graph.nodePositions[event.nodeId] ??
+          targetNode.position;
+
+      // 更新相机位置到节点位置
+      final updatedConfig = state.graph.viewConfig.copyWith(
+        camera: Camera(
+          x: nodePosition.dx,
+          y: nodePosition.dy,
+          zoom: state.viewState.camera.zoom,
+        ),
+      );
+
+      final updatedGraph = await _graphService.updateGraph(
+        state.graph.id,
+        viewConfig: updatedConfig,
+      );
+
+      emit(state.copyWith(
+        graph: updatedGraph,
+        viewState: state.viewState.copyWith(
+          camera: state.viewState.camera.copyWith(position: nodePosition),
+        ),
+      ));
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to focus node: ${e.toString()}'));
     }
   }
 }

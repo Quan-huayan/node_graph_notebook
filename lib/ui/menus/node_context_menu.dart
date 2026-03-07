@@ -2,20 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../bloc/blocs.dart';
+import '../dialogs/node_metadata_dialog.dart';
+import '../dialogs/node_connections_dialog.dart';
+import '../dialogs/node_icon_dialog.dart';
 
 /// 菜单操作类型
 enum _MenuAction {
+  // 显示模式
   titleOnly,
   compact,
   titleWithPreview,
   fullContent,
+  // 编辑功能
   editMetadata,
   manageConnections,
   addIcon,
+  changeColor,
+  duplicate,
+  // 节点操作
+  focus,
   delete,
 }
 
-/// 节点右键菜单 - 用于调整节点显示模式和删除节点
+/// 节点右键菜单 - 用于调整节点显示模式和编辑节点
 Future<void> showNodeContextMenu(
   BuildContext context, {
   required Node node,
@@ -34,6 +43,7 @@ Future<void> showNodeContextMenu(
       position.dy + 1,
     ),
     items: [
+      // === 显示模式 ===
       PopupMenuItem<_MenuAction>(
         value: _MenuAction.titleOnly,
         child: _buildMenuItem(
@@ -67,6 +77,8 @@ Future<void> showNodeContextMenu(
         ),
       ),
       const PopupMenuDivider(),
+
+      // === 编辑功能 ===
       const PopupMenuItem<_MenuAction>(
         value: _MenuAction.editMetadata,
         child: Row(
@@ -91,13 +103,48 @@ Future<void> showNodeContextMenu(
         value: _MenuAction.addIcon,
         child: Row(
           children: [
-            Icon(Icons.image, size: 18),
+            Icon(Icons.emoji_emotions_outlined, size: 18),
             SizedBox(width: 12),
             Text('Add Icon'),
           ],
         ),
       ),
+      const PopupMenuItem<_MenuAction>(
+        value: _MenuAction.changeColor,
+        child: Row(
+          children: [
+            Icon(Icons.palette, size: 18),
+            SizedBox(width: 12),
+            Text('Change Color'),
+          ],
+        ),
+      ),
+      const PopupMenuItem<_MenuAction>(
+        value: _MenuAction.duplicate,
+        child: Row(
+          children: [
+            Icon(Icons.copy, size: 18),
+            SizedBox(width: 12),
+            Text('Duplicate'),
+          ],
+        ),
+      ),
       const PopupMenuDivider(),
+
+      // === 节点操作 ===
+      const PopupMenuItem<_MenuAction>(
+        value: _MenuAction.focus,
+        child: Row(
+          children: [
+            Icon(Icons.center_focus_strong, size: 18),
+            SizedBox(width: 12),
+            Text('Focus Node'),
+          ],
+        ),
+      ),
+      const PopupMenuDivider(),
+
+      // === 危险操作 ===
       const PopupMenuItem<_MenuAction>(
         value: _MenuAction.delete,
         child: Row(
@@ -109,6 +156,8 @@ Future<void> showNodeContextMenu(
         ),
       ),
       const PopupMenuDivider(),
+
+      // === 状态信息 ===
       PopupMenuItem<_MenuAction>(
         value: null,
         enabled: false,
@@ -116,10 +165,10 @@ Future<void> showNodeContextMenu(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Text(
             'Current: ${_getModeLabel(node.viewMode)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontStyle: FontStyle.italic,
-              color: Colors.grey,
+              color: Colors.grey.shade600,
             ),
           ),
         ),
@@ -131,62 +180,263 @@ Future<void> showNodeContextMenu(
   // 处理用户选择
   if (selectedAction == null) return;
 
-  if (selectedAction == _MenuAction.delete) {
-    // 删除操作
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) {
-        return AlertDialog(
-          title: const Text('Delete Node'),
-          content: Text('Are you sure you want to delete "${node.title}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Delete'),
+  switch (selectedAction) {
+    case _MenuAction.delete:
+      await _handleDelete(context, node, graphBloc, nodeBloc);
+      break;
+
+    case _MenuAction.editMetadata:
+      await _handleEditMetadata(context, node);
+      break;
+
+    case _MenuAction.manageConnections:
+      await _handleManageConnections(context, node);
+      break;
+
+    case _MenuAction.addIcon:
+      await _handleAddIcon(context, node);
+      break;
+
+    case _MenuAction.changeColor:
+      await _handleChangeColor(context, node, nodeBloc);
+      break;
+
+    case _MenuAction.duplicate:
+      await _handleDuplicate(context, node, nodeBloc);
+      break;
+
+    case _MenuAction.focus:
+      _handleFocus(context, node);
+      break;
+
+    default:
+      // 切换显示模式
+      final newMode = _actionToViewMode(selectedAction);
+      if (newMode != null && newMode != node.viewMode) {
+        nodeBloc.add(NodeUpdateEvent(
+          node.id,
+          viewMode: newMode,
+        ));
+      }
+  }
+}
+
+/// 处理删除操作
+Future<void> _handleDelete(
+  BuildContext context,
+  Node node,
+  GraphBloc graphBloc,
+  NodeBloc nodeBloc,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogCtx) {
+      return AlertDialog(
+        title: const Text('Delete Node'),
+        content: Text('Are you sure you want to delete "${node.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed == true && context.mounted) {
+    final state = graphBloc.state;
+    if (state.hasGraph) {
+      graphBloc.add(NodeDeleteEvent(node.id));
+    }
+    nodeBloc.add(NodeDeleteEvent(node.id));
+  }
+}
+
+/// 处理编辑元数据
+Future<void> _handleEditMetadata(BuildContext context, Node node) async {
+  await showDialog(
+    context: context,
+    builder: (context) => NodeMetadataDialog(node: node),
+  );
+}
+
+/// 处理管理连接
+Future<void> _handleManageConnections(BuildContext context, Node node) async {
+  await showDialog(
+    context: context,
+    builder: (context) => NodeConnectionsDialog(node: node),
+  );
+}
+
+/// 处理添加图标
+Future<void> _handleAddIcon(BuildContext context, Node node) async {
+  await showDialog(
+    context: context,
+    builder: (context) => NodeIconDialog(node: node),
+  );
+}
+
+/// 处理更改颜色
+Future<void> _handleChangeColor(
+  BuildContext context,
+  Node node,
+  NodeBloc nodeBloc,
+) async {
+  // 快速颜色选择
+  final colors = [
+    null,
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#96CEB4',
+    '#FFEAA7',
+    '#DDA0DD',
+    '#FF9F43',
+  ];
+
+  final selectedColor = await showDialog<String?>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Select Color'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: colors.map((colorHex) {
+                Color color = Colors.grey;
+                if (colorHex != null) {
+                  color = Color(
+                    int.parse(colorHex.replaceFirst('#', '0xFF')),
+                  );
+                }
+                final isSelected = node.color == colorHex;
+
+                return InkWell(
+                  onTap: () => Navigator.pop(context, colorHex),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey.withValues(alpha: 0.3),
+                        width: isSelected ? 3 : 1,
+                      ),
+                    ),
+                    child: isSelected
+                        ? const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 20,
+                          )
+                        : null,
+                  ),
+                );
+              }).toList(),
             ),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (selectedColor != null && context.mounted) {
+    nodeBloc.add(NodeUpdateEvent(
+      node.id,
+      color: selectedColor,
+    ));
+  }
+}
+
+/// 处理复制节点
+Future<void> _handleDuplicate(
+  BuildContext context,
+  Node node,
+  NodeBloc nodeBloc,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Duplicate Node'),
+        content: Text('Create a copy of "${node.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Duplicate'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed == true && context.mounted) {
+    // 创建副本，偏移位置
+    final newPosition = Offset(
+      node.position.dx + 50,
+      node.position.dy + 50,
     );
 
-    if (confirmed == true && context.mounted) {
-      final state = graphBloc.state;
-      if (state.hasGraph) {
-        graphBloc.add(NodeDeleteEvent(node.id));
-      }
-      nodeBloc.add(NodeDeleteEvent(node.id));
+    // 生成新标题
+    String newTitle = node.title;
+    final match = RegExp(r'^(.+?)\s*\((\d+)\)$').firstMatch(newTitle);
+    if (match != null) {
+      final baseTitle = match.group(1)!;
+      final count = int.parse(match.group(2)!) + 1;
+      newTitle = '$baseTitle ($count)';
+    } else {
+      newTitle = '$newTitle (1)';
     }
-  } else if (selectedAction == _MenuAction.editMetadata) {
-    // 编辑元数据
-    // TODO: 实现编辑元数据的对话框
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit Metadata feature - Coming soon!')),
-    );
-  } else if (selectedAction == _MenuAction.manageConnections) {
-    // 管理连接
-    // TODO: 实现管理连接的对话框
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Manage Connections feature - Coming soon!')),
-    );
-  } else if (selectedAction == _MenuAction.addIcon) {
-    // 添加图标
-    // TODO: 实现添加图标的功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add Icon feature - Coming soon!')),
-    );
-  } else {
-    // 切换显示模式
-    final newMode = _actionToViewMode(selectedAction);
-    if (newMode != null && newMode != node.viewMode) {
-      nodeBloc.add(NodeUpdateEvent(
-        node.id,
-        viewMode: newMode,
-      ));
+
+    // 创建新节点事件
+    nodeBloc.add(NodeCreateEvent(
+      title: newTitle,
+      content: node.content,
+      position: newPosition,
+      color: node.color,
+      metadata: Map<String, dynamic>.from(node.metadata),
+    ));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Duplicated: $newTitle')),
+      );
     }
+  }
+}
+
+/// 处理聚焦节点
+void _handleFocus(BuildContext context, Node node) {
+  // 发送聚焦事件到 GraphBloc
+  // 这需要在 GraphBloc 中实现相应的处理逻辑
+  context.read<GraphBloc>().add(FocusNodeEvent(node.id));
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Focusing on ${node.title}')),
+    );
   }
 }
 

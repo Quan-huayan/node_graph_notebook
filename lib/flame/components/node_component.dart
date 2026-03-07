@@ -197,7 +197,9 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
 
   Color _getNodeColor() {
     if (node.color != null) {
-      return Color(int.parse(node.color!, radix: 16));
+      // 将十六进制颜色字符串（如 #FF6B6B）转换为 Color 对象
+      final colorString = node.color!.replaceFirst('#', '0xFF');
+      return Color(int.parse(colorString));
     }
     if (node.isFolder) {
       return theme.nodes.folderPrimary;

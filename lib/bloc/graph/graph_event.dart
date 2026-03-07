@@ -101,6 +101,16 @@ class ViewToggleGridEvent extends GraphEvent {
   const ViewToggleGridEvent();
 }
 
+/// 聚焦节点事件
+class FocusNodeEvent extends GraphEvent {
+  const FocusNodeEvent(this.nodeId);
+
+  final String nodeId;
+
+  @override
+  List<Object?> get props => [nodeId];
+}
+
 // 布局事件
 
 /// 应用布局事件
