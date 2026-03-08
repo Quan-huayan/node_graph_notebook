@@ -97,6 +97,16 @@ class FileSystemGraphRepository implements GraphRepository {
 
     try {
       final content = await file.readAsString();
+
+      // === 架构说明：空文件处理 ===
+      // 设计意图：防止文件损坏导致应用崩溃
+      // 实现方式：检查文件内容是否为空或仅包含空白字符
+      // 重要性：允许应用从损坏的数据中恢复
+      if (content.trim().isEmpty) {
+        debugPrint('[GraphRepository] Graph file is empty: $graphId');
+        return null;
+      }
+
       final json = _decodeJson(content);
       return Graph.fromJson(json);
     } on FileSystemException catch (e) {

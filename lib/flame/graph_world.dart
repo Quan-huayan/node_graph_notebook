@@ -77,7 +77,19 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
         // 检查是否需要更新（节点、连接、位置或显示状态变化）
         if (oldState.graph != newState.graph) return true;
         if (oldState.nodes.length != newState.nodes.length) return true;
+
+        // === 架构说明：连接变化检测 ===
+        // 设计意图：检测连接变化，确保连接操作能正确更新视图
+        // 实现方式：比较连接数量和连接内容
+        // 重要性：当节点添加/移除引用时，connections 会变化，
+        // 即使节点其他属性不变，也需要更新连接渲染
         if (oldState.connections.length != newState.connections.length) return true;
+
+        // 检查连接内容是否变化（ID 集合比较）
+        final oldConnectionIds = oldState.connections.map((c) => c.id).toSet();
+        final newConnectionIds = newState.connections.map((c) => c.id).toSet();
+        if (oldConnectionIds != newConnectionIds) return true;
+
         if (oldState.viewState.showConnections != newState.viewState.showConnections) return true;
 
         // 检查位置是否变化
@@ -93,9 +105,45 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
           }
         }
 
+        // === 架构说明：节点属性变化检测 ===
+        // 设计意图：检测节点属性变化（viewMode、颜色、标题、内容等）
+        // 实现方式：使用 ID 映射，避免依赖列表顺序
+        // 重要性：GraphBloc 更新节点时会改变列表顺序（将更新的节点移到末尾），
+        // 因此不能按索引比较，必须按 ID 匹配
+        final oldNodesMap = {for (var n in oldState.nodes) n.id: n};
+        for (final newNode in newState.nodes) {
+          final oldNode = oldNodesMap[newNode.id];
+          if (oldNode != null) {
+            if (oldNode.viewMode != newNode.viewMode ||
+                oldNode.color != newNode.color ||
+                oldNode.title != newNode.title ||
+                oldNode.content != newNode.content) {
+              return true;
+            }
+          }
+        }
+
         return false;
       },
     );
+  }
+
+  /// 计算节点尺寸（与 NodeComponent._calculateSize 保持一致）
+  Size _calculateNodeSize(Node node) {
+    // 文件夹节点使用稍大的尺寸
+    if (node.isFolder) {
+      return const Size(200, 80);
+    }
+    switch (node.viewMode) {
+      case NodeViewMode.titleOnly:
+        return const Size(150, 40);
+      case NodeViewMode.compact:
+        return const Size(80, 80);
+      case NodeViewMode.titleWithPreview:
+        return const Size(250, 120);
+      case NodeViewMode.fullContent:
+        return const Size(400, 300);
+    }
   }
 
   /// 处理节点列表变化
@@ -113,11 +161,25 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
 
     // 添加或更新节点
     for (final node in typedNodes) {
-      // 使用 graph.nodePositions 中的位置更新节点
+      // === 架构说明：位置转换 ===
+      // graph.nodePositions 约定为中心位置
+      // Node.position (Flame PositionComponent) 为左上角位置
+      // NodeComponent 构造函数需要左上角位置
+      // 因此需要将中心位置转换为左上角位置
+
       final position = nodePositions[node.id];
-      final updatedNode = position != null
-          ? node.copyWith(position: position)
-          : node;
+      Node updatedNode = node;
+
+      if (position != null) {
+        // 计算节点尺寸（根据 viewMode 和节点类型）
+        final size = _calculateNodeSize(node);
+        // 将中心位置转换为左上角位置
+        final topLeftPosition = Offset(
+          position.dx - size.width / 2,
+          position.dy - size.height / 2,
+        );
+        updatedNode = node.copyWith(position: topLeftPosition);
+      }
 
       if (currentIds.contains(node.id)) {
         _updateNodeComponent(updatedNode);
@@ -191,11 +253,13 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     );
   }
 
-  /// 从组件获取节点位置映射
+  /// 从组件获取节点位置映射（返回节点中心点坐标）
   Map<String, Vector2> _getNodePositionsFromComponents() {
     final positions = <String, Vector2>{};
     for (final entry in _nodeComponents.entries) {
-      positions[entry.key] = entry.value.position;
+      final component = entry.value;
+      // 计算节点中心点：左上角位置 + 尺寸的一半
+      positions[entry.key] = component.position + component.size / 2;
     }
     return positions;
   }
@@ -216,26 +280,32 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     }
   }
 
-  /// 获取节点位置映射
+  /// 获取节点位置映射（返回节点中心点坐标）
+  ///
+  /// 按优先级查找：组件 > Node模型 > Graph.nodePositions
   Map<String, Vector2> _getNodePositions() {
     final positions = <String, Vector2>{};
 
-    // 优先从 Graph.nodePositions 获取位置
-    for (final entry in graphBloc.state.graph.nodePositions.entries) {
-      positions[entry.key] = Vector2(
-        entry.value.dx.toDouble(),
-        entry.value.dy.toDouble(),
+    // 1. 从组件获取（左上角转中心点）
+    for (final entry in _nodeComponents.entries) {
+      final component = entry.value;
+      positions[entry.key] = component.position + component.size / 2;
+    }
+
+    // 2. 从 Node 模型获取（只添加未有的）
+    for (final node in graphBloc.state.nodes) {
+      positions.putIfAbsent(
+        node.id,
+        () => Vector2(node.position.dx.toDouble(), node.position.dy.toDouble()),
       );
     }
 
-    // 如果某个节点在 Graph.nodePositions 中没有位置，使用默认位置
-    for (final node in graphBloc.state.nodes) {
-      if (!positions.containsKey(node.id)) {
-        positions[node.id] = Vector2(
-          node.position.dx.toDouble(),
-          node.position.dy.toDouble(),
-        );
-      }
+    // 3. 从 Graph.nodePositions 获取（只添加未有的）
+    for (final entry in graphBloc.state.graph.nodePositions.entries) {
+      positions.putIfAbsent(
+        entry.key,
+        () => Vector2(entry.value.dx.toDouble(), entry.value.dy.toDouble()),
+      );
     }
 
     return positions;
@@ -355,8 +425,10 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
     super.onDragStart(event);
     position = Vector2.zero();//固定位置
     _isDragging = true;
+    // === 架构说明：拖拽起始位置记录 ===
+    // 必须使用 viewfinder.position（世界坐标系）
     // 记录拖拽起始位置
-    final cameraPosition = game.camera.viewport.position;
+    final cameraPosition = game.camera.viewfinder.position;
     _dragStartPosition = Offset(cameraPosition.x, cameraPosition.y);
 
     // 通知外部开始拖拽
@@ -368,12 +440,25 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
     // 不调用 super.onDragUpdate()！这会阻止默认的组件位置移动
     if (!_isDragging) return;
 
+    // === 架构说明：拖拽移动相机 ===
+    // 为什么必须用 viewfinder.position 而不是 viewport.position：
+    //
+    // Flame 相机系统有两层：
+    // 1. Viewport (视口) - 屏幕坐标系，控制渲染区域在屏幕上的位置
+    // 2. Viewfinder (取景器) - 世界坐标系，控制相机在世界中的位置和缩放
+    //
+    // 拖拽背景 = 移动相机看的位置（在世界中移动），不是移动渲染区域
+    // 所以必须操作 viewfinder.position
+    //
+    // event.localDelta 已经是缩放后的屏幕像素距离
+    // viewfinder.position 会自动考虑 zoom 进行世界坐标转换
+    // 因此直接相减即可，不需要手动除以 zoom
+
     // 拖拽背景时移动相机
     // 注意：这个事件只有在未命中节点组件时才会触发
     // 因为节点组件后添加，会优先处理拖拽事件
 
     // 移动相机（拖拽时相机应该跟随鼠标移动）
-    // 不需要除以 zoom，因为 viewfinder.position 是世界坐标，已经考虑了缩放
     game.camera.viewfinder.position -= event.localDelta;
 
     // 不再实时同步到 BLoC，避免循环更新
@@ -382,7 +467,7 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
 
   @override
   void onDragEnd(DragEndEvent event) {
-    // 不调用 super.onDragEnd()，避免默认行为
+    super.onDragEnd(event);
 
     // 拖拽结束时，同步相机位置到 BLoC
     final cameraPosition = game.camera.viewfinder.position;
@@ -393,43 +478,8 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
         (_dragStartPosition! - finalPosition).distance > 1) {
       // 使用简单的 ViewMoveEvent，不使用命令模式
       // 避免命令执行导致的重新加载和状态循环
+      // GraphBloc 会在 _onViewMove 中处理持久化
       graphBloc.add(ViewMoveEvent(finalPosition));
-
-      // 在后台异步持久化相机位置
-      final zoom = game.camera.viewfinder.zoom;
-
-      // 延迟执行，避免阻塞 UI 和导致状态循环
-      Future.microtask(() async {
-        try {
-          // 检查图是否存在，避免持久化到不存在的图
-          final graphId = graphBloc.state.graph.id;
-          if (graphId.isEmpty) return;
-
-          final graph = await graphBloc.graphService.getGraph(graphId);
-          if (graph == null) {
-            // 图不存在，跳过持久化
-            return;
-          }
-
-          // 直接更新持久化
-          await graphBloc.graphService.updateGraph(
-            graphId,
-            viewConfig: graph.viewConfig.copyWith(
-              camera: Camera(
-                x: finalPosition.dx,
-                y: finalPosition.dy,
-                zoom: zoom,
-                centerWidth: graph.viewConfig.camera.centerWidth,
-                centerHeight: graph.viewConfig.camera.centerHeight,
-              ),
-            ),
-          );
-        } catch (e) {
-          // 静默失败，不影响用户体验
-          // 只在调试模式下打印
-          debugPrint('Failed to persist camera position: $e');
-        }
-      });
     }
 
     // 清除拖拽状态，通知 GraphGame

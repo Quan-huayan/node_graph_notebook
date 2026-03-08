@@ -253,7 +253,6 @@ void main() {
         when(mockNodeService.getAllNodes()).thenAnswer((_) async => [testNode]);
 
         int sidebarBuildCount = 0;
-        int graphBuildCount = 0;
 
         await tester.pumpWidget(
           MaterialApp(
@@ -276,7 +275,6 @@ void main() {
                   Builder(
                     builder: (context) {
                       final graphState = context.watch<GraphBloc>().state;
-                      graphBuildCount++;
                       return Text('Graph: ${graphState.nodes.length} nodes');
                     },
                   ),
@@ -299,7 +297,6 @@ void main() {
 
         await tester.pumpAndSettle();
         final initialSidebarBuilds = sidebarBuildCount;
-        final initialGraphBuilds = graphBuildCount;
 
         // 点击添加节点按钮
         await tester.tap(find.byType(ElevatedButton));

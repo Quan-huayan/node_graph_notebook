@@ -87,11 +87,23 @@ class NodeItem extends StatelessWidget {
             child: Row(
               children: [
                 if (parentFolder == null) const SizedBox(width: 28),
-                const Icon(
-                  Icons.note,
-                  size: 16,
-                  color: null,
-                ),
+                // === 架构说明：自定义图标显示 ===
+                // 设计意图：如果节点有自定义图标（metadata['icon']），显示 emoji
+                // 否则显示默认的 note 图标
+                // 实现方式：检查 metadata['icon']，使用 Text widget 显示 emoji
+                if (node.metadata.containsKey('icon') &&
+                    node.metadata['icon'] != null &&
+                    node.metadata['icon'].toString().isNotEmpty)
+                  Text(
+                    node.metadata['icon'].toString(),
+                    style: const TextStyle(fontSize: 16),
+                  )
+                else
+                  const Icon(
+                    Icons.note,
+                    size: 16,
+                    color: null,
+                  ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

@@ -280,6 +280,12 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
           nodes: updatedNodes,
           error: null,
         ));
+
+        // 发布节点更新事件到总线，通知 GraphBloc 更新连接
+        _eventBus.publish(NodeDataChangedEvent(
+          changedNodes: [fromNode],
+          action: DataChangeAction.update,
+        ));
       }
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
@@ -308,6 +314,12 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         emit(state.copyWith(
           nodes: updatedNodes,
           error: null,
+        ));
+
+        // 发布节点更新事件到总线，通知 GraphBloc 更新连接
+        _eventBus.publish(NodeDataChangedEvent(
+          changedNodes: [fromNode],
+          action: DataChangeAction.update,
         ));
       }
     } catch (e) {

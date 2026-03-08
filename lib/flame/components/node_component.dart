@@ -45,7 +45,8 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     }
   }
 
-  final Node node;
+  /// 节点数据（可更新，通过 updateNode 方法同步最新状态）
+  Node node;
   final GraphViewConfig viewConfig;
   final AppThemeData theme;
   final GraphBloc? bloc; // 可选的 BLoC，如果提供则使用 BLoC 模式
@@ -64,6 +65,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   late TextPainter _titlePainter;
   late TextPainter _contentPainter;
   late TextPainter _fullContentPainter;
+  TextPainter? _iconPainter; // 自定义图标绘制器（从 metadata['icon']）
 
   void _initPaints() {
     // 边框
@@ -81,6 +83,19 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     _selectedPaint = Paint()
       ..color = theme.nodes.selectedOverlay
       ..style = PaintingStyle.fill;
+
+    // 图标绘制器（如果节点有自定义图标）
+    final icon = node.metadata['icon'] as String?;
+    if (icon != null && icon.isNotEmpty) {
+      _iconPainter = TextPainter(
+        text: TextSpan(
+          text: icon,
+          style: const TextStyle(fontSize: 16),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      _iconPainter!.layout();
+    }
   }
 
   double _getStrokeWidth() {
@@ -134,10 +149,14 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         // 不需要内容绘制器
         break;
       case NodeViewMode.compact:
-        // 紧凑模式只显示首字母
+        // 紧凑模式显示首字母或自定义图标
+        final icon = node.metadata['icon'] as String?;
+        final displayText = (icon != null && icon.isNotEmpty)
+            ? icon
+            : (node.title.isNotEmpty ? node.title[0].toUpperCase() : '?');
         _contentPainter = TextPainter(
           text: TextSpan(
-            text: node.title.isNotEmpty ? node.title[0].toUpperCase() : '?',
+            text: displayText,
             style: TextStyle(
               color: theme.text.onDark,
               fontSize: 24,
@@ -166,6 +185,14 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         break;
       case NodeViewMode.fullContent:
         if (node.content != null && node.content!.isNotEmpty) {
+          // 计算内容区域可用高度（节点高度 - 标题高度 - padding）
+          final titleHeight = _titlePainter.height;
+          final availableHeight = 300 - titleHeight - 24; // 8(top padding) + 8(title bottom) + 8(bottom padding)
+
+          // 根据字体高度（fontSize * lineSpacing）计算最大行数
+          final lineHeight = 11.0 * 1.4; // fontSize * height
+          final maxLines = (availableHeight / lineHeight).floor();
+
           _fullContentPainter = TextPainter(
             text: TextSpan(
               text: node.content,
@@ -176,6 +203,8 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
               ),
             ),
             textDirection: TextDirection.ltr,
+            maxLines: maxLines > 0 ? maxLines : 1,
+            ellipsis: '...',
           );
           _fullContentPainter.layout(maxWidth: width - 16);
         }
@@ -297,14 +326,25 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
       canvas.drawPath(path, _selectedPaint);
     }
 
-    // 绘制文件夹图标
-    canvas.drawCircle(const Offset(20, 20), 8, _borderPaint);
+    // === 架构说明：文件夹图标渲染 ===
+    // 设计意图：如果有自定义图标，显示自定义图标；否则显示默认文件夹圆圈
+    // 实现方式：检查 _iconPainter，如果存在则绘制 emoji
+    final hasCustomIcon = _iconPainter != null;
+    final iconOffset = hasCustomIcon ? 28.0 : 0.0;
+
+    if (hasCustomIcon) {
+      // 绘制自定义图标
+      _iconPainter!.paint(canvas, const Offset(10, 10));
+    } else {
+      // 绘制默认文件夹图标（圆圈）
+      canvas.drawCircle(const Offset(20, 20), 8, _borderPaint);
+    }
 
     // 绘制标题
-    _titlePainter.paint(canvas, const Offset(36, 10));
+    _titlePainter.paint(canvas, Offset(8 + iconOffset, 10));
 
     // 绘制子项数量
-    _contentPainter.paint(canvas, Offset(36, _titlePainter.height + 14));
+    _contentPainter.paint(canvas, Offset(8 + iconOffset, _titlePainter.height + 14));
 
     // 绘制引用计数
     _drawReferenceCount(canvas);
@@ -446,23 +486,39 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   }
 
   void _renderContent(Canvas canvas) {
+    // === 架构说明：自定义图标渲染 ===
+    // 设计意图：如果节点有自定义图标（metadata['icon']），在标题前显示
+    // 实现方式：使用 TextPainter 绘制 emoji 字符
+    // 位置：标题左侧，垂直居中对齐
+    final hasCustomIcon = _iconPainter != null;
+    final iconOffset = hasCustomIcon ? 20.0 : 0.0; // 为图标留出的空间
+
     switch (node.viewMode) {
       case NodeViewMode.titleOnly:
-        _titlePainter.paint(canvas, const Offset(8, 8));
+        if (hasCustomIcon) {
+          _iconPainter!.paint(canvas, const Offset(8, 10));
+        }
+        _titlePainter.paint(canvas, Offset(8 + iconOffset, 8));
         break;
       case NodeViewMode.compact:
         // 已在 _renderCompact 中处理
         break;
       case NodeViewMode.titleWithPreview:
-        _titlePainter.paint(canvas, const Offset(8, 8));
-        _contentPainter.paint(canvas, Offset(8, _titlePainter.height + 8));
+        if (hasCustomIcon) {
+          _iconPainter!.paint(canvas, const Offset(8, 10));
+        }
+        _titlePainter.paint(canvas, Offset(8 + iconOffset, 8));
+        _contentPainter.paint(canvas, Offset(8 + iconOffset, _titlePainter.height + 8));
         break;
       case NodeViewMode.fullContent:
-        _titlePainter.paint(canvas, const Offset(8, 8));
+        if (hasCustomIcon) {
+          _iconPainter!.paint(canvas, const Offset(8, 10));
+        }
+        _titlePainter.paint(canvas, Offset(8 + iconOffset, 8));
         final painter = _fullContentPainter;
         // ignore: unnecessary_null_comparison
         if (painter != null) {
-          painter.paint(canvas, Offset(8, _titlePainter.height + 12));
+          painter.paint(canvas, Offset(8 + iconOffset, _titlePainter.height + 12));
         }
         break;
     }
@@ -537,9 +593,9 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     super.onDragUpdate(event);
     position += event.localDelta;
 
-    // 拖拽过程中实时通知更新连线位置
-    final currentPosition = Offset(position.x, position.y);
-    onDragUpdateCallback?.call(node, currentPosition);
+    // 拖拽过程中实时通知更新连线位置（发送中心点）
+    final centerPosition = Offset(position.x + width / 2, position.y + height / 2);
+    onDragUpdateCallback?.call(node, centerPosition);
   }
 
   @override
@@ -547,15 +603,16 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     super.onDragEnd(event);
     _backgroundPaint.color = _getBackgroundColor();
 
-    final newPosition = Offset(position.x, position.y);
+    // 计算中心点位置
+    final centerPosition = Offset(position.x + width / 2, position.y + height / 2);
 
-    // 如果有 BLoC，分发移动事件
+    // 如果有 BLoC，分发移动事件（存储中心点）
     if (bloc != null) {
-      bloc!.add(NodeMoveEvent(node.id, newPosition));
+      bloc!.add(NodeMoveEvent(node.id, centerPosition));
     }
 
     // 保留旧回调以兼容非 BLoC 模式
-    onDragEndCallback?.call(node, newPosition);
+    onDragEndCallback?.call(node, centerPosition);
   }
 
   @override
@@ -610,14 +667,20 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   }
 
   void updateNode(Node newNode) {
+    // === 架构说明：节点数据同步 ===
+    // 设计意图：同步最新的节点数据到组件
+    // 实现方式：替换 node 引用，并更新相关的渲染属性
+    // 注意：Node 是不可变对象，通过替换引用实现数据更新
+    node = newNode;
+
     // 更新位置
     position = Vector2(
       newNode.position.dx.toDouble(),
       newNode.position.dy.toDouble(),
     );
-    // 重新计算尺寸
+    // 重新计算尺寸（基于新的 viewMode）
     size = _calculateSize(newNode);
-    // 重新初始化绘制
+    // 重新初始化绘制（基于新的颜色、内容等）
     _initPaints();
     _initTextPainters();
   }

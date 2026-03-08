@@ -326,16 +326,78 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   }
 
   /// 缩放视图
-  void _onViewZoom(
+  Future<void> _onViewZoom(
     ViewZoomEvent event,
     Emitter<GraphState> emit,
-  ) {
-    emit(state.copyWith(
-      viewState: state.viewState.copyWith(
-        zoomLevel: event.zoomLevel,
-        camera: state.viewState.camera.copyWith(zoom: event.zoomLevel),
-      ),
-    ));
+  ) async {
+    if (state.graph.id.isEmpty) {
+      // 如果没有加载 graph，只更新内存状态
+      emit(state.copyWith(
+        viewState: state.viewState.copyWith(
+          zoomLevel: event.zoomLevel,
+          camera: event.position != null
+              ? state.viewState.camera.copyWith(
+                  position: event.position!,
+                  zoom: event.zoomLevel,
+                )
+              : state.viewState.camera.copyWith(zoom: event.zoomLevel),
+        ),
+      ));
+      return;
+    }
+
+    try {
+      // === 架构说明：缩放持久化 ===
+      // 设计意图：缩放变化时持久化到 graph 配置
+      // 实现方式：更新 viewConfig.camera.zoom 和 position 并保存
+      // 重要性：确保用户下次打开图时保持相同的缩放级别和位置
+
+      // 使用事件中提供的位置，或者使用当前位置
+      final newPosition = event.position ?? state.viewState.camera.position;
+
+      // 先持久化缩放配置到文件
+      final updatedConfig = state.graph.viewConfig.copyWith(
+        camera: Camera(
+          x: newPosition.dx,
+          y: newPosition.dy,
+          zoom: event.zoomLevel,
+          centerWidth: state.graph.viewConfig.camera.centerWidth,
+          centerHeight: state.graph.viewConfig.camera.centerHeight,
+        ),
+      );
+
+      final updatedGraph = await _graphService.updateGraph(
+        state.graph.id,
+        viewConfig: updatedConfig,
+      );
+
+      // 更新状态（使用更新后的 graph）
+      emit(state.copyWith(
+        graph: updatedGraph,
+        viewState: state.viewState.copyWith(
+          zoomLevel: event.zoomLevel,
+          camera: state.viewState.camera.copyWith(
+            position: newPosition,
+            zoom: event.zoomLevel,
+          ),
+        ),
+      ));
+    } catch (e) {
+      // 持久化失败不影响内存状态的更新
+      debugPrint('Failed to persist camera zoom: $e');
+      // 即使持久化失败，也要更新内存状态
+      emit(state.copyWith(
+        viewState: state.viewState.copyWith(
+          zoomLevel: event.zoomLevel,
+          camera: event.position != null
+              ? state.viewState.camera.copyWith(
+                  position: event.position!,
+                  zoom: event.zoomLevel,
+                )
+              : state.viewState.camera.copyWith(zoom: event.zoomLevel),
+        ),
+      ));
+    }
   }
 
   /// 移动相机位置
@@ -429,9 +491,6 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     if (state.graph.id.isEmpty) return;
 
     try {
-      debugPrint('=== _onBatch ===');
-      debugPrint('Processing ${event.events.length} events');
-
       // 收集所有要添加和移出的节点ID
       final nodeIdsToAdd = <String>[];
       final nodeIdsToMoveOut = <String>[];
@@ -444,8 +503,6 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
           nodeIdsToMoveOut.add(graphEvent.nodeId);
         }
       }
-
-      debugPrint('To add: ${nodeIdsToAdd.length}, to remove: ${nodeIdsToMoveOut.length}');
 
       // 如果没有操作，直接返回
       if (nodeIdsToAdd.isEmpty && nodeIdsToMoveOut.isEmpty) {
@@ -467,20 +524,15 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
         }
       }
 
-      debugPrint('Updated nodeIds count: ${currentNodeIds.length}');
-
       // 保存到文件
       final savedGraph = await _graphService.updateGraph(
         state.graph.id,
         nodeIds: currentNodeIds,
       );
 
-      debugPrint('Graph saved to file');
-
       // 重新加载图数据（包括节点和连接）
       await _loadGraphData(savedGraph, emit);
 
-      debugPrint('Graph reloaded: ${state.nodes.length} nodes, ${state.connections.length} connections');
     } catch (e) {
       debugPrint('Error in _onBatch: $e');
       emit(state.copyWith(error: 'Failed to process batch operations: ${e.toString()}'));

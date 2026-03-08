@@ -146,12 +146,16 @@ class SelectionClearEvent extends GraphEvent {
 
 /// 缩放事件
 class ViewZoomEvent extends GraphEvent {
-  const ViewZoomEvent(this.zoomLevel);
+  const ViewZoomEvent(
+    this.zoomLevel, {
+    this.position,
+  });
 
   final double zoomLevel;
+  final Offset? position;  // 可选的相机位置（以鼠标为中心缩放时需要）
 
   @override
-  List<Object?> get props => [zoomLevel];
+  List<Object?> get props => [zoomLevel, position];
 }
 
 /// 移动相机位置事件

@@ -432,14 +432,29 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                       itemCount: state.results.length,
                       itemBuilder: (context, index) {
                         final node = state.results[index];
+                        // === 搜索高亮策略 ===
+                        // 优先使用主要搜索文本，其次使用标题或内容查询
+                        // 这样可以确保用户输入的内容能够被高亮显示
+                        final highlightQuery = state.currentQuery?.searchText ??
+                                           state.currentQuery?.titleQuery ??
+                                           state.currentQuery?.contentQuery;
+
                         return SearchedNodeItem(
                           node: node,
-                          query: state.currentQuery?.searchText ?? state.currentQuery?.titleQuery ?? state.currentQuery?.contentQuery,
+                          query: highlightQuery,
                           onTap: () {
+                            // === 架构说明：位置转换 ===
+                            // NodeAddEvent 的 position 参数约定为中心位置
+                            // node.position 是 Node 模型的 position 字段（左上角位置）
+                            // 需要将左上角位置转换为中心位置
+                            final centerPosition = Offset(
+                              node.position.dx + node.size.width / 2,
+                              node.position.dy + node.size.height / 2,
+                            );
                             context.read<GraphBloc>().add(
                               NodeAddEvent(
                                 node.id,
-                                position: node.position,
+                                position: centerPosition,
                               ),
                             );
                             context.read<GraphBloc>().add(NodeSelectEvent(node.id));

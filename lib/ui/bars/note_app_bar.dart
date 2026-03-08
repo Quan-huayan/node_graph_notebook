@@ -82,11 +82,18 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         );
 
         // 添加到图中，位置稍微随机
-        final randomX = 100 + (DateTime.now().millisecond % 300).toDouble();
-        final randomY = 100 + (DateTime.now().microsecond % 300).toDouble();
+        // 注意：graphBloc.add 中的 position 参数约定为节点中心位置
+        // AI 节点默认使用 titleWithPreview 模式，尺寸为 250x120
+        final nodeWidth = 250.0;
+        final nodeHeight = 120.0;
+        final topLeftX = 100 + (DateTime.now().millisecond % 300).toDouble();
+        final topLeftY = 100 + (DateTime.now().microsecond % 300).toDouble();
+        // 转换左上角位置为中心位置
+        final centerX = topLeftX + nodeWidth / 2;
+        final centerY = topLeftY + nodeHeight / 2;
         graphBloc.add(NodeAddEvent(
           aiNode.id,
-          position: Offset(randomX, randomY),
+          position: Offset(centerX, centerY),
         ));
 
         ScaffoldMessenger.of(context).showSnackBar(

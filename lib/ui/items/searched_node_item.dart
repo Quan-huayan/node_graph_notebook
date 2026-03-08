@@ -17,8 +17,25 @@ class SearchedNodeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // === 架构说明：自定义图标显示 ===
+    // 设计意图：优先显示自定义图标（metadata['icon']），否则显示默认图标
+    // 优先级：自定义图标 > 文件夹图标 > 默认文档图标
+    Widget leading;
+    if (node.metadata.containsKey('icon') &&
+        node.metadata['icon'] != null &&
+        node.metadata['icon'].toString().isNotEmpty) {
+      // 显示自定义 emoji 图标
+      leading = Text(
+        node.metadata['icon'].toString(),
+        style: const TextStyle(fontSize: 24),
+      );
+    } else {
+      // 显示默认图标
+      leading = Icon(node.isFolder ? Icons.folder : Icons.description);
+    }
+
     return ListTile(
-      leading: Icon(node.isFolder ? Icons.folder : Icons.description),
+      leading: leading,
       title: HighlightText(
         text: node.title,
         query: query,

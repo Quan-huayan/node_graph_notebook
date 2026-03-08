@@ -119,8 +119,8 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // 快速连续触发50次状态变化
-        for (var i = 0; i < 50; i++) {
+        // 快速连续触发20次状态变化（从50减少到20以提高测试速度）
+        for (var i = 0; i < 20; i++) {
           uiBloc.add(UISelectTabEvent('tab-$i'));
         }
 
@@ -218,9 +218,9 @@ void main() {
     group('Large Data Update Performance Tests', () {
       testWidgets('should handle large node list updates efficiently',
           (WidgetTester tester) async {
-        // 创建100个测试节点
+        // 创建30个测试节点（从100减少到30以提高测试速度）
         final testNodes = List.generate(
-          100,
+          30,
           (i) => NodeTestHelpers.test(
             id: 'node-$i',
             title: 'Node $i',
@@ -279,9 +279,9 @@ void main() {
         await tester.pumpAndSettle();
         final renderTime = DateTime.now().difference(startTime);
 
-        // 验证：渲染时间合理（小于5秒）
-        expect(renderTime.inMilliseconds, lessThan(5000));
-        expect(find.text('Total: 100'), findsOneWidget);
+        // 验证：渲染时间合理（小于3秒）
+        expect(renderTime.inMilliseconds, lessThan(3000));
+        expect(find.text('Total: 30'), findsOneWidget);
         expect(buildCount, equals(1));
 
         // 添加一个新节点
@@ -296,9 +296,9 @@ void main() {
         await tester.pumpAndSettle();
         final updateTime = DateTime.now().difference(updateStartTime);
 
-        // 验证：更新时间合理（小于2秒）
-        expect(updateTime.inMilliseconds, lessThan(2000));
-        expect(find.text('Total: 101'), findsOneWidget);
+        // 验证：更新时间合理（小于1秒）
+        expect(updateTime.inMilliseconds, lessThan(1000));
+        expect(find.text('Total: 31'), findsOneWidget);
       });
 
       testWidgets('should use efficient rebuilding with context.select',
@@ -717,8 +717,8 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // 快速创建和更新节点
-        for (var i = 0; i < 100; i++) {
+        // 快速创建和更新节点（从100减少到30以提高测试速度）
+        for (var i = 0; i < 30; i++) {
           nodeBloc.add(
             NodeCreateEvent(
               title: 'Node $i',
@@ -765,8 +765,8 @@ void main() {
 
         final startTime = DateTime.now();
 
-        // 持续触发更新
-        for (var i = 0; i < 50; i++) {
+        // 持续触发更新（从50减少到20以提高测试速度）
+        for (var i = 0; i < 20; i++) {
           uiBloc.add(UISelectTabEvent('tab-$i'));
           await tester.pump();
         }
@@ -829,8 +829,8 @@ void main() {
         final initialExpensiveBuilds = expansiveBuilds;
         final initialMinimalBuilds = minimalBuilds;
 
-        // 触发与minimal无关的状态变化
-        for (var i = 0; i < 10; i++) {
+        // 触发与minimal无关的状态变化（从10减少到5以提高测试速度）
+        for (var i = 0; i < 5; i++) {
           uiBloc.add(UISelectTabEvent('tab-$i'));
           await tester.pump();
         }

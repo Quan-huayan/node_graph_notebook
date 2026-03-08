@@ -53,11 +53,11 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             child: Row(
               children: [
                 const Icon(Icons.visibility, size: 16),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     'Preview',
@@ -65,23 +65,29 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(
-                      value: false,
-                      label: Text('Text', style: TextStyle(fontSize: 12)),
-                      icon: Icon(Icons.code, size: 16),
+                const SizedBox(width: 4),
+                // 使用图标按钮替代 SegmentedButton，节省空间
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ModeButton(
+                      icon: Icons.code,
+                      isSelected: !_isRenderMode,
+                      tooltip: 'View as text',
+                      onTap: () {
+                        if (_isRenderMode) _toggleMode();
+                      },
                     ),
-                    ButtonSegment(
-                      value: true,
-                      label: Text('Render', style: TextStyle(fontSize: 12)),
-                      icon: Icon(Icons.visibility, size: 16),
+                    const SizedBox(width: 2),
+                    _ModeButton(
+                      icon: Icons.visibility,
+                      isSelected: _isRenderMode,
+                      tooltip: 'View as rendered',
+                      onTap: () {
+                        if (!_isRenderMode) _toggleMode();
+                      },
                     ),
                   ],
-                  selected: {_isRenderMode},
-                  onSelectionChanged: (Set<bool> selected) {
-                    _toggleMode();
-                  },
                 ),
               ],
             ),
@@ -93,13 +99,11 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
           child: widget.markdown.isEmpty
               ? const Center(child: Text('No preview available'))
               : _isRenderMode
-                  ? SingleChildScrollView(
+                  ? Padding(
                       padding: const EdgeInsets.all(16),
-                      // 添加水平滚动支持
                       child: Markdown(
                         data: widget.markdown,
                         selectable: true,
-                        // 移除 padding，让外层 SingleChildScrollView 控制
                         padding: EdgeInsets.zero,
                       ),
                     )
@@ -120,6 +124,53 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
                     ),
         ),
       ],
+    );
+  }
+}
+
+/// 模式切换按钮（紧凑型）
+class _ModeButton extends StatelessWidget {
+  const _ModeButton({
+    required this.icon,
+    required this.isSelected,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool isSelected;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primaryContainer
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).dividerColor,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ),
     );
   }
 }

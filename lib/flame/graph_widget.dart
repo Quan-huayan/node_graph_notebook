@@ -37,7 +37,6 @@ class GraphGame extends FlameGame {
 
   // 标识是否正在拖拽，避免状态同步覆盖当前位置
   bool _isDragging = false;
-  Vector2? _positionBeforeDrag;
   Vector2? _pendingPosition; // 拖拽结束时的待处理位置
 
   /// 获取 graph world
@@ -62,9 +61,16 @@ class GraphGame extends FlameGame {
       height: cameraConfig.centerHeight,
     );
 
-    // 设置相机初始位置到配置的中心
-    final centerPos = cameraConfig.centerPosition;
-    camera.viewport.position = Vector2(centerPos.dx.toDouble(), centerPos.dy.toDouble());
+    // === 架构说明：相机初始化 ===
+    // 必须从持久化的配置中恢复相机位置和缩放
+    // viewConfig.camera 存储的是世界坐标系的位置
+
+    // 初始化 viewfinder（世界坐标系）
+    camera.viewfinder.position = Vector2(
+      cameraConfig.x,  // ← 使用持久化的 x
+      cameraConfig.y,  // ← 使用持久化的 y
+    );
+    camera.viewfinder.zoom = cameraConfig.zoom;  // ← 使用持久化的 zoom
 
     // 创建 GraphWorld 并添加到 FlameGame 的 world 中
     _graphWorld = GraphWorld(
@@ -103,18 +109,26 @@ class GraphGame extends FlameGame {
       }
     }
 
-    // 只在非拖拽状态下同步位置，避免覆盖用户正在拖拽的位置
+    // === 架构说明：相机状态防抖同步 ===
+    // 设计意图：避免状态循环导致的抖动
+    // 实现方式：
+    //   1. handleZoom/drag 先设置 camera.viewfinder（保证流畅）
+    //   2. BLoC emit 状态
+    //   3. 这里检查值是否真的变化再设置（避免循环）
+    // 重要性：防止 handleZoom → ViewZoomEvent → emit → 这里设置 camera → 又触发...
+
+    // 只在非拖拽状态下同步位置
     if (!_isDragging && _pendingPosition == null) {
-      // 应用相机位置
       final newPosition = Vector2(cameraState.position.dx, cameraState.position.dy);
-      if (camera.viewport.position != newPosition) {
-        camera.viewport.position = newPosition;
+      // 使用距离检查避免浮点数精度问题
+      if ((camera.viewfinder.position - newPosition).length > 0.1) {
+        camera.viewfinder.position = newPosition;
       }
     }
 
-    // 应用相机缩放级别
+    // 同步缩放级别（带防抖）
     final newZoom = cameraState.zoom;
-    if (camera.viewfinder.zoom != newZoom) {
+    if ((camera.viewfinder.zoom - newZoom).abs() > 0.001) {
       camera.viewfinder.zoom = newZoom;
     }
   }
@@ -123,11 +137,11 @@ class GraphGame extends FlameGame {
   void setDraggingState(bool isDragging) {
     if (isDragging) {
       _isDragging = true;
-      _positionBeforeDrag = camera.viewport.position.clone();
       _pendingPosition = null;
     } else {
       // 拖拽结束时，记录当前位置为待处理位置
-      _pendingPosition = camera.viewport.position.clone();
+      // 使用 viewfinder.position（世界坐标系）
+      _pendingPosition = camera.viewfinder.position.clone();
       // 不要立即设置 _isDragging = false，等待状态同步
     }
   }
@@ -136,43 +150,76 @@ class GraphGame extends FlameGame {
   void handleZoom(double delta, Offset? localPosition) {
     if (_graphWorld == null) return;
 
-    // 缩放系数
-    // 使用较小的系数以获得更平滑的缩放体验
-    // 滚轮每次滚动产生的 delta 约为 100-200，乘以 0.001 后每次滚动变化约 10-20%
+    // === 架构说明：Flame 坐标系统 ===
+    //
+    // **核心概念**：
+    // 1. Viewport（视口）- 屏幕上的渲染区域
+    //    - viewport.position: 视口左上角在屏幕上的位置
+    //    - viewport.size: 视口的像素大小
+    //
+    // 2. Viewfinder（取景器）- 世界中的相机位置
+    //    - viewfinder.position: 相机中心在世界坐标中的位置
+    //    - viewfinder.zoom: 缩放级别
+    //
+    // **坐标转换**（在 CameraComponent.withFixedResolution 下）：
+    // - 屏幕坐标需要转换为虚拟世界坐标
+    // - 转换公式考虑了 viewfinder.position 和 zoom
+    //
+    // **关键理解**：
+    // - event.localDelta 已经是处理过的增量，可以直接用于 viewfinder.position
+    // - 但 localPosition 是屏幕坐标，需要转换为世界坐标
+    //
+    // **缩放逻辑**：
+    // 为了让缩放以鼠标为中心，需要：
+    // 1. 找到鼠标指向的世界坐标
+    // 2. 缩放后，调整相机位置使该世界坐标仍在鼠标下
+
     const zoomFactor = 0.001;
-    final zoomChange = delta * zoomFactor;
+    final zoomChange = -delta * zoomFactor;  // 反转符号：向上滚=放大
 
-    // 计算新的缩放级别
-    final currentZoom = bloc.state.viewState.zoomLevel;
-    var newZoom = currentZoom * (1 + zoomChange);
-
-    // 限制缩放范围
-    newZoom = newZoom.clamp(0.1, 5.0);
+    final currentZoom = camera.viewfinder.zoom;
+    final newZoom = (currentZoom * (1 + zoomChange)).clamp(0.1, 5.0);
 
     // 如果提供了鼠标位置，以鼠标位置为中心进行缩放
     if (localPosition != null) {
-      // 计算鼠标在游戏世界中的位置
-      final worldPosition = camera.localToGlobal(
-        Vector2(localPosition.dx, localPosition.dy));
+      final currentCameraPos = camera.viewfinder.position;
 
-      // 计算缩放前后的差异
-      final zoomRatio = newZoom / currentZoom;
+      // === 坐标转换：屏幕 → 世界 ===
+      // 方法：利用 viewfinder.position 和 zoom
+      //
+      // 世界坐标 = 相机位置 + (屏幕坐标 - 视口中心) / zoom
+      final viewportSize = camera.viewport.size;
+      final viewportCenter = viewportSize / 2;
 
-      // 调整相机位置，使鼠标位置保持在屏幕上的同一位置
-      final cameraPosition = camera.viewport.position;
-      final newCameraPosition = Vector2(
-        worldPosition.x - (worldPosition.x - cameraPosition.x) * zoomRatio,
-        worldPosition.y - (worldPosition.y - cameraPosition.y) * zoomRatio,
+      // 鼠标相对于视口中心的偏移
+      final offsetFromCenter = Vector2(
+        localPosition.dx - viewportCenter.x,
+        localPosition.dy - viewportCenter.y,
       );
 
-      // 更新相机位置
-      camera.viewport.position = newCameraPosition;
+      // 鼠标指向的世界坐标（缩放前）
+      final mouseWorldPos = currentCameraPos + (offsetFromCenter / currentZoom);
+
+      // === 缩放后调整相机位置 ===
+      // 新的相机位置 = 鼠标世界坐标 - (屏幕偏移 / 新zoom)
+      final offsetFromCenterNew = offsetFromCenter / newZoom;
+      final newCameraPos = mouseWorldPos - offsetFromCenterNew;
+
+      // 更新相机位置和缩放
+      camera.viewfinder.position = newCameraPos;
+      camera.viewfinder.zoom = newZoom;
+
+      // 发送事件到 BLoC（包含位置信息）
+      bloc.add(ViewZoomEvent(
+        newZoom,
+        position: Offset(newCameraPos.x, newCameraPos.y),
+      ));
+    } else {
+      // 没有鼠标位置，只缩放不移动
+      camera.viewfinder.zoom = newZoom;
+      bloc.add(ViewZoomEvent(newZoom));
     }
 
-    // 分发缩放事件到 BLoC
-    bloc.add(ViewZoomEvent(newZoom));
-
-    // 通知外部缩放变化
     onZoomChanged?.call(newZoom);
   }
 

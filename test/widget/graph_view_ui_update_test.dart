@@ -48,7 +48,12 @@ void main() {
     late ThemeService themeService;
     late UndoManager undoManager;
 
+    // 用于跟踪创建的节点
+    final List<Node> _createdNodes = [];
+
     setUp(() async {
+      _createdNodes.clear(); // 重置节点列表
+
       mockNodeRepository = MockNodeRepository();
       mockGraphRepository = MockGraphRepository();
       mockNodeService = MockNodeService();
@@ -61,23 +66,29 @@ void main() {
       themeService = ThemeService();
       await themeService.init();
 
-      // 设置默认mock返回值
-      when(mockNodeRepository.queryAll()).thenAnswer((_) async => []);
-      when(mockNodeRepository.loadAll(any)).thenAnswer((_) async => []);
-      when(mockNodeRepository.delete(any)).thenAnswer((_) async {});
+      // 设置默认mock返回值 - 使用 _createdNodes 列表
+      when(mockNodeRepository.queryAll()).thenAnswer((_) async => _createdNodes);
+      when(mockNodeRepository.loadAll(any)).thenAnswer((_) async => _createdNodes);
+      when(mockNodeRepository.delete(any)).thenAnswer((_) async => _createdNodes.clear());
       when(mockGraphRepository.getAll()).thenAnswer((_) async => []);
       when(mockGraphRepository.load(any)).thenAnswer((_) async => null);
       when(mockGraphRepository.save(any)).thenAnswer((_) async {});
 
-      // 设置服务mock返回值
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => []);
+      // 设置服务mock返回值 - 使用 _createdNodes 列表
+      when(mockNodeService.getAllNodes()).thenAnswer((_) async => _createdNodes);
       when(mockNodeService.createNode(
         title: anyNamed('title'),
         content: anyNamed('content'),
         position: anyNamed('position'),
+        size: anyNamed('size'),
         color: anyNamed('color'),
+        references: anyNamed('references'),
         metadata: anyNamed('metadata'),
-      )).thenAnswer((_) async => NodeTestHelpers.test(id: 'new-node', title: 'New Node'));
+      )).thenAnswer((_) async {
+        final node = NodeTestHelpers.test(id: 'new-node', title: 'New Node');
+        _createdNodes.add(node);
+        return node;
+      });
       when(mockNodeService.updateNode(
         any,
         title: anyNamed('title'),
@@ -111,25 +122,7 @@ void main() {
     group('Node Addition UI Update Tests', () {
       testWidgets('should update graph view when node is added',
           (WidgetTester tester) async {
-        final testNode = NodeTestHelpers.test(
-          id: 'test-node-1',
-          title: 'Test Node',
-          content: 'Test Content',
-        );
-
-        when(mockNodeService.createNode(
-          title: anyNamed('title'),
-          content: anyNamed('content'),
-          position: anyNamed('position'),
-          size: anyNamed('size'),
-          color: anyNamed('color'),
-          references: anyNamed('references'),
-          metadata: anyNamed('metadata'),
-        )).thenAnswer((_) async => testNode);
-        when(mockNodeRepository.queryAll()).thenAnswer((_) async => [testNode]);
-        when(mockNodeRepository.loadAll(any)).thenAnswer((_) async => [testNode]);
-        when(mockNodeService.getAllNodes()).thenAnswer((_) async => [testNode]);
-
+        // 初始时没有节点（setUp 已配置 mock）
         await tester.pumpWidget(
           MaterialApp(
             home: MultiBlocProvider(
