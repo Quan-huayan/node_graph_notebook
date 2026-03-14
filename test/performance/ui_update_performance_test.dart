@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:node_graph_notebook/bloc/blocs.dart';
 import 'package:node_graph_notebook/core/repositories/repositories.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
+import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
@@ -33,6 +34,7 @@ void main() {
     late MockNodeService mockNodeService;
     late MockGraphService mockGraphService;
     late AppEventBus eventBus;
+    late CommandBus commandBus;
     late NodeBloc nodeBloc;
     late GraphBloc graphBloc;
     late UIBloc uiBloc;
@@ -44,6 +46,7 @@ void main() {
       mockNodeService = MockNodeService();
       mockGraphService = MockGraphService();
       eventBus = AppEventBus();
+      commandBus = CommandBus();
       undoManager = UndoManager();
 
       // 设置mock返回值
@@ -71,7 +74,8 @@ void main() {
       )).thenAnswer((_) async => NodeTestHelpers.test(id: 'test-1', title: 'Updated'));
 
       nodeBloc = NodeBloc(
-        nodeService: mockNodeService,
+        commandBus: commandBus,
+        nodeRepository: mockNodeRepository,
         eventBus: eventBus,
       );
 
@@ -88,6 +92,7 @@ void main() {
       await nodeBloc.close();
       await graphBloc.close();
       await uiBloc.close();
+      commandBus.dispose();
       eventBus.dispose();
     });
 

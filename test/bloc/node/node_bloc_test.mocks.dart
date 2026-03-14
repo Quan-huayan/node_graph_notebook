@@ -3,12 +3,18 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
-import 'dart:ui' as _i5;
+import 'dart:async' as _i5;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:node_graph_notebook/core/models/models.dart' as _i2;
-import 'package:node_graph_notebook/core/services/node_service.dart' as _i3;
+import 'package:mockito/src/dummies.dart' as _i9;
+import 'package:node_graph_notebook/core/commands/command.dart' as _i2;
+import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i4;
+import 'package:node_graph_notebook/core/commands/command_handler.dart' as _i6;
+import 'package:node_graph_notebook/core/commands/middleware/middleware.dart'
+    as _i7;
+import 'package:node_graph_notebook/core/models/models.dart' as _i3;
+import 'package:node_graph_notebook/core/repositories/node_repository.dart'
+    as _i8;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -25,223 +31,205 @@ import 'package:node_graph_notebook/core/services/node_service.dart' as _i3;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeNode_0 extends _i1.SmartFake implements _i2.Node {
-  _FakeNode_0(Object parent, Invocation parentInvocation)
+class _FakeCommandResult_0<T1> extends _i1.SmartFake
+    implements _i2.CommandResult<T1> {
+  _FakeCommandResult_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-/// A class which mocks [NodeService].
+class _FakeMetadataIndex_1 extends _i1.SmartFake implements _i3.MetadataIndex {
+  _FakeMetadataIndex_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+/// A class which mocks [CommandBus].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNodeService extends _i1.Mock implements _i3.NodeService {
+class MockCommandBus extends _i1.Mock implements _i4.CommandBus {
   @override
-  _i4.Future<_i2.Node> createNode({
-    required String? title,
-    String? content,
-    _i5.Offset? position,
-    _i5.Size? size,
-    String? color,
-    Map<String, _i2.NodeReference>? references,
-    Map<String, dynamic>? metadata,
-  }) =>
+  _i5.Stream<_i4.CommandEvent> get commandStream =>
       (super.noSuchMethod(
-            Invocation.method(#createNode, [], {
-              #title: title,
-              #content: content,
-              #position: position,
-              #size: size,
-              #color: color,
-              #references: references,
-              #metadata: metadata,
-            }),
-            returnValue: _i4.Future<_i2.Node>.value(
-              _FakeNode_0(
+            Invocation.getter(#commandStream),
+            returnValue: _i5.Stream<_i4.CommandEvent>.empty(),
+            returnValueForMissingStub: _i5.Stream<_i4.CommandEvent>.empty(),
+          )
+          as _i5.Stream<_i4.CommandEvent>);
+
+  @override
+  void registerHandler<T extends _i2.Command<dynamic>>(
+    _i6.CommandHandler<T>? handler,
+    Type? commandType,
+  ) => super.noSuchMethod(
+    Invocation.method(#registerHandler, [handler, commandType]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void addMiddleware(_i7.CommandMiddleware? middleware) => super.noSuchMethod(
+    Invocation.method(#addMiddleware, [middleware]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i5.Future<_i2.CommandResult<T>> dispatch<T>(_i2.Command<T>? command) =>
+      (super.noSuchMethod(
+            Invocation.method(#dispatch, [command]),
+            returnValue: _i5.Future<_i2.CommandResult<T>>.value(
+              _FakeCommandResult_0<T>(
                 this,
-                Invocation.method(#createNode, [], {
-                  #title: title,
-                  #content: content,
-                  #position: position,
-                  #size: size,
-                  #color: color,
-                  #references: references,
-                  #metadata: metadata,
-                }),
+                Invocation.method(#dispatch, [command]),
               ),
             ),
-            returnValueForMissingStub: _i4.Future<_i2.Node>.value(
-              _FakeNode_0(
+            returnValueForMissingStub: _i5.Future<_i2.CommandResult<T>>.value(
+              _FakeCommandResult_0<T>(
                 this,
-                Invocation.method(#createNode, [], {
-                  #title: title,
-                  #content: content,
-                  #position: position,
-                  #size: size,
-                  #color: color,
-                  #references: references,
-                  #metadata: metadata,
-                }),
+                Invocation.method(#dispatch, [command]),
               ),
             ),
           )
-          as _i4.Future<_i2.Node>);
+          as _i5.Future<_i2.CommandResult<T>>);
 
   @override
-  _i4.Future<_i2.Node> updateNode(
-    String? nodeId, {
+  _i5.Future<void> undo(_i2.Command<dynamic>? command) =>
+      (super.noSuchMethod(
+            Invocation.method(#undo, [command]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+}
+
+/// A class which mocks [NodeRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockNodeRepository extends _i1.Mock implements _i8.NodeRepository {
+  @override
+  _i5.Future<void> save(_i3.Node? node) =>
+      (super.noSuchMethod(
+            Invocation.method(#save, [node]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<_i3.Node?> load(String? nodeId) =>
+      (super.noSuchMethod(
+            Invocation.method(#load, [nodeId]),
+            returnValue: _i5.Future<_i3.Node?>.value(),
+            returnValueForMissingStub: _i5.Future<_i3.Node?>.value(),
+          )
+          as _i5.Future<_i3.Node?>);
+
+  @override
+  _i5.Future<void> delete(String? nodeId) =>
+      (super.noSuchMethod(
+            Invocation.method(#delete, [nodeId]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> saveAll(List<_i3.Node>? nodes) =>
+      (super.noSuchMethod(
+            Invocation.method(#saveAll, [nodes]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<List<_i3.Node>> loadAll(List<String>? nodeIds) =>
+      (super.noSuchMethod(
+            Invocation.method(#loadAll, [nodeIds]),
+            returnValue: _i5.Future<List<_i3.Node>>.value(<_i3.Node>[]),
+            returnValueForMissingStub: _i5.Future<List<_i3.Node>>.value(
+              <_i3.Node>[],
+            ),
+          )
+          as _i5.Future<List<_i3.Node>>);
+
+  @override
+  _i5.Future<List<_i3.Node>> queryAll() =>
+      (super.noSuchMethod(
+            Invocation.method(#queryAll, []),
+            returnValue: _i5.Future<List<_i3.Node>>.value(<_i3.Node>[]),
+            returnValueForMissingStub: _i5.Future<List<_i3.Node>>.value(
+              <_i3.Node>[],
+            ),
+          )
+          as _i5.Future<List<_i3.Node>>);
+
+  @override
+  _i5.Future<List<_i3.Node>> search({
     String? title,
     String? content,
-    _i5.Offset? position,
-    _i5.Size? size,
-    _i2.NodeViewMode? viewMode,
-    String? color,
-    Map<String, _i2.NodeReference>? references,
-    Map<String, dynamic>? metadata,
+    List<String>? tags,
+    DateTime? startDate,
+    DateTime? endDate,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(
-              #updateNode,
-              [nodeId],
-              {
-                #title: title,
-                #content: content,
-                #position: position,
-                #size: size,
-                #viewMode: viewMode,
-                #color: color,
-                #references: references,
-                #metadata: metadata,
-              },
+            Invocation.method(#search, [], {
+              #title: title,
+              #content: content,
+              #tags: tags,
+              #startDate: startDate,
+              #endDate: endDate,
+            }),
+            returnValue: _i5.Future<List<_i3.Node>>.value(<_i3.Node>[]),
+            returnValueForMissingStub: _i5.Future<List<_i3.Node>>.value(
+              <_i3.Node>[],
             ),
-            returnValue: _i4.Future<_i2.Node>.value(
-              _FakeNode_0(
+          )
+          as _i5.Future<List<_i3.Node>>);
+
+  @override
+  String getNodeFilePath(String? nodeId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getNodeFilePath, [nodeId]),
+            returnValue: _i9.dummyValue<String>(
+              this,
+              Invocation.method(#getNodeFilePath, [nodeId]),
+            ),
+            returnValueForMissingStub: _i9.dummyValue<String>(
+              this,
+              Invocation.method(#getNodeFilePath, [nodeId]),
+            ),
+          )
+          as String);
+
+  @override
+  _i5.Future<_i3.MetadataIndex> getMetadataIndex() =>
+      (super.noSuchMethod(
+            Invocation.method(#getMetadataIndex, []),
+            returnValue: _i5.Future<_i3.MetadataIndex>.value(
+              _FakeMetadataIndex_1(
                 this,
-                Invocation.method(
-                  #updateNode,
-                  [nodeId],
-                  {
-                    #title: title,
-                    #content: content,
-                    #position: position,
-                    #size: size,
-                    #viewMode: viewMode,
-                    #color: color,
-                    #references: references,
-                    #metadata: metadata,
-                  },
-                ),
+                Invocation.method(#getMetadataIndex, []),
               ),
             ),
-            returnValueForMissingStub: _i4.Future<_i2.Node>.value(
-              _FakeNode_0(
+            returnValueForMissingStub: _i5.Future<_i3.MetadataIndex>.value(
+              _FakeMetadataIndex_1(
                 this,
-                Invocation.method(
-                  #updateNode,
-                  [nodeId],
-                  {
-                    #title: title,
-                    #content: content,
-                    #position: position,
-                    #size: size,
-                    #viewMode: viewMode,
-                    #color: color,
-                    #references: references,
-                    #metadata: metadata,
-                  },
-                ),
+                Invocation.method(#getMetadataIndex, []),
               ),
             ),
           )
-          as _i4.Future<_i2.Node>);
+          as _i5.Future<_i3.MetadataIndex>);
 
   @override
-  _i4.Future<void> deleteNode(String? nodeId) =>
+  _i5.Future<void> updateIndex(_i3.Node? node) =>
       (super.noSuchMethod(
-            Invocation.method(#deleteNode, [nodeId]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            Invocation.method(#updateIndex, [node]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
-
-  @override
-  _i4.Future<_i2.Node?> getNode(String? nodeId) =>
-      (super.noSuchMethod(
-            Invocation.method(#getNode, [nodeId]),
-            returnValue: _i4.Future<_i2.Node?>.value(),
-            returnValueForMissingStub: _i4.Future<_i2.Node?>.value(),
-          )
-          as _i4.Future<_i2.Node?>);
-
-  @override
-  _i4.Future<List<_i2.Node>> getAllNodes() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllNodes, []),
-            returnValue: _i4.Future<List<_i2.Node>>.value(<_i2.Node>[]),
-            returnValueForMissingStub: _i4.Future<List<_i2.Node>>.value(
-              <_i2.Node>[],
-            ),
-          )
-          as _i4.Future<List<_i2.Node>>);
-
-  @override
-  _i4.Future<List<_i2.Node>> searchNodes(String? query) =>
-      (super.noSuchMethod(
-            Invocation.method(#searchNodes, [query]),
-            returnValue: _i4.Future<List<_i2.Node>>.value(<_i2.Node>[]),
-            returnValueForMissingStub: _i4.Future<List<_i2.Node>>.value(
-              <_i2.Node>[],
-            ),
-          )
-          as _i4.Future<List<_i2.Node>>);
-
-  @override
-  _i4.Future<void> connectNodes({
-    required String? fromNodeId,
-    required String? toNodeId,
-    required _i2.ReferenceType? type,
-    String? role,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#connectNodes, [], {
-              #fromNodeId: fromNodeId,
-              #toNodeId: toNodeId,
-              #type: type,
-              #role: role,
-            }),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
-
-  @override
-  _i4.Future<void> disconnectNodes({
-    required String? fromNodeId,
-    required String? toNodeId,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#disconnectNodes, [], {
-              #fromNodeId: fromNodeId,
-              #toNodeId: toNodeId,
-            }),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
-
-  @override
-  _i4.Future<void> batchUpdate(List<_i3.NodeUpdate>? updates) =>
-      (super.noSuchMethod(
-            Invocation.method(#batchUpdate, [updates]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
-
-  @override
-  _i4.Future<void> batchDelete(List<String>? nodeIds) =>
-      (super.noSuchMethod(
-            Invocation.method(#batchDelete, [nodeIds]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 }

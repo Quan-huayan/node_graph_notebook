@@ -7,6 +7,7 @@ import 'package:node_graph_notebook/bloc/blocs.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/core/repositories/repositories.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
+import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../test_helpers.dart';
@@ -41,6 +42,7 @@ void main() {
     late MockNodeService mockNodeService;
     late MockGraphService mockGraphService;
     late AppEventBus eventBus;
+    late CommandBus commandBus;
     late NodeBloc nodeBloc;
     late GraphBloc graphBloc;
     late UIBloc uiBloc;
@@ -49,16 +51,17 @@ void main() {
     late UndoManager undoManager;
 
     // 用于跟踪创建的节点
-    final List<Node> _createdNodes = [];
+    final List<Node> createdNodes = [];
 
     setUp(() async {
-      _createdNodes.clear(); // 重置节点列表
+      createdNodes.clear(); // 重置节点列表
 
       mockNodeRepository = MockNodeRepository();
       mockGraphRepository = MockGraphRepository();
       mockNodeService = MockNodeService();
       mockGraphService = MockGraphService();
       eventBus = AppEventBus();
+      commandBus = CommandBus();
       undoManager = UndoManager();
       uiBloc = UIBloc();
       settingsService = SettingsService();
@@ -66,16 +69,16 @@ void main() {
       themeService = ThemeService();
       await themeService.init();
 
-      // 设置默认mock返回值 - 使用 _createdNodes 列表
-      when(mockNodeRepository.queryAll()).thenAnswer((_) async => _createdNodes);
-      when(mockNodeRepository.loadAll(any)).thenAnswer((_) async => _createdNodes);
-      when(mockNodeRepository.delete(any)).thenAnswer((_) async => _createdNodes.clear());
+      // 设置默认mock返回值 - 使用 createdNodes 列表
+      when(mockNodeRepository.queryAll()).thenAnswer((_) async => createdNodes);
+      when(mockNodeRepository.loadAll(any)).thenAnswer((_) async => createdNodes);
+      when(mockNodeRepository.delete(any)).thenAnswer((_) async => createdNodes.clear());
       when(mockGraphRepository.getAll()).thenAnswer((_) async => []);
       when(mockGraphRepository.load(any)).thenAnswer((_) async => null);
       when(mockGraphRepository.save(any)).thenAnswer((_) async {});
 
-      // 设置服务mock返回值 - 使用 _createdNodes 列表
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => _createdNodes);
+      // 设置服务mock返回值 - 使用 createdNodes 列表
+      when(mockNodeService.getAllNodes()).thenAnswer((_) async => createdNodes);
       when(mockNodeService.createNode(
         title: anyNamed('title'),
         content: anyNamed('content'),
@@ -86,7 +89,7 @@ void main() {
         metadata: anyNamed('metadata'),
       )).thenAnswer((_) async {
         final node = NodeTestHelpers.test(id: 'new-node', title: 'New Node');
-        _createdNodes.add(node);
+        createdNodes.add(node);
         return node;
       });
       when(mockNodeService.updateNode(
@@ -101,7 +104,8 @@ void main() {
 
       // 初始化BLoCs
       nodeBloc = NodeBloc(
-        nodeService: mockNodeService,
+        commandBus: commandBus,
+        nodeRepository: mockNodeRepository,
         eventBus: eventBus,
       );
 
@@ -116,6 +120,7 @@ void main() {
       await nodeBloc.close();
       await graphBloc.close();
       await uiBloc.close();
+      commandBus.dispose();
       eventBus.dispose();
     });
 
@@ -369,8 +374,10 @@ void main() {
           return [];
         });
 
+        final loadingCommandBus = CommandBus();
         final loadingNodeBloc = NodeBloc(
-          nodeService: mockNodeService,
+          commandBus: loadingCommandBus,
+          nodeRepository: mockNodeRepository,
           eventBus: eventBus,
         );
 
@@ -424,8 +431,10 @@ void main() {
 
         when(mockNodeService.getAllNodes()).thenAnswer((_) async => [testNode]);
 
+        final loadingCommandBus = CommandBus();
         final loadingNodeBloc = NodeBloc(
-          nodeService: mockNodeService,
+          commandBus: loadingCommandBus,
+          nodeRepository: mockNodeRepository,
           eventBus: eventBus,
         );
 
@@ -481,8 +490,10 @@ void main() {
           Exception('Failed to load nodes'),
         );
 
+        final errorCommandBus = CommandBus();
         final errorNodeBloc = NodeBloc(
-          nodeService: mockNodeService,
+          commandBus: errorCommandBus,
+          nodeRepository: mockNodeRepository,
           eventBus: eventBus,
         );
 

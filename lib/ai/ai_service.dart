@@ -490,10 +490,6 @@ class MockAIService extends ChangeNotifier implements AIService {
       'New Topic 3',
     ];
   }
-
-  List<String> _extractKeywords(String title) {
-    return title.split(' ').take(3).toList();
-  }
 }
 
 /// AI 提供商接口

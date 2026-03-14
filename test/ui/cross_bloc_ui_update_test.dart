@@ -7,6 +7,7 @@ import 'package:node_graph_notebook/bloc/blocs.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/repositories/repositories.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
+import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import '../test_helpers.dart';
 
 // Mock生成器注解
@@ -33,6 +34,7 @@ void main() {
     late MockNodeService mockNodeService;
     late MockGraphService mockGraphService;
     late AppEventBus eventBus;
+    late CommandBus commandBus;
     late NodeBloc nodeBloc;
     late GraphBloc graphBloc;
     late UndoManager undoManager;
@@ -43,6 +45,7 @@ void main() {
       mockNodeService = MockNodeService();
       mockGraphService = MockGraphService();
       eventBus = AppEventBus();
+      commandBus = CommandBus();
       undoManager = UndoManager();
 
       // 设置mock返回值
@@ -66,7 +69,8 @@ void main() {
 
       // 初始化NodeBloc
       nodeBloc = NodeBloc(
-        nodeService: mockNodeService,
+        commandBus: commandBus,
+        nodeRepository: mockNodeRepository,
         eventBus: eventBus,
       );
 
@@ -81,6 +85,7 @@ void main() {
     tearDown(() async {
       await nodeBloc.close();
       await graphBloc.close();
+      commandBus.dispose();
       eventBus.dispose();
     });
 

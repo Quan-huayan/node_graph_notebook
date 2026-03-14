@@ -8,6 +8,7 @@ import 'package:node_graph_notebook/bloc/blocs.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/repositories/repositories.dart';
 import 'package:node_graph_notebook/core/services/services.dart';
+import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/ui/dialogs/export_markdown_dialog.dart';
 import 'package:node_graph_notebook/converter/models/models.dart';
@@ -41,6 +42,7 @@ void main() {
     late MockGraphService mockGraphService;
     late MockImportExportService mockImportExportService;
     late AppEventBus eventBus;
+    late CommandBus commandBus;
     late NodeBloc nodeBloc;
     late GraphBloc graphBloc;
     late ConverterBloc converterBloc;
@@ -53,6 +55,7 @@ void main() {
       mockGraphService = MockGraphService();
       mockImportExportService = MockImportExportService();
       eventBus = AppEventBus();
+      commandBus = CommandBus();
       undoManager = UndoManager();
 
       // 设置mock返回值
@@ -77,7 +80,8 @@ void main() {
 
       // 初始化BLoCs
       nodeBloc = NodeBloc(
-        nodeService: mockNodeService,
+        commandBus: commandBus,
+        nodeRepository: mockNodeRepository,
         eventBus: eventBus,
       );
 
@@ -96,6 +100,7 @@ void main() {
       await nodeBloc.close();
       await graphBloc.close();
       await converterBloc.close();
+      commandBus.dispose();
       eventBus.dispose();
     });
 

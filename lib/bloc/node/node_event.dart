@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:equatable/equatable.dart';
 import '../../core/models/models.dart';
+import '../../core/events/app_events.dart';
 
 /// 节点事件基类
 ///
@@ -165,4 +166,21 @@ class NodeToggleSelectionEvent extends NodeEvent {
 /// 清除错误事件
 class NodeClearErrorEvent extends NodeEvent {
   const NodeClearErrorEvent();
+}
+
+/// 节点数据变化内部事件
+///
+/// 用于处理从EventBus接收到的节点数据变化事件
+/// 仅在BLoC内部使用，用于同步状态
+class NodeDataChangedInternalEvent extends NodeEvent {
+  const NodeDataChangedInternalEvent({
+    required this.changedNodes,
+    required this.action,
+  });
+
+  final List<Node> changedNodes;
+  final DataChangeAction action;
+
+  @override
+  List<Object?> get props => [changedNodes, action];
 }

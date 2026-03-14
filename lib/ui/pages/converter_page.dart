@@ -27,7 +27,7 @@ class _ConverterPageState extends State<ConverterPage> {
   );
 
   String? _selectedPath;
-  bool _isDirectory = false; // false = MD → Nodes, true = Nodes → MD
+  final bool _isDirectory = false; // false = MD → Nodes, true = Nodes → MD
   List<Node> _previewNodes = [];
   String _previewMarkdown = '';
   bool _isConverting = false;

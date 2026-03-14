@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../ai/ai_service.dart';
 import '../../core/services/services.dart';
+import '../../core/services/theme/app_theme.dart';
 
 /// AI 测试对话框
 class AITestDialog extends StatefulWidget {
@@ -111,7 +112,7 @@ class _AITestDialogState extends State<AITestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.read<ThemeService>().themeData;
+    final AppThemeData theme = context.read<ThemeService>().themeData;
 
     return Dialog(
       child: Container(
@@ -235,16 +236,16 @@ class _AITestDialogState extends State<AITestDialog> {
     );
   }
 
-  Widget _buildMessageWidget(_ChatMessage message, dynamic theme) {
+  Widget _buildMessageWidget(_ChatMessage message, AppThemeData theme) {
     if (message.isSystem) {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.status.info.withOpacity(0.1),
+          color: theme.status.info.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: theme.status.info.withOpacity(0.3),
+            color: theme.status.info.withValues(alpha: 0.3),
           ),
         ),
         child: Text(
@@ -267,7 +268,7 @@ class _AITestDialogState extends State<AITestDialog> {
         constraints: const BoxConstraints(maxWidth: 400),
         decoration: BoxDecoration(
           color: isUser
-              ? theme.ui.icon.withOpacity(0.8)
+              ? theme.ui.icon.withValues(alpha: 0.8)
               : theme.backgrounds.tertiary,
           borderRadius: BorderRadius.circular(8),
         ),

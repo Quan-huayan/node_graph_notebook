@@ -8,6 +8,18 @@ import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
 import 'core/events/app_events.dart';
+import 'core/commands/command_bus.dart';
+import 'core/commands/impl/node_commands.dart';
+import 'core/commands/handlers/create_node_handler.dart';
+import 'core/commands/handlers/update_node_handler.dart';
+import 'core/commands/handlers/delete_node_handler.dart';
+import 'core/commands/handlers/connect_nodes_handler.dart';
+import 'core/commands/handlers/disconnect_nodes_handler.dart';
+import 'core/commands/handlers/move_node_handler.dart';
+import 'core/commands/handlers/resize_node_handler.dart';
+import 'core/commands/middleware/logging_middleware.dart';
+import 'core/commands/middleware/validation_middleware.dart';
+import 'core/commands/middleware/transaction_middleware.dart';
 import 'ai/ai_service.dart';
 import 'bloc/blocs.dart';
 import 'ui/pages/home_page.dart';
@@ -182,11 +194,64 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           dispose: (_, bus) => bus.dispose(),
         ),
 
-        // 2.3 BLoC 层
+        // 2.3 命令总线（Command Bus - 业务逻辑统一入口）
+        Provider<CommandBus>(
+          create: (ctx) {
+            final commandBus = CommandBus()
+              // 添加中间件
+              ..addMiddleware(LoggingMiddleware(
+                logLevel: LogLevel.info,
+                includeTimestamp: true,
+                includeDuration: true,
+              ))
+              ..addMiddleware(TransactionMiddleware())
+              ..addMiddleware(ValidationMiddleware());
+
+            // 注册节点命令处理器
+            final nodeService = ctx.read<NodeService>();
+            final nodeRepository = ctx.read<NodeRepository>();
+
+            commandBus.registerHandler<CreateNodeCommand>(
+              CreateNodeHandler(nodeService),
+              CreateNodeCommand,
+            );
+            commandBus.registerHandler<UpdateNodeCommand>(
+              UpdateNodeHandler(nodeService),
+              UpdateNodeCommand,
+            );
+            commandBus.registerHandler<DeleteNodeCommand>(
+              DeleteNodeHandler(nodeService),
+              DeleteNodeCommand,
+            );
+            commandBus.registerHandler<ConnectNodesCommand>(
+              ConnectNodesHandler(nodeRepository),
+              ConnectNodesCommand,
+            );
+            commandBus.registerHandler<DisconnectNodesCommand>(
+              DisconnectNodesHandler(nodeRepository),
+              DisconnectNodesCommand,
+            );
+            commandBus.registerHandler<MoveNodeCommand>(
+              MoveNodeHandler(nodeRepository),
+              MoveNodeCommand,
+            );
+            commandBus.registerHandler<ResizeNodeCommand>(
+              ResizeNodeHandler(nodeRepository),
+              ResizeNodeCommand,
+            );
+
+            return commandBus;
+          },
+          dispose: (_, bus) => bus.dispose(),
+        ),
+
+        // 2.4 BLoC 层
         // 注意：NodeBloc 和 GraphBloc 通过事件总线解耦，不再有直接依赖
+        // NodeBloc 现在通过 CommandBus 执行写操作，通过 Repository 执行读操作
         BlocProvider<NodeBloc>(
           create: (ctx) => NodeBloc(
-            nodeService: ctx.read<NodeService>(),
+            commandBus: ctx.read<CommandBus>(),
+            nodeRepository: ctx.read<NodeRepository>(),
             eventBus: ctx.read<AppEventBus>(),
           )..add(const NodeLoadEvent()),
         ),

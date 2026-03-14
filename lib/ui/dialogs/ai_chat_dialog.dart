@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../ai/ai_service.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
+import '../../core/services/theme/app_theme.dart';
 import '../../bloc/blocs.dart';
 
 /// AI 聊天对话框
@@ -469,16 +470,16 @@ Extension Commands:
     );
   }
 
-  Widget _buildMessageWidget(_ChatMessage message, dynamic theme) {
+  Widget _buildMessageWidget(_ChatMessage message, AppThemeData theme) {
     if (message.isSystem) {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.status.info.withOpacity(0.1),
+          color: theme.status.info.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: theme.status.info.withOpacity(0.3),
+            color: theme.status.info.withValues(alpha: 0.3),
           ),
         ),
         child: Text(
@@ -501,7 +502,7 @@ Extension Commands:
         constraints: const BoxConstraints(maxWidth: 450),
         decoration: BoxDecoration(
           color: isUser
-              ? theme.ui.icon.withOpacity(0.8)
+              ? theme.ui.icon.withValues(alpha: 0.8)
               : theme.backgrounds.tertiary,
           borderRadius: BorderRadius.circular(8),
         ),

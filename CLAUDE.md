@@ -16,6 +16,91 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Data import/export functionality
 - Theme customization (light/dark modes)
 
+## ⚠️ Active Refactoring
+
+**The project is currently undergoing a major architectural refactoring. Please read the refactoring documentation before making significant changes.**
+
+### Current Phase: Phase 1 - Command Bus Implementation
+
+The project is implementing a Command Bus pattern to improve separation of concerns and testability. This refactoring introduces:
+
+- **Command Bus**: Centralized business logic execution
+- **CQRS Pattern**: Separate read (Repository) and write (Command) operations
+- **Middleware Pipeline**: Cross-cutting concerns (logging, validation, transactions)
+- **BLoC Restructuring**: BLoCs now only manage UI state, not business logic
+
+### Important Documentation
+
+**Before making changes, read:**
+- [Refactoring README](docs/refactor/README.md) - Overview of refactoring process
+- [Phase 1 Plan](docs/refactor/phase_1_command_bus/refactor_plan.md) - Detailed plan for current phase
+- [Phase 1 Status](docs/refactor/phase_1_command_bus/refactor_status.md) - Current implementation status
+- [Phase 1 Changes](docs/refactor/phase_1_command_bus/refactor_changes.md) - Detailed architecture changes
+
+### Key Architecture Changes
+
+**New Architecture:**
+```
+UI → BLoC → CommandBus → Handlers → Service/Repository
+     (UI State)   (Business Logic)
+```
+
+**Important:**
+- ✅ **Write operations** (create, update, delete) → Use `CommandBus.dispatch()`
+- ✅ **Read operations** (load, search) → Use `Repository` directly
+- ✅ **BLoCs** → Only manage UI state (isLoading, error, selection)
+- ✅ **EventBus** → Subscribe to data changes from other BLoCs
+
+### Implementation Status
+
+Phase 1 is approximately **85% complete**:
+- ✅ Core Command Bus infrastructure
+- ✅ Node commands and handlers (7 commands)
+- ✅ Middleware system (3 middleware)
+- ✅ NodeBloc refactored
+- ⏳ API alignment issues (some compilation errors)
+- ⏳ Tests not yet written
+
+**Current blockers:**
+- API alignment between handlers and existing services
+- Missing EventBus integration in CommandContext
+- Compilation errors need fixing before testing
+
+### How to Work with the New Architecture
+
+#### Adding New Commands
+
+1. Create command class in `lib/core/commands/impl/`
+2. Create handler in `lib/core/commands/handlers/`
+3. Register handler in `lib/app.dart`
+4. Use in BLoC via `commandBus.dispatch(command)`
+
+#### Adding New Middleware
+
+1. Create middleware class in `lib/core/commands/middleware/`
+2. Register in `lib/app.dart` with `commandBus.addMiddleware()`
+
+#### Modifying BLoCs
+
+- Write operations → Use `CommandBus`
+- Read operations → Use `Repository` directly
+- Subscribe to `EventBus` for data changes
+- Do NOT include business logic in BLoC
+
+### Related Files
+
+**New Command Bus Files:**
+- `lib/core/commands/command.dart`
+- `lib/core/commands/command_bus.dart`
+- `lib/core/commands/command_context.dart`
+- `lib/core/commands/impl/node_commands.dart`
+- `lib/core/commands/handlers/*.dart`
+- `lib/core/commands/middleware/*.dart`
+
+**Modified Files:**
+- `lib/app.dart` - Added CommandBus provider
+- `lib/bloc/node/node_bloc.dart` - Refactored to use CommandBus
+
 ## Development Commands
 
 ### Essential Commands
