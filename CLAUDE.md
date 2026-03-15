@@ -168,39 +168,55 @@ UI Layer (widgets)
 - Relationships managed through `NodeReference` objects
 - Position and size tracked for visual layout
 
-**2. Provider/BLoC Organization** (see `lib/app.dart:97-213`)
+**2. Provider/BLoC Organization** (see `lib/app.dart`)
+
+The application initializes dependencies in layers using Provider:
 
 ```dart
-MultiProvider(
-  providers: [
-    // 0. Settings & Theme Services
-    ChangeNotifierProvider<SettingsService>,
-    ChangeNotifierProvider<ThemeService>,
-    Provider<SharedPreferencesAsync>,
+// 0. Settings & Theme Services
+ChangeNotifierProvider<SettingsService>,
+ChangeNotifierProvider<ThemeService>,
+Provider<SharedPreferencesAsync>,
 
-    // 1. Repository Layer
-    Provider<NodeRepository>,
-    Provider<GraphRepository>,
+// 1. Repository Layer
+Provider<NodeRepository>,
+Provider<GraphRepository>,
 
-    // 2. Service Layer
-    Provider<NodeService>,
-    Provider<GraphService>,
-    Provider<SearchPresetService>,
-    Provider<ConverterService>,
-    Provider<ImportExportService>,
-    ChangeNotifierProvider<AIServiceImpl>,
-    ChangeNotifierProvider<UndoManager>,
-    Provider<AppEventBus>,
+// 2. Service Layer
+Provider<NodeService>,
+Provider<GraphService>,
+Provider<SearchPresetService>,
+Provider<ConverterService>,
+Provider<ImportExportService>,
+ChangeNotifierProvider<AIServiceImpl>,
+Provider<LayoutService>,
 
-    // 3. BLoC Layer
-    BlocProvider<NodeBloc>,
-    BlocProvider<GraphBloc>,
-    BlocProvider<UIBloc>,
-    BlocProvider<SearchBloc>,
-    BlocProvider<ConverterBloc>,
-  ],
-)
+// 3. Event Bus & Command Bus
+Provider<AppEventBus>,
+Provider<CommandBus>,
+
+// 4. Command Handler Registration (via ProxyProvider)
+// - Registers Node, Graph, Layout, and AI command handlers
+
+// 5. BLoC Layer
+BlocProvider<NodeBloc>,
+BlocProvider<GraphBloc>,
+BlocProvider<UIBloc>,
+BlocProvider<SearchBloc>,
+BlocProvider<ConverterBloc>,
+
+// 6. Plugin System (loaded synchronously before UI)
+Provider<HookRegistry>,
+Provider<PluginManager>,
 ```
+
+**Plugin Loading:**
+- Built-in plugins are loaded via `FutureBuilder` before app UI displays
+- `BuiltinPluginLoader` registers plugin factories to `PluginDiscoverer`
+- `DependencyResolver` determines load order based on dependencies
+- Plugins are loaded through `PluginManager` in dependency order
+- UI Hook plugins are registered to `HookRegistry` after loading
+- App shows "Loading plugins..." screen during plugin initialization
 
 **3. Provider/BLoC Usage Rules**
 
@@ -350,6 +366,105 @@ await context.read<UndoManager>().undo();
 - `AIServiceImpl` - Main AI service implementation
 - Supports OpenAI and Anthropic providers
 - Requires API keys configuration
+
+**Plugin System** (`lib/core/plugin/` & `lib/plugins/`)
+
+The application features a comprehensive plugin system for extensibility:
+
+**Plugin Architecture:**
+- **Plugin Manager** - Manages plugin lifecycle, dependencies, and loading order
+- **Plugin Discoverer** - Discovers and instantiates plugins via factory functions
+- **Dependency Resolver** - Resolves plugin dependencies using topological sorting
+- **Plugin Registry** - Maintains registry of all loaded plugins
+- **Hook Registry** - Manages UI hooks for extending application UI
+
+**Plugin Types:**
+- **UI Hook Plugins** - Extend UI at specific hook points (toolbar, sidebar, context menus, etc.)
+- **Service Plugins** - Provide additional services and functionality
+- **Middleware Plugins** - Intercept and process commands in the Command Bus pipeline
+
+**Plugin Lifecycle:**
+1. **Registration** - Plugin factory registered to PluginDiscoverer
+2. **Discovery** - PluginDiscoverer instantiates plugin and reads metadata
+3. **Dependency Resolution** - DependencyResolver determines load order
+4. **Loading** - PluginManager.loadPlugin() calls plugin.onLoad(context)
+5. **Enabling** - PluginManager.enablePlugin() calls plugin.onEnable()
+6. **Disabling** - PluginManager.disablePlugin() calls plugin.onDisable()
+7. **Unloading** - PluginManager.unloadPlugin() calls plugin.onUnload()
+
+**Plugin Loading Order:**
+- Plugins are loaded according to dependency relationships (topological sort)
+- Depended plugins are loaded before dependent plugins
+- Built-in plugins are loaded via `BuiltinPluginLoader` at app startup
+- Plugin loading completes before app UI is displayed
+
+**Key Plugin Files:**
+- `lib/core/plugin/plugin.dart` - Base Plugin interface and lifecycle
+- `lib/core/plugin/plugin_manager.dart` - Plugin lifecycle management
+- `lib/core/plugin/plugin_discoverer.dart` - Plugin discovery and instantiation
+- `lib/core/plugin/dependency_resolver.dart` - Dependency resolution
+- `lib/core/plugin/builtin_plugin_loader.dart` - Built-in plugin loader
+- `lib/core/plugin/ui_hooks/` - UI Hook system
+- `lib/plugins/builtin_plugins/` - Built-in plugin implementations
+
+**Creating Plugins:**
+
+```dart
+// 1. Create plugin class
+class MyPlugin extends UIHook {
+  @override
+  PluginMetadata get metadata => PluginMetadata(
+    id: 'com.example.myPlugin',
+    name: 'My Plugin',
+    version: '1.0.0',
+    dependencies: [], // List of plugin IDs this plugin depends on
+  );
+
+  @override
+  HookPointId get hookPoint => HookPointId.mainToolbar;
+
+  @override
+  int get priority => 100; // Lower = higher priority
+
+  @override
+  Widget render(HookContext context) {
+    // Return UI widget
+  }
+
+  @override
+  Future<void> onLoad(PluginContext context) async {
+    // Initialize plugin
+  }
+
+  @override
+  Future<void> onEnable() async {
+    // Activate plugin functionality
+  }
+
+  @override
+  Future<void> onDisable() async {
+    // Deactivate plugin functionality
+  }
+
+  @override
+  Future<void> onUnload() async {
+    // Clean up resources
+  }
+}
+
+// 2. Register plugin factory in BuiltinPluginLoader
+final List<UIHookFactory> _builtinUIHookFactories = [
+  // ... other plugins
+  () => MyPlugin(), // Add your plugin here
+];
+```
+
+**Plugin Best Practices:**
+- Always define dependencies in metadata if your plugin relies on other plugins
+- Use `PluginContext` for accessing system APIs (CommandBus, EventBus, Repositories)
+- Implement proper cleanup in `onUnload()` to avoid memory leaks
+- Use priority to control UI element order when multiple plugins hook to same point
+- Export APIs via `exportAPIs()` for inter-plugin communication
 
 ### Data Persistence
 
@@ -521,12 +636,16 @@ flutter test --coverage
 ## Important Notes
 
 1. **Always regenerate code** after modifying models with `@JsonSerializable` annotation
-2. **Provider/BLoC dependency order matters** - repositories → services → event bus → BLoCs
+2. **Provider/BLoC dependency order matters** - repositories → services → event bus → command bus → BLoCs → plugins
 3. **Don't use `print()`** - use `debugPrint()` or a logging service
 4. **File I/O should be async** - avoid blocking the UI thread with sync operations
 5. **Flame performance** - cache Paint/Text objects, don't allocate in `render()` method
 6. **Error recovery** - app has built-in data recovery on initialization failures
 7. **BLoC event handling** - always add initial events when creating BLoCs (e.g., `..add(const NodeLoadEvent())`)
 8. **Event bus usage** - use AppEventBus for cross-BLoC communication, avoid direct BLoC-to-BLoC dependencies
-9. **Command pattern** - use UndoManager for undoable operations (define commands in `lib/core/services/commands/`)
+9. **Command pattern** - use CommandBus for write operations (define commands in `lib/plugins/builtin_plugins/*/command/`)
 10. **SharedPreferences async** - use `SharedPreferencesAsync` for non-blocking preference access
+11. **Plugin loading** - plugins are loaded synchronously at app startup in dependency order
+12. **Plugin dependencies** - always declare plugin dependencies in metadata to ensure correct load order
+13. **Plugin lifecycle** - use `onLoad()` for initialization, `onEnable()` for activation
+14. **UI Hooks** - register UI Hook plugins to HookRegistry to extend UI at specific points

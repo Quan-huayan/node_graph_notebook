@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:provider/single_child_widget.dart';
 import 'plugin.dart';
 import '../commands/command_bus.dart';
 import '../events/app_events.dart';
@@ -36,6 +37,7 @@ abstract class IPluginManager {
 ///
 /// 管理插件的生命周期、依赖关系和加载顺序
 /// 支持 API 导出/导入系统，允许插件间通信
+/// 统一管理插件提供的 Service 依赖注入
 class PluginManager implements IPluginManager {
   PluginManager({
     required CommandBus commandBus,
@@ -43,12 +45,14 @@ class PluginManager implements IPluginManager {
     NodeRepository? nodeRepository,
     GraphRepository? graphRepository,
     PluginDiscoverer? discoverer,
+    ServiceRegistry? serviceRegistry,
   })  : _commandBus = commandBus,
         _eventBus = eventBus,
         _nodeRepository = nodeRepository,
         _graphRepository = graphRepository,
         _apiRegistry = APIRegistry(),
-        _discoverer = discoverer ?? PluginDiscoverer();
+        _discoverer = discoverer ?? PluginDiscoverer(),
+        _serviceRegistry = serviceRegistry ?? ServiceRegistry();
 
   final CommandBus _commandBus;
   final AppEventBus? _eventBus;
@@ -57,6 +61,7 @@ class PluginManager implements IPluginManager {
   final APIRegistry _apiRegistry;
   final PluginDiscoverer _discoverer;
   final PluginRegistry _registry = PluginRegistry();
+  final ServiceRegistry _serviceRegistry;
 
   /// API 注册表（只读访问）
   ///
@@ -65,6 +70,30 @@ class PluginManager implements IPluginManager {
 
   /// 插件注册表（只读访问）
   PluginRegistry get registry => _registry;
+
+  /// 插件发现器（只读访问）
+  ///
+  /// 用于注册和发现插件
+  PluginDiscoverer get discoverer => _discoverer;
+
+  /// Service 注册表（只读访问）
+  ///
+  /// 管理所有插件提供的 Service
+  ServiceRegistry get serviceRegistry => _serviceRegistry;
+
+  /// 生成所有插件的 BlocProvider 列表
+  ///
+  /// 返回 BlocProvider 列表，可直接用于 MultiProvider
+  List<SingleChildWidget> generateBlocProviders() {
+    final blocs = <SingleChildWidget>[];
+    
+    for (final wrapper in _registry.getAllPlugins()) {
+      final pluginBlocs = wrapper.plugin.registerBlocs();
+      blocs.addAll(pluginBlocs);
+    }
+    
+    return blocs;
+  }
 
   /// 应用版本（用于插件兼容性检查）
   String appVersion = '1.0.0';
@@ -119,12 +148,19 @@ class PluginManager implements IPluginManager {
 
     // 调用 onLoad
     try {
+      // 1. 注册插件提供的 Service
+      final serviceBindings = plugin.registerServices();
+      if (serviceBindings.isNotEmpty) {
+        _serviceRegistry.registerServices(pluginId, serviceBindings);
+      }
+
+      // 2. 调用插件的 onLoad 方法
       await lifecycle.transitionTo(
         PluginState.loaded,
         () => plugin.onLoad(context),
       );
 
-      // 注册插件导出的 API
+      // 3. 注册插件导出的 API
       final exportedAPIs = plugin.exportAPIs();
       for (final entry in exportedAPIs.entries) {
         _apiRegistry.registerAPI(
@@ -135,10 +171,11 @@ class PluginManager implements IPluginManager {
         );
       }
 
-      // 验证 API 依赖
+      // 4. 验证 API 依赖
       await _validateAPIDependencies(plugin);
     } catch (e) {
-      // 加载失败，清理已注册的 API 并从注册表移除
+      // 加载失败，清理已注册的 Service、API 并从注册表移除
+      _serviceRegistry.unregisterPluginServices(pluginId);
       _apiRegistry.unregisterPluginAPIs(pluginId);
       _registry.unregister(pluginId);
       throw PluginLoadException(pluginId, e);
@@ -159,6 +196,9 @@ class PluginManager implements IPluginManager {
 
     // 注销插件的所有 API
     _apiRegistry.unregisterPluginAPIs(pluginId);
+
+    // 注销插件的所有 Service
+    _serviceRegistry.unregisterPluginServices(pluginId);
 
     // 调用 onUnload
     try {

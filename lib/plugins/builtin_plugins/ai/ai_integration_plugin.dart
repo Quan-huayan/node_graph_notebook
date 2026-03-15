@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
-import '../../../core/plugin/plugin_metadata.dart';
-import '../../../core/plugin/plugin_context.dart';
+import 'service/ai_service_bindings.dart';
 import 'command/ai_commands.dart';
+import 'handler/analyze_node_handler.dart';
 import '../../../core/repositories/node_repository.dart';
 import '../../../core/models/node.dart';
-import '../../../../plugins/builtin_plugins/ai/service/ai_service.dart';
+import 'service/ai_service.dart';
+
 
 /// AI 集成插件
 ///
@@ -33,6 +35,11 @@ class AIIntegrationPlugin extends MainToolbarHook {
         description: 'AI-powered node analysis and connection suggestions',
         author: 'Node Graph Notebook',
       );
+
+  @override
+  List<ServiceBinding> registerServices() => [
+    AIServiceBinding(),
+  ];
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {
@@ -543,8 +550,25 @@ class AIIntegrationPlugin extends MainToolbarHook {
   Future<void> onDisable() async {}
 
   @override
-  Future<void> onLoad(PluginContext context) async {}
+  Future<void> onLoad(PluginContext context) async {
+    // 注册命令处理器
+    _registerCommandHandlers(context);
+  }
 
   @override
-  Future<void> onUnload() async {}
+  Future<void> onUnload() async {
+    // 卸载时的逻辑
+  }
+
+  /// 注册命令处理器
+  void _registerCommandHandlers(PluginContext context) {
+    final commandBus = context.commandBus;
+    final aiService = context.read<AIService>();
+
+    // 注册 AI 命令处理器
+    commandBus.registerHandler<AnalyzeNodeCommand>(
+      AnalyzeNodeHandler(aiService),
+      AnalyzeNodeCommand,
+    );
+  }
 }

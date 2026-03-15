@@ -1,10 +1,14 @@
 import '../../../core/plugin/plugin.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'service/converter_service_bindings.dart';
+import 'bloc/converter_bloc.dart';
+import 'service/import_export_service.dart';
 
-/// 转换器插件
+/// Converter 插件
 ///
-/// 提供节点导入导出和转换功能
+/// 提供导入导出功能：数据导入、数据导出等
 class ConverterPlugin extends Plugin {
-  PluginState _state = PluginState.unloaded;
+  PluginState _state = PluginState.loaded;
 
   @override
   PluginState get state => _state;
@@ -16,30 +20,45 @@ class ConverterPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'converter_plugin',
-        name: 'Converter Plugin',
+        id: 'converter',
+        name: 'Converter',
         version: '1.0.0',
-        description: 'Provides node import/export and conversion functionality',
+        description: 'Data import and export functionality',
         author: 'Node Graph Notebook',
+        enabledByDefault: true,
       );
 
   @override
+  List<ServiceBinding> registerServices() => [
+        ConverterServiceBinding(),
+      ];
+
+  @override
+  List<BlocProvider> registerBlocs() => [
+        BlocProvider<ConverterBloc>(
+          create: (ctx) => ConverterBloc(
+            importExportService: ctx.read<ImportExportService>(),
+          ),
+        ),
+      ];
+
+  @override
   Future<void> onLoad(PluginContext context) async {
-    // 注册命令处理器
+    // 加载时的逻辑
   }
 
   @override
   Future<void> onEnable() async {
-    // 启用功能
+    // 启用时的逻辑
   }
 
   @override
   Future<void> onDisable() async {
-    // 禁用功能
+    // 禁用时的逻辑
   }
 
   @override
   Future<void> onUnload() async {
-    // 清理资源
+    // 卸载时的逻辑
   }
 }

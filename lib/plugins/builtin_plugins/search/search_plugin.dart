@@ -1,10 +1,15 @@
 import '../../../core/plugin/plugin.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'service/search_service_bindings.dart';
+import 'bloc/search_bloc.dart';
+import '../graph/service/node_service.dart';
+import 'service/search_preset_service.dart';
 
-/// 搜索插件
+/// Search 插件
 ///
-/// 提供节点搜索功能
+/// 提供搜索相关功能：节点搜索、预设管理等
 class SearchPlugin extends Plugin {
-  PluginState _state = PluginState.unloaded;
+  PluginState _state = PluginState.loaded;
 
   @override
   PluginState get state => _state;
@@ -16,30 +21,46 @@ class SearchPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'search_plugin',
-        name: 'Search Plugin',
+        id: 'search',
+        name: 'Search',
         version: '1.0.0',
-        description: 'Provides node search functionality',
+        description: 'Node search and preset management',
         author: 'Node Graph Notebook',
+        enabledByDefault: true,
       );
 
   @override
+  List<ServiceBinding> registerServices() => [
+        SearchPresetServiceBinding(),
+      ];
+
+  @override
+  List<BlocProvider> registerBlocs() => [
+        BlocProvider<SearchBloc>(
+          create: (ctx) => SearchBloc(
+            nodeService: ctx.read<NodeService>(),
+            presetService: ctx.read<SearchPresetService>(),
+          ),
+        ),
+      ];
+
+  @override
   Future<void> onLoad(PluginContext context) async {
-    // 注册命令处理器
+    // 加载时的逻辑
   }
 
   @override
   Future<void> onEnable() async {
-    // 启用功能
+    // 启用时的逻辑
   }
 
   @override
   Future<void> onDisable() async {
-    // 禁用功能
+    // 禁用时的逻辑
   }
 
   @override
   Future<void> onUnload() async {
-    // 清理资源
+    // 卸载时的逻辑
   }
 }

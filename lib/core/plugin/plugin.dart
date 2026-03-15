@@ -40,6 +40,17 @@ export 'plugin_exception.dart'
         PluginVersionException,
         PluginApiException;
 
+// Service 注册系统
+export 'service_binding.dart'
+    show
+        ServiceBinding,
+        ServiceResolver,
+        ServiceDependencyException;
+export 'service_registry.dart'
+    show
+        ServiceRegistry,
+        ServiceRegistrationException;
+
 // 管理和生命周期
 export 'plugin_manager.dart'
     show PluginManager, IPluginManager;

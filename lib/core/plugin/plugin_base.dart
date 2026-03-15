@@ -1,15 +1,18 @@
 import 'plugin_metadata.dart';
 import 'plugin_context.dart';
+import 'service_binding.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// 插件基础接口
 ///
 /// 所有插件必须实现此接口
 ///
 /// 插件生命周期：
-/// 1. onLoad(context) - 插件加载时调用，执行初始化
-/// 2. onEnable() - 插件启用时调用，激活功能
-/// 3. onDisable() - 插件禁用时调用，停用功能
-/// 4. onUnload() - 插件卸载时调用，清理资源
+/// 1. registerServices() - 插件注册 Service（可选）
+/// 2. onLoad(context) - 插件加载时调用，执行初始化
+/// 3. onEnable() - 插件启用时调用，激活功能
+/// 4. onDisable() - 插件禁用时调用，停用功能
+/// 5. onUnload() - 插件卸载时调用，清理资源
 ///
 /// 使用示例：
 /// ```dart
@@ -20,6 +23,11 @@ import 'plugin_context.dart';
 ///     name: 'My Plugin',
 ///     version: '1.0.0',
 ///   );
+///
+///   @override
+///   List<ServiceBinding> registerServices() => [
+///     MyServiceBinding(),
+///   ];
 ///
 ///   @override
 ///   Future<void> onLoad(PluginContext context) async {
@@ -48,6 +56,24 @@ abstract class Plugin {
   ///
   /// 必须实现，返回插件的元数据信息
   PluginMetadata get metadata;
+
+  /// 注册插件提供的 Service
+  ///
+  /// 在插件加载时调用，用于注册插件提供的 Service
+  ///
+  /// 返回 ServiceBinding 列表，声明插件提供的 Service 及其依赖关系
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// @override
+  /// List<ServiceBinding> registerServices() => [
+  ///   NodeServiceBinding(),
+  ///   GraphServiceBinding(),
+  /// ];
+  /// ```
+  ///
+  /// 默认返回空列表，表示插件不提供任何 Service
+  List<ServiceBinding> registerServices() => [];
 
   /// 插件加载
   ///
@@ -129,6 +155,29 @@ abstract class Plugin {
   /// };
   /// ```
   Map<String, dynamic> exportAPIs() => {};
+
+  /// 注册插件提供的 Bloc
+  ///
+  /// 在插件加载时调用，用于注册插件提供的 Bloc
+  ///
+  /// 返回 BlocProvider 列表，声明插件提供的 Bloc
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// @override
+  /// List<BlocProvider> registerBlocs() => [
+  ///   BlocProvider<NodeBloc>(
+  ///     create: (ctx) => NodeBloc(
+  ///       commandBus: ctx.read<CommandBus>(),
+  ///       nodeRepository: ctx.read<NodeRepository>(),
+  ///       eventBus: ctx.read<AppEventBus>(),
+  ///     )..add(const NodeLoadEvent()),
+  ///   ),
+  /// ];
+  /// ```
+  ///
+  /// 默认返回空列表，表示插件不提供任何 Bloc
+  List<BlocProvider> registerBlocs() => [];
 
   @override
   String toString() => 'Plugin(${metadata.id}, version: ${metadata.version})';
