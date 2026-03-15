@@ -1,40 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
 
-/// 引用类型
-enum ReferenceType {
-  /// 提及：在content中提到了该节点
-  @JsonValue('mentions')
-  mentions,
-
-  /// 包含：概念节点包含该节点（一阶关系）
-  @JsonValue('contains')
-  contains,
-
-  /// 依赖：当前节点依赖于该节点
-  @JsonValue('dependsOn')
-  dependsOn,
-
-  /// 导致：当前节点导致该节点（因果关系）
-  @JsonValue('causes')
-  causes,
-
-  /// 属于：当前节点属于该节点（分类关系）
-  @JsonValue('partOf')
-  partOf,
-
-  /// 关联：一般性关联
-  @JsonValue('relatesTo')
-  relatesTo,
-
-  /// 引用：引用或参考
-  @JsonValue('references')
-  references,
-
-  /// 实例化：当前节点是该节点的实例
-  @JsonValue('instanceOf')
-  instanceOf,
-}
-
 /// 节点显示模式
 enum NodeViewMode {
   /// 仅标题
@@ -67,11 +32,7 @@ enum LayoutAlgorithm {
   /// 环形
   @JsonValue('circular')
   circular,
-
-  /// 概念地图专用
-  @JsonValue('conceptMap')
-  conceptMap,
-
+  
   /// 自由布局
   @JsonValue('free')
   free,

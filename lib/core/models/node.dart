@@ -84,7 +84,7 @@ class Node {
   List<String> get referencedNodeIds => references.keys.toList();
 
   /// 获取特定类型的引用
-  List<NodeReference> getReferencesByType(ReferenceType type) {
+  List<NodeReference> getReferencesByType(String type) {
     return references.values.where((r) => r.type == type).toList();
   }
 

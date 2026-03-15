@@ -135,8 +135,7 @@ class ImportExportServiceImpl implements ImportExportService {
             // 找到映射，使用新的ID创建引用
             updatedReferences[newRefId] = NodeReference(
               nodeId: newRefId,
-              type: reference.type,
-              role: reference.role,
+              properties: reference.properties,
             );
           } else {
             // 被引用的节点可能没有被选中导入，忽略此引用
@@ -296,8 +295,7 @@ class ImportExportServiceImpl implements ImportExportService {
               if (newRefId != null) {
                 updatedReferences[newRefId] = NodeReference(
                   nodeId: newRefId,
-                  type: reference.type,
-                  role: reference.role,
+                  properties: reference.properties,
                 );
               }
             }

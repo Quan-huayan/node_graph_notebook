@@ -1,49 +1,62 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'enums.dart';
 
 part 'node_reference.g.dart';
 
 /// 节点引用关系
+///
+/// 存储节点间的各种关系，所有关系属性都存储在 `properties` Map 中。
+/// 标准关系类型包括：mentions, contains, dependsOn, causes, partOf, relatesTo, references, instanceOf
+///
+/// 示例：
+/// ```dart
+/// NodeReference(
+///   nodeId: 'targetId',
+///   properties: {
+///     'type': 'contains',
+///     'role': 'section',
+///     'strength': 0.8,
+///   },
+/// )
+/// ```
 @JsonSerializable()
 class NodeReference {
   const NodeReference({
     required this.nodeId,
-    required this.type,
-    this.role,
-    this.metadata,
+    required this.properties,
   });
 
-  /// 转换为JSON
+  /// 从JSON创建
   factory NodeReference.fromJson(Map<String, dynamic> json) =>
       _$NodeReferenceFromJson(json);
 
   /// 被引用的节点ID
   final String nodeId;
 
-  /// 引用类型
-  final ReferenceType type;
+  /// 关系属性（包含类型、角色、权重等所有信息）
+  ///
+  /// 标准属性：
+  /// - `type`: 关系类型（字符串），如 'contains', 'dependsOn' 等
+  /// - `role`: 可选的角色标签
+  /// - 其他自定义属性
+  final Map<String, dynamic> properties;
 
-  /// 在当前节点中的角色或标签（可选）
-  final String? role;
+  /// 获取关系类型
+  String get type => properties['type'] as String? ?? 'relatesTo';
 
-  /// 额外元数据
-  final Map<String, dynamic>? metadata;
+  /// 获取角色标签
+  String? get role => properties['role'] as String?;
 
-  /// 从JSON创建
+  /// 转换为JSON
   Map<String, dynamic> toJson() => _$NodeReferenceToJson(this);
 
   /// 复制并更新部分字段
   NodeReference copyWith({
     String? nodeId,
-    ReferenceType? type,
-    String? role,
-    Map<String, dynamic>? metadata,
+    Map<String, dynamic>? properties,
   }) {
     return NodeReference(
       nodeId: nodeId ?? this.nodeId,
-      type: type ?? this.type,
-      role: role ?? this.role,
-      metadata: metadata ?? this.metadata,
+      properties: properties ?? this.properties,
     );
   }
 
@@ -60,5 +73,5 @@ class NodeReference {
 
   @override
   String toString() =>
-      'NodeReference(nodeId: $nodeId, type: $type, role: $role)';
+      'NodeReference(nodeId: $nodeId, type: $type, properties: $properties)';
 }

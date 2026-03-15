@@ -304,13 +304,17 @@ class FileSystemNodeRepository implements NodeRepository {
       for (final entry in node.references.entries) {
         final ref = entry.value;
         buffer.writeln('  ${entry.key}:');
-        buffer.writeln('    type: ${ref.type.name}');
+        buffer.writeln('    type: ${ref.type}');
         if (ref.role != null) {
           buffer.writeln('    role: "${ref.role}"');
         }
-        if (ref.metadata != null && ref.metadata!.isNotEmpty) {
+        // 输出 properties 中的其他属性（除了 type 和 role）
+        final otherProps = ref.properties.entries
+            .where((e) => e.key != 'type' && e.key != 'role')
+            .toList();
+        if (otherProps.isNotEmpty) {
           buffer.writeln('    metadata:');
-          for (final metaEntry in ref.metadata!.entries) {
+          for (final metaEntry in otherProps) {
             buffer.writeln('      ${metaEntry.key}: ${_formatYamlValue(metaEntry.value)}');
           }
         }
@@ -399,11 +403,30 @@ class FileSystemNodeRepository implements NodeRepository {
       final refsMap = frontmatter['references'] as Map<String, dynamic>;
       refsMap.forEach((key, value) {
         final refData = value as Map<String, dynamic>;
+
+        // 构建 properties Map
+        final properties = <String, dynamic>{};
+
+        // 解析 type（必需）
+        properties['type'] = _parseStringValue(refData['type']) ?? 'relatesTo';
+
+        // 解析 role（可选）
+        final role = _parseStringValue(refData['role']);
+        if (role != null) {
+          properties['role'] = role;
+        }
+
+        // 合并 metadata 中的其他属性
+        if (refData.containsKey('metadata')) {
+          final metadata = refData['metadata'] as Map<String, dynamic>?;
+          if (metadata != null) {
+            properties.addAll(metadata);
+          }
+        }
+
         references[key] = NodeReference(
           nodeId: key,
-          type: _parseReferenceType(refData['type']),
-          role: _parseStringValue(refData['role']),
-          metadata: refData['metadata'] as Map<String, dynamic>?,
+          properties: properties,
         );
       });
     }
@@ -421,30 +444,6 @@ class FileSystemNodeRepository implements NodeRepository {
       createdAt: _parseDateTime(frontmatter['created_at']),
       updatedAt: _parseDateTime(frontmatter['updated_at']),
       metadata: frontmatter['metadata'] as Map<String, dynamic>? ?? {},
-    );
-  }
-
-  ReferenceType _parseReferenceType(dynamic typeValue) {
-    if (typeValue == null) return ReferenceType.relatesTo;
-
-    // 处理不同的类型
-    String typeStr;
-    if (typeValue is String) {
-      typeStr = typeValue;
-    } else if (typeValue is int || typeValue is double) {
-      // 如果是数字，转换为枚举索引
-      final index = typeValue as int;
-      if (index >= 0 && index < ReferenceType.values.length) {
-        return ReferenceType.values[index];
-      }
-      return ReferenceType.relatesTo;
-    } else {
-      typeStr = typeValue.toString();
-    }
-
-    return ReferenceType.values.firstWhere(
-      (e) => e.name == typeStr,
-      orElse: () => ReferenceType.relatesTo,
     );
   }
 

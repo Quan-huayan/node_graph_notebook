@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../bloc/blocs.dart';
 import '../dialogs/node_metadata_dialog.dart';
-import '../dialogs/node_connections_dialog.dart';
 import '../dialogs/node_icon_dialog.dart';
 
 /// 菜单操作类型
@@ -189,10 +188,6 @@ Future<void> showNodeContextMenu(
       await _handleEditMetadata(context, node);
       break;
 
-    case _MenuAction.manageConnections:
-      await _handleManageConnections(context, node);
-      break;
-
     case _MenuAction.addIcon:
       await _handleAddIcon(context, node);
       break;
@@ -331,14 +326,6 @@ Future<void> _handleEditMetadata(BuildContext context, Node node) async {
   await showDialog(
     context: context,
     builder: (context) => NodeMetadataDialog(node: node),
-  );
-}
-
-/// 处理管理连接
-Future<void> _handleManageConnections(BuildContext context, Node node) async {
-  await showDialog(
-    context: context,
-    builder: (context) => NodeConnectionsDialog(node: node),
   );
 }
 

@@ -42,11 +42,13 @@ abstract class NodeService {
   Future<List<Node>> searchNodes(String query);
 
   /// 连接两个节点
+  ///
+  /// 创建从 [fromNodeId] 到 [toNodeId] 的引用关系
+  /// [properties] 是可选的引用属性，插件可以自由定义
   Future<void> connectNodes({
     required String fromNodeId,
     required String toNodeId,
-    required ReferenceType type,
-    String? role,
+    Map<String, dynamic>? properties,
   });
 
   /// 断开连接
@@ -58,6 +60,22 @@ abstract class NodeService {
   /// 批量操作
   Future<void> batchUpdate(List<NodeUpdate> updates);
   Future<void> batchDelete(List<String> nodeIds);
+
+  /// 计算节点图中每个节点的深度（层级）
+  ///
+  /// 返回 Map<节点ID, 深度>，根节点深度为0
+  /// 如果存在循环引用，返回 -1
+  ///
+  /// 深度定义：
+  /// - 根节点（没有被任何节点引用）: depth = 0
+  /// - 被根节点引用的节点: depth = 1
+  /// - 依此类推...
+  ///
+  /// 使用场景：
+  /// - 第0-n层：正常显示为节点
+  /// - 第n+1层：显示为引用（reference）
+  /// - 第n+2层及更高：隐藏
+  Future<Map<String, int>> calculateNodeDepths(List<Node> nodes);
 }
 
 /// 节点服务实现
@@ -173,8 +191,7 @@ class NodeServiceImpl implements NodeService {
   Future<void> connectNodes({
     required String fromNodeId,
     required String toNodeId,
-    required ReferenceType type,
-    String? role,
+    Map<String, dynamic>? properties,
   }) async {
     final fromNode = await _repository.load(fromNodeId);
     if (fromNode == null) {
@@ -186,11 +203,10 @@ class NodeServiceImpl implements NodeService {
       throw NodeNotFoundException(toNodeId);
     }
 
-    // 添加引用
+    // 添加引用，使用插件提供的属性
     final reference = NodeReference(
       nodeId: toNodeId,
-      type: type,
-      role: role,
+      properties: properties ?? {},
     );
 
     final updatedNode = fromNode.addReference(toNodeId, reference);
@@ -231,6 +247,62 @@ class NodeServiceImpl implements NodeService {
     for (final nodeId in nodeIds) {
       await deleteNode(nodeId);
     }
+  }
+
+  @override
+  Future<Map<String, int>> calculateNodeDepths(List<Node> nodes) async {
+    final depths = <String, int>{};
+    final visited = <String>{};
+
+    /// 计算单个节点的深度（使用DFS）
+    int getDepth(String nodeId) {
+      // 如果已经计算过，直接返回
+      if (depths.containsKey(nodeId)) {
+        return depths[nodeId]!;
+      }
+
+      // 检测循环
+      if (visited.contains(nodeId)) {
+        depths[nodeId] = -1;
+        return -1;
+      }
+
+      visited.add(nodeId);
+
+      // 找到所有引用该节点的父节点
+      final parents = nodes.where((n) => n.references.containsKey(nodeId));
+
+      if (parents.isEmpty) {
+        // 没有父节点，这是根节点
+        depths[nodeId] = 0;
+      } else {
+        // 计算所有父节点的最大深度
+        int maxParentDepth = -1;
+        for (final parent in parents) {
+          final parentDepth = getDepth(parent.id);
+          if (parentDepth == -1) {
+            // 父节点存在循环，该节点也标记为循环
+            depths[nodeId] = -1;
+            visited.remove(nodeId);
+            return -1;
+          }
+          if (parentDepth > maxParentDepth) {
+            maxParentDepth = parentDepth;
+          }
+        }
+        depths[nodeId] = maxParentDepth + 1;
+      }
+
+      visited.remove(nodeId);
+      return depths[nodeId]!;
+    }
+
+    // 计算所有节点的深度
+    for (final node in nodes) {
+      getDepth(node.id);
+    }
+
+    return depths;
   }
 
   void _validateTitle(String title) {

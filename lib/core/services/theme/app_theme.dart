@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../models/enums.dart';
 
 /// 节点主题颜色
 class NodeThemeColors {
@@ -84,6 +83,7 @@ class ConnectionThemeColors {
     required this.relatesTo,
     required this.mentions,
     required this.references,
+    this.defaultColor = const Color(0xFF4A90E2),
   });
 
   final Color contains;
@@ -94,6 +94,7 @@ class ConnectionThemeColors {
   final Color relatesTo;
   final Color mentions;
   final Color references;
+  final Color defaultColor;
 
   ConnectionThemeColors copyWith({
     Color? contains,
@@ -127,28 +128,8 @@ class ConnectionThemeColors {
       'relatesTo': relatesTo.toARGB32(),
       'mentions': mentions.toARGB32(),
       'references': references.toARGB32(),
+      'defaultColor': defaultColor.toARGB32(),
     };
-  }
-
-  Color getColorForType(ReferenceType type) {
-    switch (type) {
-      case ReferenceType.contains:
-        return contains;
-      case ReferenceType.causes:
-        return causes;
-      case ReferenceType.dependsOn:
-        return dependsOn;
-      case ReferenceType.partOf:
-        return partOf;
-      case ReferenceType.instanceOf:
-        return instanceOf;
-      case ReferenceType.relatesTo:
-        return relatesTo;
-      case ReferenceType.mentions:
-        return mentions;
-      case ReferenceType.references:
-        return references;
-    }
   }
 }
 

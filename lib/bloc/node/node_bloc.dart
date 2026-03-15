@@ -3,7 +3,6 @@ import '../../core/repositories/repositories.dart';
 import '../../core/commands/command_bus.dart';
 import '../../core/commands/impl/node_commands.dart';
 import '../../core/events/app_events.dart';
-import '../../core/models/enums.dart';
 import 'node_event.dart';
 import 'node_state.dart';
 
@@ -359,8 +358,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       final command = ConnectNodesCommand(
         sourceId: event.fromNodeId,
         targetId: event.toNodeId,
-        type: event.type,
-        role: event.role,
+        properties: event.properties,
       );
 
       final result = await _commandBus.dispatch(command);
@@ -407,7 +405,6 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       final command = DisconnectNodesCommand(
         sourceId: event.fromNodeId,
         targetId: event.toNodeId,
-        type: ReferenceType.references, // 默认引用类型
       );
 
       final result = await _commandBus.dispatch(command);

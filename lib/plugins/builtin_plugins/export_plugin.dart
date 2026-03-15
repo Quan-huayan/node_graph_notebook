@@ -77,7 +77,7 @@ class ExportPlugin extends GraphPlugin {
           .map((conn) => {
                 'from': conn.fromNodeId,
                 'to': conn.toNodeId,
-                'type': conn.referenceType.toString(),
+                'type': conn.type,
               })
           .toList(),
     };

@@ -3,7 +3,6 @@ import '../command.dart';
 import '../command_context.dart';
 import '../../models/node.dart';
 import '../../models/node_reference.dart';
-import '../../models/enums.dart';
 import '../../repositories/node_repository.dart';
 
 /// 创建节点命令
@@ -135,9 +134,7 @@ class ConnectNodesCommand extends Command<void> {
   ConnectNodesCommand({
     required this.sourceId,
     required this.targetId,
-    required this.type,
-    this.role,
-    this.connectionDescription,
+    this.properties,
   });
 
   /// 源节点ID
@@ -146,16 +143,10 @@ class ConnectNodesCommand extends Command<void> {
   /// 目标节点ID
   final String targetId;
 
-  /// 引用类型
-  final ReferenceType type;
-
-  /// 引用角色（可选）
-  final String? role;
-
-  /// 引用描述（可选）
+  /// 引用属性（可选）
   ///
-  /// 重命名为 connectionDescription 以避免与基类的 description getter 冲突
-  final String? connectionDescription;
+  /// 插件可以自由定义任意属性
+  final Map<String, dynamic>? properties;
 
   @override
   String get name => 'ConnectNodes';
@@ -192,8 +183,6 @@ class DisconnectNodesCommand extends Command<void> {
   DisconnectNodesCommand({
     required this.sourceId,
     required this.targetId,
-    required this.type,
-    this.role,
   });
 
   /// 源节点ID
@@ -201,12 +190,6 @@ class DisconnectNodesCommand extends Command<void> {
 
   /// 目标节点ID
   final String targetId;
-
-  /// 引用类型
-  final ReferenceType type;
-
-  /// 引用角色（可选）
-  final String? role;
 
   /// 保存原始引用（用于撤销）
   ///

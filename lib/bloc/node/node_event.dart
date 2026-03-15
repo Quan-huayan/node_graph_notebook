@@ -123,17 +123,15 @@ class NodeConnectEvent extends NodeEvent {
   const NodeConnectEvent({
     required this.fromNodeId,
     required this.toNodeId,
-    required this.type,
-    this.role,
+    this.properties,
   });
 
   final String fromNodeId;
   final String toNodeId;
-  final ReferenceType type;
-  final String? role;
+  final Map<String, dynamic>? properties;
 
   @override
-  List<Object?> get props => [fromNodeId, toNodeId, type, role];
+  List<Object?> get props => [fromNodeId, toNodeId, properties];
 }
 
 /// 断开节点连接事件

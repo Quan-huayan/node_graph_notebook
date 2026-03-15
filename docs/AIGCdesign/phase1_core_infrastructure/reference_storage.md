@@ -60,7 +60,7 @@ class Reference {
   final String targetId;
 
   /// 引用类型
-  final ReferenceType type;
+  final RelationTypes type;
 
   /// 引用属性
   final Map<String, dynamic> properties;
@@ -89,7 +89,7 @@ class Reference {
   static Reference fromJson(Map<String, dynamic> json) => Reference(
         sourceId: json['sourceId'] as String,
         targetId: json['targetId'] as String,
-        type: ReferenceType.values[json['type'] as int],
+        type: RelationTypes.values[json['type'] as int],
         properties: json['properties'] as Map<String, dynamic>,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
@@ -98,7 +98,7 @@ class Reference {
   Reference copyWith({
     String? sourceId,
     String? targetId,
-    ReferenceType? type,
+    RelationTypes? type,
     Map<String, dynamic>? properties,
   }) {
     return Reference(
@@ -122,7 +122,7 @@ class Reference {
 }
 
 /// 引用类型
-enum ReferenceType {
+enum RelationTypes {
   /// 父子关系
   parent,
 
@@ -172,7 +172,7 @@ abstract class IReferenceStorage {
   /// 获取特定类型的引用
   Future<List<Reference>> getReferencesByType(
     String nodeId,
-    ReferenceType type,
+    RelationTypes type,
     {bool forward = true},
   );
 
@@ -193,7 +193,7 @@ abstract class IReferenceStorage {
     String startNodeId, {
     int? maxDepth,
     int? maxNodes,
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   });
 
   /// DFS 遍历
@@ -201,14 +201,14 @@ abstract class IReferenceStorage {
     String startNodeId, {
     int? maxDepth,
     int? maxNodes,
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   });
 
   /// 计算可达节点（传递闭包）
   Future<Set<String>> getReachableNodes(
     String startNodeId, {
     int? maxDepth,
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   });
 
   /// 检查两个节点是否可达
@@ -216,14 +216,14 @@ abstract class IReferenceStorage {
     String sourceId,
     String targetId, {
     int? maxDepth,
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   });
 
   /// 获取最短路径
   Future<List<String>?> getShortestPath(
     String sourceId,
     String targetId, {
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   });
 
   /// 清除缓存
@@ -346,9 +346,9 @@ class BackwardReferenceStorage {
 
 ```dart
 /// 引用类型索引
-class ReferenceTypeIndex {
+class RelationTypesIndex {
   /// type -> (nodeId -> 引用列表)
-  final Map<ReferenceType, Map<String, List<Reference>>> _index = {};
+  final Map<RelationTypes, Map<String, List<Reference>>> _index = {};
 
   /// 添加引用
   void add(Reference reference) {
@@ -373,13 +373,13 @@ class ReferenceTypeIndex {
   }
 
   /// 获取特定类型的引用
-  List<Reference> get(String nodeId, ReferenceType type) {
+  List<Reference> get(String nodeId, RelationTypes type) {
     return _index[type]?[nodeId] ?? [];
   }
 
   /// 获取节点的所有类型
-  Set<ReferenceType> getTypesForNode(String nodeId) {
-    final types = <ReferenceType>{};
+  Set<RelationTypes> getTypesForNode(String nodeId) {
+    final types = <RelationTypes>{};
     for (final entry in _index.entries) {
       if (entry.value.containsKey(nodeId)) {
         types.add(entry.key);
@@ -446,7 +446,7 @@ Future<List<String>> bfs(
   String startNodeId, {
   int? maxDepth,
   int? maxNodes,
-  Set<ReferenceType>? types,
+  Set<RelationTypes>? types,
 }) async {
   final visited = <String>{};
   final queue = Queue<_BFSNode>();
@@ -586,7 +586,7 @@ function getReachableNodes(startNodeId, maxDepth, types):
 Future<Set<String>> getReachableNodes(
   String startNodeId, {
   int? maxDepth,
-  Set<ReferenceType>? types,
+  Set<RelationTypes>? types,
 }) async {
   final visited = <String>{};
   final queue = Queue<_DFSNode>();
@@ -684,7 +684,7 @@ function getShortestPath(sourceId, targetId, types):
 Future<List<String>?> getShortestPath(
   String sourceId,
   String targetId, {
-  Set<ReferenceType>? types,
+  Set<RelationTypes>? types,
 }) async {
   if (sourceId == targetId) {
     return [sourceId];
@@ -749,7 +749,7 @@ class ReachabilityCache {
     String sourceId,
     String targetId, {
     int? maxDepth,
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   }) {
     final buffer = StringBuffer();
     buffer.write(sourceId);
@@ -769,7 +769,7 @@ class ReachabilityCache {
     String sourceId,
     String targetId, {
     int? maxDepth,
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   }) {
     final key = _generateKey(sourceId, targetId,
         maxDepth: maxDepth, types: types);
@@ -782,7 +782,7 @@ class ReachabilityCache {
     String targetId,
     bool value, {
     int? maxDepth,
-    Set<ReferenceType>? types,
+    Set<RelationTypes>? types,
   }) {
     final key = _generateKey(sourceId, targetId,
         maxDepth: maxDepth, types: types);
@@ -899,7 +899,7 @@ class ReadWriteLock {
 class ReferenceStorage implements IReferenceStorage {
   final ForwardReferenceStorage _forwardStorage;
   final BackwardReferenceStorage _backwardStorage;
-  final ReferenceTypeIndex _typeIndex;
+  final RelationTypesIndex _typeIndex;
   final ReachabilityCache _reachabilityCache;
   final NeighborCache _neighborCache;
 
@@ -908,7 +908,7 @@ class ReferenceStorage implements IReferenceStorage {
   ReferenceStorage()
       : _forwardStorage = ForwardReferenceStorage(),
         _backwardStorage = BackwardReferenceStorage(),
-        _typeIndex = ReferenceTypeIndex(),
+        _typeIndex = RelationTypesIndex(),
         _reachabilityCache = ReachabilityCache(),
         _neighborCache = NeighborCache();
 

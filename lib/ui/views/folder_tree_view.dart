@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
-import '../../core/services/theme_service.dart';
+import '../../core/services/services.dart';
 import '../../bloc/blocs.dart';
 import '../pages/markdown_editor_page.dart';
-import '../dialogs/connection_dialog.dart';
 
 /// 文件夹树形视图
 class FolderTreeView extends StatefulWidget {
@@ -26,24 +25,57 @@ class FolderTreeView extends StatefulWidget {
 class _FolderTreeViewState extends State<FolderTreeView> {
   final Set<String> _expandedFolders = {};
   String? _draggedNodeId;
+  Map<String, int>? _nodeDepths;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateDepths();
+  }
+
+  @override
+  void didUpdateWidget(FolderTreeView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.nodes != widget.nodes || oldWidget.folders != widget.folders) {
+      _calculateDepths();
+    }
+  }
+
+  /// 计算所有节点的深度
+  Future<void> _calculateDepths() async {
+    final nodeService = context.read<NodeService>();
+    final allNodes = [...widget.nodes, ...widget.folders];
+    _nodeDepths = await nodeService.calculateNodeDepths(allNodes);
+    setState(() {});
+  }
 
   /// 获取文件夹中的直接子节点
+  ///
+  /// 基于深度计算：找到被该文件夹直接引用的节点
+  /// 且这些节点的深度恰好比文件夹深度大1
   List<Node> _getFolderChildren(Node folder, List<Node> nodes) {
+    if (_nodeDepths == null) return [];
+
+    final folderDepth = _nodeDepths![folder.id] ?? 0;
     return nodes.where((node) {
-      final ref = folder.references[node.id];
-      return ref != null && ref.type == ReferenceType.contains;
+      // 检查节点是否被文件夹引用
+      if (!folder.references.containsKey(node.id)) return false;
+
+      // 检查节点深度是否为文件夹深度+1（直接子节点）
+      final nodeDepth = _nodeDepths![node.id] ?? -1;
+      return nodeDepth == folderDepth + 1;
     }).toList();
   }
 
   /// 获取顶层文件夹（没有被其他文件夹包含的文件夹）
+  ///
+  /// 基于深度计算：顶层文件夹是深度为0的文件夹
   List<Node> _getTopLevelFolders(List<Node> folders) {
+    if (_nodeDepths == null) return [];
+
     return folders.where((folder) {
-      // 检查是否被其他文件夹包含
-      return !folders.any((parent) {
-        if (parent.id == folder.id) return false;
-        final ref = parent.references[folder.id];
-        return ref != null && ref.type == ReferenceType.contains;
-      });
+      final depth = _nodeDepths![folder.id] ?? -1;
+      return depth == 0; // 顶层文件夹深度为0
     }).toList();
   }
 
@@ -59,8 +91,12 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     }).toList();
   }
 
-  /// 检测是否存在循环 contains 关系
+  /// 检测是否存在循环关系
+  ///
+  /// 基于深度检测：如果节点已经在文件夹的子树中，则不能再次添加
   bool _hasCircularContains(Node node, Node folder, List<Node> allNodes) {
+    if (_nodeDepths == null) return false;
+
     // 检查是否将节点拖拽到自身
     if (node.id == folder.id) {
       return true;
@@ -68,29 +104,43 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
     // 检查是否将文件夹拖拽到其子文件夹中
     if (node.isFolder) {
-      // 检查目标文件夹是否是当前节点的子文件夹
-      return _isChildFolder(folder, node, allNodes);
+      final folderDepth = _nodeDepths![folder.id] ?? 0;
+      final nodeDepth = _nodeDepths![node.id] ?? -1;
+
+      // 如果节点已经是文件夹的子孙节点，不能添加
+      // 即：节点的深度大于文件夹深度，且节点被文件夹引用（直接或间接）
+      if (nodeDepth > folderDepth) {
+        return _isDescendant(folder, node, allNodes);
+      }
     }
 
     return false;
   }
 
-  /// 检查 folder 是否是 parentFolder 的子文件夹
-  bool _isChildFolder(Node folder, Node parentFolder, List<Node> allNodes) {
-    // 检查 folder 是否直接或间接被 parentFolder 包含
-    if (parentFolder.references.containsKey(folder.id)) {
-      final ref = parentFolder.references[folder.id];
-      if (ref != null && ref.type == ReferenceType.contains) {
-        return true;
-      }
-    }
+  /// 检查 descendant 是否是 ancestor 的子孙节点
+  bool _isDescendant(Node ancestor, Node descendant, List<Node> allNodes) {
+    if (_nodeDepths == null) return false;
 
-    // 递归检查 parentFolder 的所有直接子文件夹
-    for (final entry in parentFolder.references.entries) {
-      if (entry.value.type == ReferenceType.contains) {
-        final childNode = allNodes.firstWhere((n) => n.id == entry.key);
-        if (childNode.id.isNotEmpty && childNode.isFolder && _isChildFolder(folder, childNode, allNodes)) {
-          return true;
+    final ancestorDepth = _nodeDepths![ancestor.id] ?? 0;
+    final descendantDepth = _nodeDepths![descendant.id] ?? -1;
+
+    // 如果后代深度不大于祖先深度，不可能是子孙
+    if (descendantDepth <= ancestorDepth) return false;
+
+    // BFS检查是否存在从祖先到后代的路径
+    final visited = <String>{};
+    final queue = <String>[ancestor.id];
+
+    while (queue.isNotEmpty) {
+      final currentId = queue.removeAt(0);
+      if (currentId == descendant.id) return true;
+      if (visited.contains(currentId)) continue;
+      visited.add(currentId);
+
+      final currentNode = allNodes.firstWhere((n) => n.id == currentId, orElse: () => ancestor);
+      for (final refId in currentNode.references.keys) {
+        if (!visited.contains(refId)) {
+          queue.add(refId);
         }
       }
     }
@@ -103,7 +153,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     final nodeBloc = context.read<NodeBloc>();
     final allNodes = nodeBloc.state.nodes;
 
-    // 检测循环 contains 关系
+    // 检测循环关系
     if (_hasCircularContains(node, folder, allNodes)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -119,15 +169,18 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       await _removeFromFolder(node, oldParent);
     }
 
-    // 创建新的引用
+    // 创建新的引用（使用 relatesTo 作为通用关系类型）
     final newReferences = Map<String, NodeReference>.from(folder.references);
     newReferences[node.id] = NodeReference(
       nodeId: node.id,
-      type: ReferenceType.contains,
+      properties: {'type': 'relatesTo'},
     );
 
     final updatedFolder = folder.copyWith(references: newReferences);
     nodeBloc.add(NodeReplaceEvent(updatedFolder));
+
+    // 重新计算深度
+    await _calculateDepths();
 
     if (mounted) {
       setState(() {
@@ -145,6 +198,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
     final updatedFolder = folder.copyWith(references: newReferences);
     nodeBloc.add(NodeReplaceEvent(updatedFolder));
+
+    // 重新计算深度
+    await _calculateDepths();
   }
 
   @override
@@ -488,20 +544,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                       _showFolderSelector(context, node, folders);
                     },
                   ),
-                ListTile(
-                  leading: const Icon(Icons.link),
-                  title: const Text('Connect to...'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => ConnectionDialog(
-                        sourceNode: node,
-                        availableNodes: nodeState.nodes,
-                      ),
-                    );
-                  },
+                const ListTile(
+                  leading: Icon(Icons.link),
+                  title: Text('Connect to...'),
+                  trailing: Icon(Icons.chevron_right),
                 ),
                 if (connectedNodes.isNotEmpty)
                   ListTile(
@@ -614,14 +660,24 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   }
 
   Node? _getParentFolder(Node node) {
+    if (_nodeDepths == null) return null;
+
     final nodeBloc = context.read<NodeBloc>();
-    final folders = nodeBloc.state.nodes.where((n) => n.isFolder).toList();
-    for (final folder in folders) {
-      final ref = folder.references[node.id];
-      if (ref != null && ref.type == ReferenceType.contains) {
+    final allNodes = nodeBloc.state.nodes;
+
+    // 找到引用该节点的文件夹，且该文件夹的深度恰好比节点深度小1
+    final nodeDepth = _nodeDepths![node.id] ?? -1;
+
+    for (final folder in allNodes) {
+      if (!folder.isFolder) continue;
+      if (!folder.references.containsKey(node.id)) continue;
+
+      final folderDepth = _nodeDepths![folder.id] ?? -1;
+      if (folderDepth == nodeDepth - 1) {
         return folder;
       }
     }
+
     return null;
   }
 
@@ -655,7 +711,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                           return ListTile(
                             leading: const Icon(Icons.help_outline, size: 16),
                             title: Text('Unknown Node (${entry.key})'),
-                            subtitle: Text(_getReferenceTypeLabel(ref.type)),
+                            subtitle: Text(_getRelationTypesLabel(ref.type)),
                             trailing: ref.role != null
                                 ? Chip(
                                     label: Text(ref.role!),
@@ -676,7 +732,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                                 : null,
                           ),
                           title: Text(targetNode.title),
-                          subtitle: Text(_getReferenceTypeLabel(ref.type)),
+                          subtitle: Text(_getRelationTypesLabel(ref.type)),
                           trailing: ref.role != null
                               ? Chip(
                                   label: Text(ref.role!),
@@ -699,24 +755,26 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     );
   }
 
-  String _getReferenceTypeLabel(ReferenceType type) {
+  String _getRelationTypesLabel(String type) {
     switch (type) {
-      case ReferenceType.mentions:
+      case 'mentions':
         return 'Mentions';
-      case ReferenceType.contains:
+      case 'contains':
         return 'Contains';
-      case ReferenceType.dependsOn:
+      case 'dependsOn':
         return 'Depends On';
-      case ReferenceType.causes:
+      case 'causes':
         return 'Causes';
-      case ReferenceType.partOf:
+      case 'partOf':
         return 'Part Of';
-      case ReferenceType.relatesTo:
+      case 'relatesTo':
         return 'Related';
-      case ReferenceType.references:
+      case 'references':
         return 'References';
-      case ReferenceType.instanceOf:
+      case 'instanceOf':
         return 'Instance Of';
+      default:
+        return type;
     }
   }
 }

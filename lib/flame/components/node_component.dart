@@ -126,10 +126,8 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
 
     // 根据视图模式初始化内容绘制器
     if (node.isFolder) {
-      // 文件夹节点显示包含的节点数量
-      final childCount = node.references.values
-          .where((ref) => ref.type == ReferenceType.contains)
-          .length;
+      // 文件夹节点显示引用的节点数量
+      final childCount = node.references.length;
       _contentPainter = TextPainter(
         text: TextSpan(
           text: '$childCount item${childCount != 1 ? "s" : ""}',

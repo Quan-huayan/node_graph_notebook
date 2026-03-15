@@ -51,51 +51,43 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
   }
 
   /// 判断节点是否有子节点（用于树形显示）
+  ///
+  /// 基于引用结构：检查节点是否引用了其他节点
   bool _hasChildren(Node node, List<Node> allNodes) {
-    return allNodes.any((n) {
-      final ref = node.references[n.id];
-      return ref != null && ref.type == ReferenceType.contains;
-    });
+    return node.references.keys.any((nodeId) =>
+      allNodes.any((n) => n.id == nodeId)
+    );
   }
 
-  /// 获取节点的直接子节点（contains 类型的 reference）
+  /// 获取节点的直接子节点（被引用的节点）
   List<Node> _getDirectChildren(Node parent, List<Node> allNodes) {
     return allNodes.where((node) {
-      final ref = parent.references[node.id];
-      return ref != null && ref.type == ReferenceType.contains;
+      return parent.references.containsKey(node.id);
     }).toList();
   }
 
-  /// 获取顶层父节点（没有被其他节点 contains 的节点）
+  /// 获取顶层父节点（没有被其他节点引用的节点）
   List<Node> _getTopLevelParents(List<Node> allNodes) {
-    final containedIds = <String>{};
+    final referencedIds = <String>{};
     for (final node in allNodes) {
-      for (final ref in node.references.values) {
-        if (ref.type == ReferenceType.contains) {
-          containedIds.add(ref.nodeId);
-        }
-      }
+      referencedIds.addAll(node.references.keys);
     }
 
-    // 返回有子节点但未被其他节点包含的节点
+    // 返回有子节点但未被其他节点引用的节点
     return allNodes.where((node) =>
-      _hasChildren(node, allNodes) && !containedIds.contains(node.id)
+      _hasChildren(node, allNodes) && !referencedIds.contains(node.id)
     ).toList();
   }
 
-  /// 获取未被任何节点包含的可导出节点
+  /// 获取未被任何节点引用的可导出节点
   List<Node> _getRootExportableNodes(List<Node> allNodes) {
-    final containedIds = <String>{};
+    final referencedIds = <String>{};
     for (final node in allNodes) {
-      for (final ref in node.references.values) {
-        if (ref.type == ReferenceType.contains) {
-          containedIds.add(ref.nodeId);
-        }
-      }
+      referencedIds.addAll(node.references.keys);
     }
 
     return allNodes.where((node) =>
-      _isExportable(node) && !containedIds.contains(node.id)
+      _isExportable(node) && !referencedIds.contains(node.id)
     ).toList();
   }
 

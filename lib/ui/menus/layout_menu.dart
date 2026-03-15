@@ -42,15 +42,6 @@ class LayoutMenu {
                 _applyLayout(context, LayoutAlgorithm.circular);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.account_tree),
-              title: const Text('Concept Map'),
-              subtitle: const Text('Organize by concept nodes'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _applyLayout(context, LayoutAlgorithm.conceptMap);
-              },
-            ),
           ],
         ),
       ),

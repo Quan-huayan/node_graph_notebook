@@ -415,7 +415,7 @@ $markdown
         childNode.id,
         NodeReference(
           nodeId: childNode.id,
-          type: ReferenceType.contains,
+          properties: {},
         ),
       );
 
@@ -582,8 +582,9 @@ $markdown
         if (targetId != null && targetId != node.id) {
           node.references[targetId] = NodeReference(
             nodeId: targetId,
-            type: ReferenceType.mentions,
-            role: 'wiki_link',
+            properties: {
+              'role': 'wiki_link',
+            },
           );
         }
       }

@@ -5,13 +5,16 @@ import 'node.dart';
 part 'connection.g.dart';
 
 /// 连接关系（计算属性，从 Node 的 references 得出）
+///
+/// Connection 是从 Node 的 NodeReference 计算得出的视图对象，
+/// 用于在图形界面中渲染节点间的连接线。
 @JsonSerializable()
 class Connection {
   const Connection({
     required this.id,
     required this.fromNodeId,
     required this.toNodeId,
-    required this.referenceType,
+    required this.type,
     this.role,
     this.color,
     required this.lineStyle,
@@ -31,7 +34,9 @@ class Connection {
   final String toNodeId;
 
   /// 引用类型（决定边的语义）
-  final ReferenceType referenceType;
+  ///
+  /// 标准类型：mentions, contains, dependsOn, causes, partOf, relatesTo, references, instanceOf
+  final String type;
 
   /// 角色标签
   final String? role;
@@ -54,14 +59,15 @@ class Connection {
       for (final ref in node.references.values) {
         if (nodeMap.containsKey(ref.nodeId)) {
           final connectionId = '${node.id}_${ref.nodeId}';
+          final refType = ref.type; // 从 properties['type'] 获取
           connections.add(Connection(
             id: connectionId,
             fromNodeId: node.id,
             toNodeId: ref.nodeId,
-            referenceType: ref.type,
+            type: refType,
             role: ref.role,
-            lineStyle: _getLineStyleForType(ref.type),
-            thickness: _getThicknessForType(ref.type),
+            lineStyle: _getLineStyleForType(refType),
+            thickness: _getThicknessForType(refType),
           ));
         }
       }
@@ -73,11 +79,11 @@ class Connection {
   Map<String, dynamic> toJson() => _$ConnectionToJson(this);
 
   /// 根据引用类型获取线型
-  static LineStyle _getLineStyleForType(ReferenceType type) {
+  static LineStyle _getLineStyleForType(String type) {
     switch (type) {
-      case ReferenceType.contains:
+      case 'contains':
         return LineStyle.dashed; // 包含关系用虚线
-      case ReferenceType.causes:
+      case 'causes':
         return LineStyle.solid; // 因果关系用实线
       default:
         return LineStyle.solid;
@@ -85,11 +91,11 @@ class Connection {
   }
 
   /// 根据引用类型获取线宽
-  static double _getThicknessForType(ReferenceType type) {
+  static double _getThicknessForType(String type) {
     switch (type) {
-      case ReferenceType.contains:
+      case 'contains':
         return 2.0;
-      case ReferenceType.causes:
+      case 'causes':
         return 3.0;
       default:
         return 1.5;
@@ -102,7 +108,7 @@ class Connection {
       id: '${toNodeId}_$fromNodeId',
       fromNodeId: toNodeId,
       toNodeId: fromNodeId,
-      referenceType: referenceType,
+      type: type,
       role: role,
       color: color,
       lineStyle: lineStyle,
@@ -122,5 +128,5 @@ class Connection {
 
   @override
   String toString() =>
-      'Connection($fromNodeId -> $toNodeId, type: $referenceType)';
+      'Connection($fromNodeId -> $toNodeId, type: $type)';
 }

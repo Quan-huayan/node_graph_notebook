@@ -33,11 +33,6 @@ class DisconnectNodesHandler implements CommandHandler<DisconnectNodesCommand> {
         return CommandResult.failure('节点连接不存在');
       }
 
-      // 检查类型和角色是否匹配
-      if (reference.type != command.type || reference.role != command.role) {
-        return CommandResult.failure('节点连接不匹配');
-      }
-
       // 保存原始引用（用于撤销）
       command.originalReference = reference;
 

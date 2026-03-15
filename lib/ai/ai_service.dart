@@ -28,8 +28,7 @@ class ConnectionSuggestion {
     required this.toNodeId,
     required this.reason,
     required this.confidence,
-    this.referenceType = ReferenceType.relatesTo,
-    this.relationType,
+    this.relationType = 'relatesTo',
   });
 
   // 从 sourceId/targetId 创建（兼容旧格式）
@@ -39,17 +38,15 @@ class ConnectionSuggestion {
     required String targetId,
     required this.reason,
     required this.confidence,
-    String this.relationType = 'relates_to',
+    this.relationType = 'relates_to',
   })  : fromNodeId = sourceId,
-        toNodeId = targetId,
-        referenceType = ReferenceType.relatesTo;
+        toNodeId = targetId;
 
   final String fromNodeId;
   final String toNodeId;
   final String reason;
   final double confidence; // 0.0 - 1.0
-  final ReferenceType referenceType;
-  final String? relationType; // 字符串形式的关联类型，用于兼容
+  final String relationType;
 }
 
 /// 概念提取结果
@@ -230,7 +227,7 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
           suggestions.add(ConnectionSuggestion(
             fromNodeId: nodes[i].id,
             toNodeId: nodes[j].id,
-            referenceType: ReferenceType.relatesTo,
+            relationType: 'relatesTo',
             reason: 'Similar content: ${(similarity * 100).toStringAsFixed(0)}%',
             confidence: similarity,
           ));

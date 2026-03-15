@@ -54,17 +54,14 @@ class ConnectionRenderer extends Component {
     final start = _calculateEdgePoint(fromPos, toPos, isStart: true);
     final end = _calculateEdgePoint(toPos, fromPos, isStart: false);
 
-    // 根据引用类型确定绘制样式
+    // 使用统一的绘制样式
     final paint = _getPaintForConnection(connection);
 
     // 根据线条样式绘制连接线
     _drawLine(canvas, start, end, paint, connection.lineStyle);
 
-    // 绘制箭头
-    if (connection.referenceType == ReferenceType.causes ||
-        connection.referenceType == ReferenceType.relatesTo) {
-      _drawArrow(canvas, start, end, paint);
-    }
+    // 统一绘制箭头（所有连接都显示箭头）
+    _drawArrow(canvas, start, end, paint);
 
     // 绘制标签
     if (connection.role != null) {
@@ -123,7 +120,8 @@ class ConnectionRenderer extends Component {
   }
 
   Paint _getPaintForConnection(Connection connection) {
-    final color = theme.connections.getColorForType(connection.referenceType);
+    // 使用统一的连接线颜色
+    final color = theme.connections.defaultColor;
     return Paint()
       ..color = color
       ..strokeWidth = connection.thickness

@@ -37,10 +37,12 @@ class FolderItem extends StatefulWidget {
 
 class _FolderItemState extends State<FolderItem> {
   /// 获取文件夹中的直接子节点
+  ///
+  /// 基于引用结构：文件夹引用的所有节点都是其子节点
+  /// 不再使用 ref.type 进行过滤
   List<Node> _getFolderChildren(Node folder, List<Node> nodes) {
     return nodes.where((node) {
-      final ref = folder.references[node.id];
-      return ref != null && ref.type == ReferenceType.contains;
+      return folder.references.containsKey(node.id);
     }).toList();
   }
 
@@ -62,21 +64,16 @@ class _FolderItemState extends State<FolderItem> {
 
   /// 检查 folder 是否是 parentFolder 的子文件夹
   bool _isChildFolder(Node folder, Node parentFolder, List<Node> allNodes) {
-    // 检查 folder 是否直接或间接被 parentFolder 包含
+    // 检查 folder 是否直接被 parentFolder 引用
     if (parentFolder.references.containsKey(folder.id)) {
-      final ref = parentFolder.references[folder.id];
-      if (ref != null && ref.type == ReferenceType.contains) {
-        return true;
-      }
+      return true;
     }
 
     // 递归检查 parentFolder 的所有直接子文件夹
     for (final entry in parentFolder.references.entries) {
-      if (entry.value.type == ReferenceType.contains) {
-        final childNode = allNodes.firstWhere((n) => n.id == entry.key);
-        if (childNode.id.isNotEmpty && childNode.isFolder && _isChildFolder(folder, childNode, allNodes)) {
-          return true;
-        }
+      final childNode = allNodes.firstWhere((n) => n.id == entry.key, orElse: () => parentFolder);
+      if (childNode.id.isNotEmpty && childNode.isFolder && _isChildFolder(folder, childNode, allNodes)) {
+        return true;
       }
     }
 
@@ -104,11 +101,11 @@ class _FolderItemState extends State<FolderItem> {
       await _removeFromFolder(node, oldParent);
     }
 
-    // 创建新的引用
+    // 创建新的引用（使用通用关系类型）
     final newReferences = Map<String, NodeReference>.from(folder.references);
     newReferences[node.id] = NodeReference(
       nodeId: node.id,
-      type: ReferenceType.contains,
+      properties: {'type': 'relatesTo'},
     );
 
     final updatedFolder = folder.copyWith(references: newReferences);
@@ -134,8 +131,8 @@ class _FolderItemState extends State<FolderItem> {
     final nodeBloc = context.read<NodeBloc>();
     final folders = nodeBloc.state.nodes.where((n) => n.isFolder).toList();
     for (final folder in folders) {
-      final ref = folder.references[node.id];
-      if (ref != null && ref.type == ReferenceType.contains) {
+      // 找到第一个引用该节点的文件夹
+      if (folder.references.containsKey(node.id)) {
         return folder;
       }
     }

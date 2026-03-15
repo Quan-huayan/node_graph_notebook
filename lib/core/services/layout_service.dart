@@ -29,12 +29,6 @@ abstract class LayoutService {
     required List<Node> nodes,
     CircularOptions? options,
   });
-
-  /// 概念地图布局
-  Future<void> conceptMapLayout({
-    required List<Node> nodes,
-    ConceptMapOptions? options,
-  });
 }
 
 /// 布局选项
@@ -94,20 +88,6 @@ class CircularOptions extends LayoutOptions {
   final double radius;
 }
 
-/// 概念地图布局选项
-class ConceptMapOptions extends LayoutOptions {
-  const ConceptMapOptions({
-    super.nodeSpacing = 100.0,
-    super.levelSpacing = 150.0,
-    super.alignToGrid = false,
-    this.groupConcepts = true,
-    this.emphasizeConnections = true,
-  });
-
-  final bool groupConcepts;
-  final bool emphasizeConnections;
-}
-
 /// 布局服务实现
 class LayoutServiceImpl implements LayoutService {
   final Map<String, Offset> _lastLayoutPositions = {};
@@ -140,12 +120,6 @@ class LayoutServiceImpl implements LayoutService {
         await circularLayout(
           nodes: nodes,
           options: options is CircularOptions ? options : null,
-        );
-        break;
-      case LayoutAlgorithm.conceptMap:
-        await conceptMapLayout(
-          nodes: nodes,
-          options: options is ConceptMapOptions ? options : null,
         );
         break;
       case LayoutAlgorithm.free:
@@ -332,64 +306,6 @@ class LayoutServiceImpl implements LayoutService {
       final x = center.x + opts.radius * cos(angle);
       final y = center.y + opts.radius * sin(angle);
       positions[nodes[i].id] = Vector2(x, y);
-    }
-
-    _updateNodePositions(nodes, positions);
-  }
-
-  @override
-  Future<void> conceptMapLayout({
-    required List<Node> nodes,
-    ConceptMapOptions? options,
-  }) async {
-    if (nodes.isEmpty) return;
-
-    final positions = <String, Vector2>{};
-
-    // 首先布局所有概念节点（有引用的节点）
-    final conceptNodes = nodes.where((n) => n.references.isNotEmpty).toList();
-
-    // 使用力导向布局先布局概念节点
-    if (conceptNodes.isNotEmpty) {
-      final radius = 300.0;
-      final center = const Vector2(640.0, 400.0);
-
-      for (int i = 0; i < conceptNodes.length; i++) {
-        final angle = (2 * pi * i) / conceptNodes.length;
-        final x = center.x + radius * cos(angle);
-        final y = center.y + radius * sin(angle);
-        positions[conceptNodes[i].id] = Vector2(x, y);
-      }
-    }
-
-    // 布局内容节点（围绕其所属的概念节点）
-    for (final contentNode in nodes) {
-      // 跳过已布局的概念节点
-      if (positions.containsKey(contentNode.id)) continue;
-
-      // 找到包含此内容节点的概念节点
-      final parentConcepts = conceptNodes.where((concept) {
-        return concept.references.containsKey(contentNode.id) &&
-            concept.references[contentNode.id]!.type == ReferenceType.contains;
-      }).toList();
-
-      if (parentConcepts.isNotEmpty) {
-        // 使用第一个包含它的概念节点作为中心
-        final parentPos = positions[parentConcepts.first.id]!;
-        final angle = Random().nextDouble() * 2 * pi;
-        final distance = 100.0 + Random().nextDouble() * 50;
-
-        positions[contentNode.id] = Vector2(
-          parentPos.x + distance * cos(angle),
-          parentPos.y + distance * sin(angle),
-        );
-      } else {
-        // 未被包含的内容节点，随机布局
-        positions[contentNode.id] = Vector2(
-          Random().nextDouble() * 800 + 200,
-          Random().nextDouble() * 600 + 100,
-        );
-      }
     }
 
     _updateNodePositions(nodes, positions);

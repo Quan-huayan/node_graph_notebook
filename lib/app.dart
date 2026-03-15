@@ -28,6 +28,7 @@ import 'core/commands/handlers/graph/update_node_position_handler.dart';
 import 'core/commands/middleware/logging_middleware.dart';
 import 'core/commands/middleware/validation_middleware.dart';
 import 'core/commands/middleware/transaction_middleware.dart';
+import 'core/commands/middleware/undo_middleware.dart';
 import 'ai/ai_service.dart';
 import 'bloc/blocs.dart';
 import 'ui/pages/home_page.dart';
@@ -202,18 +203,27 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           dispose: (_, bus) => bus.dispose(),
         ),
 
+        // 2.2.5 撤销中间件（在 CommandBus 之前注入）
+        Provider<UndoMiddleware>(
+          create: (_) => UndoMiddleware(maxStackSize: 50),
+          dispose: (_, middleware) => middleware.clear(),
+        ),
+
         // 2.3 命令总线（Command Bus - 业务逻辑统一入口）
         Provider<CommandBus>(
           create: (ctx) {
+            final undoMiddleware = ctx.read<UndoMiddleware>();
+
             final commandBus = CommandBus()
-              // 添加中间件
+              // 添加中间件（注意顺序：UndoMiddleware 应该在最后，确保命令成功后才追踪）
               ..addMiddleware(LoggingMiddleware(
                 logLevel: LogLevel.info,
                 includeTimestamp: true,
                 includeDuration: true,
               ))
               ..addMiddleware(TransactionMiddleware())
-              ..addMiddleware(ValidationMiddleware());
+              ..addMiddleware(ValidationMiddleware())
+              ..addMiddleware(undoMiddleware);
 
             // 注册节点命令处理器
             final nodeService = ctx.read<NodeService>();

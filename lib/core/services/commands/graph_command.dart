@@ -275,17 +275,12 @@ class ConnectNodesCommand extends GraphCommand {
   final String sourceId;
   final String targetId;
   final String relationType;
-  ReferenceType? _referenceType;
 
   @override
   Future<void> execute() async {
-    // 将字符串转换为 ReferenceType
-    _referenceType = _getReferenceType(relationType);
-
     await nodeService.connectNodes(
       fromNodeId: sourceId,
       toNodeId: targetId,
-      type: _referenceType!,
     );
   }
 
@@ -299,109 +294,6 @@ class ConnectNodesCommand extends GraphCommand {
 
   @override
   String get description => 'Connect $sourceId to $targetId';
-
-  ReferenceType _getReferenceType(String type) {
-    switch (type) {
-      case 'mentions':
-        return ReferenceType.mentions;
-      case 'contains':
-        return ReferenceType.contains;
-      case 'depends_on':
-        return ReferenceType.dependsOn;
-      case 'relates_to':
-        return ReferenceType.relatesTo;
-      case 'references':
-        return ReferenceType.references;
-      default:
-        return ReferenceType.relatesTo;
-    }
-  }
-}
-
-/// 断开节点命令
-class DisconnectNodesCommand extends GraphCommand {
-  DisconnectNodesCommand({
-    required this.nodeService,
-    required this.sourceId,
-    required this.targetId,
-  });
-
-  final NodeService nodeService;
-  final String sourceId;
-  final String targetId;
-  ReferenceType? _referenceType;
-
-  @override
-  Future<void> execute() async {
-    // 获取源节点以保存引用类型
-    final sourceNode = await nodeService.getNode(sourceId);
-    if (sourceNode != null) {
-      // 找到引用并保存关系类型
-      for (final ref in sourceNode.references.values) {
-        if (ref.nodeId == targetId) {
-          _referenceType = ref.type;
-          break;
-        }
-      }
-    }
-
-    await nodeService.disconnectNodes(
-      fromNodeId: sourceId,
-      toNodeId: targetId,
-    );
-  }
-
-  @override
-  Future<void> undo() async {
-    await nodeService.connectNodes(
-      fromNodeId: sourceId,
-      toNodeId: targetId,
-      type: _referenceType ?? ReferenceType.relatesTo,
-    );
-  }
-
-  @override
-  String get description => 'Disconnect $sourceId from $targetId';
-}
-
-/// 应用布局命令
-class ApplyLayoutCommand extends GraphCommand {
-  ApplyLayoutCommand({
-    required this.graphService,
-    required this.graphId,
-    required this.algorithm,
-  });
-
-  final GraphService graphService;
-  final String graphId;
-  final LayoutAlgorithm algorithm;
-
-  Map<String, Offset>? _oldPositions;
-
-  @override
-  Future<void> execute() async {
-    // 保存旧位置
-    final graph = await graphService.getGraph(graphId);
-    if (graph != null) {
-      _oldPositions = Map<String, Offset>.from(graph.nodePositions);
-    }
-
-    // 应用布局
-    await graphService.applyLayout(graphId, algorithm);
-  }
-
-  @override
-  Future<void> undo() async {
-    if (_oldPositions != null) {
-      await graphService.updateGraph(
-        graphId,
-        nodePositions: _oldPositions!,
-      );
-    }
-  }
-
-  @override
-  String get description => 'Apply ${algorithm.name} Layout';
 }
 
 /// 移动视图命令

@@ -35,9 +35,7 @@ class ConnectNodesHandler implements CommandHandler<ConnectNodesCommand> {
       // 检查是否已存在连接
       // Node.references 是 Map<String, NodeReference>，key 是 targetId
       final existingReference = sourceNode.references[command.targetId];
-      if (existingReference != null &&
-          existingReference.type == command.type &&
-          existingReference.role == command.role) {
+      if (existingReference != null) {
         return CommandResult.failure('节点连接已存在');
       }
 
@@ -45,11 +43,7 @@ class ConnectNodesHandler implements CommandHandler<ConnectNodesCommand> {
       // 注意：NodeReference 使用 nodeId 而不是 targetId
       final reference = NodeReference(
         nodeId: command.targetId,
-        type: command.type,
-        role: command.role,
-        metadata: command.connectionDescription != null
-            ? {'description': command.connectionDescription}
-            : null,
+        properties: command.properties ?? {},
       );
 
       // 更新源节点的引用映射
