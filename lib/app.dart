@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/converter/service/import_export_service.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/service/graph_service.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/service/node_service.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/search/bloc/search_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/search/service/search_preset_service.dart';
+import 'package:node_graph_notebook/ui/bloc/ui_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'converter/converter_service.dart';
-import 'converter/converter_service_impl.dart';
+import 'plugins/builtin_plugins/converter/service/converter_service.dart';
+import 'plugins/builtin_plugins/converter/service/converter_service_impl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/repositories/repositories.dart';
@@ -9,28 +20,35 @@ import 'core/services/services.dart';
 import 'core/services/theme/app_theme.dart';
 import 'core/events/app_events.dart';
 import 'core/commands/command_bus.dart';
-import 'core/commands/impl/node_commands.dart';
-import 'core/commands/impl/graph_commands.dart';
-import 'core/commands/handlers/create_node_handler.dart';
-import 'core/commands/handlers/update_node_handler.dart';
-import 'core/commands/handlers/delete_node_handler.dart';
-import 'core/commands/handlers/connect_nodes_handler.dart';
-import 'core/commands/handlers/disconnect_nodes_handler.dart';
-import 'core/commands/handlers/move_node_handler.dart';
-import 'core/commands/handlers/resize_node_handler.dart';
-import 'core/commands/handlers/graph/load_graph_handler.dart';
-import 'core/commands/handlers/graph/create_graph_handler.dart';
-import 'core/commands/handlers/graph/update_graph_handler.dart';
-import 'core/commands/handlers/graph/rename_graph_handler.dart';
-import 'core/commands/handlers/graph/add_node_to_graph_handler.dart';
-import 'core/commands/handlers/graph/remove_node_from_graph_handler.dart';
-import 'core/commands/handlers/graph/update_node_position_handler.dart';
-import 'core/commands/middleware/logging_middleware.dart';
-import 'core/commands/middleware/validation_middleware.dart';
-import 'core/commands/middleware/transaction_middleware.dart';
-import 'core/commands/middleware/undo_middleware.dart';
-import 'ai/ai_service.dart';
-import 'bloc/blocs.dart';
+import 'plugins/builtin_plugins/graph/command/node_commands.dart';
+import 'plugins/builtin_plugins/graph/command/graph_commands.dart';
+import 'plugins/builtin_plugins/layout/command/layout_commands.dart';
+import 'plugins/builtin_plugins/ai/command/ai_commands.dart';
+import 'plugins/builtin_plugins/graph/handler/create_node_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/update_node_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/delete_node_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/connect_nodes_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/disconnect_nodes_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/move_node_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/resize_node_handler.dart';
+import 'plugins/builtin_plugins/layout/handler/apply_layout_handler.dart';
+import 'plugins/builtin_plugins/ai/handler/analyze_node_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/load_graph_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/create_graph_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/update_graph_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/rename_graph_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/add_node_to_graph_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/remove_node_from_graph_handler.dart';
+import 'plugins/builtin_plugins/graph/handler/update_node_position_handler.dart';
+import 'plugins/builtin_middlewares/logging_middleware.dart';
+import 'plugins/builtin_middlewares/validation_middleware.dart';
+import 'plugins/builtin_middlewares/transaction_middleware.dart';
+import 'plugins/builtin_middlewares/undo_middleware.dart';
+import 'plugins/builtin_plugins/layout/service/layout_service.dart';
+import 'plugins/builtin_plugins/ai/service/ai_service.dart';
+import 'core/plugin/plugin_manager.dart';
+import 'core/plugin/builtin_plugin_loader.dart';
+import 'core/plugin/ui_hooks/hook_registry.dart';
 import 'ui/pages/home_page.dart';
 
 class NodeGraphNotebookApp extends StatefulWidget {
@@ -192,9 +210,11 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           },
         ),
 
-        // 2.1 Undo Manager
-        ChangeNotifierProvider<UndoManager>(
-          create: (_) => UndoManager(),
+
+
+        // 2.1.5 Layout Service
+        Provider<LayoutService>(
+          create: (_) => LayoutServiceImpl(),
         ),
 
         // 2.2 事件总线（在 BLoC 之前注入，供 BLoC 使用）
@@ -291,6 +311,36 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
               UpdateNodePositionCommand,
             );
 
+            // 注册布局命令处理器
+            final layoutService = ctx.read<LayoutService>();
+            commandBus.registerHandler<ApplyLayoutCommand>(
+              ApplyLayoutHandler(graphService, layoutService, commandBus),
+              ApplyLayoutCommand,
+            );
+            commandBus.registerHandler<BatchMoveNodesCommand>(
+              BatchMoveNodesHandler(nodeRepository),
+              BatchMoveNodesCommand,
+            );
+
+            // 注册 AI 命令处理器
+            final aiService = ctx.read<AIServiceImpl>();
+            commandBus.registerHandler<AnalyzeNodeCommand>(
+              AnalyzeNodeHandler(aiService),
+              AnalyzeNodeCommand,
+            );
+            commandBus.registerHandler<SuggestConnectionsCommand>(
+              SuggestConnectionsHandler(aiService),
+              SuggestConnectionsCommand,
+            );
+            commandBus.registerHandler<GenerateGraphSummaryCommand>(
+              GenerateGraphSummaryHandler(aiService, nodeRepository),
+              GenerateGraphSummaryCommand,
+            );
+            commandBus.registerHandler<GenerateNodeCommand>(
+              GenerateNodeHandler(aiService, nodeService),
+              GenerateNodeCommand,
+            );
+
             return commandBus;
           },
           dispose: (_, bus) => bus.dispose(),
@@ -327,6 +377,52 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           create: (ctx) => ConverterBloc(
             importExportService: ctx.read<ImportExportService>(),
           ),
+        ),
+
+        // 2.5 插件系统
+        // Hook Registry（全局单例）
+        Provider<HookRegistry>(
+          create: (_) => hookRegistry,
+          dispose: (_, registry) => registry.clear(),
+        ),
+
+        // Plugin Manager
+        Provider<PluginManager>(
+          create: (ctx) {
+            final manager = PluginManager(
+              commandBus: ctx.read<CommandBus>(),
+              eventBus: ctx.read<AppEventBus>(),
+              nodeRepository: ctx.read<NodeRepository>(),
+              graphRepository: ctx.read<GraphRepository>(),
+            );
+
+            // 异步加载内置插件（不阻塞启动）
+            Future.microtask(() async {
+              try {
+                final loader = BuiltinPluginLoader(
+                  pluginManager: manager,
+                  hookRegistry: hookRegistry,
+                );
+                final count = await loader.loadAllBuiltinPlugins();
+                debugPrint('[App] Loaded $count builtin plugins');
+              } catch (e) {
+                debugPrint('[App] Error loading builtin plugins: $e');
+              }
+            });
+
+            return manager;
+          },
+          dispose: (_, manager) {
+            // 清理插件管理器
+            Future.microtask(() async {
+              try {
+                final loader = BuiltinPluginLoader(pluginManager: manager);
+                await loader.unloadAllBuiltinPlugins();
+              } catch (e) {
+                debugPrint('[App] Error unloading plugins: $e');
+              }
+            });
+          },
         ),
       ],
       child: Consumer2<SettingsService, ThemeService>(

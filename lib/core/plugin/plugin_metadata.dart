@@ -10,6 +10,7 @@ class PluginMetadata {
     this.author,
     this.homepage,
     this.dependencies = const [],
+    this.apiDependencies = const [],
     this.minimumAppVersion = '1.0.0',
     this.enabledByDefault = true,
   });
@@ -40,6 +41,11 @@ class PluginMetadata {
   ///
   /// 插件管理器会确保这些依赖在加载此插件前已加载
   final List<String> dependencies;
+
+  /// 依赖的 API 列表
+  ///
+  /// 插件管理器会检查这些 API 是否已被其他插件导出
+  final List<APIDependency> apiDependencies;
 
   /// 最低应用版本要求
   ///
@@ -209,5 +215,65 @@ class PluginDependency {
     }
 
     return true;
+  }
+}
+
+/// API 依赖项
+///
+/// 声明插件对其他插件导出的 API 的依赖
+class APIDependency {
+  const APIDependency({
+    required this.apiName,
+    this.minimumVersion,
+    this.maximumVersion,
+  });
+
+  /// API 名称
+  final String apiName;
+
+  /// 最低版本要求（可选）
+  final String? minimumVersion;
+
+  /// 最高版本限制（可选）
+  final String? maximumVersion;
+
+  /// 检查版本是否满足依赖要求
+  ///
+  /// [version] 要检查的版本
+  /// 返回 true 如果版本满足要求
+  bool isSatisfiedBy(String version) {
+    if (minimumVersion != null) {
+      final minParts = minimumVersion!.split('.').map(int.parse).toList();
+      final verParts = version.split('.').map(int.parse).toList();
+
+      for (int i = 0; i < minParts.length; i++) {
+        if (i >= verParts.length) return false;
+        if (verParts[i] < minParts[i]) return false;
+      }
+    }
+
+    if (maximumVersion != null) {
+      final maxParts = maximumVersion!.split('.').map(int.parse).toList();
+      final verParts = version.split('.').map(int.parse).toList();
+
+      for (int i = 0; i < maxParts.length; i++) {
+        if (i >= verParts.length) return false;
+        if (verParts[i] > maxParts[i]) return false;
+      }
+    }
+
+    return true;
+  }
+
+  @override
+  String toString() {
+    if (minimumVersion != null && maximumVersion != null) {
+      return 'APIDependency($apiName: $minimumVersion - $maximumVersion)';
+    } else if (minimumVersion != null) {
+      return 'APIDependency($apiName: >=$minimumVersion)';
+    } else if (maximumVersion != null) {
+      return 'APIDependency($apiName: <=$maximumVersion)';
+    }
+    return 'APIDependency($apiName)';
   }
 }

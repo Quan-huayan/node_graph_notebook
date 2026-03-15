@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../pages/import_export_page.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+import '../../plugins/builtin_plugins/converter/ui/import_export_page.dart';
 import '../pages/plugin_market_page.dart';
 import '../dialogs/settings_dialog.dart';
-import '../../bloc/blocs.dart';
 
 /// 应用程序的顶部导航栏
 class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {

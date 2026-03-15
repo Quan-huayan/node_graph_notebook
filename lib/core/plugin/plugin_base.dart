@@ -114,6 +114,22 @@ abstract class Plugin {
   /// 检查插件是否已启用
   bool get isEnabled => state == PluginState.enabled;
 
+  /// 导出插件 API
+  ///
+  /// 插件可以导出 API 供其他插件使用
+  ///
+  /// 返回 Map，key 为 API 名称，value 为 API 实例
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// @override
+  /// Map<String, dynamic> exportAPIs() => {
+  ///   'search_api': SearchAPI(),
+  ///   'index_api': IndexAPI(),
+  /// };
+  /// ```
+  Map<String, dynamic> exportAPIs() => {};
+
   @override
   String toString() => 'Plugin(${metadata.id}, version: ${metadata.version})';
 }

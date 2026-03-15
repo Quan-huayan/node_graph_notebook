@@ -3,6 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'plugin.dart';
 import '../commands/command_bus.dart';
 import '../events/app_events.dart';
+import '../repositories/node_repository.dart';
+import '../repositories/graph_repository.dart';
+import 'api/api_registry.dart';
+import 'ui_hooks/ui_hook.dart';
 
 /// 插件管理器接口
 abstract class IPluginManager {
@@ -31,19 +35,33 @@ abstract class IPluginManager {
 /// 插件管理器实现
 ///
 /// 管理插件的生命周期、依赖关系和加载顺序
+/// 支持 API 导出/导入系统，允许插件间通信
 class PluginManager implements IPluginManager {
   PluginManager({
     required CommandBus commandBus,
     AppEventBus? eventBus,
+    NodeRepository? nodeRepository,
+    GraphRepository? graphRepository,
     PluginDiscoverer? discoverer,
   })  : _commandBus = commandBus,
         _eventBus = eventBus,
+        _nodeRepository = nodeRepository,
+        _graphRepository = graphRepository,
+        _apiRegistry = APIRegistry(),
         _discoverer = discoverer ?? PluginDiscoverer();
 
   final CommandBus _commandBus;
   final AppEventBus? _eventBus;
+  final NodeRepository? _nodeRepository;
+  final GraphRepository? _graphRepository;
+  final APIRegistry _apiRegistry;
   final PluginDiscoverer _discoverer;
   final PluginRegistry _registry = PluginRegistry();
+
+  /// API 注册表（只读访问）
+  ///
+  /// 用于高级插件间通信
+  APIRegistry get apiRegistry => _apiRegistry;
 
   /// 插件注册表（只读访问）
   PluginRegistry get registry => _registry;
@@ -73,12 +91,15 @@ class PluginManager implements IPluginManager {
       );
     }
 
-    // 创建插件上下文
+    // 创建插件上下文（包含所有依赖）
     final context = PluginContext(
       pluginId: pluginId,
       commandBus: _commandBus,
       eventBus: _eventBus,
       logger: PluginLogger(pluginId),
+      apiRegistry: _apiRegistry,
+      nodeRepository: _nodeRepository,
+      graphRepository: _graphRepository,
     );
 
     // 创建生命周期管理器
@@ -90,14 +111,35 @@ class PluginManager implements IPluginManager {
     // 注册到注册表
     _registry.register(wrapper);
 
+    // 如果是 UIHook，设置 pluginContext 引用
+    if (plugin is UIHook) {
+      final uiHook = plugin;
+      uiHook.pluginContext = context;
+    }
+
     // 调用 onLoad
     try {
       await lifecycle.transitionTo(
         PluginState.loaded,
         () => plugin.onLoad(context),
       );
+
+      // 注册插件导出的 API
+      final exportedAPIs = plugin.exportAPIs();
+      for (final entry in exportedAPIs.entries) {
+        _apiRegistry.registerAPI(
+          pluginId,
+          entry.key,
+          plugin.metadata.version,
+          entry.value,
+        );
+      }
+
+      // 验证 API 依赖
+      await _validateAPIDependencies(plugin);
     } catch (e) {
-      // 加载失败，从注册表移除
+      // 加载失败，清理已注册的 API 并从注册表移除
+      _apiRegistry.unregisterPluginAPIs(pluginId);
       _registry.unregister(pluginId);
       throw PluginLoadException(pluginId, e);
     }
@@ -114,6 +156,9 @@ class PluginManager implements IPluginManager {
     if (wrapper.isEnabled) {
       await disablePlugin(pluginId);
     }
+
+    // 注销插件的所有 API
+    _apiRegistry.unregisterPluginAPIs(pluginId);
 
     // 调用 onUnload
     try {
@@ -205,6 +250,30 @@ class PluginManager implements IPluginManager {
 
       if (!dep.isEnabled) {
         await enablePlugin(depId);
+      }
+    }
+  }
+
+  /// 验证 API 依赖
+  ///
+  /// 检查插件依赖的 API 是否已被其他插件导出，且版本满足要求
+  Future<void> _validateAPIDependencies(Plugin plugin) async {
+    for (final dep in plugin.metadata.apiDependencies) {
+      if (!_apiRegistry.hasAPI(dep.apiName)) {
+        throw MissingAPIDependencyException(
+          plugin.metadata.id,
+          dep.apiName,
+        );
+      }
+
+      final version = _apiRegistry.getAPIVersion(dep.apiName);
+      if (version != null && !dep.isSatisfiedBy(version)) {
+        throw APIVersionException(
+          plugin.metadata.id,
+          dep.apiName,
+          dep.minimumVersion ?? 'any',
+          version,
+        );
       }
     }
   }

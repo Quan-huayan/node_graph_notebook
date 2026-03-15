@@ -9,7 +9,8 @@ export 'plugin_metadata.dart'
         PluginType,
         PluginPermission,
         PluginState,
-        PluginDependency;
+        PluginDependency,
+        APIDependency;
 export 'plugin_context.dart'
     show
         PluginContext,

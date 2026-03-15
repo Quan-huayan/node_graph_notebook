@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/search/ui/search_sidebar_panel.dart';
 import '../../core/models/models.dart';
-import '../../bloc/blocs.dart';
-import '../views/folder_tree_view.dart';
-import '../panels/search_sidebar_panel.dart';
+import '../../core/plugin/ui_hooks/hook_container.dart';
+import '../../core/plugin/ui_hooks/hook_context.dart';
 
 /// 侧边栏
 class Sidebar extends StatefulWidget {
@@ -204,15 +208,7 @@ class _SidebarState extends State<Sidebar> {
             Expanded(
               child: _showSearch
                   ? const SearchSidebarPanel()
-                  : FolderTreeView(
-                      nodes: regularNodes,
-                      folders: folders,
-                      onNodeSelected: (nodeId) {
-                        setState(() {
-                          _selectedNodeId = nodeId;
-                        });
-                      },
-                    ),
+                  : _buildPluginContent(context, regularNodes, folders),
             ),
           ],
         ),
@@ -255,5 +251,56 @@ class _SidebarState extends State<Sidebar> {
     setState(() {
       _isEditingName = false;
     });
+  }
+
+  /// 构建插件内容区域
+  Widget _buildPluginContent(BuildContext context, List<Node> nodes, List<Node> folders) {
+    // 创建 SidebarBottomHookContext
+    final hookContext = SidebarHookContext(
+      data: {
+        'nodes': nodes,
+        'folders': folders,
+        'onNodeSelected': (nodeId) {
+          setState(() {
+            _selectedNodeId = nodeId;
+          });
+        },
+        'nodeBloc': context.read<NodeBloc>(),
+        'graphBloc': context.read<GraphBloc>(),
+      },
+    );
+
+    // 创建 Hook 容器并渲染插件内容
+    final container = HookContainerFactory.createSidebarBottomContainer(hookContext);
+    final pluginWidgets = container.render();
+
+    if (pluginWidgets.isEmpty) {
+      // 如果没有插件注册，显示默认界面
+      return _buildDefaultContent(context, nodes, folders);
+    }
+
+    // 渲染所有插件内容
+    return Column(
+      children: pluginWidgets.map((w) => w as Widget).toList(),
+    );
+  }
+
+  /// 构建默认内容（当没有插件时）
+  Widget _buildDefaultContent(BuildContext context, List<Node> nodes, List<Node> folders) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.folder_open, size: 48, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text('No folder plugin loaded'),
+          const SizedBox(height: 8),
+          Text(
+            '${nodes.length} nodes, ${folders.length} folders',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
   }
 }

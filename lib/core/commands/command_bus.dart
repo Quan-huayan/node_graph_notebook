@@ -2,7 +2,8 @@ import 'dart:async';
 import 'command.dart';
 import 'command_context.dart';
 import 'command_handler.dart';
-import 'middleware/middleware.dart';
+import 'command_handler_registry.dart';
+import 'middleware.dart';
 import '../plugin/middleware/middleware_plugin.dart';
 import '../plugin/middleware/middleware_pipeline.dart';
 
@@ -17,13 +18,11 @@ class CommandBus {
   /// 构造函数
   CommandBus() {
     _middlewarePipeline = MiddlewarePipeline();
+    _handlerRegistry = CommandHandlerRegistry();
   }
   
   /// 命令处理器注册表
-  ///
-  /// Key: 命令类型的运行时类型
-  /// Value: 对应的命令处理器
-  final Map<Type, CommandHandler> _handlers = {};
+  late final CommandHandlerRegistry _handlerRegistry;
 
   /// 中间件列表
   ///
@@ -58,7 +57,7 @@ class CommandBus {
       throw StateError('CommandBus 已释放，无法注册处理器');
     }
 
-    _handlers[commandType] = handler;
+    _handlerRegistry.register(handler, commandType);
   }
 
   /// 添加中间件
@@ -128,7 +127,7 @@ class CommandBus {
 
       // 2. 执行中间件插件管道
       // 3. 查找处理器
-      final handler = _handlers[command.runtimeType];
+      final handler = _handlerRegistry.getHandler(command.runtimeType);
       if (handler == null) {
         throw CommandHandlerNotFoundException(command.runtimeType);
       }
@@ -212,7 +211,7 @@ class CommandBus {
     if (_disposed) return;
 
     _commandStreamController.close();
-    _handlers.clear();
+    _handlerRegistry.clear();
     _middlewares.clear();
     _disposed = true;
   }

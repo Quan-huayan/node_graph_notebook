@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../bloc/blocs.dart';
-import '../dialogs/graph_nodes_dialog.dart';
-import '../menus/layout_menu.dart';
-import '../dialogs/delete_node_dialog.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
+import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+import 'package:node_graph_notebook/ui/bloc/ui_bloc.dart';
+import 'package:node_graph_notebook/ui/bloc/ui_event.dart';
+import 'package:node_graph_notebook/ui/bloc/ui_state.dart';
+import '../../plugins/builtin_plugins/graph/ui/graph_nodes_dialog.dart';
+import '../../plugins/builtin_plugins/layout/ui/layout_menu.dart';
+import '../../plugins/builtin_plugins/graph/service/delete_node_dialog.dart';
 
 /// 工具栏
 class Toolbar extends StatelessWidget {

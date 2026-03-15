@@ -1,6 +1,12 @@
 import 'package:flutter/widgets.dart';
 import '../commands/command_bus.dart';
 import '../events/app_events.dart';
+import '../repositories/node_repository.dart';
+import '../repositories/graph_repository.dart';
+import 'api/api_registry.dart';
+import 'dependency_container.dart';
+import 'plugin_communication.dart';
+import 'plugin_exception.dart';
 
 /// 插件上下文
 ///
@@ -12,8 +18,16 @@ class PluginContext {
     required this.commandBus,
     this.eventBus,
     this.logger,
+    this.apiRegistry,
+    this.nodeRepository,
+    this.graphRepository,
+    this.dependencyContainer,
+    this.communication,
     Map<String, dynamic>? config,
-  }) : _config = config ?? {};
+  }) : _config = config ?? {} {
+    // 注册默认依赖
+    _registerDefaultDependencies();
+  }
 
   /// 插件 ID
   final String pluginId;
@@ -27,8 +41,46 @@ class PluginContext {
   /// 插件日志记录器
   final PluginLogger? logger;
 
+  /// API 注册表（用于获取其他插件导出的 API）
+  final APIRegistry? apiRegistry;
+
+  /// 节点仓库（用于读取节点数据）
+  final NodeRepository? nodeRepository;
+
+  /// 图仓库（用于读取图数据）
+  final GraphRepository? graphRepository;
+
+  /// 依赖注入容器
+  final DependencyContainer? dependencyContainer;
+
+  /// 插件通信接口
+  final PluginCommunication? communication;
+
   /// 插件配置（只读）
   final Map<String, dynamic> _config;
+
+  /// 注册默认依赖
+  void _registerDefaultDependencies() {
+    if (dependencyContainer != null) {
+      if (nodeRepository != null) {
+        dependencyContainer!.register<NodeRepository>(nodeRepository!);
+      }
+      if (graphRepository != null) {
+        dependencyContainer!.register<GraphRepository>(graphRepository!);
+      }
+      // commandBus 是必填参数，不需要检查
+      dependencyContainer!.register<CommandBus>(commandBus);
+      if (eventBus != null) {
+        dependencyContainer!.register<AppEventBus>(eventBus!);
+      }
+      if (apiRegistry != null) {
+        dependencyContainer!.register<APIRegistry>(apiRegistry!);
+      }
+      if (communication != null) {
+        dependencyContainer!.register<PluginCommunication>(communication!);
+      }
+    }
+  }
 
   /// 获取配置值
   ///
@@ -44,6 +96,99 @@ class PluginContext {
 
   /// 获取所有配置
   Map<String, dynamic> get config => Map.unmodifiable(_config);
+
+  /// 获取其他插件导出的 API
+  ///
+  /// [apiName] API 名称
+  /// 返回 API 实例，如果不存在则返回 null
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// final searchAPI = context.getAPI<SearchAPI>('search_api');
+  /// if (searchAPI != null) {
+  ///   searchAPI.search(query);
+  /// }
+  /// ```
+  T? getAPI<T>(String apiName) {
+    return apiRegistry?.getAPI<T>(apiName);
+  }
+
+  /// 检查 API 是否存在
+  ///
+  /// [apiName] API 名称
+  /// 返回 true 如果 API 已被其他插件导出
+  bool hasAPI(String apiName) {
+    return apiRegistry?.hasAPI(apiName) ?? false;
+  }
+
+  /// 获取 API 版本
+  ///
+  /// [apiName] API 名称
+  /// 返回 API 版本，如果不存在则返回 null
+  String? getAPIVersion(String apiName) {
+    return apiRegistry?.getAPIVersion(apiName);
+  }
+
+  /// 类型安全的依赖访问
+  ///
+  /// 类似 CommandContext.read<T>()，提供类型安全的服务访问
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// final nodeRepo = context.read<NodeRepository>();
+  /// final nodes = await nodeRepo.queryAll();
+  /// ```
+  T read<T>() {
+    if (dependencyContainer != null && dependencyContainer!.contains<T>()) {
+      return dependencyContainer!.get<T>();
+    }
+
+    // 向后兼容
+    if (T == NodeRepository) {
+      if (nodeRepository == null) {
+        throw PluginStateException('plugin', 'uninitialized', 'NodeRepository available');
+      }
+      return nodeRepository as T;
+    }
+    if (T == GraphRepository) {
+      if (graphRepository == null) {
+        throw PluginStateException('plugin', 'uninitialized', 'GraphRepository available');
+      }
+      return graphRepository as T;
+    }
+    throw PluginConfigurationException('unknown', 'Unknown service type: $T');
+  }
+
+  /// 检查依赖是否可用
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// if (context.hasDependency<NodeRepository>()) {
+  ///   final repo = context.read<NodeRepository>();
+  /// }
+  /// ```
+  bool hasDependency<T>() {
+    if (dependencyContainer != null && dependencyContainer!.contains<T>()) {
+      return true;
+    }
+
+    // 向后兼容
+    if (T == NodeRepository) return nodeRepository != null;
+    if (T == GraphRepository) return graphRepository != null;
+    return false;
+  }
+
+  /// 检查 Repository 是否可用（向后兼容）
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// if (context.hasRepository<NodeRepository>()) {
+  ///   final repo = context.read<NodeRepository>();
+  /// }
+  /// ```
+  bool hasRepository<T>() {
+    return hasDependency<T>();
+  }
 
   /// 记录信息日志
   void info(String message) {

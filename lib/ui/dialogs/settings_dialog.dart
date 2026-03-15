@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../bloc/blocs.dart';
+import 'package:node_graph_notebook/ui/bloc/ui_bloc.dart';
+import 'package:node_graph_notebook/ui/bloc/ui_event.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
-import 'ai_config_dialog.dart';
-import 'ai_test_dialog.dart';
+import '../../plugins/builtin_plugins/ai/ui/ai_config_dialog.dart';
+import '../../plugins/builtin_plugins/ai/ui/ai_test_dialog.dart';
 
 /// 设置对话框
 class SettingsDialog extends StatefulWidget {

@@ -5,6 +5,11 @@ import 'package:flutter/widgets.dart';
 
 /// UI Hook 接口
 abstract class UIHook extends Plugin {
+  /// 插件上下文（由 PluginManager 在加载时设置）
+  ///
+  /// @internal
+  PluginContext? pluginContext;
+
   /// Hook 点
   HookPointId get hookPoint;
 
@@ -31,7 +36,10 @@ abstract class MainToolbarHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final toolbarContext = MainToolbarHookContext(context.data);
+    final toolbarContext = MainToolbarHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderToolbar(toolbarContext);
   }
 
@@ -46,7 +54,10 @@ abstract class NodeContextMenuHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final menuContext = NodeContextMenuHookContext(context.data);
+    final menuContext = NodeContextMenuHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderMenu(menuContext);
   }
 
@@ -61,7 +72,10 @@ abstract class GraphContextMenuHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final menuContext = GraphContextMenuHookContext(context.data);
+    final menuContext = GraphContextMenuHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderMenu(menuContext);
   }
 
@@ -76,7 +90,10 @@ abstract class SidebarTopHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final sidebarContext = SidebarHookContext(context.data);
+    final sidebarContext = SidebarHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderSidebar(sidebarContext);
   }
 
@@ -91,7 +108,10 @@ abstract class SidebarBottomHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final sidebarContext = SidebarHookContext(context.data);
+    final sidebarContext = SidebarHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderSidebar(sidebarContext);
   }
 
@@ -106,7 +126,10 @@ abstract class StatusBarHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final statusContext = StatusBarHookContext(context.data);
+    final statusContext = StatusBarHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderStatusBar(statusContext);
   }
 
@@ -121,7 +144,10 @@ abstract class NodeEditorHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final editorContext = NodeEditorHookContext(context.data);
+    final editorContext = NodeEditorHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderEditor(editorContext);
   }
 
@@ -136,7 +162,10 @@ abstract class ImportExportHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final importExportContext = ImportExportHookContext(context.data);
+    final importExportContext = ImportExportHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderImportExport(importExportContext);
   }
 
@@ -151,7 +180,10 @@ abstract class SettingsHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final settingsContext = SettingsHookContext(context.data);
+    final settingsContext = SettingsHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderSettings(settingsContext);
   }
 
@@ -166,7 +198,10 @@ abstract class HelpHook extends UIHook {
 
   @override
   Widget render(HookContext context) {
-    final helpContext = HelpHookContext(context.data);
+    final helpContext = HelpHookContext(
+      data: context.data,
+      pluginContext: pluginContext,
+    );
     return renderHelp(helpContext);
   }
 
