@@ -3,6 +3,8 @@ import 'command.dart';
 import 'command_context.dart';
 import 'command_handler.dart';
 import 'middleware/middleware.dart';
+import '../plugin/middleware/middleware_plugin.dart';
+import '../plugin/middleware/middleware_pipeline.dart';
 
 /// 命令总线
 ///
@@ -12,6 +14,11 @@ import 'middleware/middleware.dart';
 /// 3. 执行结果处理
 /// 4. 错误处理和日志
 class CommandBus {
+  /// 构造函数
+  CommandBus() {
+    _middlewarePipeline = MiddlewarePipeline();
+  }
+  
   /// 命令处理器注册表
   ///
   /// Key: 命令类型的运行时类型
@@ -22,6 +29,9 @@ class CommandBus {
   ///
   /// 按照添加顺序依次执行
   final List<CommandMiddleware> _middlewares = [];
+
+  /// 中间件管道（用于插件中间件）
+  late final MiddlewarePipeline _middlewarePipeline;
 
   /// 是否已释放
   bool _disposed = false;
@@ -63,16 +73,38 @@ class CommandBus {
     _middlewares.add(middleware);
   }
 
+  /// 添加中间件插件
+  ///
+  /// [middleware] 中间件插件实例
+  void addMiddlewarePlugin(CommandMiddlewarePlugin middleware) {
+    if (_disposed) {
+      throw StateError('CommandBus 已释放，无法添加中间件插件');
+    }
+    _middlewarePipeline.addCommandMiddleware(middleware);
+  }
+
+  /// 移除中间件插件
+  ///
+  /// [middleware] 中间件插件实例
+  void removeMiddlewarePlugin(CommandMiddlewarePlugin middleware) {
+    if (_disposed) {
+      throw StateError('CommandBus 已释放，无法移除中间件插件');
+    }
+    _middlewarePipeline.removeCommandMiddleware(middleware);
+  }
+
   /// 分发命令
   ///
   /// [command] 要执行的命令对象
   ///
   /// 执行流程：
-  /// 1. 执行所有中间件（前置处理）
-  /// 2. 路由到对应的命令处理器
-  /// 3. 执行命令
-  /// 4. 执行所有中间件（后置处理）
-  /// 5. 返回执行结果
+  /// 1. 执行所有传统中间件（前置处理）
+  /// 2. 执行中间件插件管道
+  /// 3. 路由到对应的命令处理器
+  /// 4. 执行命令
+  /// 5. 执行中间件插件管道（后置）
+  /// 6. 执行所有传统中间件（后置处理）
+  /// 7. 返回执行结果
   ///
   /// 返回命令执行结果
   Future<CommandResult<T>> dispatch<T>(Command<T> command) async {
@@ -89,21 +121,28 @@ class CommandBus {
     ));
 
     try {
-      // 1. 执行中间件管道（前置）
+      // 1. 执行传统中间件（前置）
       for (final middleware in _middlewares) {
         await middleware.processBefore(command, context);
       }
 
-      // 2. 查找处理器
+      // 2. 执行中间件插件管道
+      // 3. 查找处理器
       final handler = _handlers[command.runtimeType];
       if (handler == null) {
         throw CommandHandlerNotFoundException(command.runtimeType);
       }
 
-      // 3. 执行命令
-      final result = await handler.execute(command, context);
+      // 4. 执行命令
+      final result = await _middlewarePipeline.executeCommand(
+        command,
+        context,
+        handler,
+      );
 
-      // 4. 执行中间件管道（后置）
+
+
+      // 6. 执行传统中间件（后置）
       for (final middleware in _middlewares) {
         await middleware.processAfter(command, context, result);
       }

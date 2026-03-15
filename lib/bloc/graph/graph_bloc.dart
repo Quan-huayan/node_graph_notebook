@@ -8,6 +8,7 @@ import '../../core/models/models.dart';
 import '../../core/services/services.dart';
 import '../../core/events/app_events.dart';
 import '../../core/commands/command_bus.dart';
+import '../../core/commands/command.dart';
 import '../../core/commands/impl/graph_commands.dart';
 import '../../core/repositories/graph_repository.dart';
 import '../../core/repositories/node_repository.dart';
@@ -740,6 +741,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       );
       _commandBus.dispatch(command).catchError((e) {
         debugPrint('Failed to persist node position: $e');
+        return CommandResult.failureTyped<void>(e.toString());
       });
     } catch (e) {
       // 静默失败，不影响用户体验

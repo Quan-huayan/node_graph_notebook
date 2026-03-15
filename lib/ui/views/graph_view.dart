@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/blocs.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/settings_service.dart';
-import '../bars/toolbar.dart';
+import '../bars/core_toolbar.dart';
+import '../../core/commands/command_bus.dart';
+import '../../core/events/app_events.dart';
 import '../bars/sidebar.dart';
 import '../../flame/flame.dart';
 
@@ -189,7 +191,11 @@ class GraphView extends StatelessWidget {
                 Positioned(
                   top: 16,
                   right: 16,
-                  child: Toolbar(uiState: uiState),
+                  child: CoreToolbar(
+                    uiState: uiState,
+                    commandBus: context.read<CommandBus>(),
+                    eventBus: context.read<AppEventBus>(),
+                  ),
                 ),
               ],
             ),
