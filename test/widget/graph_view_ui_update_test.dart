@@ -40,7 +40,6 @@ void main() {
     late MockNodeRepository mockNodeRepository;
     late MockGraphRepository mockGraphRepository;
     late MockNodeService mockNodeService;
-    late MockGraphService mockGraphService;
     late AppEventBus eventBus;
     late CommandBus commandBus;
     late NodeBloc nodeBloc;
@@ -48,7 +47,6 @@ void main() {
     late UIBloc uiBloc;
     late SettingsService settingsService;
     late ThemeService themeService;
-    late UndoManager undoManager;
 
     // 用于跟踪创建的节点
     final List<Node> createdNodes = [];
@@ -59,10 +57,8 @@ void main() {
       mockNodeRepository = MockNodeRepository();
       mockGraphRepository = MockGraphRepository();
       mockNodeService = MockNodeService();
-      mockGraphService = MockGraphService();
       eventBus = AppEventBus();
       commandBus = CommandBus();
-      undoManager = UndoManager();
       uiBloc = UIBloc();
       settingsService = SettingsService();
       await settingsService.init();
@@ -110,8 +106,9 @@ void main() {
       );
 
       graphBloc = GraphBloc(
-        graphService: mockGraphService,
-        undoManager: undoManager,
+        commandBus: commandBus,
+        graphRepository: mockGraphRepository,
+        nodeRepository: mockNodeRepository,
         eventBus: eventBus,
       );
     });

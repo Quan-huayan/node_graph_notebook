@@ -32,22 +32,18 @@ void main() {
     late MockNodeRepository mockNodeRepository;
     late MockGraphRepository mockGraphRepository;
     late MockNodeService mockNodeService;
-    late MockGraphService mockGraphService;
     late AppEventBus eventBus;
     late CommandBus commandBus;
     late NodeBloc nodeBloc;
     late GraphBloc graphBloc;
     late UIBloc uiBloc;
-    late UndoManager undoManager;
 
     setUp(() async {
       mockNodeRepository = MockNodeRepository();
       mockGraphRepository = MockGraphRepository();
       mockNodeService = MockNodeService();
-      mockGraphService = MockGraphService();
       eventBus = AppEventBus();
       commandBus = CommandBus();
-      undoManager = UndoManager();
 
       // 设置mock返回值
       when(mockNodeRepository.queryAll()).thenAnswer((_) async => []);
@@ -80,8 +76,9 @@ void main() {
       );
 
       graphBloc = GraphBloc(
-        graphService: mockGraphService,
-        undoManager: undoManager,
+        commandBus: commandBus,
+        graphRepository: mockGraphRepository,
+        nodeRepository: mockNodeRepository,
         eventBus: eventBus,
       );
 

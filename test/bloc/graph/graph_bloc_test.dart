@@ -4,38 +4,41 @@ import 'package:mockito/mockito.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/core/services/graph_service.dart';
-import 'package:node_graph_notebook/core/services/undo_manager.dart';
+import 'package:node_graph_notebook/core/repositories/graph_repository.dart';
+import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/bloc/graph/graph_bloc.dart';
 import 'package:node_graph_notebook/bloc/graph/graph_event.dart';
 import 'package:node_graph_notebook/bloc/graph/graph_state.dart';
-import 'package:node_graph_notebook/core/services/commands/command.dart';
+import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import '../../test_helpers.dart';
 
 @GenerateNiceMocks([
   MockSpec<GraphService>(),
-  MockSpec<UndoManager>(),
+  MockSpec<GraphRepository>(),
+  MockSpec<NodeRepository>(),
+  MockSpec<CommandBus>(),
 ])
 import 'graph_bloc_test.mocks.dart';
 
 void main() {
   late MockGraphService mockGraphService;
-  late MockUndoManager mockUndoManager;
+  late MockGraphRepository mockGraphRepository;
+  late MockNodeRepository mockNodeRepository;
+  late MockCommandBus mockCommandBus;
   late AppEventBus eventBus;
   late GraphBloc graphBloc;
 
   setUp(() {
     mockGraphService = MockGraphService();
-    mockUndoManager = MockUndoManager();
-    // Make MockUndoManager actually execute commands
-    when(mockUndoManager.execute(any)).thenAnswer((invocation) async {
-      final command = invocation.positionalArguments[0] as Command;
-      await command.execute();
-    });
+    mockGraphRepository = MockGraphRepository();
+    mockNodeRepository = MockNodeRepository();
+    mockCommandBus = MockCommandBus();
     eventBus = AppEventBus.createForTest();
     graphBloc = GraphBloc(
-      graphService: mockGraphService,
-      undoManager: mockUndoManager,
+      commandBus: mockCommandBus,
+      graphRepository: mockGraphRepository,
+      nodeRepository: mockNodeRepository,
       eventBus: eventBus,
     );
   });

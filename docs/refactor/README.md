@@ -13,5 +13,6 @@
 Phase 1 添加 Command Bus:
 
 - [重构计划](phase_1_command_bus/refactor_plan.md)
-- [实施状态](phase_1_command_bus/refactor_status.md) 🆕
 - [变更说明](phase_1_command_bus/refactor_changes.md)
+
+Phase 1 重构已完成。

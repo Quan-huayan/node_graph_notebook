@@ -10,6 +10,7 @@ import 'core/services/theme/app_theme.dart';
 import 'core/events/app_events.dart';
 import 'core/commands/command_bus.dart';
 import 'core/commands/impl/node_commands.dart';
+import 'core/commands/impl/graph_commands.dart';
 import 'core/commands/handlers/create_node_handler.dart';
 import 'core/commands/handlers/update_node_handler.dart';
 import 'core/commands/handlers/delete_node_handler.dart';
@@ -17,6 +18,13 @@ import 'core/commands/handlers/connect_nodes_handler.dart';
 import 'core/commands/handlers/disconnect_nodes_handler.dart';
 import 'core/commands/handlers/move_node_handler.dart';
 import 'core/commands/handlers/resize_node_handler.dart';
+import 'core/commands/handlers/graph/load_graph_handler.dart';
+import 'core/commands/handlers/graph/create_graph_handler.dart';
+import 'core/commands/handlers/graph/update_graph_handler.dart';
+import 'core/commands/handlers/graph/rename_graph_handler.dart';
+import 'core/commands/handlers/graph/add_node_to_graph_handler.dart';
+import 'core/commands/handlers/graph/remove_node_from_graph_handler.dart';
+import 'core/commands/handlers/graph/update_node_position_handler.dart';
 import 'core/commands/middleware/logging_middleware.dart';
 import 'core/commands/middleware/validation_middleware.dart';
 import 'core/commands/middleware/transaction_middleware.dart';
@@ -240,6 +248,39 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
               ResizeNodeCommand,
             );
 
+            // 注册图命令处理器
+            final graphService = ctx.read<GraphService>();
+            final graphRepository = ctx.read<GraphRepository>();
+
+            commandBus.registerHandler<LoadGraphCommand>(
+              LoadGraphHandler(graphService),
+              LoadGraphCommand,
+            );
+            commandBus.registerHandler<CreateGraphCommand>(
+              CreateGraphHandler(graphService),
+              CreateGraphCommand,
+            );
+            commandBus.registerHandler<UpdateGraphCommand>(
+              UpdateGraphHandler(graphService),
+              UpdateGraphCommand,
+            );
+            commandBus.registerHandler<RenameGraphCommand>(
+              RenameGraphHandler(graphService),
+              RenameGraphCommand,
+            );
+            commandBus.registerHandler<AddNodeToGraphCommand>(
+              AddNodeToGraphHandler(graphService),
+              AddNodeToGraphCommand,
+            );
+            commandBus.registerHandler<RemoveNodeFromGraphCommand>(
+              RemoveNodeFromGraphHandler(graphService),
+              RemoveNodeFromGraphCommand,
+            );
+            commandBus.registerHandler<UpdateNodePositionCommand>(
+              UpdateNodePositionHandler(graphRepository),
+              UpdateNodePositionCommand,
+            );
+
             return commandBus;
           },
           dispose: (_, bus) => bus.dispose(),
@@ -257,8 +298,9 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         ),
         BlocProvider<GraphBloc>(
           create: (ctx) => GraphBloc(
-            graphService: ctx.read<GraphService>(),
-            undoManager: ctx.read<UndoManager>(),
+            commandBus: ctx.read<CommandBus>(),
+            graphRepository: ctx.read<GraphRepository>(),
+            nodeRepository: ctx.read<NodeRepository>(),
             eventBus: ctx.read<AppEventBus>(),
           )..add(const GraphInitializeEvent()),
         ),

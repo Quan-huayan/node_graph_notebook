@@ -3,15 +3,19 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
-import 'dart:ui' as _i5;
+import 'dart:async' as _i5;
+import 'dart:ui' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i6;
+import 'package:mockito/src/dummies.dart' as _i7;
+import 'package:node_graph_notebook/core/commands/command.dart' as _i3;
+import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i9;
+import 'package:node_graph_notebook/core/commands/command_handler.dart' as _i10;
+import 'package:node_graph_notebook/core/commands/middleware/middleware.dart'
+    as _i11;
 import 'package:node_graph_notebook/core/models/models.dart' as _i2;
-import 'package:node_graph_notebook/core/services/commands/command.dart' as _i8;
-import 'package:node_graph_notebook/core/services/graph_service.dart' as _i3;
-import 'package:node_graph_notebook/core/services/undo_manager.dart' as _i7;
+import 'package:node_graph_notebook/core/repositories/repositories.dart' as _i8;
+import 'package:node_graph_notebook/core/services/graph_service.dart' as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -33,12 +37,23 @@ class _FakeGraph_0 extends _i1.SmartFake implements _i2.Graph {
     : super(parent, parentInvocation);
 }
 
+class _FakeMetadataIndex_1 extends _i1.SmartFake implements _i2.MetadataIndex {
+  _FakeMetadataIndex_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeCommandResult_2<T1> extends _i1.SmartFake
+    implements _i3.CommandResult<T1> {
+  _FakeCommandResult_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [GraphService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGraphService extends _i1.Mock implements _i3.GraphService {
+class MockGraphService extends _i1.Mock implements _i4.GraphService {
   @override
-  _i4.Future<_i2.Graph> createGraph({
+  _i5.Future<_i2.Graph> createGraph({
     required String? name,
     List<String>? nodeIds,
   }) =>
@@ -47,7 +62,7 @@ class MockGraphService extends _i1.Mock implements _i3.GraphService {
               #name: name,
               #nodeIds: nodeIds,
             }),
-            returnValue: _i4.Future<_i2.Graph>.value(
+            returnValue: _i5.Future<_i2.Graph>.value(
               _FakeGraph_0(
                 this,
                 Invocation.method(#createGraph, [], {
@@ -56,7 +71,7 @@ class MockGraphService extends _i1.Mock implements _i3.GraphService {
                 }),
               ),
             ),
-            returnValueForMissingStub: _i4.Future<_i2.Graph>.value(
+            returnValueForMissingStub: _i5.Future<_i2.Graph>.value(
               _FakeGraph_0(
                 this,
                 Invocation.method(#createGraph, [], {
@@ -66,33 +81,33 @@ class MockGraphService extends _i1.Mock implements _i3.GraphService {
               ),
             ),
           )
-          as _i4.Future<_i2.Graph>);
+          as _i5.Future<_i2.Graph>);
 
   @override
-  _i4.Future<_i2.Graph?> getGraph(String? graphId) =>
+  _i5.Future<_i2.Graph?> getGraph(String? graphId) =>
       (super.noSuchMethod(
             Invocation.method(#getGraph, [graphId]),
-            returnValue: _i4.Future<_i2.Graph?>.value(),
-            returnValueForMissingStub: _i4.Future<_i2.Graph?>.value(),
+            returnValue: _i5.Future<_i2.Graph?>.value(),
+            returnValueForMissingStub: _i5.Future<_i2.Graph?>.value(),
           )
-          as _i4.Future<_i2.Graph?>);
+          as _i5.Future<_i2.Graph?>);
 
   @override
-  _i4.Future<_i2.Graph?> getCurrentGraph() =>
+  _i5.Future<_i2.Graph?> getCurrentGraph() =>
       (super.noSuchMethod(
             Invocation.method(#getCurrentGraph, []),
-            returnValue: _i4.Future<_i2.Graph?>.value(),
-            returnValueForMissingStub: _i4.Future<_i2.Graph?>.value(),
+            returnValue: _i5.Future<_i2.Graph?>.value(),
+            returnValueForMissingStub: _i5.Future<_i2.Graph?>.value(),
           )
-          as _i4.Future<_i2.Graph?>);
+          as _i5.Future<_i2.Graph?>);
 
   @override
-  _i4.Future<_i2.Graph> updateGraph(
+  _i5.Future<_i2.Graph> updateGraph(
     String? graphId, {
     String? name,
     List<String>? nodeIds,
     _i2.GraphViewConfig? viewConfig,
-    Map<String, _i5.Offset>? nodePositions,
+    Map<String, _i6.Offset>? nodePositions,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -105,7 +120,7 @@ class MockGraphService extends _i1.Mock implements _i3.GraphService {
                 #nodePositions: nodePositions,
               },
             ),
-            returnValue: _i4.Future<_i2.Graph>.value(
+            returnValue: _i5.Future<_i2.Graph>.value(
               _FakeGraph_0(
                 this,
                 Invocation.method(
@@ -120,7 +135,7 @@ class MockGraphService extends _i1.Mock implements _i3.GraphService {
                 ),
               ),
             ),
-            returnValueForMissingStub: _i4.Future<_i2.Graph>.value(
+            returnValueForMissingStub: _i5.Future<_i2.Graph>.value(
               _FakeGraph_0(
                 this,
                 Invocation.method(
@@ -136,176 +151,362 @@ class MockGraphService extends _i1.Mock implements _i3.GraphService {
               ),
             ),
           )
-          as _i4.Future<_i2.Graph>);
+          as _i5.Future<_i2.Graph>);
 
   @override
-  _i4.Future<void> deleteGraph(String? graphId) =>
+  _i5.Future<void> deleteGraph(String? graphId) =>
       (super.noSuchMethod(
             Invocation.method(#deleteGraph, [graphId]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<void> addNodeToGraph(String? graphId, String? nodeId) =>
+  _i5.Future<void> addNodeToGraph(String? graphId, String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#addNodeToGraph, [graphId, nodeId]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<void> removeNodeFromGraph(String? graphId, String? nodeId) =>
+  _i5.Future<void> removeNodeFromGraph(String? graphId, String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#removeNodeFromGraph, [graphId, nodeId]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<List<_i2.Node>> getGraphNodes(String? graphId) =>
+  _i5.Future<List<_i2.Node>> getGraphNodes(String? graphId) =>
       (super.noSuchMethod(
             Invocation.method(#getGraphNodes, [graphId]),
-            returnValue: _i4.Future<List<_i2.Node>>.value(<_i2.Node>[]),
-            returnValueForMissingStub: _i4.Future<List<_i2.Node>>.value(
+            returnValue: _i5.Future<List<_i2.Node>>.value(<_i2.Node>[]),
+            returnValueForMissingStub: _i5.Future<List<_i2.Node>>.value(
               <_i2.Node>[],
             ),
           )
-          as _i4.Future<List<_i2.Node>>);
+          as _i5.Future<List<_i2.Node>>);
 
   @override
-  _i4.Future<List<_i2.Connection>> getGraphConnections(String? graphId) =>
+  _i5.Future<List<_i2.Connection>> getGraphConnections(String? graphId) =>
       (super.noSuchMethod(
             Invocation.method(#getGraphConnections, [graphId]),
-            returnValue: _i4.Future<List<_i2.Connection>>.value(
+            returnValue: _i5.Future<List<_i2.Connection>>.value(
               <_i2.Connection>[],
             ),
-            returnValueForMissingStub: _i4.Future<List<_i2.Connection>>.value(
+            returnValueForMissingStub: _i5.Future<List<_i2.Connection>>.value(
               <_i2.Connection>[],
             ),
           )
-          as _i4.Future<List<_i2.Connection>>);
+          as _i5.Future<List<_i2.Connection>>);
 
   @override
-  _i4.Future<void> applyLayout(
+  _i5.Future<void> applyLayout(
     String? graphId,
     _i2.LayoutAlgorithm? algorithm,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#applyLayout, [graphId, algorithm]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<String> exportGraph(String? graphId) =>
+  _i5.Future<String> exportGraph(String? graphId) =>
       (super.noSuchMethod(
             Invocation.method(#exportGraph, [graphId]),
-            returnValue: _i4.Future<String>.value(
-              _i6.dummyValue<String>(
+            returnValue: _i5.Future<String>.value(
+              _i7.dummyValue<String>(
                 this,
                 Invocation.method(#exportGraph, [graphId]),
               ),
             ),
-            returnValueForMissingStub: _i4.Future<String>.value(
-              _i6.dummyValue<String>(
+            returnValueForMissingStub: _i5.Future<String>.value(
+              _i7.dummyValue<String>(
                 this,
                 Invocation.method(#exportGraph, [graphId]),
               ),
             ),
           )
-          as _i4.Future<String>);
+          as _i5.Future<String>);
 }
 
-/// A class which mocks [UndoManager].
+/// A class which mocks [GraphRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockUndoManager extends _i1.Mock implements _i7.UndoManager {
+class MockGraphRepository extends _i1.Mock implements _i8.GraphRepository {
   @override
-  bool get canUndo =>
+  _i5.Future<void> save(_i2.Graph? graph) =>
       (super.noSuchMethod(
-            Invocation.getter(#canUndo),
-            returnValue: false,
-            returnValueForMissingStub: false,
+            Invocation.method(#save, [graph]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as bool);
+          as _i5.Future<void>);
 
   @override
-  bool get canRedo =>
+  _i5.Future<_i2.Graph?> load(String? graphId) =>
       (super.noSuchMethod(
-            Invocation.getter(#canRedo),
-            returnValue: false,
-            returnValueForMissingStub: false,
+            Invocation.method(#load, [graphId]),
+            returnValue: _i5.Future<_i2.Graph?>.value(),
+            returnValueForMissingStub: _i5.Future<_i2.Graph?>.value(),
           )
-          as bool);
+          as _i5.Future<_i2.Graph?>);
 
   @override
-  bool get hasListeners =>
+  _i5.Future<void> delete(String? graphId) =>
       (super.noSuchMethod(
-            Invocation.getter(#hasListeners),
-            returnValue: false,
-            returnValueForMissingStub: false,
+            Invocation.method(#delete, [graphId]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as bool);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<void> execute(_i8.Command? command) =>
+  _i5.Future<List<_i2.Graph>> getAll() =>
       (super.noSuchMethod(
-            Invocation.method(#execute, [command]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            Invocation.method(#getAll, []),
+            returnValue: _i5.Future<List<_i2.Graph>>.value(<_i2.Graph>[]),
+            returnValueForMissingStub: _i5.Future<List<_i2.Graph>>.value(
+              <_i2.Graph>[],
+            ),
           )
-          as _i4.Future<void>);
+          as _i5.Future<List<_i2.Graph>>);
 
   @override
-  _i4.Future<void> undo() =>
+  _i5.Future<_i2.Graph?> getCurrent() =>
       (super.noSuchMethod(
-            Invocation.method(#undo, []),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            Invocation.method(#getCurrent, []),
+            returnValue: _i5.Future<_i2.Graph?>.value(),
+            returnValueForMissingStub: _i5.Future<_i2.Graph?>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<_i2.Graph?>);
 
   @override
-  _i4.Future<void> redo() =>
+  _i5.Future<void> setCurrent(String? graphId) =>
       (super.noSuchMethod(
-            Invocation.method(#redo, []),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            Invocation.method(#setCurrent, [graphId]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  void clear() => super.noSuchMethod(
-    Invocation.method(#clear, []),
+  _i5.Future<void> export(String? graphId, String? filePath) =>
+      (super.noSuchMethod(
+            Invocation.method(#export, [graphId, filePath]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<_i2.Graph> import(String? filePath) =>
+      (super.noSuchMethod(
+            Invocation.method(#import, [filePath]),
+            returnValue: _i5.Future<_i2.Graph>.value(
+              _FakeGraph_0(this, Invocation.method(#import, [filePath])),
+            ),
+            returnValueForMissingStub: _i5.Future<_i2.Graph>.value(
+              _FakeGraph_0(this, Invocation.method(#import, [filePath])),
+            ),
+          )
+          as _i5.Future<_i2.Graph>);
+}
+
+/// A class which mocks [NodeRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockNodeRepository extends _i1.Mock implements _i8.NodeRepository {
+  @override
+  _i5.Future<void> save(_i2.Node? node) =>
+      (super.noSuchMethod(
+            Invocation.method(#save, [node]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<_i2.Node?> load(String? nodeId) =>
+      (super.noSuchMethod(
+            Invocation.method(#load, [nodeId]),
+            returnValue: _i5.Future<_i2.Node?>.value(),
+            returnValueForMissingStub: _i5.Future<_i2.Node?>.value(),
+          )
+          as _i5.Future<_i2.Node?>);
+
+  @override
+  _i5.Future<void> delete(String? nodeId) =>
+      (super.noSuchMethod(
+            Invocation.method(#delete, [nodeId]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> saveAll(List<_i2.Node>? nodes) =>
+      (super.noSuchMethod(
+            Invocation.method(#saveAll, [nodes]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<List<_i2.Node>> loadAll(List<String>? nodeIds) =>
+      (super.noSuchMethod(
+            Invocation.method(#loadAll, [nodeIds]),
+            returnValue: _i5.Future<List<_i2.Node>>.value(<_i2.Node>[]),
+            returnValueForMissingStub: _i5.Future<List<_i2.Node>>.value(
+              <_i2.Node>[],
+            ),
+          )
+          as _i5.Future<List<_i2.Node>>);
+
+  @override
+  _i5.Future<List<_i2.Node>> queryAll() =>
+      (super.noSuchMethod(
+            Invocation.method(#queryAll, []),
+            returnValue: _i5.Future<List<_i2.Node>>.value(<_i2.Node>[]),
+            returnValueForMissingStub: _i5.Future<List<_i2.Node>>.value(
+              <_i2.Node>[],
+            ),
+          )
+          as _i5.Future<List<_i2.Node>>);
+
+  @override
+  _i5.Future<List<_i2.Node>> search({
+    String? title,
+    String? content,
+    List<String>? tags,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#search, [], {
+              #title: title,
+              #content: content,
+              #tags: tags,
+              #startDate: startDate,
+              #endDate: endDate,
+            }),
+            returnValue: _i5.Future<List<_i2.Node>>.value(<_i2.Node>[]),
+            returnValueForMissingStub: _i5.Future<List<_i2.Node>>.value(
+              <_i2.Node>[],
+            ),
+          )
+          as _i5.Future<List<_i2.Node>>);
+
+  @override
+  String getNodeFilePath(String? nodeId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getNodeFilePath, [nodeId]),
+            returnValue: _i7.dummyValue<String>(
+              this,
+              Invocation.method(#getNodeFilePath, [nodeId]),
+            ),
+            returnValueForMissingStub: _i7.dummyValue<String>(
+              this,
+              Invocation.method(#getNodeFilePath, [nodeId]),
+            ),
+          )
+          as String);
+
+  @override
+  _i5.Future<_i2.MetadataIndex> getMetadataIndex() =>
+      (super.noSuchMethod(
+            Invocation.method(#getMetadataIndex, []),
+            returnValue: _i5.Future<_i2.MetadataIndex>.value(
+              _FakeMetadataIndex_1(
+                this,
+                Invocation.method(#getMetadataIndex, []),
+              ),
+            ),
+            returnValueForMissingStub: _i5.Future<_i2.MetadataIndex>.value(
+              _FakeMetadataIndex_1(
+                this,
+                Invocation.method(#getMetadataIndex, []),
+              ),
+            ),
+          )
+          as _i5.Future<_i2.MetadataIndex>);
+
+  @override
+  _i5.Future<void> updateIndex(_i2.Node? node) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateIndex, [node]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+}
+
+/// A class which mocks [CommandBus].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockCommandBus extends _i1.Mock implements _i9.CommandBus {
+  @override
+  _i5.Stream<_i9.CommandEvent> get commandStream =>
+      (super.noSuchMethod(
+            Invocation.getter(#commandStream),
+            returnValue: _i5.Stream<_i9.CommandEvent>.empty(),
+            returnValueForMissingStub: _i5.Stream<_i9.CommandEvent>.empty(),
+          )
+          as _i5.Stream<_i9.CommandEvent>);
+
+  @override
+  void registerHandler<T extends _i3.Command<dynamic>>(
+    _i10.CommandHandler<T>? handler,
+    Type? commandType,
+  ) => super.noSuchMethod(
+    Invocation.method(#registerHandler, [handler, commandType]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addListener(_i5.VoidCallback? listener) => super.noSuchMethod(
-    Invocation.method(#addListener, [listener]),
+  void addMiddleware(_i11.CommandMiddleware? middleware) => super.noSuchMethod(
+    Invocation.method(#addMiddleware, [middleware]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i5.VoidCallback? listener) => super.noSuchMethod(
-    Invocation.method(#removeListener, [listener]),
-    returnValueForMissingStub: null,
-  );
+  _i5.Future<_i3.CommandResult<T>> dispatch<T>(_i3.Command<T>? command) =>
+      (super.noSuchMethod(
+            Invocation.method(#dispatch, [command]),
+            returnValue: _i5.Future<_i3.CommandResult<T>>.value(
+              _FakeCommandResult_2<T>(
+                this,
+                Invocation.method(#dispatch, [command]),
+              ),
+            ),
+            returnValueForMissingStub: _i5.Future<_i3.CommandResult<T>>.value(
+              _FakeCommandResult_2<T>(
+                this,
+                Invocation.method(#dispatch, [command]),
+              ),
+            ),
+          )
+          as _i5.Future<_i3.CommandResult<T>>);
+
+  @override
+  _i5.Future<void> undo(_i3.Command<dynamic>? command) =>
+      (super.noSuchMethod(
+            Invocation.method(#undo, [command]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 
   @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void notifyListeners() => super.noSuchMethod(
-    Invocation.method(#notifyListeners, []),
     returnValueForMissingStub: null,
   );
 }
