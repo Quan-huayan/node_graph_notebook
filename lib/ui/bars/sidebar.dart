@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/models/models.dart';
-import '../../core/plugin/ui_hooks/hook_container.dart';
 import '../../core/plugin/ui_hooks/hook_context.dart';
+import '../../core/plugin/ui_hooks/hook_point.dart';
+import '../../core/plugin/ui_hooks/hook_registry.dart';
+import '../../core/services/i18n.dart';
 import '../../plugins/graph/bloc/graph_bloc.dart';
 import '../../plugins/graph/bloc/graph_event.dart';
 import '../../plugins/graph/bloc/node_bloc.dart';
 import '../../plugins/graph/bloc/node_event.dart';
-import '../../plugins/search/ui/search_sidebar_panel.dart';
-import '../../core/services/i18n.dart';
 
 /// 侧边栏
 class Sidebar extends StatefulWidget {
@@ -209,7 +209,7 @@ class _SidebarState extends State<Sidebar> {
             // 内容区域
             Expanded(
               child: _showSearch
-                  ? const SearchSidebarPanel()
+                  ? _buildSearchContent(context)
                   : _buildPluginContent(context, regularNodes, folders),
             ),
           ],
@@ -263,7 +263,10 @@ class _SidebarState extends State<Sidebar> {
     List<Node> nodes,
     List<Node> folders,
   ) {
-    // 创建 SidebarBottomHookContext
+    debugPrint('[Sidebar] _buildPluginContent() called:');
+    debugPrint('  - Nodes: ${nodes.length}, Folders: ${folders.length}');
+
+    // 创建 SidebarHookContext
     final hookContext = SidebarHookContext(
       data: {
         'nodes': nodes,
@@ -275,22 +278,31 @@ class _SidebarState extends State<Sidebar> {
         },
         'nodeBloc': context.read<NodeBloc>(),
         'graphBloc': context.read<GraphBloc>(),
+        'buildContext': context,
       },
     );
 
-    // 创建 Hook 容器并渲染插件内容
-    final container = HookContainerFactory.createSidebarBottomContainer(
-      hookContext,
-    );
-    final pluginWidgets = container.render();
+    // 获取侧边栏底部的所有Hook
+    final hooks = hookRegistry.getHooks(HookPointId.sidebarBottom);
+    debugPrint('  - SidebarBottom hooks found: ${hooks.length}');
 
-    if (pluginWidgets.isEmpty) {
+    if (hooks.isEmpty) {
       // 如果没有插件注册，显示默认界面
+      debugPrint('  - No hooks found, showing default content');
       return _buildDefaultContent(context, nodes, folders);
     }
 
     // 渲染所有插件内容
-    return Column(children: pluginWidgets.map((w) => w as Widget).toList());
+    debugPrint('  - Rendering ${hooks.length} hooks');
+    return Column(
+      children: hooks.map((hook) {
+        debugPrint('    - Rendering sidebar hook: ${hook.metadata.id}');
+        if (hook.isVisible(hookContext)) {
+          return hook.render(hookContext);
+        }
+        return const SizedBox.shrink();
+      }).toList(),
+    );
   }
 
   /// 构建默认内容（当没有插件时）
@@ -311,6 +323,30 @@ class _SidebarState extends State<Sidebar> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 构建搜索内容（通过Hook加载）
+  Widget _buildSearchContent(BuildContext context) {
+    final hooks = hookRegistry.getHooks(HookPointId.sidebarBottom);
+    final hookContext = SidebarHookContext(
+      data: {
+        'buildContext': context,
+        'isSearch': true,
+      },
+    );
+
+    if (hooks.isEmpty) {
+      return const Center(child: Text('No search plugin loaded'));
+    }
+
+    return Column(
+      children: hooks.map((hook) {
+        if (hook.isVisible(hookContext)) {
+          return hook.render(hookContext);
+        }
+        return const SizedBox.shrink();
+      }).toList(),
     );
   }
 }

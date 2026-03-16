@@ -1,8 +1,13 @@
 // 插件系统核心导出
 
+// 日志级别
+export '../middleware/logging_middleware.dart' show LogLevel;
 // 依赖解析
 export 'dependency_resolver.dart'
     show DependencyResolver, DependencyResolutionResult;
+// DI
+export 'dynamic_provider_widget.dart'
+    show DynamicProviderWidget;
 // 基础接口和类
 export 'plugin_base.dart' show Plugin, internal;
 export 'plugin_context.dart'
@@ -51,8 +56,3 @@ export 'service_binding.dart'
     show ServiceBinding, ServiceResolver, ServiceDependencyException;
 export 'service_registry.dart'
     show ServiceRegistry, ServiceRegistrationException, ServiceNotFoundException;
-// DI
-export 'dynamic_provider_widget.dart'
-    show DynamicProviderWidget;
-// 日志级别
-export '../middleware/logging_middleware.dart' show LogLevel;

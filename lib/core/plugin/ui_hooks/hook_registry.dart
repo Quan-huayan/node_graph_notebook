@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import 'hook_point.dart';
 import 'ui_hook.dart';
 
@@ -23,6 +25,13 @@ class HookRegistry {
 
     _hooks[hookPointId]!.add(hook);
     _hooks[hookPointId]!.sort((a, b) => a.priority.compareTo(b.priority));
+    
+    debugPrint('[HookRegistry] Registered hook: ${hook.metadata.id}');
+    debugPrint('  - Hook point: $hookPointId');
+    debugPrint('  - Hook state: ${hook.state}');
+    debugPrint('  - Is enabled: ${hook.isEnabled}');
+    debugPrint('  - Priority: ${hook.priority}');
+    debugPrint('  - Total hooks at this point: ${_hooks[hookPointId]!.length}');
   }
 
   /// 注销 Hook
@@ -40,7 +49,22 @@ class HookRegistry {
   /// [hookPointId] Hook 点 ID
   ///
   /// 返回按优先级排序的 Hook 列表
-  List<UIHook> getHooks(HookPointId hookPointId) => _hooks[hookPointId]?.where((hook) => hook.isEnabled).toList() ?? [];
+  List<UIHook> getHooks(HookPointId hookPointId) {
+    final allHooks = _hooks[hookPointId] ?? [];
+    final enabledHooks = allHooks.where((hook) => hook.isEnabled).toList();
+    
+    debugPrint('[HookRegistry] getHooks($hookPointId):');
+    debugPrint('  - Total hooks registered: ${allHooks.length}');
+    debugPrint('  - Hooks with enabled state: ${enabledHooks.length}');
+    
+    if (allHooks.isNotEmpty) {
+      for (final hook in allHooks) {
+        debugPrint('    - ${hook.metadata.id}: state=${hook.state}, isEnabled=${hook.isEnabled}, priority=${hook.priority}');
+      }
+    }
+    
+    return enabledHooks;
+  }
 
   /// 获取指定 Hook 点的第一个 Hook
   ///

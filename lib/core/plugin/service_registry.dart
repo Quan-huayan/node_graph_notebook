@@ -193,8 +193,7 @@ class ServiceRegistry with ChangeNotifier {
   /// 为绑定创建 Provider
   ///
   /// 根据 Service 类型自动选择合适的 Provider 类型
-  SingleChildWidget _createProvider(ServiceBinding binding) {
-    return Provider(
+  SingleChildWidget _createProvider(ServiceBinding binding) => Provider(
       create: (ctx) {
         // 如果已经有实例（单例），直接返回
         if (_instances.containsKey(binding.serviceType)) {
@@ -219,7 +218,6 @@ class ServiceRegistry with ChangeNotifier {
         return instance;
       },
     );
-  }
 
   /// 拓扑排序 Service 类型
   ///
@@ -458,20 +456,30 @@ class _ServiceResolverAdapter extends ServiceResolver {
       return _registry._instantiatedServices[T] as T;
     }
 
-    // 2. 尝试从 ServiceRegistry 获取（包括核心依赖）
+    // 2. 检查核心依赖（NodeRepository, GraphRepository, CommandBus 等）
+    if (_registry._coreDependencies.containsKey(T)) {
+      return _registry._coreDependencies[T] as T;
+    }
+
+    // 3. 尝试从 ServiceRegistry 获取
     final parentInstance = _registry.getService<T>();
     if (parentInstance != null) {
       return parentInstance;
     }
 
-    // 3. 如果都找不到，抛出异常
+    // 4. 如果都找不到，抛出异常
+    final availableServices = [
+      ..._registry._instantiatedServices.keys,
+      ..._registry._coreDependencies.keys,
+    ].join(', ');
     throw ServiceNotFoundException(
-      'Service $T not found (services available: ${_registry._instantiatedServices.keys.join(', ')})',
+      'Service $T not found (services available: $availableServices)',
     );
   }
 
   @override
   bool has<T>() => _registry._instantiatedServices.containsKey(T) ||
+        _registry._coreDependencies.containsKey(T) ||
         _registry._bindings.containsKey(T);
 }
 

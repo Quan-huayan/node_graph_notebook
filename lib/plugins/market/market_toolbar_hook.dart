@@ -27,6 +27,7 @@ class MarketToolbarHook extends MainToolbarHook {
     version: '1.0.0',
     description: 'Provides plugin market button in toolbar',
     author: 'Node Graph Notebook',
+    enabledByDefault: true,
   );
 
   @override

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/plugin/ui_hooks/hook_context.dart';
+import '../../core/plugin/ui_hooks/hook_point.dart';
+import '../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../plugins/graph/bloc/graph_bloc.dart';
 import '../../plugins/graph/bloc/graph_event.dart';
 import '../../plugins/graph/bloc/node_bloc.dart';
 import '../../plugins/graph/bloc/node_event.dart';
 import '../../plugins/graph/service/delete_node_dialog.dart';
-import '../../plugins/graph/ui/graph_nodes_dialog.dart';
-import '../../plugins/layout/ui/layout_menu.dart';
 import '../bloc/ui_bloc.dart';
 import '../bloc/ui_event.dart';
 import '../bloc/ui_state.dart';
@@ -21,7 +22,13 @@ class Toolbar extends StatelessWidget {
   final UIState uiState;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) {
+    final hooks = hookRegistry.getHooks(HookPointId.mainToolbar);
+
+    debugPrint('[Toolbar] build() called:');
+    debugPrint('  - MainToolbar hooks found: ${hooks.length}');
+
+    return Card(
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
@@ -42,12 +49,21 @@ class Toolbar extends StatelessWidget {
               },
             ),
             if (uiState.isToolbarExpanded) ...[
-              // 布局按钮
-              IconButton(
-                icon: const Icon(Icons.account_tree),
-                tooltip: 'Layout',
-                onPressed: () => _showLayoutMenu(context),
-              ),
+              // 动态加载所有主工具栏钩子（仅限工具栏相关）
+              ...hooks.map((hook) {
+                debugPrint('  - Rendering toolbar hook: ${hook.metadata.id}');
+                final hookContext = MainToolbarHookContext(
+                  data: {
+                    'buildContext': context,
+                    'graphBloc': context.read<GraphBloc>(),
+                    'nodeBloc': context.read<NodeBloc>(),
+                  },
+                );
+                if (hook.isVisible(hookContext)) {
+                  return hook.render(hookContext);
+                }
+                return null;
+              }).whereType<Widget>(),
               IconButton(
                 icon: Icon(
                   context.read<GraphBloc>().state.viewState.showConnections
@@ -76,13 +92,6 @@ class Toolbar extends StatelessWidget {
                 onPressed: () => _refreshData(context),
               ),
               const Divider(),
-              // 管理图节点按钮
-              IconButton(
-                icon: const Icon(Icons.playlist_add_check),
-                tooltip: 'Manage Graph Nodes',
-                onPressed: () => _showGraphNodesDialog(context),
-              ),
-              // 删除按钮
               IconButton(
                 icon: const Icon(Icons.delete),
                 tooltip: 'Delete Selected Node',
@@ -92,19 +101,6 @@ class Toolbar extends StatelessWidget {
           ],
         ),
       ),
-    );
-
-  void _showLayoutMenu(BuildContext context) {
-    LayoutMenu.show(context);
-  }
-
-  void _showGraphNodesDialog(BuildContext context) {
-    final bloc = context.read<GraphBloc>();
-    final nodeBloc = context.read<NodeBloc>();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => GraphNodesDialog(graphBloc: bloc, nodeBloc: nodeBloc),
     );
   }
 

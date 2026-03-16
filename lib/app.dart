@@ -7,17 +7,17 @@ import 'core/commands/command_bus.dart';
 import 'core/events/app_events.dart';
 import 'core/execution/execution_engine.dart';
 import 'core/execution/task_registry.dart';
-import 'core/plugin/builtin_plugin_loader.dart';
-import 'core/plugin/plugin.dart';
-import 'core/plugin/plugin_manager.dart';
-import 'core/plugin/ui_hooks/hook_registry.dart';
-import 'core/repositories/repositories.dart';
-import 'core/services/i18n.dart';
-import 'core/services/services.dart';
 import 'core/middleware/logging_middleware.dart';
 import 'core/middleware/transaction_middleware.dart';
 import 'core/middleware/undo_middleware.dart';
 import 'core/middleware/validation_middleware.dart';
+import 'core/plugin/builtin_plugin_loader.dart';
+import 'core/plugin/plugin.dart';
+import 'core/plugin/ui_hooks/hook_registry.dart';
+import 'core/repositories/repositories.dart';
+import 'core/services/i18n.dart';
+import 'core/services/services.dart';
+import 'plugins/graph/service/graph_service.dart';
 import 'ui/bloc/ui_bloc.dart';
 import 'ui/pages/home_page.dart';
 
@@ -55,6 +55,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   late ThemeRegistry _themeRegistry;
   late ExecutionEngine _executionEngine;
   late StoragePathService _storagePathService;
+  late SharedPreferencesAsync _sharedPreferencesAsync;
   late ServiceRegistry _serviceRegistry;
   bool _isInitialized = false;
   Object? _initError;
@@ -70,14 +71,17 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       // 1. 初始化 SharedPreferences
       final prefs = await SharedPreferences.getInstance();
 
-      // 2. 创建存储路径服务
+      // 2. 初始化 SharedPreferencesAsync
+      _sharedPreferencesAsync = SharedPreferencesAsync();
+
+      // 3. 创建存储路径服务
       _storagePathService = StoragePathService(prefs);
 
-      // 3. 获取存储路径
+      // 4. 获取存储路径
       final nodesPath = await _storagePathService.getNodesPath();
       final graphsPath = await _storagePathService.getGraphsPath();
 
-      // 4. 初始化 Repositories
+      // 5. 初始化 Repositories
       _nodeRepository = FileSystemNodeRepository(nodesDir: nodesPath);
       _graphRepository = FileSystemGraphRepository(graphsDir: graphsPath);
 
@@ -89,25 +93,25 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         await (_graphRepository as FileSystemGraphRepository).init();
       }
 
-      // 5. 初始化 CommandBus 和 EventBus
+      // 6. 初始化 CommandBus 和 EventBus
       _commandBus = _createCommandBus();
       _eventBus = AppEventBus();
 
-      // 6. 创建三个注册表
+      // 7. 创建三个注册表
       _taskRegistry = TaskRegistry();
       _settingsRegistry = SettingsRegistry(prefs);
       _themeRegistry = ThemeRegistry();
 
-      // 7. 初始化 ExecutionEngine（使用 TaskRegistry）
+      // 8. 初始化 ExecutionEngine（使用 TaskRegistry）
       _executionEngine = ExecutionEngine();
       await _executionEngine.initialize(
         taskRegistry: _taskRegistry,
       );
 
-      // 8. 注册核心设置到 SettingsRegistry
+      // 9. 注册核心设置到 SettingsRegistry
       _registerCoreSettings();
 
-      // 9. 创建动态服务注册表（新增）
+      // 10. 创建动态服务注册表（新增）
       _serviceRegistry = ServiceRegistry(
         coreDependencies: {
           NodeRepository: _nodeRepository,
@@ -116,8 +120,13 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           AppEventBus: _eventBus,
           SettingsService: widget.settingsService,
           ThemeService: widget.themeService,
+          SharedPreferencesAsync: _sharedPreferencesAsync,
+          StoragePathService: _storagePathService,
         },
       );
+
+      // 11. 在插件加载前注册核心服务
+      _registerCoreServices();
 
       setState(() {
         _isInitialized = true;
@@ -151,6 +160,22 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       description: 'Default node view mode',
       category: 'Core',
     ));
+  }
+
+  /// 注册核心服务（在插件加载前注册）
+  ///
+  /// 这些服务需要在插件加载前注册，因为插件可能依赖它们。
+  /// 例如：GraphPlugin 依赖 GraphService。
+  void _registerCoreServices() {
+    // 注册 GraphService
+    // GraphService 依赖 GraphRepository 和 NodeRepository，这两个已经在 coreDependencies 中
+    _serviceRegistry.registerService(
+      'core',
+      _GraphServiceBinding(
+        graphRepository: _graphRepository,
+        nodeRepository: _nodeRepository,
+      ),
+    );
   }
 
   /// 创建 CommandBus 并注册所有命令处理器
@@ -232,6 +257,8 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       taskRegistry: _taskRegistry,
       settingsRegistry: _settingsRegistry,
       themeRegistry: _themeRegistry,
+      sharedPreferencesAsync: _sharedPreferencesAsync,
+      storagePathService: _storagePathService,
     );
 
     // 使用 FutureBuilder 等待插件加载完成
@@ -379,4 +406,25 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         ),
       ),
     );
+}
+
+/// GraphService 绑定（核心版本）
+///
+/// 在插件加载前注册 GraphService，确保插件可以访问它
+class _GraphServiceBinding extends ServiceBinding<GraphService> {
+  /// 创建 GraphService 绑定
+  ///
+  /// [graphRepository] - 图仓库
+  /// [nodeRepository] - 节点仓库
+  _GraphServiceBinding({
+    required this.graphRepository,
+    required this.nodeRepository,
+  });
+
+  final GraphRepository graphRepository;
+  final NodeRepository nodeRepository;
+
+  @override
+  GraphService createService(ServiceResolver resolver) =>
+      GraphServiceImpl(graphRepository, nodeRepository);
 }

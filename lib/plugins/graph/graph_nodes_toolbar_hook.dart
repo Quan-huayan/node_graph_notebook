@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
 import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import 'ui/graph_nodes_dialog.dart';
 
-/// AI助手工具栏钩子
-class AIToolbarHook extends MainToolbarHook {
+/// 图节点管理工具栏钩子
+class GraphNodesToolbarHook extends MainToolbarHook {
   PluginState _state = PluginState.loaded;
 
   @override
@@ -17,42 +18,36 @@ class AIToolbarHook extends MainToolbarHook {
   }
 
   @override
-  int get priority => 10;
+  int get priority => 50;
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-    id: 'ai_toolbar_hook',
-    name: 'AI Toolbar Hook',
+    id: 'graph_nodes_toolbar_hook',
+    name: 'Graph Nodes Toolbar Hook',
     version: '1.0.0',
-    description: 'Provides AI assistant button in toolbar',
+    description: 'Provides graph nodes management button in toolbar',
     author: 'Node Graph Notebook',
     enabledByDefault: true,
   );
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) => IconButton(
-      icon: const Icon(Icons.smart_toy),
-      onPressed: () => _addAIAssistant(context),
-      tooltip: 'AI Assistant',
+      icon: const Icon(Icons.playlist_add_check),
+      onPressed: () => _showGraphNodesDialog(context),
+      tooltip: 'Manage Graph Nodes',
     );
 
-  void _addAIAssistant(MainToolbarHookContext context) {
+  void _showGraphNodesDialog(MainToolbarHookContext context) {
     final buildContext = context.data['buildContext'] as BuildContext?;
     if (buildContext == null) return;
 
-    try {
-      // 通过命令总线执行创建AI助手节点的命令
-      // 这里需要在AI插件中实现相应的命令和处理器
-      ScaffoldMessenger.of(buildContext).showSnackBar(
-        const SnackBar(
-          content: Text('AI Assistant functionality coming soon!'),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        buildContext,
-      ).showSnackBar(SnackBar(content: Text('Failed to add AI Assistant: $e')));
-    }
+    final bloc = context.data['graphBloc'] as dynamic;
+    final nodeBloc = context.data['nodeBloc'] as dynamic;
+
+    showDialog(
+      context: buildContext,
+      builder: (ctx) => GraphNodesDialog(graphBloc: bloc, nodeBloc: nodeBloc),
+    );
   }
 
   @override

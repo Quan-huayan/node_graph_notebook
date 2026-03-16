@@ -23,8 +23,11 @@ class CoreToolbar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         // 动态加载所有主工具栏钩子
         ...hooks.map((hook) {
-          if (hook.isVisible(MainToolbarHookContext())) {
-            return hook.render(MainToolbarHookContext());
+          final hookContext = MainToolbarHookContext(
+            data: {'buildContext': context},
+          );
+          if (hook.isVisible(hookContext)) {
+            return hook.render(hookContext);
           }
           return null;
         }).whereType<Widget>(),

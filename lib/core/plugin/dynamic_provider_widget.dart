@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
@@ -125,13 +124,11 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
   }
 
   /// 构建完整的 Provider 列表（核心 + 动态）
-  List<SingleChildWidget> _buildProviders() {
-    return [
+  List<SingleChildWidget> _buildProviders() => [
       ...widget.coreProviders,
       // 从 ServiceRegistry 生成插件提供的 Provider
       ...widget.serviceRegistry.generateProviders(),
     ];
-  }
 
   /// 计算服务注册表的状态哈希
   ///
@@ -142,13 +139,13 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // 使用 MultiProvider 包装所有 Provider
-    return MultiProvider(
+  Widget build(BuildContext context) 
+  // 使用 MultiProvider 包装所有 Provider
+  => MultiProvider(
       providers: _currentProviders,
       child: widget.child,
     );
-  }
+    
 }
 
 /// InheritedWidget 版本的动态 Provider
@@ -223,16 +220,15 @@ class _HybridDynamicProviderWidgetState
   }
 
   @override
-  Widget build(BuildContext context) {
-    // 先构建核心 Provider（不重建）
-    return MultiProvider(
+  Widget build(BuildContext context) 
+  // 先构建核心 Provider（不重建）
+  => MultiProvider(
       providers: widget.coreProviders,
       child: _DynamicProvidersLayer(
         serviceRegistry: widget.serviceRegistry,
         child: widget.child,
       ),
     );
-  }
 }
 
 /// 动态 Provider 层（只重建这部分）
@@ -246,11 +242,10 @@ class _DynamicProvidersLayer extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    // 只构建动态 Provider（这部分会重建）
-    return MultiProvider(
+  Widget build(BuildContext context) 
+  // 只构建动态 Provider（这部分会重建）
+  => MultiProvider(
       providers: serviceRegistry.generateProviders(),
       child: child,
     );
-  }
 }

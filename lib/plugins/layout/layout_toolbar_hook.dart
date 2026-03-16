@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
 import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import 'ui/layout_menu.dart';
 
-/// AI助手工具栏钩子
-class AIToolbarHook extends MainToolbarHook {
+/// 布局工具栏钩子
+class LayoutToolbarHook extends MainToolbarHook {
   PluginState _state = PluginState.loaded;
 
   @override
@@ -17,42 +18,30 @@ class AIToolbarHook extends MainToolbarHook {
   }
 
   @override
-  int get priority => 10;
+  int get priority => 60;
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-    id: 'ai_toolbar_hook',
-    name: 'AI Toolbar Hook',
+    id: 'layout_toolbar_hook',
+    name: 'Layout Toolbar Hook',
     version: '1.0.0',
-    description: 'Provides AI assistant button in toolbar',
+    description: 'Provides layout button in toolbar',
     author: 'Node Graph Notebook',
     enabledByDefault: true,
   );
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) => IconButton(
-      icon: const Icon(Icons.smart_toy),
-      onPressed: () => _addAIAssistant(context),
-      tooltip: 'AI Assistant',
+      icon: const Icon(Icons.account_tree),
+      onPressed: () => _showLayoutMenu(context),
+      tooltip: 'Layout',
     );
 
-  void _addAIAssistant(MainToolbarHookContext context) {
+  void _showLayoutMenu(MainToolbarHookContext context) {
     final buildContext = context.data['buildContext'] as BuildContext?;
     if (buildContext == null) return;
 
-    try {
-      // 通过命令总线执行创建AI助手节点的命令
-      // 这里需要在AI插件中实现相应的命令和处理器
-      ScaffoldMessenger.of(buildContext).showSnackBar(
-        const SnackBar(
-          content: Text('AI Assistant functionality coming soon!'),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        buildContext,
-      ).showSnackBar(SnackBar(content: Text('Failed to add AI Assistant: $e')));
-    }
+    LayoutMenu.show(buildContext);
   }
 
   @override

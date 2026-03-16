@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../plugins/converter/ui/import_export_page.dart';
-import '../../plugins/graph/bloc/graph_bloc.dart';
-import '../../plugins/graph/bloc/graph_event.dart';
-import '../../plugins/graph/bloc/node_bloc.dart';
-import '../../plugins/graph/bloc/node_event.dart';
-import '../dialogs/settings_dialog.dart';
-import '../pages/plugin_market_page.dart';
-import '../../core/services/i18n.dart';
+import '../../core/plugin/ui_hooks/hook_context.dart';
+import '../../core/plugin/ui_hooks/hook_point.dart';
+import '../../core/plugin/ui_hooks/hook_registry.dart';
 
 /// 应用程序的顶部导航栏
 ///
-/// 包含AI助手、插件市场、导入导出和设置等功能按钮
+/// 通过钩子系统动态构建工具栏内容
 class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   /// 创建一个应用程序顶部导航栏
   const NoteAppBarWidget({super.key});
@@ -22,100 +16,22 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final i18n = I18n.of(context);
+    final hooks = hookRegistry.getHooks(HookPointId.mainToolbar);
 
     return AppBar(
-      title: const Text('Node Graph Notebook'), // 标题保持不变
+      title: const Text('Node Graph Notebook'),
       actions: [
-        // AI按钮
-        IconButton(
-          icon: const Icon(Icons.smart_toy),
-          onPressed: () => _addAIAssistant(context),
-          tooltip: i18n.t('AI Assistant'),
-        ),
-        // 插件市场按钮
-        IconButton(
-          icon: const Icon(Icons.extension),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (ctx) => const PluginMarketPage()),
-            );
-          },
-          tooltip: i18n.t('Plugin Market'),
-        ),
-        // 导入导出
-        IconButton(
-          icon: const Icon(Icons.import_export),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (ctx) => const ImportExportPage()),
-            );
-          },
-          tooltip: i18n.t('Import & Export'),
-        ),
-
-        IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (ctx) => const SettingsDialog(),
-            );
-          },
-          tooltip: i18n.t('Settings'),
-        ),
+        // 动态加载所有主工具栏钩子
+        ...hooks.map((hook) {
+          final hookContext = MainToolbarHookContext(
+            data: {'buildContext': context},
+          );
+          if (hook.isVisible(hookContext)) {
+            return hook.render(hookContext);
+          }
+          return null;
+        }).whereType<Widget>(),
       ],
     );
-  }
-
-  /// 添加AI助手节点到图中
-  ///
-  /// [context] - 构建上下文
-  void _addAIAssistant(BuildContext context) {
-    final i18n = I18n.of(context);
-    final nodeBloc = BlocProvider.of<NodeBloc>(context);
-    final graphBloc = BlocProvider.of<GraphBloc>(context);
-
-    try {
-      // 创建AI助手节点
-      nodeBloc.add(NodeCreateEvent(
-        title: i18n.t('AI Assistant'),
-        content: i18n.t('Your AI assistant. Click to start a conversation!'),
-        metadata: const {'isAI': true, 'character': 'assistant'},
-      ));
-
-      // 等待节点创建完成后添加到图中
-      Future.delayed(const Duration(milliseconds: 500), () {
-        final nodeState = nodeBloc.state;
-        final aiNode = nodeState.nodes.lastWhere(
-          (n) => n.metadata.containsKey('isAI') && n.metadata['isAI'] == true,
-          orElse: () => nodeState.nodes.last,
-        );
-
-        // 添加到图中，位置稍微随机
-        // 注意：graphBloc.add 中的 position 参数约定为节点中心位置
-        // AI 节点默认使用 titleWithPreview 模式，尺寸为 250x120
-        const nodeWidth = 250.0;
-        const nodeHeight = 120.0;
-        final topLeftX = 100 + (DateTime.now().millisecond % 300).toDouble();
-        final topLeftY = 100 + (DateTime.now().microsecond % 300).toDouble();
-        // 转换左上角位置为中心位置
-        final centerX = topLeftX + nodeWidth / 2;
-        final centerY = topLeftY + nodeHeight / 2;
-        graphBloc.add(
-          NodeAddEvent(aiNode.id, position: Offset(centerX, centerY)),
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(i18n.t('AI Assistant added to the graph!'))),
-        );
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${i18n.t('Failed to add AI Assistant:')} $e')),
-      );
-    }
   }
 }

@@ -1,14 +1,23 @@
 import 'package:flutter/foundation.dart';
 
 import '../../plugins/ai/ai_plugin.dart';
+import '../../plugins/ai/ai_settings_hook.dart';
+import '../../plugins/ai/ai_toolbar_hook.dart';
 import '../../plugins/converter/converter_plugin.dart';
+import '../../plugins/converter/converter_toolbar_hook.dart';
 import '../../plugins/data_recovery/data_recovery.dart';
 import '../../plugins/delete/delete_plugin.dart';
 import '../../plugins/folder/folder_plugin.dart';
+import '../../plugins/graph/create_node_toolbar_hook.dart';
+import '../../plugins/graph/graph_nodes_toolbar_hook.dart';
 import '../../plugins/graph/graph_plugin.dart';
 import '../../plugins/i18n/i18n_plugin.dart';
 import '../../plugins/layout/layout_plugin.dart';
+import '../../plugins/layout/layout_toolbar_hook.dart';
+import '../../plugins/market/market_toolbar_hook.dart';
 import '../../plugins/search/search_plugin.dart';
+import '../../plugins/search/search_sidebar_hook.dart';
+import '../../plugins/settings/settings_toolbar_hook.dart';
 import '../../plugins/sidebarNode/sidebar_plugin.dart';
 import 'dependency_resolver.dart';
 import 'plugin_discoverer.dart';
@@ -52,6 +61,24 @@ class BuiltinPluginLoader {
     SidebarPlugin.new,
     // 国际化插件
     I18nPlugin.new,
+    // AI工具栏钩子
+    AIToolbarHook.new,
+    // AI设置钩子
+    AISettingsHook.new,
+    // 转换器工具栏钩子
+    ConverterToolbarHook.new,
+    // 图节点工具栏钩子
+    GraphNodesToolbarHook.new,
+    // 创建节点工具栏钩子
+    CreateNodeToolbarHook.new,
+    // 布局工具栏钩子
+    LayoutToolbarHook.new,
+    // 插件市场工具栏钩子
+    MarketToolbarHook.new,
+    // 搜索侧边栏钩子
+    SearchSidebarHook.new,
+    // 设置工具栏钩子
+    SettingsToolbarHook.new,
   ];
 
   /// 所有内置普通插件工厂
@@ -120,15 +147,28 @@ class BuiltinPluginLoader {
 
           // 如果插件默认启用，自动启用
           final plugin = _pluginManager.getPlugin(pluginId);
-          if (plugin != null && plugin.metadata.enabledByDefault) {
-            try {
-              await _pluginManager.enablePlugin(pluginId);
-              debugPrint('[BuiltinPluginLoader] ✓ Enabled plugin: $pluginId');
-            } catch (e) {
-              debugPrint(
-                '[BuiltinPluginLoader] ✗ Failed to enable plugin $pluginId: $e',
-              );
+          if (plugin != null) {
+            debugPrint('[BuiltinPluginLoader] Checking plugin $pluginId:');
+            debugPrint('  - enabledByDefault: ${plugin.metadata.enabledByDefault}');
+            debugPrint('  - Current state: ${plugin.state}');
+            
+            if (plugin.metadata.enabledByDefault) {
+              try {
+                debugPrint('[BuiltinPluginLoader] Attempting to enable plugin: $pluginId');
+                await _pluginManager.enablePlugin(pluginId);
+                debugPrint('[BuiltinPluginLoader] ✓ Enabled plugin: $pluginId');
+                debugPrint('  - New state: ${plugin.state}');
+              } catch (e) {
+                debugPrint(
+                  '[BuiltinPluginLoader] ✗ Failed to enable plugin $pluginId: $e',
+                );
+                debugPrint('  - Current state after failure: ${plugin.state}');
+              }
+            } else {
+              debugPrint('[BuiltinPluginLoader] Plugin $pluginId is not enabled by default');
             }
+          } else {
+            debugPrint('[BuiltinPluginLoader] ✗ Plugin $pluginId not found after loading');
           }
         } catch (e) {
           debugPrint(
@@ -186,6 +226,10 @@ class BuiltinPluginLoader {
 
     final allPlugins = _pluginManager.getAllPlugins();
     var uiHookCount = 0;
+    var enabledHookCount = 0;
+
+    debugPrint('[BuiltinPluginLoader] ===== Starting UI Hook Registration =====');
+    debugPrint('[BuiltinPluginLoader] Total plugins loaded: ${allPlugins.length}');
 
     for (final wrapper in allPlugins) {
       if (wrapper.plugin is UIHook) {
@@ -196,6 +240,13 @@ class BuiltinPluginLoader {
           debugPrint(
             '[BuiltinPluginLoader] ✓ Registered UI Hook: ${uiHook.metadata.id} to ${uiHook.hookPoint}',
           );
+          debugPrint('    - State: ${uiHook.state}');
+          debugPrint('    - Is Enabled: ${uiHook.isEnabled}');
+          debugPrint('    - Priority: ${uiHook.priority}');
+          
+          if (uiHook.isEnabled) {
+            enabledHookCount++;
+          }
         } catch (e) {
           debugPrint(
             '[BuiltinPluginLoader] ✗ Failed to register UI Hook ${uiHook.metadata.id}: $e',
@@ -204,9 +255,11 @@ class BuiltinPluginLoader {
       }
     }
 
-    debugPrint(
-      '[BuiltinPluginLoader] Registered $uiHookCount UI Hooks to HookRegistry',
-    );
+    debugPrint('[BuiltinPluginLoader] ===== UI Hook Registration Summary =====');
+    debugPrint('[BuiltinPluginLoader] Total UI Hooks registered: $uiHookCount');
+    debugPrint('[BuiltinPluginLoader] UI Hooks in enabled state: $enabledHookCount');
+    debugPrint('[BuiltinPluginLoader] UI Hooks NOT in enabled state: ${uiHookCount - enabledHookCount}');
+    debugPrint('[BuiltinPluginLoader] ========================================');
   }
 
   /// 卸载所有内置插件

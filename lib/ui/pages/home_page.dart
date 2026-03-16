@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../plugins/graph/service/create_node_dialog.dart';
 import '../../plugins/graph/ui/graph_view.dart';
 import '../bars/core_toolbar.dart';
 
 /// 主页面
 ///
-/// 应用的主页面，包含核心工具栏、图形视图和创建节点的浮动按钮
+/// 应用的主页面，包含核心工具栏和图形视图
 class HomePage extends StatefulWidget {
   /// 创建一个主页面
   const HomePage({super.key});
@@ -16,17 +15,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: const CoreToolbar(),
-      body: const GraphView(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateNodeDialog,
-        child: const Icon(Icons.add),
-      ),
+  Widget build(BuildContext context) => const Scaffold(
+      appBar: CoreToolbar(),
+      body: GraphView(),
     );
-
-  /// 显示创建节点对话框
-  void _showCreateNodeDialog() {
-    showDialog(context: context, builder: (ctx) => const CreateNodeDialog());
-  }
 }

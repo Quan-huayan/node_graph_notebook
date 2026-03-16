@@ -27,6 +27,7 @@ class ConverterToolbarHook extends MainToolbarHook {
     version: '1.0.0',
     description: 'Provides import/export button in toolbar',
     author: 'Node Graph Notebook',
+    enabledByDefault: true,
   );
 
   @override

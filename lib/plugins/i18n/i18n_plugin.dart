@@ -9,6 +9,16 @@ import '../../../core/services/i18n.dart';
 ///
 /// 提供多语言支持和语言切换功能
 class I18nPlugin extends MainToolbarHook {
+  PluginState _state = PluginState.loaded;
+
+  @override
+  PluginState get state => _state;
+
+  @override
+  set state(PluginState newState) {
+    _state = newState;
+  }
+
   @override
   PluginMetadata get metadata => const PluginMetadata(
         id: 'i18n',
@@ -16,6 +26,7 @@ class I18nPlugin extends MainToolbarHook {
         version: '1.0.0',
         description: '提供多语言支持和界面汉化',
         author: 'Node Graph Notebook',
+        enabledByDefault: true,
       );
 
   @override
@@ -24,16 +35,15 @@ class I18nPlugin extends MainToolbarHook {
   @override
   Widget renderToolbar(MainToolbarHookContext context) {
     final buildContext = context.data['buildContext'] as BuildContext?;
-    final pluginContext = context.pluginContext;
 
-    if (buildContext == null || pluginContext == null) {
+    if (buildContext == null) {
       return const SizedBox.shrink();
     }
 
     return IconButton(
       icon: const Icon(Icons.translate, color: Colors.blue),
-      tooltip: pluginContext.read<I18n>().t('Language'),
-      onPressed: () => _showLanguageDialog(context, buildContext, pluginContext),
+      tooltip: I18n.of(buildContext).t('Language'),
+      onPressed: () => _showLanguageDialog(context, buildContext),
     );
   }
 
@@ -41,9 +51,8 @@ class I18nPlugin extends MainToolbarHook {
   void _showLanguageDialog(
     MainToolbarHookContext context,
     BuildContext buildContext,
-    PluginContext pluginContext,
   ) {
-    final i18n = pluginContext.read<I18n>();
+    final i18n = I18n.of(buildContext);
 
     showDialog(
       context: buildContext,
@@ -104,12 +113,6 @@ class I18nPlugin extends MainToolbarHook {
 
   @override
   Future<void> onDispose() async {}
-
-  @override
-  PluginState get state => PluginState.loaded;
-
-  @override
-  set state(PluginState newState) {}
 
   @override
   Future<void> onLoad(PluginContext context) async {

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../commands/command_bus.dart';
 import '../events/app_events.dart';
@@ -8,6 +9,7 @@ import '../execution/task_registry.dart';
 import '../repositories/graph_repository.dart';
 import '../repositories/node_repository.dart';
 import '../services/infrastructure/settings_registry.dart';
+import '../services/infrastructure/storage_path_service.dart';
 import '../services/infrastructure/theme_registry.dart';
 import 'api/api_registry.dart';
 import 'plugin.dart';
@@ -32,6 +34,8 @@ class PluginContext {
   /// [taskRegistry] 任务注册表，用于注册自定义任务类型
   /// [settingsRegistry] 设置注册表，用于注册插件设置
   /// [themeRegistry] 主题注册表，用于注册主题扩展
+  /// [storagePathService] 存储路径服务，用于获取文件存储路径
+  /// [sharedPreferencesAsync] SharedPreferencesAsync，用于异步存储访问
   /// [config] 插件配置
   PluginContext({
     required this.pluginId,
@@ -47,9 +51,10 @@ class PluginContext {
     this.settingsRegistry,
     this.themeRegistry,
     this.serviceRegistry,
+    this.storagePathService,
+    this.sharedPreferencesAsync,
     Map<String, dynamic>? config,
-  }) : _config = config ?? {} {
-  }
+  }) : _config = config ?? {};
 
   /// 插件 ID
   final String pluginId;
@@ -89,6 +94,12 @@ class PluginContext {
 
   /// Service 注册表（用于获取插件提供的 Service）
   final ServiceRegistry? serviceRegistry;
+
+  /// 存储路径服务（用于获取文件存储路径）
+  final StoragePathService? storagePathService;
+
+  /// SharedPreferencesAsync（用于异步存储访问）
+  final SharedPreferencesAsync? sharedPreferencesAsync;
 
   /// 插件配置（只读）
   final Map<String, dynamic> _config;
@@ -189,7 +200,21 @@ class PluginContext {
       return eventBus as T;
     }
 
-    // 4. 如果都找不到，抛出异常
+    // 4. 特殊处理：StoragePathService 和 SharedPreferencesAsync
+    if (T == StoragePathService) {
+      if (storagePathService == null) {
+        throw PluginStateException('plugin', 'uninitialized', 'StoragePathService available');
+      }
+      return storagePathService as T;
+    }
+    if (T == SharedPreferencesAsync) {
+      if (sharedPreferencesAsync == null) {
+        throw PluginStateException('plugin', 'uninitialized', 'SharedPreferencesAsync available');
+      }
+      return sharedPreferencesAsync as T;
+    }
+
+    // 5. 如果都找不到，抛出异常
     throw PluginConfigurationException('unknown', 'Unknown service type: $T');
   }
 

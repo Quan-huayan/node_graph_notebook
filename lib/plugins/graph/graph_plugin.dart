@@ -60,7 +60,6 @@ class GraphPlugin extends Plugin {
   @override
   List<ServiceBinding> registerServices() => [
     NodeServiceBinding(),
-    GraphServiceBinding(),
   ];
 
   @override

@@ -30,7 +30,7 @@ class ShortcutsDialog extends StatelessWidget {
             ),
             _ShortcutItem(shortcutKey: 'Ctrl + F', description: 'Search'),
             _ShortcutItem(shortcutKey: 'Ctrl + E', description: 'Export'),
-            const Divider(),
+            Divider(),
             _ShortcutItem(
               shortcutKey: 'Ctrl + 1',
               description: 'Force Directed Layout',

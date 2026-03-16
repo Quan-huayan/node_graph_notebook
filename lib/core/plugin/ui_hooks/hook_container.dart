@@ -25,15 +25,22 @@ class HookContainer {
     final hooks = hookRegistry.getHooks(hookPoint.id);
     final results = <dynamic>[];
 
+    debugPrint('[HookContainer] render() for ${hookPoint.id}:');
+    debugPrint('  - Hook point: ${hookPoint.name}');
+    debugPrint('  - Number of hooks to render: ${hooks.length}');
+
     for (final hook in hooks) {
       try {
+        debugPrint('  - Rendering hook: ${hook.metadata.id}');
         final result = hook.render(context);
         results.add(result);
+        debugPrint('    ✓ Successfully rendered');
       } catch (e) {
         debugPrint('[HookContainer] Error rendering hook $hook: $e');
       }
     }
 
+    debugPrint('  - Total rendered widgets: ${results.length}');
     return results;
   }
 

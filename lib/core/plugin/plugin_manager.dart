@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:provider/single_child_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../commands/command_bus.dart';
 import '../events/app_events.dart';
@@ -10,6 +11,7 @@ import '../execution/task_registry.dart';
 import '../repositories/graph_repository.dart';
 import '../repositories/node_repository.dart';
 import '../services/infrastructure/settings_registry.dart';
+import '../services/infrastructure/storage_path_service.dart';
 import '../services/infrastructure/theme_registry.dart';
 import 'api/api_registry.dart';
 import 'plugin.dart';
@@ -57,6 +59,8 @@ class PluginManager implements IPluginManager {
   /// [taskRegistry] 任务注册表，用于管理插件注册的任务类型
   /// [settingsRegistry] 设置注册表，用于管理插件注册的设置项
   /// [themeRegistry] 主题注册表，用于管理插件注册的主题扩展
+  /// [sharedPreferencesAsync] SharedPreferencesAsync，用于异步存储访问
+  /// [storagePathService] 存储路径服务，用于获取文件存储路径
   PluginManager({
     required CommandBus commandBus,
     AppEventBus? eventBus,
@@ -68,6 +72,8 @@ class PluginManager implements IPluginManager {
     TaskRegistry? taskRegistry,
     SettingsRegistry? settingsRegistry,
     ThemeRegistry? themeRegistry,
+    SharedPreferencesAsync? sharedPreferencesAsync,
+    StoragePathService? storagePathService,
   }) : _commandBus = commandBus,
        _eventBus = eventBus,
        _nodeRepository = nodeRepository,
@@ -78,7 +84,9 @@ class PluginManager implements IPluginManager {
        _serviceRegistry = serviceRegistry ?? ServiceRegistry(),
        _taskRegistry = taskRegistry ?? TaskRegistry(),
        _settingsRegistry = settingsRegistry,
-       _themeRegistry = themeRegistry ?? ThemeRegistry();
+       _themeRegistry = themeRegistry ?? ThemeRegistry(),
+       _sharedPreferencesAsync = sharedPreferencesAsync,
+       _storagePathService = storagePathService;
 
   final CommandBus _commandBus;
   final AppEventBus? _eventBus;
@@ -92,6 +100,8 @@ class PluginManager implements IPluginManager {
   final TaskRegistry _taskRegistry;
   final SettingsRegistry? _settingsRegistry;
   final ThemeRegistry _themeRegistry;
+  final SharedPreferencesAsync? _sharedPreferencesAsync;
+  final StoragePathService? _storagePathService;
 
   /// API 注册表（只读访问）
   ///
@@ -179,6 +189,8 @@ class PluginManager implements IPluginManager {
       settingsRegistry: _settingsRegistry,
       themeRegistry: _themeRegistry,
       serviceRegistry: _serviceRegistry,
+      storagePathService: _storagePathService,
+      sharedPreferencesAsync: _sharedPreferencesAsync,
     );
 
     // 创建生命周期管理器
@@ -265,25 +277,39 @@ class PluginManager implements IPluginManager {
 
   @override
   Future<void> enablePlugin(String pluginId) async {
+    debugPrint('[PluginManager] enablePlugin($pluginId) called');
+    
     final wrapper = _registry.getPlugin(pluginId);
     if (wrapper == null) {
+      debugPrint('[PluginManager] ✗ Plugin not found: $pluginId');
       throw PluginNotFoundException(pluginId);
     }
 
+    debugPrint('[PluginManager] Plugin found: $pluginId');
+    debugPrint('  - Current state: ${wrapper.state}');
+    debugPrint('  - Is enabled: ${wrapper.isEnabled}');
+
     if (wrapper.isEnabled) {
+      debugPrint('[PluginManager] Plugin already enabled: $pluginId');
       return; // 已启用
     }
 
     // 检查依赖
+    debugPrint('[PluginManager] Checking dependencies for $pluginId');
     await _ensureDependencies(wrapper);
 
     // 调用 onEnable
     try {
+      debugPrint('[PluginManager] Calling onEnable for $pluginId');
       await wrapper.lifecycle.transitionTo(
         PluginState.enabled,
         wrapper.plugin.onEnable,
       );
+      debugPrint('[PluginManager] ✓ Successfully enabled plugin: $pluginId');
+      debugPrint('  - New state: ${wrapper.state}');
     } catch (e) {
+      debugPrint('[PluginManager] ✗ Failed to enable plugin $pluginId: $e');
+      debugPrint('  - Current state: ${wrapper.state}');
       throw PluginEnableException(pluginId, e);
     }
   }

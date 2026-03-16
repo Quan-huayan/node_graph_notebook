@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
 import '../../../core/plugin/ui_hooks/ui_hook.dart';
-import '../../../ui/dialogs/settings_dialog.dart';
+import 'ui/search_sidebar_panel.dart';
 
-/// 设置工具栏钩子
-class SettingsToolbarHook extends MainToolbarHook {
+/// 搜索侧边栏钩子
+class SearchSidebarHook extends SidebarBottomHook {
   PluginState _state = PluginState.loaded;
 
   @override
@@ -18,31 +18,20 @@ class SettingsToolbarHook extends MainToolbarHook {
   }
 
   @override
-  int get priority => 40;
+  int get priority => 10;
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-    id: 'settings_toolbar_hook',
-    name: 'Settings Toolbar Hook',
+    id: 'search_sidebar_hook',
+    name: 'Search Sidebar Hook',
     version: '1.0.0',
-    description: 'Provides settings button in toolbar',
+    description: 'Provides search functionality in sidebar',
     author: 'Node Graph Notebook',
     enabledByDefault: true,
   );
 
   @override
-  Widget renderToolbar(MainToolbarHookContext context) => IconButton(
-      icon: const Icon(Icons.settings),
-      onPressed: () => _openSettingsDialog(context),
-      tooltip: 'Settings',
-    );
-
-  void _openSettingsDialog(MainToolbarHookContext context) {
-    final buildContext = context.data['buildContext'] as BuildContext?;
-    if (buildContext == null) return;
-
-    showDialog(context: buildContext, builder: (ctx) => const SettingsDialog());
-  }
+  Widget renderSidebar(SidebarHookContext context) => const SearchSidebarPanel();
 
   @override
   Future<void> onInit() async {}

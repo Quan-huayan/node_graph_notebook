@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../core/models/models.dart';
-import '../../core/services/services.dart';
+import '../../core/plugin/ui_hooks/hook_context.dart';
+import '../../core/plugin/ui_hooks/hook_point.dart';
+import '../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../core/services/i18n.dart';
-import '../../plugins/ai/ui/ai_config_dialog.dart';
-import '../../plugins/ai/ui/ai_test_dialog.dart';
+import '../../core/services/services.dart';
 import '../bloc/ui_bloc.dart';
 import '../bloc/ui_event.dart';
 
@@ -31,7 +33,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
     return AlertDialog(
       backgroundColor: theme.backgrounds.primary,
       title: Row(
-        children: [Icon(Icons.settings), SizedBox(width: 8), Text(i18n.t('Settings'))],
+        children: [const Icon(Icons.settings), const SizedBox(width: 8), Text(i18n.t('Settings'))],
       ),
       content: SizedBox(
         width: 500,
@@ -69,7 +71,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 return ListTile(
                   leading: const Icon(Icons.storage_outlined),
                   title: Text(i18n.t('Storage Usage')),
-                  subtitle: Text('Calculating...'),
+                  subtitle: const Text('Calculating...'),
                 );
               },
             ),
@@ -120,27 +122,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
             const Divider(height: 32),
 
-            // AI 配置部分
-            _buildSectionHeader(i18n.t('AI Configuration')),
-            ListTile(
-              leading: const Icon(Icons.smart_toy_outlined),
-              title: Text(i18n.t('AI Settings')),
-              subtitle: Text(
-                settingsService.isAIConfigured
-                    ? '${settingsService.aiProvider} - ${settingsService.aiModel}'
-                    : 'Not configured',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showAIConfigDialog(context, settingsService),
-            ),
-            if (settingsService.isAIConfigured)
-              ListTile(
-                leading: const Icon(Icons.chat_bubble_outline),
-                title: Text(i18n.t('Test AI Connection')),
-                subtitle: Text(i18n.t('Chat with AI to test the configuration')),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _showAITestDialog(context),
-              ),
+            // 插件设置部分（通过Hook动态加载）
+            _buildSectionHeader(i18n.t('Plugin Settings')),
+            ..._buildPluginSettings(context, settingsService),
 
             const Divider(height: 32),
 
@@ -529,28 +513,31 @@ class _SettingsDialogState extends State<SettingsDialog> {
     );
   }
 
-  void _showAIConfigDialog(
-    BuildContext context,
-    SettingsService settingsService,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AIConfigDialog(settingsService: settingsService),
+  List<Widget> _buildPluginSettings(BuildContext context, SettingsService settingsService) {
+    final hooks = hookRegistry.getHooks(HookPointId.settings);
+    final hookContext = SettingsHookContext(
+      data: {
+        'buildContext': context,
+        'settingsService': settingsService,
+      },
     );
+
+    return hooks.map((hook) {
+      if (hook.isVisible(hookContext)) {
+        return hook.render(hookContext);
+      }
+      return const SizedBox.shrink();
+    }).toList();
   }
 
-  void _showAITestDialog(BuildContext context) {
-    showDialog(context: context, builder: (ctx) => const AITestDialog());
-  }
-}
-
-String _getThemeModeLabel(ThemeMode mode) {
-  switch (mode) {
-    case ThemeMode.light:
-      return 'Light';
-    case ThemeMode.dark:
-      return 'Dark';
-    case ThemeMode.system:
-      return 'System';
+  String _getThemeModeLabel(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.dark:
+        return 'Dark';
+      case ThemeMode.system:
+        return 'System';
+    }
   }
 }
