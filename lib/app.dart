@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
+import 'core/services/i18n.dart';
 import 'core/events/app_events.dart';
 import 'core/commands/command_bus.dart';
 import 'plugins/builtin_middlewares/logging_middleware.dart';
@@ -15,6 +16,7 @@ import 'plugins/builtin_middlewares/undo_middleware.dart';
 import 'core/plugin/plugin_manager.dart';
 import 'core/plugin/builtin_plugin_loader.dart';
 import 'core/plugin/ui_hooks/hook_registry.dart';
+import 'core/plugin/service_registry.dart';
 import 'ui/pages/home_page.dart';
 
 class NodeGraphNotebookApp extends StatefulWidget {
@@ -149,6 +151,16 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       eventBus: _eventBus,
       nodeRepository: _nodeRepository,
       graphRepository: _graphRepository,
+      serviceRegistry: ServiceRegistry(
+        coreDependencies: {
+          NodeRepository: _nodeRepository,
+          GraphRepository: _graphRepository,
+          CommandBus: _commandBus,
+          AppEventBus: _eventBus,
+          SettingsService: widget.settingsService,
+          ThemeService: widget.themeService,
+        },
+      ),
     );
 
     // 使用 FutureBuilder 等待插件加载完成
@@ -208,6 +220,12 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
         // 5. 插件提供的 Bloc（由 PluginManager 自动生成）
         ...pluginManager.generateBlocProviders(),
+
+        // === 国际化 Provider ===
+        // 6. I18n 服务（支持多语言）
+        ChangeNotifierProvider<I18n>(
+          create: (_) => I18n(),
+        ),
 
         // === BLoC 层 ===
         // UI Bloc（核心 UI 状态管理）

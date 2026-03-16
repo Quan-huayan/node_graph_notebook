@@ -7,6 +7,7 @@ import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_even
 import '../../plugins/builtin_plugins/converter/ui/import_export_page.dart';
 import '../pages/plugin_market_page.dart';
 import '../dialogs/settings_dialog.dart';
+import '../../core/services/i18n.dart';
 
 /// 应用程序的顶部导航栏
 class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
@@ -17,14 +18,16 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+
     return AppBar(
-      title: const Text('Node Graph Notebook'),
+      title: const Text('Node Graph Notebook'), // 标题保持不变
       actions: [
         // AI按钮
         IconButton(
           icon: const Icon(Icons.smart_toy),
           onPressed: () => _addAIAssistant(context),
-          tooltip: 'AI Assistant',
+          tooltip: i18n.t('AI Assistant'),
         ),
         // 插件市场按钮
         IconButton(
@@ -35,7 +38,7 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               MaterialPageRoute(builder: (ctx) => const PluginMarketPage()),
             );
           },
-          tooltip: 'Plugin Market',
+          tooltip: i18n.t('Plugin Market'),
         ),
         // 导入导出
         IconButton(
@@ -46,7 +49,7 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               MaterialPageRoute(builder: (ctx) => const ImportExportPage()),
             );
           },
-          tooltip: 'Import & Export',
+          tooltip: i18n.t('Import & Export'),
         ),
 
 
@@ -58,22 +61,23 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               builder: (ctx) => const SettingsDialog(),
             );
           },
-          tooltip: 'Settings',
+          tooltip: i18n.t('Settings'),
         ),
       ],
     );
   }
 
   void _addAIAssistant(BuildContext context) {
+    final i18n = I18n.of(context);
     final nodeBloc = BlocProvider.of<NodeBloc>(context);
     final graphBloc = BlocProvider.of<GraphBloc>(context);
 
     try {
       // 创建AI助手节点
-      nodeBloc.add(const NodeCreateEvent(
-        title: 'AI Assistant',
-        content: 'Your AI assistant. Click to start a conversation!',
-        metadata: {'isAI': true, 'character': 'assistant'}, 
+      nodeBloc.add(NodeCreateEvent(
+        title: i18n.t('AI Assistant'),
+        content: i18n.t('Your AI assistant. Click to start a conversation!'),
+        metadata: const {'isAI': true, 'character': 'assistant'},
       ));
 
       // 等待节点创建完成后添加到图中
@@ -100,12 +104,12 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         ));
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('AI Assistant added to the graph!')),
+          SnackBar(content: Text(i18n.t('AI Assistant added to the graph!'))),
         );
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add AI Assistant: $e')),
+        SnackBar(content: Text('${i18n.t('Failed to add AI Assistant:')} $e')),
       );
     }
   }

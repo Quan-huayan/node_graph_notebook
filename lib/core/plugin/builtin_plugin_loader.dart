@@ -12,6 +12,7 @@ import '../../plugins/builtin_plugins/sidebarNode/sidebar_plugin.dart';
 import '../../plugins/builtin_plugins/graph/graph_plugin.dart';
 import '../../plugins/builtin_plugins/search/search_plugin.dart';
 import '../../plugins/builtin_plugins/converter/converter_plugin.dart';
+import '../../plugins/builtin_plugins/i18n/i18n_plugin.dart';
 
 /// 内置插件加载器
 ///
@@ -47,6 +48,9 @@ class BuiltinPluginLoader {
 
     // 侧边栏插件
     () => SidebarPlugin(),
+
+    // 国际化插件
+    () => I18nPlugin(),
   ];
 
   /// 所有内置普通插件工厂

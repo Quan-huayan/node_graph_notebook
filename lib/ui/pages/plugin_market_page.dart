@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/i18n.dart';
 
 /// 插件市场页面
 class PluginMarketPage extends StatelessWidget {
@@ -6,9 +7,11 @@ class PluginMarketPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plugin Market'),
+        title: Text(i18n.t('Plugin Market')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -19,9 +22,9 @@ class PluginMarketPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Available Plugins',
-              style: TextStyle(
+            Text(
+              i18n.t('Available Plugins'),
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -44,6 +47,7 @@ class PluginMarketPage extends StatelessWidget {
 
   /// 构建插件卡片
   Widget _buildPluginCard(BuildContext context, int index) {
+    final i18n = I18n.of(context);
     // 示例插件数据
     final plugins = [
       {
@@ -113,14 +117,14 @@ class PluginMarketPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Version: ${plugin['version']}',
+                        '${i18n.t('Version')}: ${plugin['version']}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
                         ),
                       ),
                       Text(
-                        'By: ${plugin['author']}',
+                        '${i18n.t('By:')} ${plugin['author']}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -133,10 +137,10 @@ class PluginMarketPage extends StatelessWidget {
                   onPressed: () {
                     // TODO: 实现插件安装功能
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Installing ${plugin['name']}...')),
+                      SnackBar(content: Text('${i18n.t('Installing...')} ${plugin['name']}')),
                     );
                   },
-                  child: const Text('Install'),
+                  child: Text(i18n.t('Install')),
                 ),
               ],
             ),

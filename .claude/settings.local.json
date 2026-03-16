@@ -14,7 +14,10 @@
       "Bash(flutter run:*)",
       "Bash(taskkill:*)",
       "Bash(flutter:*)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(pgrep:*)",
+      "Bash(rm:*)",
+      "Bash(timeout 5 cmd:*)"
     ]
   }
 }

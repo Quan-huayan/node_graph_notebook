@@ -6,9 +6,9 @@ import 'ai_service.dart';
 ///
 /// 将 AIService 注册到插件系统的依赖注入容器
 /// AIService 是 ChangeNotifier，需要特殊处理
-class AIServiceBinding extends ServiceBinding<AIServiceImpl> {
+class AIServiceBinding extends ServiceBinding<AIService> {
   @override
-  AIServiceImpl createService(ServiceResolver resolver) {
+  AIService createService(ServiceResolver resolver) {
     final settingsService = resolver.get<SettingsService>();
     final aiService = AIServiceImpl();
 
@@ -21,7 +21,7 @@ class AIServiceBinding extends ServiceBinding<AIServiceImpl> {
     return aiService;
   }
 
-  void _updateAIProvider(AIServiceImpl aiService, SettingsService settings) {
+  void _updateAIProvider(AIService aiService, SettingsService settings) {
     if (settings.isAIConfigured) {
       final provider = settings.aiProvider == 'anthropic'
           ? AnthropicProvider(
@@ -29,17 +29,23 @@ class AIServiceBinding extends ServiceBinding<AIServiceImpl> {
               model: settings.aiModel,
               baseUrl: settings.aiBaseUrl,
             )
-          : OpenAIProvider(
-              apiKey: settings.aiApiKey!,
-              model: settings.aiModel,
-              baseUrl: settings.aiBaseUrl,
-            );
+          : settings.aiProvider == 'zhipuai'
+              ? ZhipuAIProvider(
+                  apiKey: settings.aiApiKey!,
+                  model: settings.aiModel,
+                  baseUrl: settings.aiBaseUrl,
+                )
+              : OpenAIProvider(
+                  apiKey: settings.aiApiKey!,
+                  model: settings.aiModel,
+                  baseUrl: settings.aiBaseUrl,
+                );
       aiService.setProvider(provider);
     }
   }
 
   @override
-  void dispose(AIServiceImpl service) {
+  void dispose(AIService service) {
     // 清理资源（如果需要）
   }
 }

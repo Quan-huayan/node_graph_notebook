@@ -55,13 +55,22 @@ abstract class ServiceBinding<T> {
 ///
 /// 用于在 Service 创建过程中解析依赖
 class ServiceResolver {
-  ServiceResolver(this._bindings, this._instances);
+  ServiceResolver(
+    this._bindings,
+    this._instances, {
+    Map<Type, dynamic>? coreDependencies,
+  }) : _coreDependencies = coreDependencies ?? {};
 
   /// 所有 Service 绑定
   final Map<Type, ServiceBinding> _bindings;
 
   /// 已创建的 Service 实例（单例）
   final Map<Type, dynamic> _instances;
+
+  /// 核心依赖（Repository、CommandBus、EventBus 等）
+  ///
+  /// 这些依赖不是通过插件提供的，但是插件的 Service 可能会依赖它们
+  final Map<Type, dynamic> _coreDependencies;
 
   /// 获取 Service 依赖
   ///
@@ -74,6 +83,11 @@ class ServiceResolver {
     // 先检查是否已有实例（单例）
     if (_instances.containsKey(T)) {
       return _instances[T] as T;
+    }
+
+    // 检查核心依赖中是否有
+    if (_coreDependencies.containsKey(T)) {
+      return _coreDependencies[T] as T;
     }
 
     // 检查是否有对应的绑定

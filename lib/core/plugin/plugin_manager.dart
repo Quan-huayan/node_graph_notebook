@@ -129,6 +129,7 @@ class PluginManager implements IPluginManager {
       apiRegistry: _apiRegistry,
       nodeRepository: _nodeRepository,
       graphRepository: _graphRepository,
+      serviceRegistry: _serviceRegistry,
     );
 
     // 创建生命周期管理器

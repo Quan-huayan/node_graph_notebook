@@ -607,6 +607,78 @@ class AnthropicProvider implements AIProvider {
   }
 }
 
+/// 智谱AI 提供商
+///
+/// 支持智谱AI的GLM系列模型
+/// 官方文档: https://open.bigmodel.cn/dev/api
+class ZhipuAIProvider implements AIProvider {
+  ZhipuAIProvider({
+    required this.apiKey,
+    this.model = 'glm-4',
+    this.maxTokens = 2000,
+    this.baseUrl = 'https://open.bigmodel.cn/api/paas/v4',
+  });
+
+  final String apiKey;
+  final String model;
+  final int maxTokens;
+  final String baseUrl;
+
+  @override
+  String get serviceName => '智谱AI ($model)';
+
+  @override
+  Future<String> generate(String prompt) async {
+    try {
+      // 智谱AI使用JWT token认证
+      final token = _generateJWTToken();
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat/completions'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'model': model,
+          'messages': [
+            {'role': 'user', 'content': prompt},
+          ],
+          'max_tokens': maxTokens,
+          'temperature': 0.7,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final choices = data['choices'] as List<dynamic>;
+        final firstChoice = choices.first as Map<String, dynamic>;
+        final message = firstChoice['message'] as Map<String, dynamic>;
+        return message['content'] as String;
+      } else {
+        final error = jsonDecode(response.body) as Map<String, dynamic>;
+        final errorData = error['error'] as Map<String, dynamic>?;
+        throw AIServiceException(
+          '智谱AI API error: ${errorData?['message'] ?? response.body}',
+        );
+      }
+    } catch (e) {
+      throw AIServiceException('Failed to call 智谱AI API: $e');
+    }
+  }
+
+  /// 生成JWT Token
+  ///
+  /// 智谱AI要求使用JWT token进行认证
+  /// Token格式: Header.Payload.Signature
+  String _generateJWTToken() {
+    // 简化实现：直接使用API Key作为token
+    // 生产环境应该实现完整的JWT签名逻辑
+    // TODO: 实现正确的JWT token生成
+    return apiKey;
+  }
+}
+
 /// AI 服务异常
 class AIServiceException implements Exception {
   AIServiceException(this.message);

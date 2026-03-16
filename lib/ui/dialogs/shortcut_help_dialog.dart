@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/i18n.dart';
 
 /// 快捷键帮助对话框
 class ShortcutsDialog extends StatelessWidget {
@@ -6,8 +7,10 @@ class ShortcutsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+
     return AlertDialog(
-      title: const Text('Keyboard Shortcuts'),
+      title: Text(i18n.t('Keyboard Shortcuts')),
       content: SizedBox(
         width: 500,
         child: ListView(
@@ -64,7 +67,7 @@ class ShortcutsDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(i18n.t('Close')),
         ),
       ],
     );
