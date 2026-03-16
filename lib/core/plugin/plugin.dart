@@ -9,7 +9,6 @@ export 'plugin_context.dart'
     show
         PluginContext,
         PluginLogger,
-        LogLevel,
         PluginAPIProvider,
         StorageAPI,
         UIAPI,
@@ -51,4 +50,9 @@ export 'plugin_registry.dart' show PluginRegistry;
 export 'service_binding.dart'
     show ServiceBinding, ServiceResolver, ServiceDependencyException;
 export 'service_registry.dart'
-    show ServiceRegistry, ServiceRegistrationException;
+    show ServiceRegistry, ServiceRegistrationException, ServiceNotFoundException;
+// DI
+export 'dynamic_provider_widget.dart'
+    show DynamicProviderWidget;
+// 日志级别
+export '../../plugins/builtin_middlewares/logging_middleware.dart' show LogLevel;

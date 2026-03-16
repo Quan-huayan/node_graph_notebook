@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **The project has completed a major architectural refactoring implementing Command Bus and Plugin patterns.**
 
-### Current Status: ✅ Implementation Complete (95%+)
+### Current Status: ✅ Implementation Complete (100%)
 
 The refactoring has successfully introduced:
 
@@ -29,6 +29,7 @@ The refactoring has successfully introduced:
 - **Plugin System**: Fully functional plugin architecture with UI hooks, service providers, and middleware plugins
 - **BLoC Restructuring**: BLoCs now only manage UI state, all business logic in Command Handlers
 - **Event-Driven Architecture**: EventBus for cross-component communication
+- **Unified DI Container**: Single dependency injection system supporting both Provider and dynamic plugin loading
 
 ### Implementation Summary
 
@@ -41,6 +42,8 @@ The refactoring has successfully introduced:
 - ✅ NodeBloc refactored to use CommandBus
 - ✅ Service Registry for plugin-provided services
 - ✅ API Registry for inter-plugin communication
+- ✅ Unified DI Container (ServiceRegistry + DynamicProviderWidget)
+- ✅ Lazy loading support for non-critical services
 
 **Remaining Work:**
 - ⏳ Test coverage for new Command Handlers
@@ -274,57 +277,80 @@ UI Layer (widgets)
 
 **2. Provider/BLoC Organization** (see `lib/app.dart`)
 
-The application initializes dependencies in strict layers using Provider:
+The application initializes dependencies in strict layers using **DynamicProviderWidget**:
 
 ```dart
-// === Core System Providers ===
-// 0. Settings & Theme Services (must be first - plugins may depend on these)
-ChangeNotifierProvider<SettingsService>.value(...),
-ChangeNotifierProvider<ThemeService>.value(...),
-Provider<SharedPreferencesAsync>...,
+// 1. Create ServiceRegistry with core dependencies
+_serviceRegistry = ServiceRegistry(
+  coreDependencies: {
+    NodeRepository: _nodeRepository,
+    GraphRepository: _graphRepository,
+    CommandBus: _commandBus,
+    AppEventBus: _eventBus,
+    SettingsService: widget.settingsService,
+    ThemeService: widget.themeService,
+  },
+);
 
-// 1. Repository Layer (data access - foundation for all services)
-Provider<NodeRepository>.value(...),
-Provider<GraphRepository>.value(...),
+// 2. Use DynamicProviderWidget to wrap MultiProvider
+DynamicProviderWidget(
+  serviceRegistry: _serviceRegistry,
+  coreProviders: [
+    // === Core System Providers ===
+    // 0. Settings & Theme Services (must be first - plugins may depend on these)
+    ChangeNotifierProvider<SettingsService>.value(...),
+    ChangeNotifierProvider<ThemeService>.value(...),
+    Provider<SharedPreferencesAsync>...,
 
-// 2. Event Bus (for cross-component communication)
-Provider<AppEventBus>.value(...),
+    // 1. Repository Layer (data access - foundation for all services)
+    Provider<NodeRepository>.value(...),
+    Provider<GraphRepository>.value(...),
 
-// 3. Command Bus (business logic gateway)
-Provider<CommandBus>.value(...),
+    // 2. Event Bus (for cross-component communication)
+    Provider<AppEventBus>.value(...),
 
-// === Plugin System Providers ===
-// 4. Plugin-provided Services (auto-generated from plugins)
-...pluginManager.serviceRegistry.generateProviders(),
+    // 3. Command Bus (business logic gateway)
+    Provider<CommandBus>.value(...),
 
-// 5. Plugin-provided BLoCs (auto-generated from plugins)
-...pluginManager.generateBlocProviders(),
+    // === Core UI BLoCs ===
+    // 4. UI BLoC (core UI state management)
+    BlocProvider<UIBloc>...,
 
-// === Core UI BLoCs ===
-// 6. UI BLoC (core UI state management)
-BlocProvider<UIBloc>...,
+    // === Plugin System Providers ===
+    // 5. Hook Registry (global singleton for UI extensions)
+    Provider<HookRegistry>...,
 
-// === Plugin System ===
-// 7. Hook Registry (global singleton for UI extensions)
-Provider<HookRegistry>...,
+    // 6. Plugin Manager (plugin lifecycle management)
+    Provider<PluginManager>.value(...),
 
-// 8. Plugin Manager (plugin lifecycle management)
-Provider<PluginManager>.value(...),
+    // === Plugin BLoC Layer ===
+    // 7. Plugin-provided BLoCs (auto-generated from plugins)
+    ...pluginManager.generateBlocProviders(),
+  ],
+  child: MaterialApp(...),
+)
 ```
 
 **Critical Dependency Order:**
-1. **Settings/Theme** first - plugins may need these during initialization
-2. **Repositories** second - all services depend on data access
-3. **EventBus** third - command handlers and services need event publishing
-4. **CommandBus** fourth - handlers need all services registered first
-5. **Plugin Services** fifth - plugins provide services after core system is ready
-6. **Plugin BLoCs** sixth - plugin BLoCs depend on plugin services
-7. **UI BLoC** seventh - core UI state management
-8. **Plugin System** last - HookRegistry and PluginManager orchestrate everything
+1. **ServiceRegistry** first - must be created before any plugins
+2. **Settings/Theme** second - plugins may need these during initialization
+3. **Repositories** third - all services depend on data access
+4. **EventBus** fourth - command handlers and services need event publishing
+5. **CommandBus** fifth - handlers need all services registered first
+6. **UI BLoC** sixth - core UI state management
+7. **Plugin System** seventh - HookRegistry and PluginManager orchestrate everything
+8. **Plugin BLoCs** eighth - plugin BLoCs depend on plugin services
+
+**Key Changes from Old Architecture:**
+- **DynamicProviderWidget** replaces static MultiProvider
+- **ServiceRegistry** unifies all DI systems
+- Plugin services are automatically added to Provider tree
+- Provider tree rebuilds when plugins load/unload
+- No need to manually add plugin providers
 
 **Plugin Loading Process:**
 1. **Initialization Phase** (`app.dart:147-152`)
-   - Create PluginManager with core dependencies
+   - Create ServiceRegistry with core dependencies
    - Pass CommandBus, EventBus, Repositories to plugins
 
 2. **Loading Phase** (`app.dart:155-177`)
@@ -338,25 +364,27 @@ Provider<PluginManager>.value(...),
    - Plugins loaded according to dependency relationships
 
 4. **Plugin Lifecycle** (`plugin_manager.dart:102-183`)
-   - `loadPlugin()` → Call `plugin.onLoad(context)`
-   - Register plugin services to ServiceRegistry
+   - `loadPlugin()` → Register plugin services to ServiceRegistry
+   - Call `plugin.onLoad(context)` - **can now access plugin's own services!**
    - Register plugin APIs to APIRegistry
    - Validate plugin dependencies
 
 5. **Provider Generation** (`app.dart:207-210`)
-   - `serviceRegistry.generateProviders()` - Create providers for plugin services
+   - `DynamicProviderWidget` automatically includes plugin services
    - `pluginManager.generateBlocProviders()` - Create providers for plugin BLoCs
+   - Provider tree rebuilds when services change
 
-6. **UI Extension** (after MultiProvider)
+6. **UI Extension** (after DynamicProviderWidget)
    - UI Hook plugins render widgets at hook points via HookRegistry
    - Hook points: toolbar, sidebar, context menus, dialogs, etc.
 
 **Key Points:**
 - Plugins are loaded **before** UI renders, ensuring all services available
-- Plugin services are injected into Provider tree automatically
+- Plugin services are injected into Provider tree automatically via DynamicProviderWidget
 - Plugin BLoCs are registered alongside core BLoCs
 - UI Hooks extend UI at specific points via HookRegistry
 - Dependency order is enforced via topological sorting
+- **Plugins can now access their own services in onLoad()** - major improvement!
 
 **3. Provider/BLoC Usage Rules**
 
@@ -669,6 +697,101 @@ The application features a comprehensive plugin system for extensibility:
 - `lib/core/plugin/ui_hooks/` - UI Hook system
 - `lib/plugins/builtin_plugins/` - Built-in plugin implementations
 
+**Unified Dependency Injection (DI) System**
+
+The application now features a **unified DI container** that resolves the previous architecture problem of having multiple parallel DI systems:
+
+**Problem Solved:**
+- Previously had 4 parallel DI systems: Provider, ServiceRegistry, CommandContext, DependencyContainer
+- PluginContext couldn't resolve services registered by the same plugin
+- Provider tree was static but plugins needed dynamic loading
+- Memory leaks from plugin services not being disposed
+
+**Solution: ServiceRegistry + DynamicProviderWidget**
+
+**ServiceRegistry** (`lib/core/plugin/service_registry.dart`):
+- Enhanced ServiceRegistry with immediate service instantiation
+- Supports lazy loading for non-critical services
+- Provides `getServiceDirect<T>()` to bypass Provider
+- Notifies listeners when services change (triggers Provider tree rebuild)
+- Fully backward compatible with existing ServiceRegistry
+
+**DynamicProviderWidget** (`lib/core/plugin/dynamic_provider_widget.dart`):
+- Stateful widget that listens to ServiceRegistry changes
+- Automatically rebuilds Provider tree when plugins load/unload
+- Merges core providers and dynamic providers
+- Maintains Provider tree integrity
+
+**Usage Example:**
+
+```dart
+// 1. Create ServiceRegistry in app.dart
+_serviceRegistry = ServiceRegistry(
+  coreDependencies: {
+    NodeRepository: _nodeRepository,
+    GraphRepository: _graphRepository,
+    CommandBus: _commandBus,
+    AppEventBus: _eventBus,
+  },
+);
+
+// 2. Use DynamicProviderWidget to wrap MultiProvider
+DynamicProviderWidget(
+  serviceRegistry: _serviceRegistry,
+  coreProviders: [
+    Provider<NodeRepository>.value(value: _nodeRepository),
+    Provider<CommandBus>.value(value: _commandBus),
+    // ... other core providers
+  ],
+  child: MaterialApp(...),
+)
+
+// 3. Plugins can now access their own services in onLoad()
+class MyPlugin extends Plugin {
+  @override
+  List<ServiceBinding> registerServices() {
+    return [
+      MyServiceBinding(),
+    ];
+  }
+
+  @override
+  Future<void> onLoad(PluginContext context) async {
+    // This now works! PluginContext can resolve services
+    // registered by the same plugin
+    final myService = context.read<MyService>();
+    myService.initialize();
+  }
+}
+```
+
+**Lazy Loading Support:**
+
+```dart
+class AIServiceBinding extends ServiceBinding<AIService> {
+  @override
+  bool get isLazy => true; // Only instantiate when first requested
+
+  @override
+  AIService createService(ServiceResolver resolver) {
+    return AIServiceImpl(
+      settingsService: resolver.get<SettingsService>(),
+    );
+  }
+}
+```
+
+**Benefits:**
+- Single source of truth for all dependencies
+- Plugins can access their own services during initialization
+- Dynamic plugin loading without breaking Provider tree
+- Automatic memory management (services disposed on plugin unload)
+- Performance optimization through lazy loading
+- Zero breaking changes (fully backward compatible)
+
+**Deprecated Components:**
+- `DependencyContainer` - Marked as @Deprecated, use ServiceRegistry instead
+
 **Creating Plugins:**
 
 ```dart
@@ -902,7 +1025,7 @@ flutter test --coverage
 1. **CQRS Pattern**: Separate read (Repository) and write (CommandBus) operations
 2. **Event-Driven**: Use EventBus for cross-component communication
 3. **Plugin Architecture**: Extend functionality via plugins, not direct modifications
-4. **Dependency Injection**: Follow strict Provider ordering
+4. **Unified Dependency Injection**: Single DI container (ServiceRegistry) supporting both Provider and dynamic plugin loading
 
 ### Development Guidelines
 

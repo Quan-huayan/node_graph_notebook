@@ -39,6 +39,17 @@ abstract class ServiceBinding<T> {
   /// false：每次请求都创建新实例
   bool get isSingleton => true;
 
+  /// 是否懒加载（默认 false）
+  ///
+  /// true：只有在第一次被请求时才创建实例
+  /// false：在注册时立即创建实例
+  ///
+  /// 使用场景：
+  /// - 非关键服务（如 AI 服务、导出服务等）
+  /// - 初始化成本高的服务
+  /// - 可能不被使用的服务
+  bool get isLazy => false;
+
   /// Service 名称（可选）
   ///
   /// 用于区分同一类型的多个 Service 实例

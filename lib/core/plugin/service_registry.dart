@@ -12,10 +12,13 @@ import 'service_binding.dart';
 /// - 解析 Service 依赖关系
 /// - 生成 Flutter Provider 列表
 /// - 管理 Service 生命周期
-class ServiceRegistry {
+/// - 支持立即实例化（解决插件 onLoad() 中无法访问自己注册的服务的问题）
+/// - 支持服务变化通知（触发 Provider 树重建）
+class ServiceRegistry with ChangeNotifier {
   /// 创建一个新的 Service 注册表实例。
   ServiceRegistry({Map<Type, dynamic>? coreDependencies})
-      : _coreDependencies = coreDependencies ?? {};
+      : _coreDependencies = coreDependencies ?? {},
+        _instantiatedServices = {};
 
   /// Service 绑定注册表
   ///
@@ -28,6 +31,16 @@ class ServiceRegistry {
   /// Key: Service 类型
   /// Value: Service 实例
   final Map<Type, dynamic> _instances = {};
+
+  /// 已立即实例化的服务缓存
+  ///
+  /// Key: Service 类型
+  /// Value: 服务实例
+  ///
+  /// 与 _instances 的区别：
+  /// - _instantiatedServices: 在 registerService() 时立即创建
+  /// - _instances: 在 Provider.create() 时延迟创建
+  final Map<Type, dynamic> _instantiatedServices;
 
   /// 插件 ID 到 Service 类型的映射
   ///
@@ -43,6 +56,9 @@ class ServiceRegistry {
   ///
   /// [pluginId] 插件 ID
   /// [binding] Service 绑定
+  ///
+  /// 关键改进：立即实例化服务（除非标记为懒加载）
+  /// 这解决了 PluginContext 在 onLoad() 中无法访问自己注册的服务的问题
   ///
   /// 使用示例：
   /// ```dart
@@ -64,7 +80,32 @@ class ServiceRegistry {
     // 记录插件提供的 Service
     _pluginServices.putIfAbsent(pluginId, () => {}).add(serviceType);
 
-    debugPrint('[ServiceRegistry] Registered $serviceType from $pluginId');
+    // === 立即实例化服务（除非标记为懒加载）===
+    // 懒加载的服务只在第一次被请求时创建
+    if (!binding.isLazy) {
+      try {
+        final instance = _createServiceInstance(binding);
+        _instantiatedServices[serviceType] = instance;
+
+        debugPrint(
+          '[ServiceRegistry] Instantiated $serviceType from $pluginId',
+        );
+      } catch (e) {
+        // 实例化失败，回滚注册
+        _bindings.remove(serviceType);
+        _pluginServices[pluginId]?.remove(serviceType);
+        throw ServiceRegistrationException(
+          'Failed to instantiate $serviceType: $e',
+        );
+      }
+    } else {
+      debugPrint(
+        '[ServiceRegistry] Registered lazy service $serviceType from $pluginId',
+      );
+    }
+
+    // 通知监听器（触发 Provider 树重建）
+    notifyListeners();
   }
 
   /// 批量注册 Service 绑定
@@ -89,9 +130,16 @@ class ServiceRegistry {
     for (final serviceType in serviceTypes) {
       final binding = _bindings[serviceType];
       final instance = _instances[serviceType];
+      final instantiatedInstance = _instantiatedServices[serviceType];
 
-      // 释放资源
-      if (binding != null && instance != null) {
+      // 释放资源（优先释放立即实例化的服务）
+      if (binding != null && instantiatedInstance != null) {
+        try {
+          binding.dispose(instantiatedInstance);
+        } catch (e) {
+          debugPrint('[ServiceRegistry] Error disposing $serviceType: $e');
+        }
+      } else if (binding != null && instance != null) {
         try {
           binding.dispose(instance);
         } catch (e) {
@@ -102,6 +150,7 @@ class ServiceRegistry {
       // 移除绑定和实例
       _bindings.remove(serviceType);
       _instances.remove(serviceType);
+      _instantiatedServices.remove(serviceType);
     }
 
     // 移除插件记录
@@ -110,6 +159,9 @@ class ServiceRegistry {
     debugPrint(
       '[ServiceRegistry] Unregistered ${serviceTypes.length} services from $pluginId',
     );
+
+    // 通知监听器（触发 Provider 树重建）
+    notifyListeners();
   }
 
   /// 生成 Provider 列表
@@ -228,6 +280,16 @@ class ServiceRegistry {
   /// 返回插件提供的所有 Service 类型
   Set<Type> getPluginServices(String pluginId) => _pluginServices[pluginId] ?? {};
 
+  /// 获取 Service 绑定
+  ///
+  /// [T] Service 类型
+  /// 返回 Service 绑定，如果未注册则返回 null
+  ServiceBinding<T>? getBinding<T>() {
+    final serviceType = T;
+    if (!_bindings.containsKey(serviceType)) return null;
+    return _bindings[serviceType] as ServiceBinding<T>;
+  }
+
   /// 获取 Service 实例
   ///
   /// [T] Service 类型
@@ -266,6 +328,80 @@ class ServiceRegistry {
     return null;
   }
 
+  /// 直接获取服务实例（绕过 Provider）
+  ///
+  /// [T] Service 类型
+  /// 返回服务实例
+  ///
+  /// 抛出 [ServiceNotFoundException] 如果服务未注册
+  ///
+  /// 使用场景：
+  /// - PluginContext 在 onLoad() 中访问自己注册的服务
+  /// - 在 Provider 树构建前访问服务
+  T getServiceDirect<T>() {
+    final serviceType = T;
+
+    // 1. 优先从立即实例化缓存获取
+    if (_instantiatedServices.containsKey(serviceType)) {
+      return _instantiatedServices[serviceType] as T;
+    }
+
+    // 2. 检查是否是懒加载服务，如果是则创建实例
+    if (_bindings.containsKey(serviceType)) {
+      final binding = _bindings[serviceType]!;
+      if (binding.isLazy) {
+        try {
+          final instance = _createServiceInstance(binding);
+          _instantiatedServices[serviceType] = instance;
+          debugPrint(
+            '[ServiceRegistry] Lazy instantiated $serviceType',
+          );
+          return instance;
+        } catch (e) {
+          throw ServiceNotFoundException(
+            'Failed to instantiate lazy service $T: $e',
+          );
+        }
+      }
+    }
+
+    // 3. 尝试从父类实例缓存获取
+    final parentInstance = getService<T>();
+    if (parentInstance != null) {
+      return parentInstance;
+    }
+
+    // 4. 如果都找不到，抛出异常
+    throw ServiceNotFoundException(
+      'Service $T not found in registry',
+    );
+  }
+
+  /// 检查服务是否可用（可立即解析）
+  ///
+  /// [T] Service 类型
+  /// 返回 true 如果服务已注册并可立即解析
+  bool hasService<T>() {
+    // 检查是否在立即实例化缓存中
+    if (_instantiatedServices.containsKey(T)) {
+      return true;
+    }
+
+    // 检查是否已注册（包括懒加载服务）
+    return _bindings.containsKey(T);
+  }
+
+  /// 创建服务实例（内部方法）
+  ///
+  /// [binding] Service 绑定
+  /// 返回服务实例
+  dynamic _createServiceInstance(ServiceBinding binding) {
+    // 策略：使用 getService() 方法来处理依赖解析
+    // 这会自动使用 ServiceResolver，它包含核心依赖
+    final instance = binding.createService(_ServiceResolverAdapter(this));
+    return instance;
+  }
+
   /// 清空所有注册
   ///
   /// 仅用于测试
@@ -283,10 +419,76 @@ class ServiceRegistry {
       }
     }
 
+    // 释放立即实例化的服务
+    for (final entry in _instantiatedServices.entries) {
+      final binding = _bindings[entry.key];
+      if (binding != null) {
+        try {
+          binding.dispose(entry.value);
+        } catch (e) {
+          debugPrint('[ServiceRegistry] Error disposing ${entry.key}: $e');
+        }
+      }
+    }
+
     _bindings.clear();
     _instances.clear();
+    _instantiatedServices.clear();
     _pluginServices.clear();
   }
+}
+
+/// Service 解析器适配器
+///
+/// 将 ServiceRegistry 适配为 ServiceResolver 接口
+/// 用于在服务创建过程中解析依赖
+class _ServiceResolverAdapter extends ServiceResolver {
+  /// 创建一个新的服务解析器适配器实例
+  ///
+  /// [registry] 服务注册表
+  _ServiceResolverAdapter(this._registry)
+      : super({}, {}, coreDependencies: {});
+
+  final ServiceRegistry _registry;
+
+  @override
+  T get<T>() {
+    // 1. 优先从立即实例化缓存获取
+    if (_registry._instantiatedServices.containsKey(T)) {
+      return _registry._instantiatedServices[T] as T;
+    }
+
+    // 2. 尝试从 ServiceRegistry 获取（包括核心依赖）
+    final parentInstance = _registry.getService<T>();
+    if (parentInstance != null) {
+      return parentInstance;
+    }
+
+    // 3. 如果都找不到，抛出异常
+    throw ServiceNotFoundException(
+      'Service $T not found (services available: ${_registry._instantiatedServices.keys.join(', ')})',
+    );
+  }
+
+  @override
+  bool has<T>() => _registry._instantiatedServices.containsKey(T) ||
+        _registry._bindings.containsKey(T);
+}
+
+/// 服务未找到异常
+///
+/// 当请求的服务未注册时抛出
+class ServiceNotFoundException implements Exception {
+  /// 创建一个新的服务未找到异常实例
+  ///
+  /// [message] 错误消息
+  const ServiceNotFoundException(this.message);
+
+  /// 错误消息
+  final String message;
+
+  @override
+  String toString() => 'ServiceNotFoundException: $message';
 }
 
 /// Service 注册异常

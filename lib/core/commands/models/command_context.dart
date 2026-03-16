@@ -2,6 +2,7 @@ import '../../../plugins/builtin_plugins/graph/service/graph_service.dart';
 import '../../../plugins/builtin_plugins/graph/service/node_service.dart';
 import '../../events/app_events.dart';
 import '../../models/node.dart';
+import '../../plugin/service_registry.dart';
 import '../../repositories/graph_repository.dart';
 import '../../repositories/node_repository.dart';
 
@@ -185,7 +186,7 @@ class CommandContext {
   T read<T>() {
     final service = _services[T];
     if (service == null) {
-      throw ServiceNotFoundException(T.toString());
+      throw ServiceNotFoundException('Service not found: $T');
     }
     return service as T;
   }
@@ -232,20 +233,4 @@ class CommandContext {
 
     return child;
   }
-}
-
-/// 服务未找到异常
-///
-/// 当请求的服务未在上下文中注册时抛出
-class ServiceNotFoundException implements Exception {
-  /// 创建一个服务未找到异常
-  ///
-  /// [serviceType] - 服务类型名称
-  ServiceNotFoundException(this.serviceType);
-
-  /// 服务类型名称
-  final String serviceType;
-
-  @override
-  String toString() => 'ServiceNotFoundException: 未找到服务 $serviceType';
 }

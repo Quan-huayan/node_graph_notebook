@@ -8,8 +8,8 @@ import 'core/events/app_events.dart';
 import 'core/execution/execution_engine.dart';
 import 'core/execution/task_registry.dart';
 import 'core/plugin/builtin_plugin_loader.dart';
+import 'core/plugin/plugin.dart';
 import 'core/plugin/plugin_manager.dart';
-import 'core/plugin/service_registry.dart';
 import 'core/plugin/ui_hooks/hook_registry.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/i18n.dart';
@@ -55,6 +55,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   late ThemeRegistry _themeRegistry;
   late ExecutionEngine _executionEngine;
   late StoragePathService _storagePathService;
+  late ServiceRegistry _serviceRegistry;
   bool _isInitialized = false;
   Object? _initError;
 
@@ -105,6 +106,18 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
       // 8. 注册核心设置到 SettingsRegistry
       _registerCoreSettings();
+
+      // 9. 创建动态服务注册表（新增）
+      _serviceRegistry = ServiceRegistry(
+        coreDependencies: {
+          NodeRepository: _nodeRepository,
+          GraphRepository: _graphRepository,
+          CommandBus: _commandBus,
+          AppEventBus: _eventBus,
+          SettingsService: widget.settingsService,
+          ThemeService: widget.themeService,
+        },
+      );
 
       setState(() {
         _isInitialized = true;
@@ -214,16 +227,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       eventBus: _eventBus,
       nodeRepository: _nodeRepository,
       graphRepository: _graphRepository,
-      serviceRegistry: ServiceRegistry(
-        coreDependencies: {
-          NodeRepository: _nodeRepository,
-          GraphRepository: _graphRepository,
-          CommandBus: _commandBus,
-          AppEventBus: _eventBus,
-          SettingsService: widget.settingsService,
-          ThemeService: widget.themeService,
-        },
-      ),
+      serviceRegistry: _serviceRegistry,
       executionEngine: _executionEngine,
       taskRegistry: _taskRegistry,
       settingsRegistry: _settingsRegistry,
@@ -256,8 +260,10 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         }
 
         // 插件加载完成，显示应用界面
-        return MultiProvider(
-          providers: [
+        // 使用 DynamicProviderWidget 支持动态插件加载
+        return DynamicProviderWidget(
+          serviceRegistry: _serviceRegistry,
+          coreProviders: [
             // === 核心系统 Provider ===
             // 0. 设置服务（必须在插件 Service 之前，因为 AIService 依赖 SettingsService）
             ChangeNotifierProvider<SettingsService>.value(
@@ -298,18 +304,11 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
             // 3. 命令总线（Command Bus - 业务逻辑统一入口）
             Provider<CommandBus>.value(value: _commandBus),
 
-            // === 插件系统 Provider ===
-            // 4. 插件提供的 Service（由 PluginManager.serviceRegistry 自动生成）
-            ...pluginManager.serviceRegistry.generateProviders(),
-
-            // 5. 插件提供的 Bloc（由 PluginManager 自动生成）
-            ...pluginManager.generateBlocProviders(),
-
-        // === 国际化 Provider ===
-        // 6. I18n 服务（支持多语言）
-        ChangeNotifierProvider<I18n>(
-          create: (_) => I18n(),
-        ),
+            // === 国际化 Provider ===
+            // 4. I18n 服务（支持多语言）
+            ChangeNotifierProvider<I18n>(
+              create: (_) => I18n(),
+            ),
 
             // === BLoC 层 ===
             // UI Bloc（核心 UI 状态管理）
@@ -324,6 +323,11 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
             // Plugin Manager（已经在 FutureBuilder 中初始化）
             Provider<PluginManager>.value(value: pluginManager),
+
+            // === 插件 BLoC 层 ===
+            // 插件提供的 Bloc（由 PluginManager 自动生成）
+            // 注意：这些 BLoC 不会动态变化，所以放在 coreProviders 中
+            ...pluginManager.generateBlocProviders(),
           ],
           child: Consumer2<SettingsService, ThemeService>(
             builder: (context, settings, themeService, child) {
