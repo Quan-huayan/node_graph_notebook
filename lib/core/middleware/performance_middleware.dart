@@ -1,8 +1,8 @@
-import '../../core/commands/models/command.dart';
-import '../../core/commands/models/command_context.dart';
-import '../../core/plugin/middleware/middleware_plugin.dart';
-import '../../core/plugin/plugin_context.dart';
-import '../../core/plugin/plugin_metadata.dart';
+import '../commands/models/command.dart';
+import '../commands/models/command_context.dart';
+import '../plugin/middleware/middleware_plugin.dart';
+import '../plugin/plugin_context.dart';
+import '../plugin/plugin_metadata.dart';
 
 /// 性能监控中间件
 class PerformanceMiddleware extends CommandMiddlewarePlugin {

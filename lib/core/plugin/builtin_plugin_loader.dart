@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 
-import '../../plugins/builtin_plugins/ai/ai_plugin.dart';
-import '../../plugins/builtin_plugins/converter/converter_plugin.dart';
-import '../../plugins/builtin_plugins/data_recovery/data_recovery.dart';
-import '../../plugins/builtin_plugins/delete/delete_plugin.dart';
-import '../../plugins/builtin_plugins/folder/folder_plugin.dart';
-import '../../plugins/builtin_plugins/graph/graph_plugin.dart';
-import '../../plugins/builtin_plugins/i18n/i18n_plugin.dart';
-import '../../plugins/builtin_plugins/layout/layout_plugin.dart';
-import '../../plugins/builtin_plugins/search/search_plugin.dart';
-import '../../plugins/builtin_plugins/sidebarNode/sidebar_plugin.dart';
+import '../../plugins/ai/ai_plugin.dart';
+import '../../plugins/converter/converter_plugin.dart';
+import '../../plugins/data_recovery/data_recovery.dart';
+import '../../plugins/delete/delete_plugin.dart';
+import '../../plugins/folder/folder_plugin.dart';
+import '../../plugins/graph/graph_plugin.dart';
+import '../../plugins/i18n/i18n_plugin.dart';
+import '../../plugins/layout/layout_plugin.dart';
+import '../../plugins/search/search_plugin.dart';
+import '../../plugins/sidebarNode/sidebar_plugin.dart';
 import 'dependency_resolver.dart';
 import 'plugin_discoverer.dart';
 import 'plugin_manager.dart';

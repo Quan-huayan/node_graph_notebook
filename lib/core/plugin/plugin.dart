@@ -55,4 +55,4 @@ export 'service_registry.dart'
 export 'dynamic_provider_widget.dart'
     show DynamicProviderWidget;
 // 日志级别
-export '../../plugins/builtin_middlewares/logging_middleware.dart' show LogLevel;
+export '../middleware/logging_middleware.dart' show LogLevel;

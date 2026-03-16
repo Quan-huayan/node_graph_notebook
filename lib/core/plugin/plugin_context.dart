@@ -12,7 +12,6 @@ import '../services/infrastructure/theme_registry.dart';
 import 'api/api_registry.dart';
 import 'plugin.dart';
 import 'plugin_communication.dart';
-import '../../plugins/builtin_middlewares/logging_middleware.dart';
 
 /// 插件上下文
 ///

@@ -76,8 +76,8 @@ Services/Repositories (Data Access)
 
 #### Adding New Commands
 
-1. Create command class in `lib/plugins/builtin_plugins/{plugin_name}/command/`
-2. Create handler in `lib/plugins/builtin_plugins/{plugin_name}/handler/`
+1. Create command class in `lib/plugins/{plugin_name}/command/`
+2. Create handler in `lib/plugins/{plugin_name}/handler/`
 3. Register handler in plugin's `registerCommandHandlers()` method
 4. Use in BLoC via `commandBus.dispatch(command)`
 
@@ -197,7 +197,7 @@ class MyPlugin extends Plugin {
 - `lib/core/plugin/plugin.dart` - Plugin base interface
 - `lib/core/plugin/plugin_manager.dart` - Plugin lifecycle management
 - `lib/core/plugin/ui_hooks/` - UI hook system
-- `lib/plugins/builtin_plugins/` - Built-in plugin implementations
+- `lib/plugins/` - Built-in plugin implementations
 
 **Middleware:**
 - `lib/plugins/builtin_middlewares/logging_middleware.dart`
@@ -206,7 +206,7 @@ class MyPlugin extends Plugin {
 - `lib/plugins/builtin_middlewares/undo_middleware.dart`
 
 **BLoC Examples:**
-- `lib/plugins/builtin_plugins/graph/bloc/node_bloc.dart` - Refactored NodeBloc
+- `lib/plugins/graph/bloc/node_bloc.dart` - Refactored NodeBloc
 
 ## Development Commands
 
@@ -408,7 +408,7 @@ The application uses **BLoC (Business Logic Component)** pattern for state manag
 - **Core UI BLoCs** (`lib/ui/bloc/`):
   - `UIBloc` - Manages UI state (sidebar, panels, dialogs)
 
-- **Plugin-Provided BLoCs** (`lib/plugins/builtin_plugins/{plugin}/bloc/`):
+- **Plugin-Provided BLoCs** (`lib/plugins/{plugin}/bloc/`):
   - `NodeBloc` (Graph plugin) - Manages node state
   - `GraphBloc` (Graph plugin) - Manages graph state
   - Other domain-specific BLoCs provided by plugins
@@ -579,8 +579,8 @@ class LoggingMiddleware implements CommandMiddleware {
 ```
 
 **Command Locations:**
-- Commands: `lib/plugins/builtin_plugins/{plugin}/command/`
-- Handlers: `lib/plugins/builtin_plugins/{plugin}/handler/`
+- Commands: `lib/plugins/{plugin}/command/`
+- Handlers: `lib/plugins/{plugin}/handler/`
 - Middleware: `lib/plugins/builtin_middlewares/`
 
 ### Core Components
@@ -609,7 +609,7 @@ class LoggingMiddleware implements CommandMiddleware {
   - `api/` - API registry for inter-plugin communication
   - `middleware/` - Middleware plugin support
 
-**Plugin-Based Services** (`lib/plugins/builtin_plugins/`)
+**Plugin-Based Services** (`lib/plugins/`)
 
 **Graph Plugin** (`graph/`):
 - `bloc/node_bloc.dart` - Node state management
@@ -695,7 +695,7 @@ The application features a comprehensive plugin system for extensibility:
 - `lib/core/plugin/dependency_resolver.dart` - Dependency resolution
 - `lib/core/plugin/builtin_plugin_loader.dart` - Built-in plugin loader
 - `lib/core/plugin/ui_hooks/` - UI Hook system
-- `lib/plugins/builtin_plugins/` - Built-in plugin implementations
+- `lib/plugins/` - Built-in plugin implementations
 
 **Unified Dependency Injection (DI) System**
 
@@ -1055,7 +1055,7 @@ flutter test --coverage
 
 ### Plugin Development
 
-21. **Plugin location** → Create plugins in `lib/plugins/builtin_plugins/{plugin_name}/`
+21. **Plugin location** → Create plugins in `lib/plugins/{plugin_name}/`
 22. **Plugin dependencies** → Always declare in metadata to ensure correct load order
 23. **Plugin lifecycle** → Use `onLoad()` for initialization, `onEnable()` for activation
 24. **Service registration** → Use `registerServices()` to provide plugin services

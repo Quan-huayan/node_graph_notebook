@@ -1,6 +1,6 @@
-import '../../core/commands/models/command.dart';
-import '../../core/commands/models/command_context.dart';
-import '../../core/commands/models/middleware.dart';
+import '../commands/models/command.dart';
+import '../commands/models/command_context.dart';
+import '../commands/models/middleware.dart';
 
 /// 验证中间件
 ///

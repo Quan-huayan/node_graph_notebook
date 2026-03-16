@@ -6,9 +6,9 @@ import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/core/repositories/graph_repository.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_state.dart';
+import 'package:node_graph_notebook/plugins/graph/bloc/graph_bloc.dart';
+import 'package:node_graph_notebook/plugins/graph/bloc/graph_event.dart';
+import 'package:node_graph_notebook/plugins/graph/bloc/graph_state.dart';
 
 // Mock classes
 class MockCommandBus extends Mock implements CommandBus {}

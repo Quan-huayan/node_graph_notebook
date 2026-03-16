@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import '../../plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import '../../plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import '../../plugins/builtin_plugins/graph/bloc/node_event.dart';
-import '../../plugins/builtin_plugins/graph/service/delete_node_dialog.dart';
-import '../../plugins/builtin_plugins/graph/ui/graph_nodes_dialog.dart';
-import '../../plugins/builtin_plugins/layout/ui/layout_menu.dart';
+import '../../plugins/graph/bloc/graph_bloc.dart';
+import '../../plugins/graph/bloc/graph_event.dart';
+import '../../plugins/graph/bloc/node_bloc.dart';
+import '../../plugins/graph/bloc/node_event.dart';
+import '../../plugins/graph/service/delete_node_dialog.dart';
+import '../../plugins/graph/ui/graph_nodes_dialog.dart';
+import '../../plugins/layout/ui/layout_menu.dart';
 import '../bloc/ui_bloc.dart';
 import '../bloc/ui_event.dart';
 import '../bloc/ui_state.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/ai/service/ai_service.dart';
+import 'package:node_graph_notebook/plugins/ai/service/ai_service.dart';
 
 void main() {
   group('ZhipuAIProvider', () {

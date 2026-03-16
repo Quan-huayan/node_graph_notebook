@@ -5,11 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/plugin/ui_hooks/hook_container.dart';
 import '../../core/plugin/ui_hooks/hook_context.dart';
-import '../../plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import '../../plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import '../../plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import '../../plugins/builtin_plugins/graph/bloc/node_event.dart';
-import '../../plugins/builtin_plugins/search/ui/search_sidebar_panel.dart';
+import '../../plugins/graph/bloc/graph_bloc.dart';
+import '../../plugins/graph/bloc/graph_event.dart';
+import '../../plugins/graph/bloc/node_bloc.dart';
+import '../../plugins/graph/bloc/node_event.dart';
+import '../../plugins/search/ui/search_sidebar_panel.dart';
 import '../../core/services/i18n.dart';
 
 /// 侧边栏

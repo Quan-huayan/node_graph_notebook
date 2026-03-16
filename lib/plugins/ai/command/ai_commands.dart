@@ -1,9 +1,9 @@
 import 'dart:ui';
 
-import '../../../../../plugins/builtin_plugins/ai/service/ai_service.dart';
 import '../../../../core/commands/models/command.dart';
 import '../../../../core/commands/models/command_context.dart';
 import '../../../../core/models/node.dart';
+import '../service/ai_service.dart';
 
 /// 分析节点命令
 ///

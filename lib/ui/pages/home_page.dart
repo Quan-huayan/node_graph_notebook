@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../plugins/builtin_plugins/graph/service/create_node_dialog.dart';
-import '../../plugins/builtin_plugins/graph/ui/graph_view.dart';
+import '../../plugins/graph/service/create_node_dialog.dart';
+import '../../plugins/graph/ui/graph_view.dart';
 import '../bars/core_toolbar.dart';
 
 /// 主页面

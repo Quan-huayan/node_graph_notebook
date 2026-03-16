@@ -1,5 +1,5 @@
-import '../../../plugins/builtin_plugins/graph/service/graph_service.dart';
-import '../../../plugins/builtin_plugins/graph/service/node_service.dart';
+import '../../../plugins/graph/service/graph_service.dart';
+import '../../../plugins/graph/service/node_service.dart';
 import '../../events/app_events.dart';
 import '../../models/node.dart';
 import '../../plugin/service_registry.dart';

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/plugin/plugin.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
+import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../../../core/services/i18n.dart';
 
 /// 国际化插件

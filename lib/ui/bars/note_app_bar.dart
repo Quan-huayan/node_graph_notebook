@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../plugins/builtin_plugins/converter/ui/import_export_page.dart';
-import '../../plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import '../../plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import '../../plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import '../../plugins/builtin_plugins/graph/bloc/node_event.dart';
+import '../../plugins/converter/ui/import_export_page.dart';
+import '../../plugins/graph/bloc/graph_bloc.dart';
+import '../../plugins/graph/bloc/graph_event.dart';
+import '../../plugins/graph/bloc/node_bloc.dart';
+import '../../plugins/graph/bloc/node_event.dart';
 import '../dialogs/settings_dialog.dart';
 import '../pages/plugin_market_page.dart';
 import '../../core/services/i18n.dart';

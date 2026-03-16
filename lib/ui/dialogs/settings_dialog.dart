@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
 import '../../core/services/i18n.dart';
-import '../../plugins/builtin_plugins/ai/ui/ai_config_dialog.dart';
-import '../../plugins/builtin_plugins/ai/ui/ai_test_dialog.dart';
+import '../../plugins/ai/ui/ai_config_dialog.dart';
+import '../../plugins/ai/ui/ai_test_dialog.dart';
 import '../bloc/ui_bloc.dart';
 import '../bloc/ui_event.dart';
 

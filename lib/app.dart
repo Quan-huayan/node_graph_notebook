@@ -14,10 +14,10 @@ import 'core/plugin/ui_hooks/hook_registry.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/i18n.dart';
 import 'core/services/services.dart';
-import 'plugins/builtin_middlewares/logging_middleware.dart';
-import 'plugins/builtin_middlewares/transaction_middleware.dart';
-import 'plugins/builtin_middlewares/undo_middleware.dart';
-import 'plugins/builtin_middlewares/validation_middleware.dart';
+import 'core/middleware/logging_middleware.dart';
+import 'core/middleware/transaction_middleware.dart';
+import 'core/middleware/undo_middleware.dart';
+import 'core/middleware/validation_middleware.dart';
 import 'ui/bloc/ui_bloc.dart';
 import 'ui/pages/home_page.dart';
 
