@@ -14,7 +14,8 @@ import 'service_binding.dart';
 /// - 管理 Service 生命周期
 class ServiceRegistry {
   /// 创建一个新的 Service 注册表实例。
-  ServiceRegistry();
+  ServiceRegistry({Map<Type, dynamic>? coreDependencies})
+      : _coreDependencies = coreDependencies ?? {};
 
   /// Service 绑定注册表
   ///
@@ -32,6 +33,11 @@ class ServiceRegistry {
   ///
   /// 用于跟踪哪些 Service 是由哪个插件提供的
   final Map<String, Set<Type>> _pluginServices = {};
+
+  /// 核心依赖（Repository、CommandBus、EventBus 等）
+  ///
+  /// 这些依赖不是通过插件提供的，但是插件的 Service 可能会依赖它们
+  final Map<Type, dynamic> _coreDependencies;
 
   /// 注册 Service 绑定
   ///
@@ -136,15 +142,19 @@ class ServiceRegistry {
   ///
   /// 根据 Service 类型自动选择合适的 Provider 类型
   SingleChildWidget _createProvider(ServiceBinding binding) {
-    // 创建依赖解析器
-    final resolver = ServiceResolver(_bindings, _instances);
-
     return Provider(
       create: (ctx) {
         // 如果已经有实例（单例），直接返回
         if (_instances.containsKey(binding.serviceType)) {
           return _instances[binding.serviceType];
         }
+
+        // 创建依赖解析器（包含核心依赖）
+        final resolver = ServiceResolver(
+          _bindings,
+          _instances,
+          coreDependencies: _coreDependencies,
+        );
 
         // 创建新实例
         final instance = binding.createService(resolver);
@@ -217,6 +227,44 @@ class ServiceRegistry {
   /// [pluginId] 插件 ID
   /// 返回插件提供的所有 Service 类型
   Set<Type> getPluginServices(String pluginId) => _pluginServices[pluginId] ?? {};
+
+  /// 获取 Service 实例
+  ///
+  /// [T] Service 类型
+  /// 返回 Service 实例，如果不存在则返回 null
+  T? getService<T>() {
+    final serviceType = T;
+
+    // 如果已有缓存实例，直接返回
+    if (_instances.containsKey(serviceType)) {
+      return _instances[serviceType] as T;
+    }
+
+    // 如果没有缓存实例，但已注册，则创建新实例
+    if (_bindings.containsKey(serviceType)) {
+      try {
+        final binding = _bindings[serviceType]!;
+        final resolver = ServiceResolver(
+          _bindings,
+          _instances,
+          coreDependencies: _coreDependencies,
+        );
+        final instance = binding.createService(resolver);
+
+        // 如果是单例，缓存实例
+        if (binding.isSingleton) {
+          _instances[serviceType] = instance;
+        }
+
+        return instance as T;
+      } catch (e) {
+        debugPrint('[ServiceRegistry] Error creating service $serviceType: $e');
+        return null;
+      }
+    }
+
+    return null;
+  }
 
   /// 清空所有注册
   ///

@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 
-import '../../plugins/builtin_plugins/ai/ai_integration_plugin.dart';
+import '../../plugins/builtin_plugins/ai/ai_plugin.dart';
 import '../../plugins/builtin_plugins/converter/converter_plugin.dart';
-import '../../plugins/builtin_plugins/data_recovery/data_recovery_plugin.dart';
+import '../../plugins/builtin_plugins/data_recovery/data_recovery.dart';
 import '../../plugins/builtin_plugins/delete/delete_plugin.dart';
 import '../../plugins/builtin_plugins/folder/folder_plugin.dart';
 import '../../plugins/builtin_plugins/graph/graph_plugin.dart';
+import '../../plugins/builtin_plugins/i18n/i18n_plugin.dart';
 import '../../plugins/builtin_plugins/layout/layout_plugin.dart';
 import '../../plugins/builtin_plugins/search/search_plugin.dart';
 import '../../plugins/builtin_plugins/sidebarNode/sidebar_plugin.dart';
@@ -47,12 +48,10 @@ class BuiltinPluginLoader {
   final List<UIHookFactory> _builtinUIHookFactories = [
     // 删除功能插件
     DeletePlugin.new,
-
-    // AI 集成插件
-    AIIntegrationPlugin.new,
-
     // 侧边栏插件
     SidebarPlugin.new,
+    // 国际化插件
+    I18nPlugin.new,
   ];
 
   /// 所有内置普通插件工厂
@@ -69,6 +68,8 @@ class BuiltinPluginLoader {
     ConverterPlugin.new,
     // 数据恢复插件
     DataRecoveryPlugin.new,
+    // AI 集成插件
+    AIIntegrationPlugin.new,
   ];
 
   /// 已加载的插件列表

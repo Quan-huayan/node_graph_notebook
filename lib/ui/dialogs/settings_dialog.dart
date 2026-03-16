@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
+import '../../core/services/i18n.dart';
 import '../../plugins/builtin_plugins/ai/ui/ai_config_dialog.dart';
 import '../../plugins/builtin_plugins/ai/ui/ai_test_dialog.dart';
 import '../bloc/ui_bloc.dart';
@@ -25,11 +26,12 @@ class _SettingsDialogState extends State<SettingsDialog> {
     final uiState = uiBloc.state;
     final settingsService = context.watch<SettingsService>();
     final theme = context.watch<ThemeService>().themeData;
+    final i18n = I18n.of(context);
 
     return AlertDialog(
       backgroundColor: theme.backgrounds.primary,
-      title: const Row(
-        children: [Icon(Icons.settings), SizedBox(width: 8), Text('Settings')],
+      title: Row(
+        children: [Icon(Icons.settings), SizedBox(width: 8), Text(i18n.t('Settings'))],
       ),
       content: SizedBox(
         width: 500,
@@ -37,14 +39,14 @@ class _SettingsDialogState extends State<SettingsDialog> {
           shrinkWrap: true,
           children: [
             // 存储设置部分
-            _buildSectionHeader('Storage Settings'),
+            _buildSectionHeader(i18n.t('Storage Settings')),
             ListTile(
               leading: const Icon(Icons.folder_outlined),
-              title: const Text('Storage Location'),
+              title: Text(i18n.t('Storage Location')),
               subtitle: Text(
                 settingsService.isUsingDefaultPath
-                    ? 'Default Location'
-                    : settingsService.customStoragePath ?? 'Default Location',
+                    ? i18n.t('Default Location')
+                    : settingsService.customStoragePath ?? i18n.t('Default Location'),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -58,15 +60,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   final usage = snapshot.data!;
                   return ListTile(
                     leading: const Icon(Icons.storage_outlined),
-                    title: const Text('Storage Usage'),
+                    title: Text(i18n.t('Storage Usage')),
                     subtitle: Text(
                       '${usage.formattedSize} • ${usage.nodesCount} nodes • ${usage.graphsCount} graphs',
                     ),
                   );
                 }
-                return const ListTile(
-                  leading: Icon(Icons.storage_outlined),
-                  title: Text('Storage Usage'),
+                return ListTile(
+                  leading: const Icon(Icons.storage_outlined),
+                  title: Text(i18n.t('Storage Usage')),
                   subtitle: Text('Calculating...'),
                 );
               },
@@ -75,10 +77,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
             const Divider(height: 32),
 
             // 主题设置部分
-            _buildSectionHeader('Theme Settings'),
+            _buildSectionHeader(i18n.t('Theme Settings')),
             ListTile(
               leading: const Icon(Icons.palette_outlined),
-              title: const Text('Color Theme'),
+              title: Text(i18n.t('Color Theme')),
               subtitle: Text(_getThemeModeLabel(settingsService.themeMode)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showThemeSelector(context, settingsService),
@@ -87,18 +89,18 @@ class _SettingsDialogState extends State<SettingsDialog> {
             const Divider(height: 32),
 
             // 视图设置部分
-            _buildSectionHeader('View Settings'),
+            _buildSectionHeader(i18n.t('View Settings')),
             SwitchListTile(
-              title: const Text('Show Connections'),
-              subtitle: const Text('Display connection lines between nodes'),
+              title: Text(i18n.t('Show Connections')),
+              subtitle: Text(i18n.t('Display connection lines between nodes')),
               value: uiState.showConnections,
               onChanged: (value) {
                 uiBloc.add(UISetConnectionsEvent(value));
               },
             ),
             SwitchListTile(
-              title: const Text('Show Sidebar'),
-              subtitle: const Text('Display the node list sidebar'),
+              title: Text(i18n.t('Show Sidebar')),
+              subtitle: Text(i18n.t('Display the node list sidebar')),
               value: uiState.isSidebarOpen,
               onChanged: (value) {
                 uiBloc.add(UISetSidebarEvent(value));
@@ -108,9 +110,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
             const Divider(height: 32),
 
             // 节点设置部分
-            _buildSectionHeader('Node Settings'),
+            _buildSectionHeader(i18n.t('Node Settings')),
             ListTile(
-              title: const Text('Default View Mode'),
+              title: Text(i18n.t('Default View Mode')),
               subtitle: Text(_getViewModeLabel(uiState.defaultViewMode)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showViewModeSelector(context),
@@ -119,10 +121,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
             const Divider(height: 32),
 
             // AI 配置部分
-            _buildSectionHeader('AI Configuration'),
+            _buildSectionHeader(i18n.t('AI Configuration')),
             ListTile(
               leading: const Icon(Icons.smart_toy_outlined),
-              title: const Text('AI Settings'),
+              title: Text(i18n.t('AI Settings')),
               subtitle: Text(
                 settingsService.isAIConfigured
                     ? '${settingsService.aiProvider} - ${settingsService.aiModel}'
@@ -134,8 +136,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
             if (settingsService.isAIConfigured)
               ListTile(
                 leading: const Icon(Icons.chat_bubble_outline),
-                title: const Text('Test AI Connection'),
-                subtitle: const Text('Chat with AI to test the configuration'),
+                title: Text(i18n.t('Test AI Connection')),
+                subtitle: Text(i18n.t('Chat with AI to test the configuration')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showAITestDialog(context),
               ),
@@ -143,19 +145,19 @@ class _SettingsDialogState extends State<SettingsDialog> {
             const Divider(height: 32),
 
             // 关于部分
-            _buildSectionHeader('About'),
+            _buildSectionHeader(i18n.t('About')),
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('Node Graph Notebook'),
-              subtitle: const Text('Version 0.1.0'),
+              subtitle: Text(i18n.t('Version 0.1.0')),
               onTap: () {
                 _showAboutDialog(context);
               },
             ),
             ListTile(
               leading: const Icon(Icons.description_outlined),
-              title: const Text('Documentation'),
-              subtitle: const Text('View project documentation'),
+              title: Text(i18n.t('Documentation')),
+              subtitle: Text(i18n.t('View project documentation')),
               onTap: () {
                 _showDocumentationDialog(context);
               },
@@ -166,7 +168,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(i18n.t('Close')),
         ),
       ],
     );
@@ -199,6 +201,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   void _showViewModeSelector(BuildContext context) {
     final uiBloc = context.read<UIBloc>();
     final currentMode = uiBloc.state.nodeViewMode;
+    final i18n = I18n.of(context);
 
     showDialog(
       context: context,
@@ -206,7 +209,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         final theme = ctx.read<ThemeService>().themeData;
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
-          title: const Text('Select Default View Mode'),
+          title: Text(i18n.t('Select Default View Mode')),
           content: RadioGroup<NodeViewMode>(
             groupValue: currentMode,
             onChanged: (value) {
@@ -226,7 +229,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(i18n.t('Cancel')),
             ),
           ],
         );
@@ -235,13 +238,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   void _showAboutDialog(BuildContext context) {
+    final i18n = I18n.of(context);
+
     showDialog(
       context: context,
       builder: (ctx) {
         final theme = ctx.read<ThemeService>().themeData;
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
-          title: const Text('About Node Graph Notebook'),
+          title: Text(i18n.t('About Node Graph Notebook')),
           content: const SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,7 +280,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
+              child: Text(i18n.t('Close')),
             ),
           ],
         );
@@ -284,13 +289,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   void _showDocumentationDialog(BuildContext context) {
+    final i18n = I18n.of(context);
+
     showDialog(
       context: context,
       builder: (ctx) {
         final theme = ctx.read<ThemeService>().themeData;
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
-          title: const Text('Documentation'),
+          title: Text(i18n.t('Documentation')),
           content: const SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +351,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
+              child: Text(i18n.t('Close')),
             ),
           ],
         );
@@ -356,6 +363,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
     BuildContext context,
     SettingsService settingsService,
   ) async {
+    final i18n = I18n.of(context);
     final currentPath = await settingsService.getStoragePath();
 
     showDialog(
@@ -364,7 +372,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         final theme = ctx.read<ThemeService>().themeData;
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
-          title: const Text('Storage Location'),
+          title: Text(i18n.t('Storage Location')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,18 +416,18 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       final theme = ctx.read<ThemeService>().themeData;
                       return AlertDialog(
                         backgroundColor: theme.backgrounds.primary,
-                        title: const Text('Reset to Default'),
-                        content: const Text(
+                        title: Text(i18n.t('Reset to Default')),
+                        content: Text(i18n.t(
                           'Reset to default storage location?',
-                        ),
+                        )),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
+                            child: Text(i18n.t('Cancel')),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Reset'),
+                            child: Text(i18n.t('Reset')),
                           ),
                         ],
                       );
@@ -439,7 +447,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                     );
                   }
                 },
-                child: const Text('Reset to Default'),
+                child: Text(i18n.t('Reset to Default')),
               ),
             ElevatedButton(
               onPressed: () async {
@@ -460,7 +468,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   );
                 }
               },
-              child: const Text('Choose New Location'),
+              child: Text(i18n.t('Choose New Location')),
             ),
           ],
         );
@@ -472,13 +480,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
     BuildContext context,
     SettingsService settingsService,
   ) {
+    final i18n = I18n.of(context);
+
     showDialog(
       context: context,
       builder: (ctx) {
         final theme = ctx.read<ThemeService>().themeData;
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
-          title: const Text('Select Theme'),
+          title: Text(i18n.t('Select Theme')),
           content: RadioGroup<ThemeMode>(
             groupValue: settingsService.themeMode,
             onChanged: (value) {
@@ -511,7 +521,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(i18n.t('Cancel')),
             ),
           ],
         );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/i18n.dart';
 
 /// 插件项组件
 class PluginItem extends StatelessWidget {
@@ -74,7 +75,7 @@ class PluginItem extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: onInstall,
-                  child: const Text('Install'),
+                  child: Text(I18n.of(context).t('Install')),
                 ),
               ],
             ),

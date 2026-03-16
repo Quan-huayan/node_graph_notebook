@@ -178,6 +178,7 @@ class PluginManager implements IPluginManager {
       taskRegistry: _taskRegistry,
       settingsRegistry: _settingsRegistry,
       themeRegistry: _themeRegistry,
+      serviceRegistry: _serviceRegistry,
     );
 
     // 创建生命周期管理器

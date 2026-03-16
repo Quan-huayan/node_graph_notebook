@@ -13,6 +13,7 @@ import 'api/api_registry.dart';
 import 'dependency_container.dart';
 import 'plugin_communication.dart';
 import 'plugin_exception.dart';
+import 'service_registry.dart';
 
 /// 插件上下文
 ///
@@ -49,6 +50,7 @@ class PluginContext {
     this.taskRegistry,
     this.settingsRegistry,
     this.themeRegistry,
+    this.serviceRegistry,
     Map<String, dynamic>? config,
   }) : _config = config ?? {} {
     // 注册默认依赖
@@ -93,6 +95,9 @@ class PluginContext {
 
   /// 插件通信接口
   final PluginCommunication? communication;
+
+  /// Service 注册表（用于获取插件提供的 Service）
+  final ServiceRegistry? serviceRegistry;
 
   /// 插件配置（只读）
   final Map<String, dynamic> _config;
@@ -183,11 +188,24 @@ class PluginContext {
   /// final nodes = await nodeRepo.queryAll();
   /// ```
   T read<T>() {
+    // 1. 首先尝试从 dependencyContainer 获取
     if (dependencyContainer != null && dependencyContainer!.contains<T>()) {
       return dependencyContainer!.get<T>();
     }
 
-    // 向后兼容
+    // 2. 尝试从 ServiceRegistry 获取服务
+    if (serviceRegistry != null && serviceRegistry!.isRegistered<T>()) {
+      try {
+        final service = serviceRegistry!.getService<T>();
+        if (service != null) {
+          return service;
+        }
+      } catch (e) {
+        debugPrint('[PluginContext] Failed to get service $T from ServiceRegistry: $e');
+      }
+    }
+
+    // 3. 向后兼容：直接访问 Repository
     if (T == NodeRepository) {
       if (nodeRepository == null) {
         throw PluginStateException(
@@ -208,6 +226,19 @@ class PluginContext {
       }
       return graphRepository as T;
     }
+
+    // 4. 特殊处理：CommandBus 和 EventBus
+    if (T == CommandBus) {
+      return commandBus as T;
+    }
+    if (T == AppEventBus) {
+      if (eventBus == null) {
+        throw PluginStateException('plugin', 'uninitialized', 'AppEventBus available');
+      }
+      return eventBus as T;
+    }
+
+    // 5. 如果都找不到，抛出异常
     throw PluginConfigurationException('unknown', 'Unknown service type: $T');
   }
 
@@ -220,13 +251,20 @@ class PluginContext {
   /// }
   /// ```
   bool hasDependency<T>() {
+    // 1. 检查 dependencyContainer
     if (dependencyContainer != null && dependencyContainer!.contains<T>()) {
       return true;
     }
 
-    // 向后兼容
+    // 2. 检查 ServiceRegistry
+    if (serviceRegistry != null && serviceRegistry!.isRegistered<T>()) {
+      return true;
+    }
+
+    // 3. 向后兼容：直接检查 Repository
     if (T == NodeRepository) return nodeRepository != null;
     if (T == GraphRepository) return graphRepository != null;
+
     return false;
   }
 

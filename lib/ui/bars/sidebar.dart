@@ -10,6 +10,7 @@ import '../../plugins/builtin_plugins/graph/bloc/graph_event.dart';
 import '../../plugins/builtin_plugins/graph/bloc/node_bloc.dart';
 import '../../plugins/builtin_plugins/graph/bloc/node_event.dart';
 import '../../plugins/builtin_plugins/search/ui/search_sidebar_panel.dart';
+import '../../core/services/i18n.dart';
 
 /// 侧边栏
 class Sidebar extends StatefulWidget {
@@ -60,23 +61,24 @@ class _SidebarState extends State<Sidebar> {
       (n) => n.id == _selectedNodeId,
       orElse: () => nodeState.nodes.first,
     );
+    final i18n = I18n.of(context);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-          title: const Text('Delete Node'),
+          title: Text(i18n.t('Delete')),
           content: Text('Are you sure you want to delete "${node.title}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Cancel'),
+              child: Text(i18n.t('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Delete'),
+              child: Text(i18n.t('Delete')),
             ),
           ],
-        ),
+        )
     );
 
     if ((confirmed ?? false) && mounted) {
@@ -292,17 +294,16 @@ class _SidebarState extends State<Sidebar> {
   }
 
   /// 构建默认内容（当没有插件时）
-  Widget _buildDefaultContent(
-    BuildContext context,
-    List<Node> nodes,
-    List<Node> folders,
-  ) => Center(
+  Widget _buildDefaultContent(BuildContext context, List<Node> nodes, List<Node> folders) {
+    final i18n = I18n.of(context);
+
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.folder_open, size: 48, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text('No folder plugin loaded'),
+          Text(i18n.t('No folder plugin loaded')),
           const SizedBox(height: 8),
           Text(
             '${nodes.length} nodes, ${folders.length} folders',
@@ -311,4 +312,5 @@ class _SidebarState extends State<Sidebar> {
         ],
       ),
     );
+  }
 }
