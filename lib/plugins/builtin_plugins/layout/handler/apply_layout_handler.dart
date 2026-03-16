@@ -1,24 +1,24 @@
-import '../../../../core/commands/command_handler.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command.dart';
-import '../command/layout_commands.dart';
 import '../../../../core/commands/command_bus.dart';
-import '../../graph/service/graph_service.dart';
-import '../../../../core/repositories/graph_repository.dart';
-import '../../../../core/repositories/node_repository.dart';
-import '../event/layout_events.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../core/repositories/node_repository.dart';
+import '../../graph/service/graph_service.dart';
+import '../command/layout_commands.dart';
+import '../event/layout_events.dart';
 import '../service/layout_service.dart';
 
 /// 应用布局命令处理器
 ///
 /// 负责执行布局算法并更新节点位置
 class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
-  ApplyLayoutHandler(
-    this._graphService,
-    this._layoutService,
-    this._commandBus,
-  );
+  /// 构造函数
+  ///
+  /// [_graphService] - 图形服务
+  /// [_layoutService] - 布局服务
+  /// [_commandBus] - 命令总线
+  ApplyLayoutHandler(this._graphService, this._layoutService, this._commandBus);
 
   final GraphService _graphService;
   final LayoutService _layoutService;
@@ -30,8 +30,9 @@ class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
     CommandContext context,
   ) async {
     try {
-      final graphRepo = context.read<GraphRepository>();
-      final nodeRepo = context.read<NodeRepository>();
+      // 使用便捷访问器获取仓库
+      final graphRepo = context.graphRepository;
+      final nodeRepo = context.nodeRepository;
 
       // 获取当前图或指定的图
       final graphId = command.graphId ?? (await graphRepo.getCurrent())?.id;
@@ -46,7 +47,9 @@ class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
       }
 
       final nodes = await nodeRepo.queryAll();
-      final graphNodes = nodes.where((n) => graph.nodeIds.contains(n.id)).toList();
+      final graphNodes = nodes
+          .where((n) => graph.nodeIds.contains(n.id))
+          .toList();
 
       if (graphNodes.isEmpty) {
         return CommandResult.success({});
@@ -55,7 +58,9 @@ class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
       // 将布局类型转换为 LayoutAlgorithm 枚举
       final algorithm = _mapLayoutType(command.layoutType);
       if (algorithm == null) {
-        return CommandResult.failure('Unknown layout type: ${command.layoutType}');
+        return CommandResult.failure(
+          'Unknown layout type: ${command.layoutType}',
+        );
       }
 
       // 应用布局算法
@@ -66,17 +71,17 @@ class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
 
       // 批量移动节点到新位置
       if (positions.isNotEmpty) {
-        await _commandBus.dispatch(
-          BatchMoveNodesCommand(positions: positions),
-        );
+        await _commandBus.dispatch(BatchMoveNodesCommand(positions: positions));
       }
 
       // 发布布局应用事件
-      context.eventBus.publish(LayoutAppliedEvent(
-        graphId: graphId,
-        layoutType: command.layoutType,
-        nodeCount: positions.length,
-      ));
+      context.eventBus.publish(
+        LayoutAppliedEvent(
+          graphId: graphId,
+          layoutType: command.layoutType,
+          nodeCount: positions.length,
+        ),
+      );
 
       return CommandResult.success(positions);
     } catch (e) {
@@ -108,6 +113,9 @@ class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
 ///
 /// 用于布局算法批量更新节点位置
 class BatchMoveNodesHandler implements CommandHandler<BatchMoveNodesCommand> {
+  /// 构造函数
+  ///
+  /// [_nodeRepository] - 节点仓库
   BatchMoveNodesHandler(this._nodeRepository);
 
   final NodeRepository _nodeRepository;
@@ -129,16 +137,14 @@ class BatchMoveNodesHandler implements CommandHandler<BatchMoveNodesCommand> {
           command.oldPositions[entry.key] = node.position;
 
           // 更新位置
-          await _nodeRepository.save(node.copyWith(
-            position: entry.value,
-          ));
+          await _nodeRepository.save(node.copyWith(position: entry.value));
         }
       }
 
       // 发布节点位置变化事件
-      context.eventBus.publish(NodePositionsChangedEvent(
-        nodeIds: command.positions.keys.toList(),
-      ));
+      context.eventBus.publish(
+        NodePositionsChangedEvent(nodeIds: command.positions.keys.toList()),
+      );
 
       return CommandResult.success(null);
     } catch (e) {

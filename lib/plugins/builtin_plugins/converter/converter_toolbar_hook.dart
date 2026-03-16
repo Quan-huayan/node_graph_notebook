@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/plugin/plugin.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
+import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import 'ui/import_export_page.dart';
 
 /// 导入导出工具栏钩子
@@ -21,21 +22,19 @@ class ConverterToolbarHook extends MainToolbarHook {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'converter_toolbar_hook',
-        name: 'Converter Toolbar Hook',
-        version: '1.0.0',
-        description: 'Provides import/export button in toolbar',
-        author: 'Node Graph Notebook',
-      );
+    id: 'converter_toolbar_hook',
+    name: 'Converter Toolbar Hook',
+    version: '1.0.0',
+    description: 'Provides import/export button in toolbar',
+    author: 'Node Graph Notebook',
+  );
 
   @override
-  Widget renderToolbar(MainToolbarHookContext context) {
-    return IconButton(
+  Widget renderToolbar(MainToolbarHookContext context) => IconButton(
       icon: const Icon(Icons.import_export),
       onPressed: () => _openImportExportPage(context),
       tooltip: 'Import & Export',
     );
-  }
 
   void _openImportExportPage(MainToolbarHookContext context) {
     final buildContext = context.data['buildContext'] as BuildContext?;

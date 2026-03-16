@@ -1,17 +1,19 @@
-import '../../../../core/commands/command_handler.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command.dart';
-import '../command/ai_commands.dart';
-import '../../graph/service/node_service.dart';
-import '../../../../core/repositories/node_repository.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/events/app_events.dart';
 import '../../../../core/models/connection.dart';
+import '../../graph/service/node_service.dart';
+import '../command/ai_commands.dart';
 import '../service/ai_service.dart';
 
 /// 分析节点命令处理器
 ///
 /// 调用 AI Service 分析节点内容
 class AnalyzeNodeHandler implements CommandHandler<AnalyzeNodeCommand> {
+  /// 创建分析节点命令处理器
+  ///
+  /// [aiService] - AI 服务实例
   AnalyzeNodeHandler(this._aiService);
 
   final AIService _aiService;
@@ -26,12 +28,14 @@ class AnalyzeNodeHandler implements CommandHandler<AnalyzeNodeCommand> {
       final analysis = await _aiService.analyzeNode(command.node);
 
       // 发布分析完成事件
-      context.eventBus.publish(NodeAnalyzedEvent(
-        nodeId: command.node.id,
-        summary: analysis.summary,
-        keywords: analysis.keywords,
-        topics: analysis.topics,
-      ));
+      context.eventBus.publish(
+        NodeAnalyzedEvent(
+          nodeId: command.node.id,
+          summary: analysis.summary,
+          keywords: analysis.keywords,
+          topics: analysis.topics,
+        ),
+      );
 
       return CommandResult.success(analysis);
     } catch (e) {
@@ -43,7 +47,11 @@ class AnalyzeNodeHandler implements CommandHandler<AnalyzeNodeCommand> {
 /// 建议连接命令处理器
 ///
 /// 调用 AI Service 分析节点关系并推荐连接
-class SuggestConnectionsHandler implements CommandHandler<SuggestConnectionsCommand> {
+class SuggestConnectionsHandler
+    implements CommandHandler<SuggestConnectionsCommand> {
+  /// 创建建议连接命令处理器
+  ///
+  /// [aiService] - AI 服务实例
   SuggestConnectionsHandler(this._aiService);
 
   final AIService _aiService;
@@ -71,9 +79,9 @@ class SuggestConnectionsHandler implements CommandHandler<SuggestConnectionsComm
           .toList();
 
       // 发布建议事件
-      context.eventBus.publish(ConnectionsSuggestedEvent(
-        suggestions: filteredSuggestions,
-      ));
+      context.eventBus.publish(
+        ConnectionsSuggestedEvent(suggestions: filteredSuggestions),
+      );
 
       return CommandResult.success(filteredSuggestions);
     } catch (e) {
@@ -85,11 +93,14 @@ class SuggestConnectionsHandler implements CommandHandler<SuggestConnectionsComm
 /// 生成图摘要命令处理器
 ///
 /// 调用 AI Service 生成图的摘要
-class GenerateGraphSummaryHandler implements CommandHandler<GenerateGraphSummaryCommand> {
-  GenerateGraphSummaryHandler(this._aiService, this._nodeRepository);
+class GenerateGraphSummaryHandler
+    implements CommandHandler<GenerateGraphSummaryCommand> {
+  /// 创建生成图摘要命令处理器
+  ///
+  /// [aiService] - AI 服务实例
+  GenerateGraphSummaryHandler(this._aiService);
 
   final AIService _aiService;
-  final NodeRepository _nodeRepository;
 
   @override
   Future<CommandResult> execute(
@@ -102,8 +113,8 @@ class GenerateGraphSummaryHandler implements CommandHandler<GenerateGraphSummary
         return CommandResult.failure('AI service is not available');
       }
 
-      // 获取所有节点
-      final nodes = await _nodeRepository.queryAll();
+      // 使用便捷访问器获取仓库
+      final nodes = await context.nodeRepository.queryAll();
 
       // TODO: 获取连接（需要从 Graph 或通过 Node.references 计算）
       final connections = <Connection>[];
@@ -112,9 +123,7 @@ class GenerateGraphSummaryHandler implements CommandHandler<GenerateGraphSummary
       final summary = await _aiService.generateGraphSummary(nodes, connections);
 
       // 发布摘要生成事件
-      context.eventBus.publish(GraphSummaryGeneratedEvent(
-        summary: summary,
-      ));
+      context.eventBus.publish(GraphSummaryGeneratedEvent(summary: summary));
 
       return CommandResult.success(summary);
     } catch (e) {
@@ -127,6 +136,10 @@ class GenerateGraphSummaryHandler implements CommandHandler<GenerateGraphSummary
 ///
 /// 调用 AI Service 生成新节点内容
 class GenerateNodeHandler implements CommandHandler<GenerateNodeCommand> {
+  /// 创建生成节点命令处理器
+  ///
+  /// [aiService] - AI 服务实例
+  /// [nodeService] - 节点服务实例
   GenerateNodeHandler(this._aiService, this._nodeService);
 
   final AIService _aiService;
@@ -158,10 +171,9 @@ class GenerateNodeHandler implements CommandHandler<GenerateNodeCommand> {
       );
 
       // 发布节点创建事件
-      context.eventBus.publish(NodeGeneratedEvent(
-        nodeId: savedNode.id,
-        prompt: command.prompt,
-      ));
+      context.eventBus.publish(
+        NodeGeneratedEvent(nodeId: savedNode.id, prompt: command.prompt),
+      );
 
       return CommandResult.success(savedNode);
     } catch (e) {
@@ -172,6 +184,12 @@ class GenerateNodeHandler implements CommandHandler<GenerateNodeCommand> {
 
 /// 节点分析完成事件
 class NodeAnalyzedEvent extends AppEvent {
+  /// 创建节点分析完成事件
+  ///
+  /// [nodeId] - 节点 ID
+  /// [summary] - 分析摘要
+  /// [keywords] - 提取的关键词列表
+  /// [topics] - 提取的主题列表
   const NodeAnalyzedEvent({
     required this.nodeId,
     required this.summary,
@@ -179,33 +197,43 @@ class NodeAnalyzedEvent extends AppEvent {
     required this.topics,
   });
 
+  /// 节点 ID
   final String nodeId;
+  /// 分析摘要
   final String summary;
+  /// 提取的关键词列表
   final List<String> keywords;
+  /// 提取的主题列表
   final List<String> topics;
 
   @override
-  String toString() => 'NodeAnalyzedEvent(nodeId: $nodeId, topics: ${topics.length})';
+  String toString() =>
+      'NodeAnalyzedEvent(nodeId: $nodeId, topics: ${topics.length})';
 }
 
 /// 连接建议事件
 class ConnectionsSuggestedEvent extends AppEvent {
-  const ConnectionsSuggestedEvent({
-    required this.suggestions,
-  });
+  /// 创建连接建议事件
+  ///
+  /// [suggestions] - 连接建议列表
+  const ConnectionsSuggestedEvent({required this.suggestions});
 
+  /// 连接建议列表
   final List<ConnectionSuggestion> suggestions;
 
   @override
-  String toString() => 'ConnectionsSuggestedEvent(${suggestions.length} suggestions)';
+  String toString() =>
+      'ConnectionsSuggestedEvent(${suggestions.length} suggestions)';
 }
 
 /// 图摘要生成完成事件
 class GraphSummaryGeneratedEvent extends AppEvent {
-  const GraphSummaryGeneratedEvent({
-    required this.summary,
-  });
+  /// 创建图摘要生成完成事件
+  ///
+  /// [summary] - 生成的图摘要
+  const GraphSummaryGeneratedEvent({required this.summary});
 
+  /// 生成的图摘要
   final GraphSummary summary;
 
   @override
@@ -214,12 +242,15 @@ class GraphSummaryGeneratedEvent extends AppEvent {
 
 /// 节点生成完成事件
 class NodeGeneratedEvent extends AppEvent {
-  const NodeGeneratedEvent({
-    required this.nodeId,
-    required this.prompt,
-  });
+  /// 创建节点生成完成事件
+  ///
+  /// [nodeId] - 生成的节点 ID
+  /// [prompt] - 生成提示词
+  const NodeGeneratedEvent({required this.nodeId, required this.prompt});
 
+  /// 生成的节点 ID
   final String nodeId;
+  /// 生成提示词
   final String prompt;
 
   @override

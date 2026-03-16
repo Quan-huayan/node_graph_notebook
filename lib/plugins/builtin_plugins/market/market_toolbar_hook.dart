@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/plugin/plugin.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
+import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../../../ui/pages/plugin_market_page.dart';
 
 /// 插件市场工具栏钩子
@@ -21,21 +22,19 @@ class MarketToolbarHook extends MainToolbarHook {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'market_toolbar_hook',
-        name: 'Market Toolbar Hook',
-        version: '1.0.0',
-        description: 'Provides plugin market button in toolbar',
-        author: 'Node Graph Notebook',
-      );
+    id: 'market_toolbar_hook',
+    name: 'Market Toolbar Hook',
+    version: '1.0.0',
+    description: 'Provides plugin market button in toolbar',
+    author: 'Node Graph Notebook',
+  );
 
   @override
-  Widget renderToolbar(MainToolbarHookContext context) {
-    return IconButton(
+  Widget renderToolbar(MainToolbarHookContext context) => IconButton(
       icon: const Icon(Icons.extension),
       onPressed: () => _openPluginMarket(context),
       tooltip: 'Plugin Market',
     );
-  }
 
   void _openPluginMarket(MainToolbarHookContext context) {
     final buildContext = context.data['buildContext'] as BuildContext?;

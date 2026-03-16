@@ -3,6 +3,9 @@ import 'ui_hook.dart';
 
 /// Hook 注册表
 class HookRegistry {
+  /// 创建一个新的 Hook 注册表实例。
+  HookRegistry();
+
   /// Hook 映射
   ///
   /// Key: Hook 点 ID
@@ -17,7 +20,7 @@ class HookRegistry {
     if (!_hooks.containsKey(hookPointId)) {
       _hooks[hookPointId] = [];
     }
-    
+
     _hooks[hookPointId]!.add(hook);
     _hooks[hookPointId]!.sort((a, b) => a.priority.compareTo(b.priority));
   }
@@ -37,9 +40,7 @@ class HookRegistry {
   /// [hookPointId] Hook 点 ID
   ///
   /// 返回按优先级排序的 Hook 列表
-  List<UIHook> getHooks(HookPointId hookPointId) {
-    return _hooks[hookPointId]?.where((hook) => hook.isEnabled).toList() ?? [];
-  }
+  List<UIHook> getHooks(HookPointId hookPointId) => _hooks[hookPointId]?.where((hook) => hook.isEnabled).toList() ?? [];
 
   /// 获取指定 Hook 点的第一个 Hook
   ///
@@ -54,9 +55,7 @@ class HookRegistry {
   /// 检查指定 Hook 点是否有 Hook
   ///
   /// [hookPointId] Hook 点 ID
-  bool hasHooks(HookPointId hookPointId) {
-    return getHooks(hookPointId).isNotEmpty;
-  }
+  bool hasHooks(HookPointId hookPointId) => getHooks(hookPointId).isNotEmpty;
 
   /// 清空所有 Hook
   void clear() {
@@ -64,14 +63,10 @@ class HookRegistry {
   }
 
   /// 获取所有注册的 Hook 点
-  Set<HookPointId> get registeredHookPoints {
-    return _hooks.keys.toSet();
-  }
+  Set<HookPointId> get registeredHookPoints => _hooks.keys.toSet();
 
   /// 获取 Hook 总数
-  int get totalHooks {
-    return _hooks.values.fold(0, (sum, hooks) => sum + hooks.length);
-  }
+  int get totalHooks => _hooks.values.fold(0, (sum, hooks) => sum + hooks.length);
 }
 
 /// 全局 Hook 注册表实例

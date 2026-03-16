@@ -1,7 +1,9 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../ai/service/ai_service.dart';
@@ -24,10 +26,12 @@ class _HeadingNode {
 
 /// 转换服务实现
 class ConverterServiceImpl implements ConverterService {
-  ConverterServiceImpl(
-    this._nodeRepository, [
-    AIService? aiService,
-  ]) : _aiService = aiService;
+  /// 创建转换服务实现
+  /// 
+  /// [_nodeRepository] - 节点仓库，用于数据持久化
+  /// [aiService] - AI 服务，用于智能拆分，可选
+  ConverterServiceImpl(this._nodeRepository, [AIService? aiService])
+    : _aiService = aiService;
 
   final NodeRepository _nodeRepository;
   final AIService? _aiService;
@@ -110,11 +114,7 @@ class ConverterServiceImpl implements ConverterService {
     final markdown = await file.readAsString();
     final filename = filePath.split(RegExp(r'[/\\]')).last;
 
-    return markdownToNodes(
-      markdown: markdown,
-      rule: rule,
-      filename: filename,
-    );
+    return markdownToNodes(markdown: markdown, rule: rule, filename: filename);
   }
 
   @override
@@ -123,10 +123,7 @@ class ConverterServiceImpl implements ConverterService {
     required String filePath,
     required MergeRule rule,
   }) async {
-    final markdown = await nodesToMarkdown(
-      nodes: nodes,
-      rule: rule,
-    );
+    final markdown = await nodesToMarkdown(nodes: nodes, rule: rule);
 
     final file = File(filePath);
     await file.writeAsString(markdown);
@@ -139,8 +136,8 @@ class ConverterServiceImpl implements ConverterService {
     required ConversionConfig config,
     Function(int, int)? onProgress,
   }) async {
-    int successCount = 0;
-    int failureCount = 0;
+    var successCount = 0;
+    var failureCount = 0;
     final errors = <String>[];
     final createdNodeIds = <String>[];
     final startTime = DateTime.now();
@@ -160,7 +157,7 @@ class ConverterServiceImpl implements ConverterService {
     final files = await _listMarkdownFiles(inputDir);
     final totalFiles = files.length;
 
-    for (int i = 0; i < files.length; i++) {
+    for (var i = 0; i < files.length; i++) {
       try {
         final nodes = await fileToNodes(
           filePath: files[i].path,
@@ -192,9 +189,7 @@ class ConverterServiceImpl implements ConverterService {
   }
 
   @override
-  Future<List<Node>> smartSplit({
-    required String markdown,
-  }) async {
+  Future<List<Node>> smartSplit({required String markdown}) async {
     if (_aiService == null) {
       // 如果没有 AI 服务，使用简单的按标题拆分
       return _splitByHeading(markdown, const HeadingSplitRule(level: 2));
@@ -202,7 +197,8 @@ class ConverterServiceImpl implements ConverterService {
 
     try {
       // 使用 AI 分析文档结构并返回拆分建议
-      final prompt = '''请分析以下 Markdown 文档，将其智能拆分成多个主题节点。
+      final prompt ='''
+请分析以下 Markdown 文档，将其智能拆分成多个主题节点。
 
 要求：
 1. 每个节点应该是一个独立的主题
@@ -221,16 +217,17 @@ $markdown
   ]
 }''';
 
-      final response = await _aiService.generateNode(
-        prompt: prompt,
-      );
+      final response = await _aiService.generateNode(prompt: prompt);
 
       // 解析 AI 响应
       final nodes = <Node>[];
       final content = response.content ?? '';
 
       // 尝试从响应中提取 JSON
-      final jsonMatch = RegExp(r'\{[\s\S]*\}', multiLine: true).firstMatch(content);
+      final jsonMatch = RegExp(
+        r'\{[\s\S]*\}',
+        multiLine: true,
+      ).firstMatch(content);
       if (jsonMatch != null) {
         try {
           final jsonStr = jsonMatch.group(0)!;
@@ -240,11 +237,13 @@ $markdown
           if (nodesList != null) {
             for (final nodeData in nodesList) {
               final nodeMap = nodeData as Map<String, dynamic>;
-              nodes.add(_createNode(
-                nodeMap['title'] as String? ?? 'Untitled',
-                nodeMap['content'] as String? ?? '',
-                false,
-              ));
+              nodes.add(
+                _createNode(
+                  nodeMap['title'] as String? ?? 'Untitled',
+                  nodeMap['content'] as String? ?? '',
+                  false,
+                ),
+              );
             }
           }
         } catch (e) {
@@ -287,7 +286,9 @@ $markdown
 
     for (final node in nodes) {
       if (!connectedIds.contains(node.id)) {
-        suggestions.add('Node "${node.title}" is not connected to any other node');
+        suggestions.add(
+          'Node "${node.title}" is not connected to any other node',
+        );
       }
     }
 
@@ -298,7 +299,12 @@ $markdown
     );
   }
 
-  /// 按标题拆分
+  /// 按标题拆分Markdown文档
+  /// 
+  /// [markdown] - 要拆分的Markdown内容
+  /// [rule] - 标题拆分规则
+  /// 
+  /// 返回拆分后的节点列表
   List<Node> _splitByHeading(String markdown, HeadingSplitRule rule) {
     final lines = markdown.split('\n');
 
@@ -358,6 +364,9 @@ $markdown
   }
 
   /// 将标题树转换为节点列表，建立引用关系
+  /// 
+  /// [headingNodes] - 标题节点列表
+  /// 
   /// 返回所有节点（包括父节点和所有子节点），父节点通过 references 引用子节点
   List<Node> _convertHeadingTreeToNodes(List<_HeadingNode> headingNodes) {
     debugPrint('=== _convertHeadingTreeToNodes ===');
@@ -370,15 +379,18 @@ $markdown
       final node = nodeAndChildren['node'] as Node;
       final children = nodeAndChildren['children'] as List<Node>;
 
-      debugPrint('Top node: ${node.title}, refs: ${node.references.length}, children: ${children.length}');
+      debugPrint(
+        'Top node: ${node.title}, refs: ${node.references.length}, children: ${children.length}',
+      );
 
       // 添加父节点
-      result.add(node);
-
+      result..add(node)
       // 添加所有子节点（包括后代节点）
-      result.addAll(children);
+      ..addAll(children);
 
-      debugPrint('  Added top-level node + ${children.length} children, total now: ${result.length}');
+      debugPrint(
+        '  Added top-level node + ${children.length} children, total now: ${result.length}',
+      );
     }
 
     debugPrint('Output: ${result.length} nodes total (all nodes)');
@@ -392,6 +404,9 @@ $markdown
   }
 
   /// 递归创建节点及其子节点
+  /// 
+  /// [heading] - 标题节点
+  /// 
   /// 返回 Map 包含 'node' (当前节点) 和 'children' (所有后代节点列表)
   Map<String, dynamic> _createNodeFromHeading(_HeadingNode heading) {
     // 创建当前节点（不包含引用）
@@ -404,7 +419,7 @@ $markdown
     final allChildren = <Node>[];
 
     // 递归处理所有子节点，并创建引用
-    Node currentNode = node;
+    var currentNode = node;
     for (final child in heading.children) {
       final childResult = _createNodeFromHeading(child);
       final childNode = childResult['node'] as Node;
@@ -413,21 +428,22 @@ $markdown
       // 使用 addReference 方法创建 contains 类型的引用（父节点包含子节点）
       currentNode = currentNode.addReference(
         childNode.id,
-        NodeReference(
-          nodeId: childNode.id,
-          properties: {},
-        ),
+        NodeReference(nodeId: childNode.id, properties: {}),
       );
 
       // 调试输出
-      debugPrint('Created reference: ${currentNode.title} -> ${childNode.title} (${currentNode.references.length} refs)');
+      debugPrint(
+        'Created reference: ${currentNode.title} -> ${childNode.title} (${currentNode.references.length} refs)',
+      );
 
       // 收集所有后代节点
-      allChildren.add(childNode);
-      allChildren.addAll(childDescendants);
+      allChildren..add(childNode)
+      ..addAll(childDescendants);
     }
 
-    debugPrint('Node ${currentNode.title} has ${currentNode.references.length} references');
+    debugPrint(
+      'Node ${currentNode.title} has ${currentNode.references.length} references',
+    );
 
     return {
       'node': currentNode, // 使用包含所有引用的节点
@@ -435,49 +451,62 @@ $markdown
     };
   }
 
-  /// 按分隔符拆分
+  /// 按分隔符拆分Markdown文档
+  /// 
+  /// [markdown] - 要拆分的Markdown内容
+  /// [rule] - 分隔符拆分规则
+  /// 
+  /// 返回拆分后的节点列表
   List<Node> _splitBySeparator(String markdown, SeparatorSplitRule rule) {
     final nodes = <Node>[];
     final parts = markdown.split(RegExp(rule.pattern));
 
-    for (int i = 0; i < parts.length; i++) {
+    for (var i = 0; i < parts.length; i++) {
       final content = parts[i].trim();
       if (content.isNotEmpty) {
         // 从第一行提取标题
         final lines = content.split('\n');
         final title = lines.first.replaceAll(RegExp(r'^#+\s+'), '').trim();
 
-        nodes.add(_createNode(
-          title.isEmpty ? 'Section ${i + 1}' : title,
-          content,
-          false,
-        ));
+        nodes.add(
+          _createNode(
+            title.isEmpty ? 'Section ${i + 1}' : title,
+            content,
+            false,
+          ),
+        );
       }
     }
 
     return nodes;
   }
 
-  /// 按自定义正则拆分
+  /// 按自定义正则表达式拆分Markdown文档
+  /// 
+  /// [markdown] - 要拆分的Markdown内容
+  /// [rule] - 自定义正则拆分规则
+  /// 
+  /// 返回拆分后的节点列表
   List<Node> _splitByCustomRegex(String markdown, CustomRegexRule rule) {
     final nodes = <Node>[];
     final parts = markdown.split(RegExp(rule.pattern));
 
-    for (int i = 0; i < parts.length; i++) {
+    for (var i = 0; i < parts.length; i++) {
       final content = parts[i].trim();
       if (content.isNotEmpty) {
-        nodes.add(_createNode(
-          'Section ${i + 1}',
-          content,
-          false,
-        ));
+        nodes.add(_createNode('Section ${i + 1}', content, false));
       }
     }
 
     return nodes;
   }
 
-  /// 层级合并
+  /// 按层级合并节点为Markdown文档
+  /// 
+  /// [nodes] - 要合并的节点列表
+  /// [rule] - 层级合并规则
+  /// 
+  /// 返回合并后的Markdown内容
   String _mergeHierarchy(List<Node> nodes, HierarchyMergeRule rule) {
     final buffer = StringBuffer();
 
@@ -499,17 +528,22 @@ $markdown
       } else {
         buffer.writeln(node.title);
       }
-      buffer.writeln();
-      buffer.writeln(node.content ?? '');
-      buffer.writeln();
-      buffer.writeln(rule.separator);
-      buffer.writeln();
+      buffer..writeln()
+      ..writeln(node.content ?? '')
+      ..writeln()
+      ..writeln(rule.separator)
+      ..writeln();
     }
 
     return buffer.toString();
   }
 
-  /// 顺序合并
+  /// 按顺序合并节点为Markdown文档
+  /// 
+  /// [nodes] - 要合并的节点列表
+  /// [rule] - 顺序合并规则
+  /// 
+  /// 返回合并后的Markdown内容
   String _mergeSequence(List<Node> nodes, SequenceMergeRule rule) {
     final buffer = StringBuffer();
 
@@ -525,27 +559,32 @@ $markdown
 
     // 合并
     for (final node in sortedNodes) {
-      buffer.writeln('# ${node.title}');
-      buffer.writeln();
+      buffer..writeln('# ${node.title}')
+      ..writeln();
 
       if (rule.addMetadata) {
-        buffer.writeln('*Created: ${node.createdAt}*');
-        buffer.writeln('*Updated: ${node.updatedAt}*');
-        buffer.writeln();
+        buffer..writeln('*Created: ${node.createdAt}*')
+        ..writeln('*Updated: ${node.updatedAt}*')
+        ..writeln();
       }
 
-      buffer.writeln(node.content ?? '');
-      buffer.writeln();
-      buffer.writeln(rule.separator);
-      buffer.writeln();
+      buffer..writeln(node.content ?? '')
+      ..writeln()
+      ..writeln(rule.separator)
+      ..writeln();
     }
 
     return buffer.toString();
   }
 
-  /// 自定义合并
+  /// 按自定义模板合并节点为Markdown文档
+  /// 
+  /// [nodes] - 要合并的节点列表
+  /// [rule] - 自定义合并规则
+  /// 
+  /// 返回合并后的Markdown内容
   String _mergeCustom(List<Node> nodes, CustomMergeRule rule) {
-    String result = rule.template;
+    var result = rule.template;
 
     for (final node in nodes) {
       result = result.replaceAll('{title}', node.title);
@@ -566,7 +605,9 @@ $markdown
     return result;
   }
 
-  /// 提取连接
+  /// 从节点内容中提取连接关系
+  /// 
+  /// [nodes] - 节点列表
   void _extractConnections(List<Node> nodes) {
     final titleToId = <String, String>{};
     for (final node in nodes) {
@@ -582,16 +623,16 @@ $markdown
         if (targetId != null && targetId != node.id) {
           node.references[targetId] = NodeReference(
             nodeId: targetId,
-            properties: {
-              'role': 'wiki_link',
-            },
+            properties: {'role': 'wiki_link'},
           );
         }
       }
     }
   }
 
-  /// 提取标签
+  /// 从节点内容中提取标签
+  /// 
+  /// [nodes] - 节点列表
   void _extractTags(List<Node> nodes) {
     for (final node in nodes) {
       final content = node.content ?? '';
@@ -603,7 +644,9 @@ $markdown
     }
   }
 
-  /// 解析 Frontmatter
+  /// 解析节点内容中的YAML Frontmatter
+  /// 
+  /// [nodes] - 节点列表
   void _parseFrontmatter(List<Node> nodes) {
     for (final node in nodes) {
       final content = node.content ?? '';
@@ -625,12 +668,16 @@ $markdown
   }
 
   /// 简单的 YAML frontmatter 解析器
+  /// 
+  /// [yaml] - YAML内容
+  /// 
+  /// 返回解析后的元数据映射
   Map<String, dynamic> _parseYamlFrontmatter(String yaml) {
     final metadata = <String, dynamic>{};
     final lines = yaml.split('\n');
 
     String? currentKey;
-    List<String> listValues = [];
+    var listValues = <String>[];
 
     for (final line in lines) {
       final trimmed = line.trim();
@@ -671,6 +718,10 @@ $markdown
   }
 
   /// 解析 YAML 值
+  /// 
+  /// [value] - 要解析的YAML值
+  /// 
+  /// 返回解析后的值
   dynamic _parseYamlValue(String value) {
     // 布尔值
     if (value == 'true') return true;
@@ -696,12 +747,22 @@ $markdown
     return value;
   }
 
+  /// 从内容中提取Wiki链接
+  /// 
+  /// [content] - 节点内容
+  /// 
+  /// 返回提取的链接列表
   List<String> _extractWikiLinks(String content) {
     final pattern = RegExp(r'\[\[([^\]]+)\]\]');
     final matches = pattern.allMatches(content);
     return matches.map((m) => m.group(1)!).toList();
   }
 
+  /// 从内容中提取标签
+  /// 
+  /// [content] - 节点内容
+  /// 
+  /// 返回提取的标签列表
   List<String> _extractTagsFromContent(String content) {
     final tags = <String>[];
     final pattern = RegExp(r'#([a-zA-Z0-9_\u4e00-\u9fa5]+)');
@@ -717,6 +778,13 @@ $markdown
     return tags;
   }
 
+  /// 创建新节点
+  /// 
+  /// [title] - 节点标题
+  /// [content] - 节点内容
+  /// [keepHeading] - 是否保留原始标题
+  /// 
+  /// 返回创建的节点
   Node _createNode(String title, String content, bool keepHeading) {
     final now = DateTime.now();
     return Node(
@@ -733,14 +801,22 @@ $markdown
     );
   }
 
-  String _slugify(String text) {
-    return text
+  /// 将文本转换为slug格式（用于URL和锚点）
+  /// 
+  /// [text] - 要转换的文本
+  /// 
+  /// 返回转换后的slug
+  String _slugify(String text) => text
         .toLowerCase()
         .replaceAll(RegExp(r'[^\w\s-]'), '')
         .replaceAll(RegExp(r'[\s]+'), '-')
         .replaceAll(RegExp(r'-+'), '-');
-  }
 
+  /// 递归列出目录中的所有Markdown文件
+  /// 
+  /// [dir] - 要搜索的目录
+  /// 
+  /// 返回找到的Markdown文件列表
   Future<List<File>> _listMarkdownFiles(Directory dir) async {
     final files = <File>[];
     await for (final entity in dir.list(recursive: true)) {

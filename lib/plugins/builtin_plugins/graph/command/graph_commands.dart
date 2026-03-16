@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
 import '../../../../core/models/graph.dart';
 import '../../../../core/repositories/graph_repository.dart';
 
@@ -8,9 +8,8 @@ import '../../../../core/repositories/graph_repository.dart';
 ///
 /// 用于加载指定的图
 class LoadGraphCommand extends Command<Graph> {
-  LoadGraphCommand({
-    required this.graphId,
-  });
+  /// 创建加载图命令
+  LoadGraphCommand({required this.graphId});
 
   /// 图 ID
   final String graphId;
@@ -35,9 +34,8 @@ class LoadGraphCommand extends Command<Graph> {
 ///
 /// 用于创建新的图
 class CreateGraphCommand extends Command<Graph> {
-  CreateGraphCommand({
-    required this.graphName,
-  });
+  /// 创建创建图命令
+  CreateGraphCommand({required this.graphName});
 
   /// 图名称
   final String graphName;
@@ -65,6 +63,7 @@ class CreateGraphCommand extends Command<Graph> {
 ///
 /// 用于更新图的配置
 class UpdateGraphCommand extends Command<Graph> {
+  /// 创建更新图命令
   UpdateGraphCommand({
     required this.graphId,
     this.updatedName,
@@ -119,10 +118,8 @@ class UpdateGraphCommand extends Command<Graph> {
 ///
 /// 用于重命名图
 class RenameGraphCommand extends Command<Graph> {
-  RenameGraphCommand({
-    required this.graphId,
-    required this.updatedName,
-  });
+  /// 创建重命名图命令
+  RenameGraphCommand({required this.graphId, required this.updatedName});
 
   /// 图 ID
   final String graphId;
@@ -164,6 +161,7 @@ class RenameGraphCommand extends Command<Graph> {
 ///
 /// 用于将节点添加到图中
 class AddNodeToGraphCommand extends Command<void> {
+  /// 创建添加节点到图命令
   AddNodeToGraphCommand({
     required this.graphId,
     required this.nodeId,
@@ -207,10 +205,8 @@ class AddNodeToGraphCommand extends Command<void> {
 ///
 /// 用于从图中移除节点（不删除节点本身）
 class RemoveNodeFromGraphCommand extends Command<void> {
-  RemoveNodeFromGraphCommand({
-    required this.graphId,
-    required this.nodeId,
-  });
+  /// 创建从图中移除节点命令
+  RemoveNodeFromGraphCommand({required this.graphId, required this.nodeId});
 
   /// 图 ID
   final String graphId;
@@ -246,6 +242,7 @@ class RemoveNodeFromGraphCommand extends Command<void> {
 ///
 /// 用于更新图中节点的位置
 class UpdateNodePositionCommand extends Command<void> {
+  /// 创建更新节点位置命令
   UpdateNodePositionCommand({
     required this.graphId,
     required this.nodeId,

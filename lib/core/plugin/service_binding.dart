@@ -29,6 +29,8 @@ abstract class ServiceBinding<T> {
   T createService(ServiceResolver resolver);
 
   /// Service 类型
+  ///
+  /// 返回 Service 的类型，用于注册和解析
   Type get serviceType => T;
 
   /// 是否为单例（默认 true）
@@ -55,6 +57,10 @@ abstract class ServiceBinding<T> {
 ///
 /// 用于在 Service 创建过程中解析依赖
 class ServiceResolver {
+  /// 创建一个新的 Service 解析器实例。
+  ///
+  /// [_bindings] 所有 Service 绑定
+  /// [_instances] 已创建的 Service 实例（单例）
   ServiceResolver(this._bindings, this._instances);
 
   /// 所有 Service 绑定
@@ -97,17 +103,19 @@ class ServiceResolver {
   ///
   /// [T] Service 类型
   /// 返回 true 如果 Service 可以被解析
-  bool has<T>() {
-    return _instances.containsKey(T) || _bindings.containsKey(T);
-  }
+  bool has<T>() => _instances.containsKey(T) || _bindings.containsKey(T);
 }
 
 /// Service 依赖异常
 ///
 /// 当 Service 的依赖无法满足时抛出
 class ServiceDependencyException implements Exception {
+  /// 创建一个新的 Service 依赖异常实例。
+  ///
+  /// [message] 错误消息
   const ServiceDependencyException(this.message);
 
+  /// 错误消息
   final String message;
 
   @override

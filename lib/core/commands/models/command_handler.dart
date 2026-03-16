@@ -19,6 +19,9 @@ abstract class CommandHandler<T extends Command> {
 ///
 /// 当尝试执行没有注册处理器的命令时抛出
 class CommandHandlerNotFoundException implements Exception {
+  /// 创建一个命令处理器未找到异常
+  ///
+  /// [commandType] - 命令类型
   CommandHandlerNotFoundException(this.commandType);
 
   /// 命令类型

@@ -1,6 +1,6 @@
-import '../../core/commands/command.dart';
-import '../../core/commands/command_context.dart';
-import '../../core/commands/middleware.dart';
+import '../../core/commands/models/command.dart';
+import '../../core/commands/models/command_context.dart';
+import '../../core/commands/models/middleware.dart';
 
 /// 验证中间件
 ///
@@ -19,10 +19,7 @@ class ValidationMiddleware extends CommandMiddlewareBase {
   }
 
   @override
-  Future<void> processBefore(
-    Command command,
-    CommandContext context,
-  ) async {
+  Future<void> processBefore(Command command, CommandContext context) async {
     final validator = _validators[command.runtimeType];
     if (validator != null) {
       final result = await validator.validate(command, context);
@@ -53,31 +50,16 @@ abstract class CommandValidator<T extends Command> {
 ///
 /// 封装验证的结果信息
 class ValidationResult {
-  ValidationResult._({
-    required this.isValid,
-    required this.errors,
-  });
+  ValidationResult._({required this.isValid, required this.errors});
 
   /// 创建成功的验证结果
-  factory ValidationResult.success() {
-    return ValidationResult._(
-      isValid: true,
-      errors: [],
-    );
-  }
+  factory ValidationResult.success() => ValidationResult._(isValid: true, errors: []);
 
   /// 创建失败的验证结果
-  factory ValidationResult.failure(List<String> errors) {
-    return ValidationResult._(
-      isValid: false,
-      errors: errors,
-    );
-  }
+  factory ValidationResult.failure(List<String> errors) => ValidationResult._(isValid: false, errors: errors);
 
   /// 创建单个错误的验证结果
-  factory ValidationResult.singleError(String error) {
-    return ValidationResult.failure([error]);
-  }
+  factory ValidationResult.singleError(String error) => ValidationResult.failure([error]);
 
   /// 是否通过验证
   final bool isValid;
@@ -92,10 +74,11 @@ class ValidationResult {
 ///
 /// 当命令验证失败时抛出
 class CommandValidationException implements Exception {
-  CommandValidationException({
-    required this.command,
-    required this.errors,
-  });
+  /// 创建命令验证异常
+  ///
+  /// [command] 被验证的命令
+  /// [errors] 验证错误列表
+  CommandValidationException({required this.command, required this.errors});
 
   /// 被验证的命令
   final Command command;

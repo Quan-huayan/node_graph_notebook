@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
-import '../../../core/plugin/ui_hooks/hook_context.dart';
-import '../../../core/plugin/plugin_metadata.dart';
+
 import '../../../core/plugin/plugin_context.dart';
+import '../../../core/plugin/plugin_metadata.dart';
+import '../../../core/plugin/ui_hooks/hook_context.dart';
+import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../graph/command/node_commands.dart';
 
 /// 删除功能插件
@@ -18,17 +19,18 @@ class DeletePlugin extends NodeContextMenuHook {
   set state(PluginState newState) {
     _state = newState;
   }
+
   @override
   int get priority => 50;
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'delete_plugin',
-        name: 'Delete Plugin',
-        version: '1.0.0',
-        description: 'Provides node deletion functionality',
-        author: 'Node Graph Notebook',
-      );
+    id: 'delete_plugin',
+    name: 'Delete Plugin',
+    version: '1.0.0',
+    description: 'Provides node deletion functionality',
+    author: 'Node Graph Notebook',
+  );
 
   @override
   Widget renderMenu(NodeContextMenuHookContext context) {
@@ -56,7 +58,9 @@ class DeletePlugin extends NodeContextMenuHook {
     final buildContext = context.data['buildContext'] as BuildContext?;
 
     if (buildContext == null) {
-      context.pluginContext!.error('BuildContext not found in HookContext data');
+      context.pluginContext!.error(
+        'BuildContext not found in HookContext data',
+      );
       return;
     }
 
@@ -79,7 +83,7 @@ class DeletePlugin extends NodeContextMenuHook {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       try {
         // 通过 CommandBus 执行删除命令
         final result = await context.pluginContext!.commandBus.dispatch(
@@ -87,10 +91,7 @@ class DeletePlugin extends NodeContextMenuHook {
         );
 
         if (!result.isSuccess) {
-          context.pluginContext!.error(
-            'Failed to delete node',
-            result.error,
-          );
+          context.pluginContext!.error('Failed to delete node', result.error);
           // 显示错误提示
           if (buildContext.mounted) {
             ScaffoldMessenger.of(buildContext).showSnackBar(

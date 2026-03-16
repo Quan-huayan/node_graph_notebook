@@ -12,10 +12,7 @@ abstract class CommandMiddleware {
   /// [context] 执行上下文
   ///
   /// 可以修改上下文或抛出异常阻止命令执行
-  Future<void> processBefore(
-    Command command,
-    CommandContext context,
-  );
+  Future<void> processBefore(Command command, CommandContext context);
 
   /// 命令执行后处理
   ///
@@ -36,10 +33,7 @@ abstract class CommandMiddleware {
 /// 提供默认实现，子类只需重写需要的方法
 abstract class CommandMiddlewareBase implements CommandMiddleware {
   @override
-  Future<void> processBefore(
-    Command command,
-    CommandContext context,
-  ) async {
+  Future<void> processBefore(Command command, CommandContext context) async {
     // 默认不做任何处理
   }
 

@@ -4,6 +4,7 @@ import 'plugin.dart';
 ///
 /// 管理所有已加载的插件
 class PluginRegistry {
+  /// 创建一个新的插件注册表实例。
   PluginRegistry();
 
   /// 所有已注册的插件
@@ -25,16 +26,12 @@ class PluginRegistry {
   List<PluginWrapper> getAllPlugins() => _plugins.values.toList();
 
   /// 获取已启用的插件
-  List<PluginWrapper> getEnabledPlugins() {
-    return _plugins.values.where((p) => p.isEnabled).toList();
-  }
+  List<PluginWrapper> getEnabledPlugins() => _plugins.values.where((p) => p.isEnabled).toList();
 
   /// 获取已加载但未启用的插件
-  List<PluginWrapper> getLoadedPlugins() {
-    return _plugins.values
+  List<PluginWrapper> getLoadedPlugins() => _plugins.values
         .where((p) => p.lifecycle.state == PluginState.loaded)
         .toList();
-  }
 
   /// 注册插件
   ///
@@ -79,18 +76,14 @@ class PluginRegistry {
       if (plugin == null) return;
 
       // 先访问依赖
-      for (final dep in plugin.metadata.dependencies) {
-        visit(dep);
-      }
+      plugin.metadata.dependencies.forEach(visit);
 
       temp.remove(pluginId);
       visited.add(pluginId);
       result.add(plugin);
     }
 
-    for (final pluginId in _plugins.keys) {
-      visit(pluginId);
-    }
+    _plugins.keys.forEach(visit);
 
     return result;
   }

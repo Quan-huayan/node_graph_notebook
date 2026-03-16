@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_bloc.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_event.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
 import '../../plugins/builtin_plugins/ai/ui/ai_config_dialog.dart';
 import '../../plugins/builtin_plugins/ai/ui/ai_test_dialog.dart';
+import '../bloc/ui_bloc.dart';
+import '../bloc/ui_event.dart';
 
 /// 设置对话框
 class SettingsDialog extends StatefulWidget {
+  /// 创建设置对话框
   const SettingsDialog({super.key});
 
   @override
@@ -28,11 +29,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
     return AlertDialog(
       backgroundColor: theme.backgrounds.primary,
       title: const Row(
-        children: [
-          Icon(Icons.settings),
-          SizedBox(width: 8),
-          Text('Settings'),
-        ],
+        children: [Icon(Icons.settings), SizedBox(width: 8), Text('Settings')],
       ),
       content: SizedBox(
         width: 500,
@@ -175,8 +172,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
+  Widget _buildSectionHeader(String title) => Padding(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
       child: Text(
         title,
@@ -186,7 +182,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
         ),
       ),
     );
-  }
 
   String _getViewModeLabel(NodeViewMode mode) {
     switch (mode) {
@@ -222,12 +217,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: NodeViewMode.values.map((mode) {
-                return RadioListTile<NodeViewMode>(
+              children: NodeViewMode.values.map((mode) => RadioListTile<NodeViewMode>(
                   title: Text(_getViewModeLabel(mode)),
                   value: mode,
-                );
-              }).toList(),
+                )).toList(),
             ),
           ),
           actions: [
@@ -254,42 +247,40 @@ class _SettingsDialogState extends State<SettingsDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-              Text(
-                'Node Graph Notebook',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                Text(
+                  'Node Graph Notebook',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
-              SizedBox(height: 8),
-              Text('Version 0.1.0'),
-              SizedBox(height: 16),
-              Text(
-                'A concept map-based note-taking application built with Flutter and Flame engine.',
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Features:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('• Visual node graph with Flame engine'),
-              Text('• Markdown editing support'),
-              Text('• Multiple node types (Content & Concept)'),
-              Text('• 8 reference types for relationships'),
-              Text('• Auto-layout algorithms'),
-              Text('• Search and filter functionality'),
-            ],
+                SizedBox(height: 8),
+                Text('Version 0.1.0'),
+                SizedBox(height: 16),
+                Text(
+                  'A concept map-based note-taking application built with Flutter and Flame engine.',
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Features:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text('• Visual node graph with Flame engine'),
+                Text('• Markdown editing support'),
+                Text('• Multiple node types (Content & Concept)'),
+                Text('• 8 reference types for relationships'),
+                Text('• Auto-layout algorithms'),
+                Text('• Search and filter functionality'),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      );
-    });
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showDocumentationDialog(BuildContext context) {
@@ -301,69 +292,70 @@ class _SettingsDialogState extends State<SettingsDialog> {
           backgroundColor: theme.backgrounds.primary,
           title: const Text('Documentation'),
           content: const SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Quick Start Guide',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Quick Start Guide',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                '1. Creating Nodes',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('• Click the + button to create a new node'),
-              Text('• Choose between Content or Concept node type'),
-              Text('• Enter title and content'),
-              SizedBox(height: 16),
-              Text(
-                '2. Connecting Nodes',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('• Long press a node to open its menu'),
-              Text('• Select "Connect to..." to link nodes'),
-              Text('• Choose a reference type for the connection'),
-              SizedBox(height: 16),
-              Text(
-                '3. Layout Options',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('• Force Directed: Physics-based layout'),
-              Text('• Hierarchical: Tree-based layout'),
-              Text('• Circular: Circle arrangement'),
-              Text('• Concept Map: Concept-focused layout'),
-              SizedBox(height: 16),
-              Text(
-                '4. Keyboard Shortcuts',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('• Ctrl+N: Create new node'),
-              Text('• Ctrl+S: Save current node'),
-              Text('• Ctrl+F: Quick search'),
-              Text('• Delete: Delete selected node'),
-            ],
+                SizedBox(height: 16),
+                Text(
+                  '1. Creating Nodes',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text('• Click the + button to create a new node'),
+                Text('• Choose between Content or Concept node type'),
+                Text('• Enter title and content'),
+                SizedBox(height: 16),
+                Text(
+                  '2. Connecting Nodes',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text('• Long press a node to open its menu'),
+                Text('• Select "Connect to..." to link nodes'),
+                Text('• Choose a reference type for the connection'),
+                SizedBox(height: 16),
+                Text(
+                  '3. Layout Options',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text('• Force Directed: Physics-based layout'),
+                Text('• Hierarchical: Tree-based layout'),
+                Text('• Circular: Circle arrangement'),
+                Text('• Concept Map: Concept-focused layout'),
+                SizedBox(height: 16),
+                Text(
+                  '4. Keyboard Shortcuts',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text('• Ctrl+N: Create new node'),
+                Text('• Ctrl+S: Save current node'),
+                Text('• Ctrl+F: Quick search'),
+                Text('• Delete: Delete selected node'),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      );
-    });
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  void _showStoragePathSelector(BuildContext context, SettingsService settingsService) async {
+  void _showStoragePathSelector(
+    BuildContext context,
+    SettingsService settingsService,
+  ) async {
     final currentPath = await settingsService.getStoragePath();
 
     showDialog(
@@ -384,9 +376,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
               const SizedBox(height: 8),
               Text(
                 currentPath,
-                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                  fontFamily: 'monospace',
-                ),
+                style: Theme.of(
+                  ctx,
+                ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -402,76 +394,84 @@ class _SettingsDialogState extends State<SettingsDialog> {
               ),
             ],
           ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          if (!settingsService.isUsingDefaultPath)
+          actions: [
             TextButton(
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) {
-                    final theme = ctx.read<ThemeService>().themeData;
-                    return AlertDialog(
-                      backgroundColor: theme.backgrounds.primary,
-                      title: const Text('Reset to Default'),
-                      content: const Text('Reset to default storage location?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            if (!settingsService.isUsingDefaultPath)
+              TextButton(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) {
+                      final theme = ctx.read<ThemeService>().themeData;
+                      return AlertDialog(
+                        backgroundColor: theme.backgrounds.primary,
+                        title: const Text('Reset to Default'),
+                        content: const Text(
+                          'Reset to default storage location?',
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Reset'),
-                        ),
-                      ],
-                    );
-                  },
-                );
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Reset'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
 
-                if (confirmed == true && context.mounted) {
-                  await settingsService.setCustomStoragePath(null);
-                  Navigator.pop(ctx);
+                  if ((confirmed ?? false) && context.mounted) {
+                    await settingsService.setCustomStoragePath(null);
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Storage location reset. Please restart the app.',
+                        ),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Reset to Default'),
+              ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final newPath = await settingsService.selectStoragePath();
+                if (newPath != null && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Storage location reset. Please restart the app.'),
-                      duration: Duration(seconds: 3),
+                    SnackBar(
+                      content: Text('Storage location changed to: $newPath'),
+                      duration: const Duration(seconds: 3),
+                      action: SnackBarAction(
+                        label: 'Restart',
+                        onPressed: () {
+                          // 提示用户需要重启应用
+                        },
+                      ),
                     ),
                   );
                 }
               },
-              child: const Text('Reset to Default'),
+              child: const Text('Choose New Location'),
             ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final newPath = await settingsService.selectStoragePath();
-              if (newPath != null && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Storage location changed to: $newPath'),
-                    duration: const Duration(seconds: 3),
-                    action: SnackBarAction(
-                      label: 'Restart',
-                      onPressed: () {
-                        // 提示用户需要重启应用
-                      },
-                    ),
-                  ),
-                );
-              }
-            },
-            child: const Text('Choose New Location'),
-          ),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
   }
 
-  void _showThemeSelector(BuildContext context, SettingsService settingsService) {
+  void _showThemeSelector(
+    BuildContext context,
+    SettingsService settingsService,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -515,11 +515,14 @@ class _SettingsDialogState extends State<SettingsDialog> {
             ),
           ],
         );
-      }
+      },
     );
   }
 
-  void _showAIConfigDialog(BuildContext context, SettingsService settingsService) {
+  void _showAIConfigDialog(
+    BuildContext context,
+    SettingsService settingsService,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AIConfigDialog(settingsService: settingsService),
@@ -527,10 +530,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   void _showAITestDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => const AITestDialog(),
-    );
+    showDialog(context: context, builder: (ctx) => const AITestDialog());
   }
 }
 

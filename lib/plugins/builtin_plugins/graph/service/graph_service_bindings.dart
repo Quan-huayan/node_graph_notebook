@@ -1,7 +1,7 @@
 import '../../../../core/plugin/service_binding.dart';
 import '../../../../core/repositories/repositories.dart';
-import 'node_service.dart';
 import 'graph_service.dart';
+import 'node_service.dart';
 
 /// NodeService 绑定
 ///

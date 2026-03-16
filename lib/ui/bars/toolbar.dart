@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_bloc.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_event.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_state.dart';
+
+import '../../plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
+import '../../plugins/builtin_plugins/graph/bloc/graph_event.dart';
+import '../../plugins/builtin_plugins/graph/bloc/node_bloc.dart';
+import '../../plugins/builtin_plugins/graph/bloc/node_event.dart';
+import '../../plugins/builtin_plugins/graph/service/delete_node_dialog.dart';
 import '../../plugins/builtin_plugins/graph/ui/graph_nodes_dialog.dart';
 import '../../plugins/builtin_plugins/layout/ui/layout_menu.dart';
-import '../../plugins/builtin_plugins/graph/service/delete_node_dialog.dart';
+import '../bloc/ui_bloc.dart';
+import '../bloc/ui_event.dart';
+import '../bloc/ui_state.dart';
 
 /// 工具栏
 class Toolbar extends StatelessWidget {
-  const Toolbar({
-    super.key,
-    required this.uiState,
-  });
+  /// 创建工具栏
+  const Toolbar({super.key, required this.uiState});
 
+  /// UI 状态
   final UIState uiState;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
+  Widget build(BuildContext context) => Card(
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
@@ -30,66 +29,70 @@ class Toolbar extends StatelessWidget {
           children: [
             // 收起/展开按钮
             IconButton(
-              icon: Icon(uiState.isToolbarExpanded ? Icons.expand_less : Icons.expand_more),
-              tooltip: uiState.isToolbarExpanded ? 'Collapse Toolbar' : 'Expand Toolbar',
+              icon: Icon(
+                uiState.isToolbarExpanded
+                    ? Icons.expand_less
+                    : Icons.expand_more,
+              ),
+              tooltip: uiState.isToolbarExpanded
+                  ? 'Collapse Toolbar'
+                  : 'Expand Toolbar',
               onPressed: () {
                 context.read<UIBloc>().add(const UIToggleToolbarEvent());
               },
             ),
-            if (uiState.isToolbarExpanded)
-              ...[
-                // 布局按钮
-                IconButton(
-                  icon: const Icon(Icons.account_tree),
-                  tooltip: 'Layout',
-                  onPressed: () => _showLayoutMenu(context),
+            if (uiState.isToolbarExpanded) ...[
+              // 布局按钮
+              IconButton(
+                icon: const Icon(Icons.account_tree),
+                tooltip: 'Layout',
+                onPressed: () => _showLayoutMenu(context),
+              ),
+              IconButton(
+                icon: Icon(
+                  context.read<GraphBloc>().state.viewState.showConnections
+                      ? Icons.share
+                      : Icons.share_outlined,
                 ),
-                IconButton(
-                  icon: Icon(
-                    context.read<GraphBloc>().state.viewState.showConnections
-                        ? Icons.share
-                        : Icons.share_outlined,
-                  ),
-                  tooltip: 'Toggle Connections',
-                  onPressed: () {
-                    context.read<GraphBloc>().add(const ViewToggleConnectionsEvent());
-                  },
+                tooltip: 'Toggle Connections',
+                onPressed: () {
+                  context.read<GraphBloc>().add(
+                    const ViewToggleConnectionsEvent(),
+                  );
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  uiState.isSidebarOpen ? Icons.menu_open : Icons.menu,
                 ),
-                IconButton(
-                  icon: Icon(
-                    uiState.isSidebarOpen
-                        ? Icons.menu_open
-                        : Icons.menu,
-                  ),
-                  tooltip: 'Toggle Sidebar',
-                  onPressed: () {
-                    context.read<UIBloc>().add(const UIToggleSidebarEvent());
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Refresh',
-                  onPressed: () => _refreshData(context),
-                ),
-                const Divider(),
-                // 管理图节点按钮
-                IconButton(
-                  icon: const Icon(Icons.playlist_add_check),
-                  tooltip: 'Manage Graph Nodes',
-                  onPressed: () => _showGraphNodesDialog(context),
-                ),
-                // 删除按钮
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  tooltip: 'Delete Selected Node',
-                  onPressed: () => _deleteSelectedNode(context),
-                ),
-              ],
+                tooltip: 'Toggle Sidebar',
+                onPressed: () {
+                  context.read<UIBloc>().add(const UIToggleSidebarEvent());
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Refresh',
+                onPressed: () => _refreshData(context),
+              ),
+              const Divider(),
+              // 管理图节点按钮
+              IconButton(
+                icon: const Icon(Icons.playlist_add_check),
+                tooltip: 'Manage Graph Nodes',
+                onPressed: () => _showGraphNodesDialog(context),
+              ),
+              // 删除按钮
+              IconButton(
+                icon: const Icon(Icons.delete),
+                tooltip: 'Delete Selected Node',
+                onPressed: () => _deleteSelectedNode(context),
+              ),
+            ],
           ],
         ),
       ),
     );
-  }
 
   void _showLayoutMenu(BuildContext context) {
     LayoutMenu.show(context);
@@ -101,10 +104,7 @@ class Toolbar extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => GraphNodesDialog(
-        graphBloc: bloc,
-        nodeBloc: nodeBloc,
-      ),
+      builder: (ctx) => GraphNodesDialog(graphBloc: bloc, nodeBloc: nodeBloc),
     );
   }
 
@@ -118,4 +118,3 @@ class Toolbar extends StatelessWidget {
     context.read<GraphBloc>().add(const GraphInitializeEvent());
   }
 }
-

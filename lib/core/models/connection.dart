@@ -10,6 +10,16 @@ part 'connection.g.dart';
 /// 用于在图形界面中渲染节点间的连接线。
 @JsonSerializable()
 class Connection {
+  /// 创建一个连接关系
+  ///
+  /// [id] - 连接ID（自动生成：fromId_toId）
+  /// [fromNodeId] - 起始节点ID
+  /// [toNodeId] - 目标节点ID
+  /// [type] - 引用类型（决定边的语义）
+  /// [role] - 角色标签
+  /// [color] - 颜色
+  /// [lineStyle] - 线型
+  /// [thickness] - 线宽
   const Connection({
     required this.id,
     required this.fromNodeId,
@@ -21,6 +31,7 @@ class Connection {
     required this.thickness,
   });
 
+  /// 从JSON创建连接关系
   factory Connection.fromJson(Map<String, dynamic> json) =>
       _$ConnectionFromJson(json);
 
@@ -51,6 +62,9 @@ class Connection {
   final double thickness;
 
   /// 从 references 计算连接列表
+  ///
+  /// [nodes] - 节点列表
+  /// 返回计算出的连接关系列表
   static List<Connection> calculateConnections(List<Node> nodes) {
     final connections = <Connection>[];
     final nodeMap = {for (var n in nodes) n.id: n};
@@ -60,15 +74,17 @@ class Connection {
         if (nodeMap.containsKey(ref.nodeId)) {
           final connectionId = '${node.id}_${ref.nodeId}';
           final refType = ref.type; // 从 properties['type'] 获取
-          connections.add(Connection(
-            id: connectionId,
-            fromNodeId: node.id,
-            toNodeId: ref.nodeId,
-            type: refType,
-            role: ref.role,
-            lineStyle: _getLineStyleForType(refType),
-            thickness: _getThicknessForType(refType),
-          ));
+          connections.add(
+            Connection(
+              id: connectionId,
+              fromNodeId: node.id,
+              toNodeId: ref.nodeId,
+              type: refType,
+              role: ref.role,
+              lineStyle: _getLineStyleForType(refType),
+              thickness: _getThicknessForType(refType),
+            ),
+          );
         }
       }
     }
@@ -76,6 +92,7 @@ class Connection {
     return connections;
   }
 
+  /// 转换为JSON
   Map<String, dynamic> toJson() => _$ConnectionToJson(this);
 
   /// 根据引用类型获取线型
@@ -94,17 +111,16 @@ class Connection {
   static double _getThicknessForType(String type) {
     switch (type) {
       case 'contains':
-        return 2.0;
+        return 2;
       case 'causes':
-        return 3.0;
+        return 3;
       default:
         return 1.5;
     }
   }
 
   /// 获取反向连接
-  Connection get reverse {
-    return Connection(
+  Connection get reverse => Connection(
       id: '${toNodeId}_$fromNodeId',
       fromNodeId: toNodeId,
       toNodeId: fromNodeId,
@@ -114,19 +130,15 @@ class Connection {
       lineStyle: lineStyle,
       thickness: thickness,
     );
-  }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Connection &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      other is Connection && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;
 
   @override
-  String toString() =>
-      'Connection($fromNodeId -> $toNodeId, type: $type)';
+  String toString() => 'Connection($fromNodeId -> $toNodeId, type: $type)';
 }

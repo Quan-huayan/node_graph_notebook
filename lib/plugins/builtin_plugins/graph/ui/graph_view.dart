@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_bloc.dart';
-import '../bloc/node_bloc.dart';
-import '../bloc/graph_bloc.dart';
-import '../../../../core/services/theme_service.dart';
-import '../../../../core/services/settings_service.dart';
-import '../flame/flame.dart';
 
+import '../../../../core/execution/execution_engine.dart';
+import '../../../../core/services/settings_service.dart';
+import '../../../../core/services/theme_service.dart';
+import '../../../../ui/bloc/ui_bloc.dart';
+import '../bloc/graph_bloc.dart';
+import '../bloc/node_bloc.dart';
+import '../flame/flame.dart';
 
 /// 图视图
 class GraphView extends StatelessWidget {
+  /// 创建图视图
   const GraphView({super.key});
 
   @override
@@ -22,6 +24,7 @@ class GraphView extends StatelessWidget {
     final uiState = uiBloc.state;
     final themeService = context.watch<ThemeService>();
     final settings = context.watch<SettingsService>();
+    final executionEngine = context.watch<ExecutionEngine?>();
     final theme = themeService.getThemeForMode(
       settings.themeMode,
       MediaQuery.of(context).platformBrightness,
@@ -32,10 +35,11 @@ class GraphView extends StatelessWidget {
     }
 
     if (state.hasError || nodeState.hasError) {
-      final error = state.error ?? nodeState.error ?? 'An unknown error occurred';
+      final error =
+          state.error ?? nodeState.error ?? 'An unknown error occurred';
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -151,15 +155,20 @@ class GraphView extends StatelessWidget {
                 // Flame 图渲染组件
                 Positioned.fill(
                   child: GraphFlameWidget(
-                    key: ValueKey(theme.backgrounds.canvas.toARGB32()), // 使用主题背景色作为 key，主题变化时重建
+                    key: ValueKey(
+                      theme.backgrounds.canvas.toARGB32(),
+                    ), // 使用主题背景色作为 key，主题变化时重建
                     uiState: uiState,
                     theme: theme,
+                    executionEngine: executionEngine,
                     onZoomChanged: (zoomLevel) {
                       // Zoom 在 BLoC 中解决
                     },
                     onNodeDropped: (nodeId, position) async {
                       // 检查节点是否已经在图中
-                      final alreadyInGraph = state.nodes.any((n) => n.id == nodeId);
+                      final alreadyInGraph = state.nodes.any(
+                        (n) => n.id == nodeId,
+                      );
                       if (alreadyInGraph) {
                         // 节点已经在图中，显示提示
                         if (context.mounted) {
@@ -173,8 +182,7 @@ class GraphView extends StatelessWidget {
                         return;
                       }
 
-                      try
-                      {
+                      try {
                         // 添加节点到图中，并设置其位置
                         // 注意：NodeAddEvent 和 NodeSelectEvent 可能需要重新定义
                       } catch (e) {
@@ -187,8 +195,6 @@ class GraphView extends StatelessWidget {
                     },
                   ),
                 ),
-
-
               ],
             ),
           ),

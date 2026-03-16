@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 /// 插件项组件
 class PluginItem extends StatelessWidget {
+  /// 创建插件项组件
   const PluginItem({
     super.key,
     required this.name,
@@ -11,31 +12,37 @@ class PluginItem extends StatelessWidget {
     required this.icon,
     required this.onInstall,
   });
-  
+
+  /// 插件名称
   final String name;
+  
+  /// 插件描述
   final String description;
+  
+  /// 插件版本
   final String version;
+  
+  /// 插件作者
   final String author;
+  
+  /// 插件图标
   final IconData icon;
+  
+  /// 安装按钮点击回调
   final VoidCallback onInstall;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
+  Widget build(BuildContext context) => Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 48,
-                  color: Theme.of(context).primaryColor,
-                ),
+                Icon(icon, size: 48, color: Theme.of(context).primaryColor),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -72,15 +79,9 @@ class PluginItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              description,
-              style: const TextStyle(
-                fontSize: 14,
-              ),
-            ),
+            Text(description, style: const TextStyle(fontSize: 14)),
           ],
         ),
       ),
     );
-  }
 }

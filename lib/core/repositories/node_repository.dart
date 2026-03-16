@@ -1,31 +1,59 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+
 import '../models/models.dart';
 import 'exceptions.dart';
 
 /// 节点仓库接口
+///
+/// 负责节点数据的持久化和检索操作
 abstract class NodeRepository {
-  /// 保存节点
+  /// 保存节点到存储
+  ///
+  /// [node]: 要保存的节点对象
   Future<void> save(Node node);
 
-  /// 加载节点
+  /// 根据ID加载节点
+  ///
+  /// [nodeId]: 节点的唯一标识符
+  ///
+  /// 返回: 加载的节点，如果不存在则返回null
   Future<Node?> load(String nodeId);
 
-  /// 删除节点
+  /// 删除指定ID的节点
+  ///
+  /// [nodeId]: 要删除的节点ID
   Future<void> delete(String nodeId);
 
-  /// 批量保存
+  /// 批量保存多个节点
+  ///
+  /// [nodes]: 要保存的节点列表
   Future<void> saveAll(List<Node> nodes);
 
-  /// 批量加载
+  /// 批量加载多个节点
+  ///
+  /// [nodeIds]: 要加载的节点ID列表
+  ///
+  /// 返回: 加载的节点列表，不存在的节点会被忽略
   Future<List<Node>> loadAll(List<String> nodeIds);
 
   /// 查询所有节点
+  ///
+  /// 返回: 所有节点的列表
   Future<List<Node>> queryAll();
 
-  /// 搜索
+  /// 根据条件搜索节点
+  ///
+  /// [title]: 标题搜索关键词
+  /// [content]: 内容搜索关键词
+  /// [tags]: 标签过滤
+  /// [startDate]: 开始日期过滤
+  /// [endDate]: 结束日期过滤
+  ///
+  /// 返回: 符合条件的节点列表
   Future<List<Node>> search({
     String? title,
     String? content,
@@ -35,23 +63,36 @@ abstract class NodeRepository {
   });
 
   /// 获取节点文件路径
+  ///
+  /// [nodeId]: 节点ID
+  ///
+  /// 返回: 节点对应的文件路径
   String getNodeFilePath(String nodeId);
 
   /// 获取元数据索引
+  ///
+  /// 返回: 元数据索引对象
   Future<MetadataIndex> getMetadataIndex();
 
-  /// 更新索引
+  /// 更新节点的元数据索引
+  ///
+  /// [node]: 要更新索引的节点
   Future<void> updateIndex(Node node);
 }
 
 /// 文件系统节点仓库实现
 class FileSystemNodeRepository implements NodeRepository {
+  /// 创建文件系统节点仓库
+  ///
+  /// [nodesDir]: 节点文件存储目录，默认为 'data/nodes'
   FileSystemNodeRepository({String nodesDir = 'data/nodes'})
-      : _nodesDir = nodesDir;
+    : _nodesDir = nodesDir;
 
   final String _nodesDir;
 
-  /// 初始化目录
+  /// 初始化节点存储目录
+  ///
+  /// 创建必要的目录结构并验证写入权限
   Future<void> init() async {
     final dir = Directory(_nodesDir);
     if (!dir.existsSync()) {
@@ -105,7 +146,9 @@ class FileSystemNodeRepository implements NodeRepository {
   Future<void> saveAll(List<Node> nodes) async {
     debugPrint('=== saveAll ===');
     for (final node in nodes) {
-      debugPrint('Saving node: ${node.title} with ${node.references.length} references');
+      debugPrint(
+        'Saving node: ${node.title} with ${node.references.length} references',
+      );
       await save(node);
     }
     debugPrint('saveAll completed');
@@ -137,7 +180,7 @@ class FileSystemNodeRepository implements NodeRepository {
     }
 
     final nodes = <Node>[];
-    final List<String> corruptedFiles = [];
+    final corruptedFiles = <String>[];
 
     try {
       await for (final entity in dir.list()) {
@@ -185,10 +228,12 @@ class FileSystemNodeRepository implements NodeRepository {
     // Combine title and content search with OR logic
     if (title != null || content != null) {
       results = results.where((n) {
-        final titleMatch = title != null &&
+        final titleMatch =
+            title != null &&
             n.title.toLowerCase().contains(title.toLowerCase());
-        final contentMatch = content != null &&
-            n.content?.toLowerCase().contains(content.toLowerCase()) == true;
+        final contentMatch =
+            content != null &&
+            (n.content?.toLowerCase().contains(content.toLowerCase()) ?? false);
         return titleMatch || contentMatch;
       }).toList();
     }
@@ -196,7 +241,7 @@ class FileSystemNodeRepository implements NodeRepository {
     if (tags != null && tags.isNotEmpty) {
       results = results.where((n) {
         final nodeTags = n.metadata['tags'] as List<Object>? ?? [];
-        return tags.any((tag) => nodeTags.contains(tag));
+        return tags.any(nodeTags.contains);
       }).toList();
     }
 
@@ -212,9 +257,7 @@ class FileSystemNodeRepository implements NodeRepository {
   }
 
   @override
-  String getNodeFilePath(String nodeId) {
-    return path.join(_nodesDir, '$nodeId.md');
-  }
+  String getNodeFilePath(String nodeId) => path.join(_nodesDir, '$nodeId.md');
 
   @override
   Future<MetadataIndex> getMetadataIndex() async {
@@ -269,24 +312,24 @@ class FileSystemNodeRepository implements NodeRepository {
 
   /// 生成节点 Markdown 文件内容
   String _generateNodeMarkdown(Node node) {
-    final buffer = StringBuffer();
+    final buffer = StringBuffer()
 
     // Frontmatter
-    buffer.writeln('---');
-    buffer.writeln('id: ${node.id}');
-    buffer.writeln('title: "${node.title}"');
-    buffer.writeln('created_at: ${node.createdAt.toIso8601String()}');
-    buffer.writeln('updated_at: ${node.updatedAt.toIso8601String()}');
+    ..writeln('---')
+    ..writeln('id: ${node.id}')
+    ..writeln('title: "${node.title}"')
+    ..writeln('created_at: ${node.createdAt.toIso8601String()}')
+    ..writeln('updated_at: ${node.updatedAt.toIso8601String()}')
 
     // 序列化位置
-    buffer.writeln('position:');
-    buffer.writeln('  dx: ${node.position.dx}');
-    buffer.writeln('  dy: ${node.position.dy}');
+    ..writeln('position:')
+    ..writeln('  dx: ${node.position.dx}')
+    ..writeln('  dy: ${node.position.dy}')
 
     // 序列化尺寸
-    buffer.writeln('size:');
-    buffer.writeln('  width: ${node.size.width}');
-    buffer.writeln('  height: ${node.size.height}');
+    ..writeln('size:')
+    ..writeln('  width: ${node.size.width}')
+    ..writeln('  height: ${node.size.height}');
 
     if (node.color != null) {
       buffer.writeln('color: "${node.color}"');
@@ -303,8 +346,8 @@ class FileSystemNodeRepository implements NodeRepository {
       buffer.writeln('references:');
       for (final entry in node.references.entries) {
         final ref = entry.value;
-        buffer.writeln('  ${entry.key}:');
-        buffer.writeln('    type: ${ref.type}');
+        buffer..writeln('  ${entry.key}:')
+        ..writeln('    type: ${ref.type}');
         if (ref.role != null) {
           buffer.writeln('    role: "${ref.role}"');
         }
@@ -315,7 +358,9 @@ class FileSystemNodeRepository implements NodeRepository {
         if (otherProps.isNotEmpty) {
           buffer.writeln('    metadata:');
           for (final metaEntry in otherProps) {
-            buffer.writeln('      ${metaEntry.key}: ${_formatYamlValue(metaEntry.value)}');
+            buffer.writeln(
+              '      ${metaEntry.key}: ${_formatYamlValue(metaEntry.value)}',
+            );
           }
         }
       }
@@ -336,12 +381,12 @@ class FileSystemNodeRepository implements NodeRepository {
     final lines = markdown.split('\n');
 
     // 解析 Frontmatter
-    Map<String, dynamic> frontmatter = {};
-    int frontmatterEnd = 0;
+    var frontmatter = <String, dynamic>{};
+    var frontmatterEnd = 0;
 
     if (lines.isNotEmpty && lines[0] == '---') {
       final frontmatterLines = <String>[];
-      for (int i = 1; i < lines.length; i++) {
+      for (var i = 1; i < lines.length; i++) {
         if (lines[i] == '---') {
           frontmatterEnd = i + 1;
           break;
@@ -353,11 +398,11 @@ class FileSystemNodeRepository implements NodeRepository {
 
     // 解析内容并提取第一个 # title（只提取一级标题）
     final contentLines = lines.skip(frontmatterEnd).toList();
-    String? title = _parseStringValue(frontmatter['title']);
-    String content = '';
+    var title = _parseStringValue(frontmatter['title']);
+    var content = '';
 
     // Skip leading empty/whitespace lines after frontmatter
-    int contentStartOffset = 0;
+    var contentStartOffset = 0;
     while (contentStartOffset < contentLines.length &&
         contentLines[contentStartOffset].trim().isEmpty) {
       contentStartOffset++;
@@ -366,8 +411,8 @@ class FileSystemNodeRepository implements NodeRepository {
 
     if (trimmedContentLines.isNotEmpty) {
       // 只查找一级标题（单个 # 号）
-      int contentStartIndex = 0;
-      for (int i = 0; i < trimmedContentLines.length; i++) {
+      var contentStartIndex = 0;
+      for (var i = 0; i < trimmedContentLines.length; i++) {
         final line = contentLines[i];
         final trimmed = line.trim();
 
@@ -381,7 +426,7 @@ class FileSystemNodeRepository implements NodeRepository {
             contentStartIndex = i + 1;
             // 跳过标题后的空行
             while (contentStartIndex < trimmedContentLines.length &&
-                   trimmedContentLines[contentStartIndex].trim().isEmpty) {
+                trimmedContentLines[contentStartIndex].trim().isEmpty) {
               contentStartIndex++;
             }
             break;
@@ -393,15 +438,17 @@ class FileSystemNodeRepository implements NodeRepository {
       if (contentStartIndex == 0) {
         content = trimmedContentLines.join('\n').trimRight();
       } else {
-        content = trimmedContentLines.skip(contentStartIndex).join('\n').trimRight();
+        content = trimmedContentLines
+            .skip(contentStartIndex)
+            .join('\n')
+            .trimRight();
       }
     }
 
     // 解析引用
     final references = <String, NodeReference>{};
     if (frontmatter.containsKey('references')) {
-      final refsMap = frontmatter['references'] as Map<String, dynamic>;
-      refsMap.forEach((key, value) {
+      (frontmatter['references'] as Map<String, dynamic>).forEach((key, value) {
         final refData = value as Map<String, dynamic>;
 
         // 构建 properties Map
@@ -424,10 +471,7 @@ class FileSystemNodeRepository implements NodeRepository {
           }
         }
 
-        references[key] = NodeReference(
-          nodeId: key,
-          properties: properties,
-        );
+        references[key] = NodeReference(nodeId: key, properties: properties);
       });
     }
 
@@ -438,8 +482,8 @@ class FileSystemNodeRepository implements NodeRepository {
       references: references,
       position: _parseOffset(frontmatter['position'] as Map<String, dynamic>?),
       size: _parseSize(frontmatter['size'] as Map<String, dynamic>?),
-      viewMode: NodeViewMode.values.firstOrNull ??
-          NodeViewMode.titleWithPreview,
+      viewMode:
+          NodeViewMode.values.firstOrNull ?? NodeViewMode.titleWithPreview,
       color: _parseStringValue(frontmatter['color']),
       createdAt: _parseDateTime(frontmatter['created_at']),
       updatedAt: _parseDateTime(frontmatter['updated_at']),
@@ -493,7 +537,10 @@ class FileSystemNodeRepository implements NodeRepository {
     if (value is num) return value.toString();
     if (value is String) {
       // 如果值包含空格或特殊字符，用引号包裹
-      if (value.contains(' ') || value.contains(':') || value.contains('{') || value.contains(',')) {
+      if (value.contains(' ') ||
+          value.contains(':') ||
+          value.contains('{') ||
+          value.contains(',')) {
         return '"$value"';
       }
       return value;
@@ -519,8 +566,12 @@ class FileSystemNodeRepository implements NodeRepository {
 
   /// 递归解析 YAML 块
   /// 返回处理到的行索引
-  int _parseYamlBlock(List<String> lines, int startIndex, Map<String, dynamic> output) {
-    int i = startIndex;
+  int _parseYamlBlock(
+    List<String> lines,
+    int startIndex,
+    Map<String, dynamic> output,
+  ) {
+    var i = startIndex;
     int? baseIndent;
 
     while (i < lines.length) {
@@ -573,7 +624,9 @@ class FileSystemNodeRepository implements NodeRepository {
               if (!itemTrimmed.startsWith('-')) break;
 
               final itemContent = itemTrimmed.substring(1).trim();
-              final itemMatch = RegExp(r'^([^:]+):\s*(.*)$').firstMatch(itemContent);
+              final itemMatch = RegExp(
+                r'^([^:]+):\s*(.*)$',
+              ).firstMatch(itemContent);
 
               if (itemMatch != null) {
                 // 列表项是对象
@@ -589,10 +642,13 @@ class FileSystemNodeRepository implements NodeRepository {
                     i++;
                     continue;
                   }
-                  final attrIndent = lines[i].length - lines[i].trimLeft().length;
+                  final attrIndent =
+                      lines[i].length - lines[i].trimLeft().length;
                   if (attrIndent <= nextIndent) break;
 
-                  final attrMatch = RegExp(r'^([^:]+):\s*(.*)$').firstMatch(lines[i].trim());
+                  final attrMatch = RegExp(
+                    r'^([^:]+):\s*(.*)$',
+                  ).firstMatch(lines[i].trim());
                   if (attrMatch != null) {
                     final attrKey = attrMatch.group(1)!.trim();
                     final attrValue = attrMatch.group(2)!.trim();
@@ -652,13 +708,9 @@ class FileSystemNodeRepository implements NodeRepository {
     return value;
   }
 
-  Map<String, dynamic> _parseJson(String json) {
-    return jsonDecode(json) as Map<String, dynamic>;
-  }
+  Map<String, dynamic> _parseJson(String json) => jsonDecode(json) as Map<String, dynamic>;
 
-  String _stringifyJson(Map<String, dynamic> json) {
-    return jsonEncode(json);
-  }
+  String _stringifyJson(Map<String, dynamic> json) => jsonEncode(json);
 
   /// 清理损坏的索引条目
   Future<void> _cleanupIndex(Set<String> validNodeIds) async {
@@ -683,7 +735,9 @@ class FileSystemNodeRepository implements NodeRepository {
         'last_updated': DateTime.now().toIso8601String(),
       };
       await indexFile.writeAsString(_stringifyJson(cleanedIndex));
-      debugPrint('Cleaned up index: removed ${nodes.length - validNodes.length} invalid entries');
+      debugPrint(
+        'Cleaned up index: removed ${nodes.length - validNodes.length} invalid entries',
+      );
     } catch (e) {
       // 如果清理失败，尝试删除索引文件，让它重新构建
       try {

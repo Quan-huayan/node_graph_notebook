@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'enums.dart';
+
 import 'converters.dart';
+import 'enums.dart';
 
 part 'graph.g.dart';
 
 /// 图视图配置
 @JsonSerializable()
 class GraphViewConfig {
+  /// 创建一个图视图配置
+  ///
+  /// [camera] - 相机位置和缩放
+  /// [autoLayoutEnabled] - 是否启用自动布局
+  /// [layoutAlgorithm] - 布局算法
+  /// [showConnectionLines] - 是否显示连接线
+  /// [backgroundStyle] - 背景样式
   const GraphViewConfig({
     required this.camera,
     required this.autoLayoutEnabled,
@@ -16,6 +24,7 @@ class GraphViewConfig {
     required this.backgroundStyle,
   });
 
+  /// 从JSON创建图视图配置
   factory GraphViewConfig.fromJson(Map<String, dynamic> json) =>
       _$GraphViewConfigFromJson(json);
 
@@ -43,24 +52,24 @@ class GraphViewConfig {
     backgroundStyle: BackgroundStyle.grid,
   );
 
-  Map<String, dynamic> toJson() => _$GraphViewConfigToJson(this)
-    ..['camera'] = camera.toJson();
+  /// 转换为JSON
+  Map<String, dynamic> toJson() =>
+      _$GraphViewConfigToJson(this)..['camera'] = camera.toJson();
 
+  /// 复制并更新部分字段
   GraphViewConfig copyWith({
     Camera? camera,
     bool? autoLayoutEnabled,
     LayoutAlgorithm? layoutAlgorithm,
     bool? showConnectionLines,
     BackgroundStyle? backgroundStyle,
-  }) {
-    return GraphViewConfig(
+  }) => GraphViewConfig(
       camera: camera ?? this.camera,
       autoLayoutEnabled: autoLayoutEnabled ?? this.autoLayoutEnabled,
       layoutAlgorithm: layoutAlgorithm ?? this.layoutAlgorithm,
       showConnectionLines: showConnectionLines ?? this.showConnectionLines,
       backgroundStyle: backgroundStyle ?? this.backgroundStyle,
     );
-  }
 
   @override
   bool operator ==(Object other) =>
@@ -76,6 +85,13 @@ class GraphViewConfig {
 /// 相机配置
 @JsonSerializable()
 class Camera {
+  /// 创建一个相机配置
+  ///
+  /// [x] - X 坐标
+  /// [y] - Y 坐标
+  /// [zoom] - 缩放级别
+  /// [centerWidth] - 虚拟分辨率宽度（用于计算中心位置）
+  /// [centerHeight] - 虚拟分辨率高度（用于计算中心位置）
   const Camera({
     this.x = 0,
     this.y = 0,
@@ -84,16 +100,16 @@ class Camera {
     this.centerHeight = 2160,
   });
 
-  factory Camera.fromJson(Map<String, dynamic> json) {
+  /// 从JSON创建相机配置
+  factory Camera.fromJson(Map<String, dynamic> json) => 
     // 兼容旧格式：如果缺少 centerWidth/centerHeight，使用默认值
-    return Camera(
+    Camera(
       x: (json['x'] as num?)?.toDouble() ?? 0,
       y: (json['y'] as num?)?.toDouble() ?? 0,
       zoom: (json['zoom'] as num?)?.toDouble() ?? 1.0,
       centerWidth: (json['centerWidth'] as num?)?.toDouble() ?? 4096,
       centerHeight: (json['centerHeight'] as num?)?.toDouble() ?? 2160,
     );
-  }
 
   /// X 坐标
   final double x;
@@ -113,23 +129,23 @@ class Camera {
   /// 获取中心位置坐标
   Offset get centerPosition => Offset(centerWidth / 2, centerHeight / 2);
 
+  /// 转换为JSON
   Map<String, dynamic> toJson() => _$CameraToJson(this);
 
+  /// 复制并更新部分字段
   Camera copyWith({
     double? x,
     double? y,
     double? zoom,
     double? centerWidth,
     double? centerHeight,
-  }) {
-    return Camera(
+  }) => Camera(
       x: x ?? this.x,
       y: y ?? this.y,
       zoom: zoom ?? this.zoom,
       centerWidth: centerWidth ?? this.centerWidth,
       centerHeight: centerHeight ?? this.centerHeight,
     );
-  }
 
   @override
   bool operator ==(Object other) =>
@@ -149,6 +165,15 @@ class Camera {
 /// 图结构模型
 @JsonSerializable()
 class Graph {
+  /// 创建一个图结构模型
+  ///
+  /// [id] - 图ID
+  /// [name] - 图名称
+  /// [nodeIds] - 节点ID列表
+  /// [nodePositions] - 节点位置映射（节点ID -> 位置）
+  /// [viewConfig] - 视图配置
+  /// [createdAt] - 创建时间
+  /// [updatedAt] - 更新时间
   const Graph({
     required this.id,
     required this.name,
@@ -159,8 +184,9 @@ class Graph {
     required this.updatedAt,
   });
 
+  /// 从JSON创建图结构模型
   factory Graph.fromJson(Map<String, dynamic> json) => _$GraphFromJson(json);
-  
+
   /// 创建一个空的图实例
   factory Graph.empty(String id) {
     final now = DateTime.now();
@@ -197,8 +223,9 @@ class Graph {
   /// 更新时间
   final DateTime updatedAt;
 
-  Map<String, dynamic> toJson() => _$GraphToJson(this)
-    ..['viewConfig'] = viewConfig.toJson();
+  /// 转换为JSON
+  Map<String, dynamic> toJson() =>
+      _$GraphToJson(this)..['viewConfig'] = viewConfig.toJson();
 
   /// 复制并更新部分字段
   Graph copyWith({
@@ -209,8 +236,7 @@ class Graph {
     GraphViewConfig? viewConfig,
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) {
-    return Graph(
+  }) => Graph(
       id: id ?? this.id,
       name: name ?? this.name,
       nodeIds: nodeIds ?? this.nodeIds,
@@ -219,9 +245,11 @@ class Graph {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
-  }
 
   /// 添加节点
+  ///
+  /// [nodeId] - 要添加的节点ID
+  /// [position] - 节点位置（可选）
   Graph addNode(String nodeId, {Offset? position}) {
     final newNodeIds = List<String>.from(nodeIds);
     final newNodePositions = Map<String, Offset>.from(nodePositions);
@@ -235,23 +263,23 @@ class Graph {
       newNodePositions[nodeId] = position;
     }
 
-    return copyWith(
-      nodeIds: newNodeIds,
-      nodePositions: newNodePositions,
-    );
+    return copyWith(nodeIds: newNodeIds, nodePositions: newNodePositions);
   }
 
   /// 移除节点
+  ///
+  /// [nodeId] - 要移除的节点ID
   Graph removeNode(String nodeId) {
     final newNodeIds = List<String>.from(nodeIds)..remove(nodeId);
-    final newNodePositions = Map<String, Offset>.from(nodePositions)..remove(nodeId);
-    return copyWith(
-      nodeIds: newNodeIds,
-      nodePositions: newNodePositions,
-    );
+    final newNodePositions = Map<String, Offset>.from(nodePositions)
+      ..remove(nodeId);
+    return copyWith(nodeIds: newNodeIds, nodePositions: newNodePositions);
   }
 
   /// 更新节点位置
+  ///
+  /// [nodeId] - 要更新的节点ID
+  /// [position] - 新的节点位置
   Graph updateNodePosition(String nodeId, Offset position) {
     final newNodePositions = Map<String, Offset>.from(nodePositions);
     newNodePositions[nodeId] = position;
@@ -259,14 +287,13 @@ class Graph {
   }
 
   /// 获取节点位置
-  Offset? getNodePosition(String nodeId) {
-    return nodePositions[nodeId];
-  }
+  ///
+  /// [nodeId] - 节点ID
+  /// 返回节点位置，如果节点不存在则返回null
+  Offset? getNodePosition(String nodeId) => nodePositions[nodeId];
 
   /// 更新时间戳
-  Graph updateTimestamp() {
-    return copyWith(updatedAt: DateTime.now());
-  }
+  Graph updateTimestamp() => copyWith(updatedAt: DateTime.now());
 
   @override
   bool operator ==(Object other) =>
@@ -283,19 +310,19 @@ class Graph {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        name,
-        createdAt,
-        updatedAt,
-        nodeIds.length,
-        nodePositions.length,
-        viewConfig,
-      );
+    id,
+    name,
+    createdAt,
+    updatedAt,
+    nodeIds.length,
+    nodePositions.length,
+    viewConfig,
+  );
 
   /// 辅助方法：比较两个列表是否相等
   bool _listEquals<T>(List<T> a, List<T> b) {
     if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
+    for (var i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;
     }
     return true;

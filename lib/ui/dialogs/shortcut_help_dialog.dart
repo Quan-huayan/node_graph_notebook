@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 /// 快捷键帮助对话框
 class ShortcutsDialog extends StatelessWidget {
+  /// 创建快捷键帮助对话框
   const ShortcutsDialog({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
+  Widget build(BuildContext context) => AlertDialog(
       title: const Text('Keyboard Shortcuts'),
       content: SizedBox(
         width: 500,
@@ -17,30 +17,15 @@ class ShortcutsDialog extends StatelessWidget {
               shortcutKey: 'Ctrl + N',
               description: 'Create New Node',
             ),
-            _ShortcutItem(
-              shortcutKey: 'Ctrl + S',
-              description: 'Save',
-            ),
-            _ShortcutItem(
-              shortcutKey: 'Ctrl + Z',
-              description: 'Undo',
-            ),
-            _ShortcutItem(
-              shortcutKey: 'Ctrl + Shift + Z',
-              description: 'Redo',
-            ),
+            _ShortcutItem(shortcutKey: 'Ctrl + S', description: 'Save'),
+            _ShortcutItem(shortcutKey: 'Ctrl + Z', description: 'Undo'),
+            _ShortcutItem(shortcutKey: 'Ctrl + Shift + Z', description: 'Redo'),
             _ShortcutItem(
               shortcutKey: 'Delete',
               description: 'Delete Selected Node',
             ),
-            _ShortcutItem(
-              shortcutKey: 'Ctrl + F',
-              description: 'Search',
-            ),
-            _ShortcutItem(
-              shortcutKey: 'Ctrl + E',
-              description: 'Export',
-            ),
+            _ShortcutItem(shortcutKey: 'Ctrl + F', description: 'Search'),
+            _ShortcutItem(shortcutKey: 'Ctrl + E', description: 'Export'),
             Divider(),
             _ShortcutItem(
               shortcutKey: 'Ctrl + 1',
@@ -68,21 +53,16 @@ class ShortcutsDialog extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 class _ShortcutItem extends StatelessWidget {
-  const _ShortcutItem({
-    required this.shortcutKey,
-    required this.description,
-  });
+  const _ShortcutItem({required this.shortcutKey, required this.description});
 
   final String shortcutKey;
   final String description;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
@@ -96,11 +76,8 @@ class _ShortcutItem extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: Text(description),
-          ),
+          Expanded(child: Text(description)),
         ],
       ),
     );
-  }
 }

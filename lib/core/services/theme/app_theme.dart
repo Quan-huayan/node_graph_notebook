@@ -2,17 +2,7 @@ import 'package:flutter/material.dart';
 
 /// 节点主题颜色
 class NodeThemeColors {
-  factory NodeThemeColors.fromJson(Map<String, dynamic> json) {
-    return NodeThemeColors(
-      folderPrimary: Color(json['folderPrimary'] as int),
-      folderBackground: Color(json['folderBackground'] as int),
-      nodePrimary: Color(json['nodePrimary'] as int),
-      nodeBackground: Color(json['nodeBackground'] as int),
-      selectedOverlay: Color(json['selectedOverlay'] as int),
-      hoverBackground: Color(json['hoverBackground'] as int),
-    );
-  }
-
+  /// 构造函数
   const NodeThemeColors({
     required this.folderPrimary,
     required this.folderBackground,
@@ -22,13 +12,30 @@ class NodeThemeColors {
     required this.hoverBackground,
   });
 
+  /// 从JSON创建NodeThemeColors
+  factory NodeThemeColors.fromJson(Map<String, dynamic> json) => NodeThemeColors(
+        folderPrimary: Color(json['folderPrimary'] as int),
+        folderBackground: Color(json['folderBackground'] as int),
+        nodePrimary: Color(json['nodePrimary'] as int),
+        nodeBackground: Color(json['nodeBackground'] as int),
+        selectedOverlay: Color(json['selectedOverlay'] as int),
+        hoverBackground: Color(json['hoverBackground'] as int),
+      );
+
+  /// 文件夹主色
   final Color folderPrimary;
+  /// 文件夹背景色
   final Color folderBackground;
+  /// 节点主色
   final Color nodePrimary;
+  /// 节点背景色
   final Color nodeBackground;
+  /// 选中覆盖色
   final Color selectedOverlay;
+  /// 悬停背景色
   final Color hoverBackground;
 
+  /// 复制并修改属性
   NodeThemeColors copyWith({
     Color? folderPrimary,
     Color? folderBackground,
@@ -36,44 +43,29 @@ class NodeThemeColors {
     Color? nodeBackground,
     Color? selectedOverlay,
     Color? hoverBackground,
-  }) {
-    return NodeThemeColors(
-      folderPrimary: folderPrimary ?? this.folderPrimary,
-      folderBackground: folderBackground ?? this.folderBackground,
-      nodePrimary: nodePrimary ?? this.nodePrimary,
-      nodeBackground: nodeBackground ?? this.nodeBackground,
-      selectedOverlay: selectedOverlay ?? this.selectedOverlay,
-      hoverBackground: hoverBackground ?? this.hoverBackground,
-    );
-  }
+  }) => NodeThemeColors(
+        folderPrimary: folderPrimary ?? this.folderPrimary,
+        folderBackground: folderBackground ?? this.folderBackground,
+        nodePrimary: nodePrimary ?? this.nodePrimary,
+        nodeBackground: nodeBackground ?? this.nodeBackground,
+        selectedOverlay: selectedOverlay ?? this.selectedOverlay,
+        hoverBackground: hoverBackground ?? this.hoverBackground,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'folderPrimary': folderPrimary.toARGB32(),
-      'folderBackground': folderBackground.toARGB32(),
-      'nodePrimary': nodePrimary.toARGB32(),
-      'nodeBackground': nodeBackground.toARGB32(),
-      'selectedOverlay': selectedOverlay.toARGB32(),
-      'hoverBackground': hoverBackground.toARGB32(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'folderPrimary': folderPrimary.toARGB32(),
+        'folderBackground': folderBackground.toARGB32(),
+        'nodePrimary': nodePrimary.toARGB32(),
+        'nodeBackground': nodeBackground.toARGB32(),
+        'selectedOverlay': selectedOverlay.toARGB32(),
+        'hoverBackground': hoverBackground.toARGB32(),
+      };
 }
 
 /// 连接线主题颜色
 class ConnectionThemeColors {
-  factory ConnectionThemeColors.fromJson(Map<String, dynamic> json) {
-    return ConnectionThemeColors(
-      contains: Color(json['contains'] as int),
-      causes: Color(json['causes'] as int),
-      dependsOn: Color(json['dependsOn'] as int),
-      partOf: Color(json['partOf'] as int),
-      instanceOf: Color(json['instanceOf'] as int),
-      relatesTo: Color(json['relatesTo'] as int),
-      mentions: Color(json['mentions'] as int),
-      references: Color(json['references'] as int),
-    );
-  }
-
+  /// 构造函数
   const ConnectionThemeColors({
     required this.contains,
     required this.causes,
@@ -86,16 +78,38 @@ class ConnectionThemeColors {
     this.defaultColor = const Color(0xFF4A90E2),
   });
 
+  /// 从JSON创建ConnectionThemeColors
+  factory ConnectionThemeColors.fromJson(Map<String, dynamic> json) => ConnectionThemeColors(
+        contains: Color(json['contains'] as int),
+        causes: Color(json['causes'] as int),
+        dependsOn: Color(json['dependsOn'] as int),
+        partOf: Color(json['partOf'] as int),
+        instanceOf: Color(json['instanceOf'] as int),
+        relatesTo: Color(json['relatesTo'] as int),
+        mentions: Color(json['mentions'] as int),
+        references: Color(json['references'] as int),
+      );
+
+  /// 包含关系颜色
   final Color contains;
+  /// 因果关系颜色
   final Color causes;
+  /// 依赖关系颜色
   final Color dependsOn;
+  /// 部分关系颜色
   final Color partOf;
+  /// 实例关系颜色
   final Color instanceOf;
+  /// 相关关系颜色
   final Color relatesTo;
+  /// 提及关系颜色
   final Color mentions;
+  /// 引用关系颜色
   final Color references;
+  /// 默认颜色
   final Color defaultColor;
 
+  /// 复制并修改属性
   ConnectionThemeColors copyWith({
     Color? contains,
     Color? causes,
@@ -105,46 +119,34 @@ class ConnectionThemeColors {
     Color? relatesTo,
     Color? mentions,
     Color? references,
-  }) {
-    return ConnectionThemeColors(
-      contains: contains ?? this.contains,
-      causes: causes ?? this.causes,
-      dependsOn: dependsOn ?? this.dependsOn,
-      partOf: partOf ?? this.partOf,
-      instanceOf: instanceOf ?? this.instanceOf,
-      relatesTo: relatesTo ?? this.relatesTo,
-      mentions: mentions ?? this.mentions,
-      references: references ?? this.references,
-    );
-  }
+  }) => ConnectionThemeColors(
+        contains: contains ?? this.contains,
+        causes: causes ?? this.causes,
+        dependsOn: dependsOn ?? this.dependsOn,
+        partOf: partOf ?? this.partOf,
+        instanceOf: instanceOf ?? this.instanceOf,
+        relatesTo: relatesTo ?? this.relatesTo,
+        mentions: mentions ?? this.mentions,
+        references: references ?? this.references,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'contains': contains.toARGB32(),
-      'causes': causes.toARGB32(),
-      'dependsOn': dependsOn.toARGB32(),
-      'partOf': partOf.toARGB32(),
-      'instanceOf': instanceOf.toARGB32(),
-      'relatesTo': relatesTo.toARGB32(),
-      'mentions': mentions.toARGB32(),
-      'references': references.toARGB32(),
-      'defaultColor': defaultColor.toARGB32(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'contains': contains.toARGB32(),
+        'causes': causes.toARGB32(),
+        'dependsOn': dependsOn.toARGB32(),
+        'partOf': partOf.toARGB32(),
+        'instanceOf': instanceOf.toARGB32(),
+        'relatesTo': relatesTo.toARGB32(),
+        'mentions': mentions.toARGB32(),
+        'references': references.toARGB32(),
+        'defaultColor': defaultColor.toARGB32(),
+      };
 }
 
 /// UI 主题颜色
 class UIThemeColors {
-  factory UIThemeColors.fromJson(Map<String, dynamic> json) {
-    return UIThemeColors(
-      card: Color(json['card'] as int),
-      divider: Color(json['divider'] as int),
-      icon: Color(json['icon'] as int),
-      badge: Color(json['badge'] as int),
-      badgeBackground: Color(json['badgeBackground'] as int),
-    );
-  }
-
+  /// 构造函数
   const UIThemeColors({
     required this.card,
     required this.divider,
@@ -153,50 +155,54 @@ class UIThemeColors {
     required this.badgeBackground,
   });
 
+  /// 从JSON创建UIThemeColors
+  factory UIThemeColors.fromJson(Map<String, dynamic> json) => UIThemeColors(
+        card: Color(json['card'] as int),
+        divider: Color(json['divider'] as int),
+        icon: Color(json['icon'] as int),
+        badge: Color(json['badge'] as int),
+        badgeBackground: Color(json['badgeBackground'] as int),
+      );
+
+  /// 卡片颜色
   final Color card;
+  /// 分隔线颜色
   final Color divider;
+  /// 图标颜色
   final Color icon;
+  /// 徽章颜色
   final Color badge;
+  /// 徽章背景色
   final Color badgeBackground;
 
+  /// 复制并修改属性
   UIThemeColors copyWith({
     Color? card,
     Color? divider,
     Color? icon,
     Color? badge,
     Color? badgeBackground,
-  }) {
-    return UIThemeColors(
-      card: card ?? this.card,
-      divider: divider ?? this.divider,
-      icon: icon ?? this.icon,
-      badge: badge ?? this.badge,
-      badgeBackground: badgeBackground ?? this.badgeBackground,
-    );
-  }
+  }) => UIThemeColors(
+        card: card ?? this.card,
+        divider: divider ?? this.divider,
+        icon: icon ?? this.icon,
+        badge: badge ?? this.badge,
+        badgeBackground: badgeBackground ?? this.badgeBackground,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'card': card.toARGB32(),
-      'divider': divider.toARGB32(),
-      'icon': icon.toARGB32(),
-      'badge': badge.toARGB32(),
-      'badgeBackground': badgeBackground.toARGB32(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'card': card.toARGB32(),
+        'divider': divider.toARGB32(),
+        'icon': icon.toARGB32(),
+        'badge': badge.toARGB32(),
+        'badgeBackground': badgeBackground.toARGB32(),
+      };
 }
 
 /// 文本主题颜色
 class TextThemeColors {
-  factory TextThemeColors.fromJson(Map<String, dynamic> json) {
-    return TextThemeColors(
-      primary: Color(json['primary'] as int),
-      secondary: Color(json['secondary'] as int),
-      hint: Color(json['hint'] as int),
-      onDark: Color(json['onDark'] as int),
-    );
-  }
-
+  /// 构造函数
   const TextThemeColors({
     required this.primary,
     required this.secondary,
@@ -204,46 +210,48 @@ class TextThemeColors {
     required this.onDark,
   });
 
+  /// 从JSON创建TextThemeColors
+  factory TextThemeColors.fromJson(Map<String, dynamic> json) => TextThemeColors(
+        primary: Color(json['primary'] as int),
+        secondary: Color(json['secondary'] as int),
+        hint: Color(json['hint'] as int),
+        onDark: Color(json['onDark'] as int),
+      );
+
+  /// 主要文本颜色
   final Color primary;
+  /// 次要文本颜色
   final Color secondary;
+  /// 提示文本颜色
   final Color hint;
+  /// 深色背景上的文本颜色
   final Color onDark;
 
+  /// 复制并修改属性
   TextThemeColors copyWith({
     Color? primary,
     Color? secondary,
     Color? hint,
     Color? onDark,
-  }) {
-    return TextThemeColors(
-      primary: primary ?? this.primary,
-      secondary: secondary ?? this.secondary,
-      hint: hint ?? this.hint,
-      onDark: onDark ?? this.onDark,
-    );
-  }
+  }) => TextThemeColors(
+        primary: primary ?? this.primary,
+        secondary: secondary ?? this.secondary,
+        hint: hint ?? this.hint,
+        onDark: onDark ?? this.onDark,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'primary': primary.toARGB32(),
-      'secondary': secondary.toARGB32(),
-      'hint': hint.toARGB32(),
-      'onDark': onDark.toARGB32(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'primary': primary.toARGB32(),
+        'secondary': secondary.toARGB32(),
+        'hint': hint.toARGB32(),
+        'onDark': onDark.toARGB32(),
+      };
 }
 
 /// 背景主题颜色
 class BackgroundThemeColors {
-  factory BackgroundThemeColors.fromJson(Map<String, dynamic> json) {
-    return BackgroundThemeColors(
-      primary: Color(json['primary'] as int),
-      secondary: Color(json['secondary'] as int),
-      tertiary: Color(json['tertiary'] as int),
-      canvas: Color(json['canvas'] as int),
-    );
-  }
-
+  /// 构造函数
   const BackgroundThemeColors({
     required this.primary,
     required this.secondary,
@@ -251,46 +259,48 @@ class BackgroundThemeColors {
     required this.canvas,
   });
 
+  /// 从JSON创建BackgroundThemeColors
+  factory BackgroundThemeColors.fromJson(Map<String, dynamic> json) => BackgroundThemeColors(
+        primary: Color(json['primary'] as int),
+        secondary: Color(json['secondary'] as int),
+        tertiary: Color(json['tertiary'] as int),
+        canvas: Color(json['canvas'] as int),
+      );
+
+  /// 主要背景色
   final Color primary;
+  /// 次要背景色
   final Color secondary;
+  /// 第三级背景色
   final Color tertiary;
+  /// 画布背景色
   final Color canvas;
 
+  /// 复制并修改属性
   BackgroundThemeColors copyWith({
     Color? primary,
     Color? secondary,
     Color? tertiary,
     Color? canvas,
-  }) {
-    return BackgroundThemeColors(
-      primary: primary ?? this.primary,
-      secondary: secondary ?? this.secondary,
-      tertiary: tertiary ?? this.tertiary,
-      canvas: canvas ?? this.canvas,
-    );
-  }
+  }) => BackgroundThemeColors(
+        primary: primary ?? this.primary,
+        secondary: secondary ?? this.secondary,
+        tertiary: tertiary ?? this.tertiary,
+        canvas: canvas ?? this.canvas,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'primary': primary.toARGB32(),
-      'secondary': secondary.toARGB32(),
-      'tertiary': tertiary.toARGB32(),
-      'canvas': canvas.toARGB32(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'primary': primary.toARGB32(),
+        'secondary': secondary.toARGB32(),
+        'tertiary': tertiary.toARGB32(),
+        'canvas': canvas.toARGB32(),
+      };
 }
 
 /// 状态主题颜色
 class StatusThemeColors {
-  factory StatusThemeColors.fromJson(Map<String, dynamic> json) {
-    return StatusThemeColors(
-      error: Color(json['error'] as int),
-      success: Color(json['success'] as int),
-      warning: Color(json['warning'] as int),
-      info: Color(json['info'] as int),
-    );
-  }
-
+  /// 构造函数
   const StatusThemeColors({
     required this.error,
     required this.success,
@@ -298,78 +308,90 @@ class StatusThemeColors {
     required this.info,
   });
 
+  /// 从JSON创建StatusThemeColors
+  factory StatusThemeColors.fromJson(Map<String, dynamic> json) => StatusThemeColors(
+        error: Color(json['error'] as int),
+        success: Color(json['success'] as int),
+        warning: Color(json['warning'] as int),
+        info: Color(json['info'] as int),
+      );
+
+  /// 错误状态颜色
   final Color error;
+  /// 成功状态颜色
   final Color success;
+  /// 警告状态颜色
   final Color warning;
+  /// 信息状态颜色
   final Color info;
 
+  /// 复制并修改属性
   StatusThemeColors copyWith({
     Color? error,
     Color? success,
     Color? warning,
     Color? info,
-  }) {
-    return StatusThemeColors(
-      error: error ?? this.error,
-      success: success ?? this.success,
-      warning: warning ?? this.warning,
-      info: info ?? this.info,
-    );
-  }
+  }) => StatusThemeColors(
+        error: error ?? this.error,
+        success: success ?? this.success,
+        warning: warning ?? this.warning,
+        info: info ?? this.info,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'error': error.toARGB32(),
-      'success': success.toARGB32(),
-      'warning': warning.toARGB32(),
-      'info': info.toARGB32(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'error': error.toARGB32(),
+        'success': success.toARGB32(),
+        'warning': warning.toARGB32(),
+        'info': info.toARGB32(),
+      };
 }
 
 /// Flame 特定主题颜色
 class FlameThemeColors {
-  factory FlameThemeColors.fromJson(Map<String, dynamic> json) {
-    return FlameThemeColors(
-      gridLine: Color(json['gridLine'] as int),
-      originAxis: Color(json['originAxis'] as int),
-      selectionBox: Color(json['selectionBox'] as int),
-    );
-  }
-
+  /// 构造函数
   const FlameThemeColors({
     required this.gridLine,
     required this.originAxis,
     required this.selectionBox,
   });
 
+  /// 从JSON创建FlameThemeColors
+  factory FlameThemeColors.fromJson(Map<String, dynamic> json) => FlameThemeColors(
+        gridLine: Color(json['gridLine'] as int),
+        originAxis: Color(json['originAxis'] as int),
+        selectionBox: Color(json['selectionBox'] as int),
+      );
+
+  /// 网格线颜色
   final Color gridLine;
+  /// 原点轴线颜色
   final Color originAxis;
+  /// 选择框颜色
   final Color selectionBox;
 
+  /// 复制并修改属性
   FlameThemeColors copyWith({
     Color? gridLine,
     Color? originAxis,
     Color? selectionBox,
-  }) {
-    return FlameThemeColors(
-      gridLine: gridLine ?? this.gridLine,
-      originAxis: originAxis ?? this.originAxis,
-      selectionBox: selectionBox ?? this.selectionBox,
-    );
-  }
+  }) => FlameThemeColors(
+        gridLine: gridLine ?? this.gridLine,
+        originAxis: originAxis ?? this.originAxis,
+        selectionBox: selectionBox ?? this.selectionBox,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'gridLine': gridLine.toARGB32(),
-      'originAxis': originAxis.toARGB32(),
-      'selectionBox': selectionBox.toARGB32(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'gridLine': gridLine.toARGB32(),
+        'originAxis': originAxis.toARGB32(),
+        'selectionBox': selectionBox.toARGB32(),
+      };
 }
 
 /// 应用主题数据
 class AppThemeData {
+  /// 构造函数
   const AppThemeData({
     required this.nodes,
     required this.connections,
@@ -380,26 +402,39 @@ class AppThemeData {
     required this.flame,
   });
 
-  factory AppThemeData.fromJson(Map<String, dynamic> json) {
-    return AppThemeData(
-      nodes: NodeThemeColors.fromJson(json['nodes'] as Map<String, dynamic>),
-      connections: ConnectionThemeColors.fromJson(json['connections'] as Map<String, dynamic>),
-      ui: UIThemeColors.fromJson(json['ui'] as Map<String, dynamic>),
-      text: TextThemeColors.fromJson(json['text'] as Map<String, dynamic>),
-      backgrounds: BackgroundThemeColors.fromJson(json['backgrounds'] as Map<String, dynamic>),
-      status: StatusThemeColors.fromJson(json['status'] as Map<String, dynamic>),
-      flame: FlameThemeColors.fromJson(json['flame'] as Map<String, dynamic>),
-    );
-  }
+  /// 从JSON创建AppThemeData
+  factory AppThemeData.fromJson(Map<String, dynamic> json) => AppThemeData(
+        nodes: NodeThemeColors.fromJson(json['nodes'] as Map<String, dynamic>),
+        connections: ConnectionThemeColors.fromJson(
+          json['connections'] as Map<String, dynamic>,
+        ),
+        ui: UIThemeColors.fromJson(json['ui'] as Map<String, dynamic>),
+        text: TextThemeColors.fromJson(json['text'] as Map<String, dynamic>),
+        backgrounds: BackgroundThemeColors.fromJson(
+          json['backgrounds'] as Map<String, dynamic>,
+        ),
+        status: StatusThemeColors.fromJson(
+          json['status'] as Map<String, dynamic>,
+        ),
+        flame: FlameThemeColors.fromJson(json['flame'] as Map<String, dynamic>),
+      );
 
+  /// 节点主题颜色
   final NodeThemeColors nodes;
+  /// 连接线主题颜色
   final ConnectionThemeColors connections;
+  /// UI主题颜色
   final UIThemeColors ui;
+  /// 文本主题颜色
   final TextThemeColors text;
+  /// 背景主题颜色
   final BackgroundThemeColors backgrounds;
+  /// 状态主题颜色
   final StatusThemeColors status;
+  /// Flame特定主题颜色
   final FlameThemeColors flame;
 
+  /// 复制并修改属性
   AppThemeData copyWith({
     NodeThemeColors? nodes,
     ConnectionThemeColors? connections,
@@ -408,29 +443,26 @@ class AppThemeData {
     BackgroundThemeColors? backgrounds,
     StatusThemeColors? status,
     FlameThemeColors? flame,
-  }) {
-    return AppThemeData(
-      nodes: nodes ?? this.nodes,
-      connections: connections ?? this.connections,
-      ui: ui ?? this.ui,
-      text: text ?? this.text,
-      backgrounds: backgrounds ?? this.backgrounds,
-      status: status ?? this.status,
-      flame: flame ?? this.flame,
-    );
-  }
+  }) => AppThemeData(
+        nodes: nodes ?? this.nodes,
+        connections: connections ?? this.connections,
+        ui: ui ?? this.ui,
+        text: text ?? this.text,
+        backgrounds: backgrounds ?? this.backgrounds,
+        status: status ?? this.status,
+        flame: flame ?? this.flame,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'nodes': nodes.toJson(),
-      'connections': connections.toJson(),
-      'ui': ui.toJson(),
-      'text': text.toJson(),
-      'backgrounds': backgrounds.toJson(),
-      'status': status.toJson(),
-      'flame': flame.toJson(),
-    };
-  }
+  /// 转换为JSON
+  Map<String, dynamic> toJson() => {
+        'nodes': nodes.toJson(),
+        'connections': connections.toJson(),
+        'ui': ui.toJson(),
+        'text': text.toJson(),
+        'backgrounds': backgrounds.toJson(),
+        'status': status.toJson(),
+        'flame': flame.toJson(),
+      };
 
   /// 亮色主题
   static const AppThemeData lightTheme = AppThemeData(
@@ -540,40 +572,41 @@ class AppThemeData {
 /// AppTheme 辅助类
 class AppTheme {
   /// 将 AppThemeData 转换为 Material ThemeData
-  static ThemeData getMaterialTheme(AppThemeData appTheme, Brightness brightness) {
-    return ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: appTheme.nodes.nodePrimary,
-        brightness: brightness,
-        primary: appTheme.nodes.nodePrimary,
-        secondary: appTheme.nodes.folderPrimary,
-        error: appTheme.status.error,
-        surface: appTheme.backgrounds.primary,
-        onPrimary: appTheme.text.onDark,
-        onSecondary: appTheme.text.onDark,
-        onError: appTheme.text.onDark,
-        onSurface: appTheme.text.primary,
-      ),
-      scaffoldBackgroundColor: appTheme.backgrounds.canvas,
-      cardColor: appTheme.ui.card,
-      dividerColor: appTheme.ui.divider,
-      textTheme: TextTheme(
-        displayLarge: TextStyle(color: appTheme.text.primary, fontSize: 57),
-        displayMedium: TextStyle(color: appTheme.text.primary, fontSize: 45),
-        displaySmall: TextStyle(color: appTheme.text.primary, fontSize: 36),
-        headlineMedium: TextStyle(color: appTheme.text.primary, fontSize: 28),
-        headlineSmall: TextStyle(color: appTheme.text.primary, fontSize: 24),
-        titleLarge: TextStyle(color: appTheme.text.primary, fontSize: 22),
-        titleMedium: TextStyle(color: appTheme.text.primary, fontSize: 16),
-        titleSmall: TextStyle(color: appTheme.text.secondary, fontSize: 14),
-        bodyLarge: TextStyle(color: appTheme.text.primary, fontSize: 16),
-        bodyMedium: TextStyle(color: appTheme.text.primary, fontSize: 14),
-        bodySmall: TextStyle(color: appTheme.text.secondary, fontSize: 12),
-        labelLarge: TextStyle(color: appTheme.text.primary, fontSize: 14),
-        labelMedium: TextStyle(color: appTheme.text.secondary, fontSize: 12),
-        labelSmall: TextStyle(color: appTheme.text.secondary, fontSize: 11),
-      ),
-      useMaterial3: true,
-    );
-  }
+  static ThemeData getMaterialTheme(
+    AppThemeData appTheme,
+    Brightness brightness,
+  ) => ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: appTheme.nodes.nodePrimary,
+          brightness: brightness,
+          primary: appTheme.nodes.nodePrimary,
+          secondary: appTheme.nodes.folderPrimary,
+          error: appTheme.status.error,
+          surface: appTheme.backgrounds.primary,
+          onPrimary: appTheme.text.onDark,
+          onSecondary: appTheme.text.onDark,
+          onError: appTheme.text.onDark,
+          onSurface: appTheme.text.primary,
+        ),
+        scaffoldBackgroundColor: appTheme.backgrounds.canvas,
+        cardColor: appTheme.ui.card,
+        dividerColor: appTheme.ui.divider,
+        textTheme: TextTheme(
+          displayLarge: TextStyle(color: appTheme.text.primary, fontSize: 57),
+          displayMedium: TextStyle(color: appTheme.text.primary, fontSize: 45),
+          displaySmall: TextStyle(color: appTheme.text.primary, fontSize: 36),
+          headlineMedium: TextStyle(color: appTheme.text.primary, fontSize: 28),
+          headlineSmall: TextStyle(color: appTheme.text.primary, fontSize: 24),
+          titleLarge: TextStyle(color: appTheme.text.primary, fontSize: 22),
+          titleMedium: TextStyle(color: appTheme.text.primary, fontSize: 16),
+          titleSmall: TextStyle(color: appTheme.text.secondary, fontSize: 14),
+          bodyLarge: TextStyle(color: appTheme.text.primary, fontSize: 16),
+          bodyMedium: TextStyle(color: appTheme.text.primary, fontSize: 14),
+          bodySmall: TextStyle(color: appTheme.text.secondary, fontSize: 12),
+          labelLarge: TextStyle(color: appTheme.text.primary, fontSize: 14),
+          labelMedium: TextStyle(color: appTheme.text.secondary, fontSize: 12),
+          labelSmall: TextStyle(color: appTheme.text.secondary, fontSize: 11),
+        ),
+        useMaterial3: true,
+      );
 }

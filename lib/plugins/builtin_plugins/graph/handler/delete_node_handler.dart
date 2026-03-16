@@ -1,14 +1,17 @@
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command_handler.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
+import '../../../../core/events/app_events.dart';
 import '../command/node_commands.dart';
 import '../service/node_service.dart';
-import '../../../../core/events/app_events.dart';
 
 /// 删除节点处理器
 ///
 /// 处理删除节点的命令，包含级联删除连接和事件发布
 class DeleteNodeHandler implements CommandHandler<DeleteNodeCommand> {
+  /// 构造函数
+  ///
+  /// [_service] - 节点服务，用于删除节点
   DeleteNodeHandler(this._service);
 
   final NodeService _service;
@@ -22,11 +25,8 @@ class DeleteNodeHandler implements CommandHandler<DeleteNodeCommand> {
       // 删除节点
       await _service.deleteNode(command.node.id);
 
-      // 发布事件
-      context.eventBus.publish(NodeDataChangedEvent(
-        changedNodes: [command.node],
-        action: DataChangeAction.delete,
-      ));
+      // 发布事件（使用便捷方法）
+      context.publishSingleNodeEvent(command.node, DataChangeAction.delete);
 
       return CommandResult.success();
     } catch (e) {

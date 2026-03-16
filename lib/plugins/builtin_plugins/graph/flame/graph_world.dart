@@ -1,34 +1,44 @@
 import 'dart:async';
+
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/flame/graph_widget.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_state.dart';
+
+import '../../../../core/execution/execution_engine.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/services/theme/app_theme.dart';
-import '../../editor/ui/markdown_editor_page.dart';
-import '../service/node_context_menu.dart';
+import '../../../../ui/bloc/ui_state.dart';
 import '../../ai/ui/ai_chat_dialog.dart';
-import 'mixins/bloc_consumer.dart';
-import 'components/node_component.dart';
+import '../../editor/ui/markdown_editor_page.dart';
+import '../bloc/graph_bloc.dart';
+import '../bloc/graph_event.dart';
+import '../service/node_context_menu.dart';
 import 'components/connection_renderer.dart';
+import 'components/node_component.dart';
+import 'graph_widget.dart';
+import 'mixins/bloc_consumer.dart';
 
 /// 图世界 - Flame 的根组件（BLoC 集成版本）
 class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
+  /// 创建图世界组件
   GraphWorld({
     required this.graphBloc,
     required this.uiState,
     required this.theme,
     required this.context,
+    this.executionEngine,
   });
 
   @override
   final GraphBloc graphBloc;
+  /// UI 状态
   final UIState uiState;
+  /// 应用主题
   final AppThemeData theme;
+  /// 构建上下文
   final BuildContext context;
+  /// 执行引擎
+  final ExecutionEngine? executionEngine;
 
   late final ConnectionRenderer _connectionRenderer;
   final Map<String, NodeComponent> _nodeComponents = {};
@@ -38,16 +48,18 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     await super.onLoad();
 
     // 添加背景组件（处理空白区域拖拽）
-    add(_BackgroundComponent(
-      theme: theme,
-      graphBloc: graphBloc,
-      onDraggingStateChanged: (isDragging) {
-        // 通知 GraphGame 拖拽状态变化
-        if (game is GraphGame) {
-          (game as GraphGame).setDraggingState(isDragging);
-        }
-      },
-    ));
+    add(
+      _BackgroundComponent(
+        theme: theme,
+        graphBloc: graphBloc,
+        onDraggingStateChanged: (isDragging) {
+          // 通知 GraphGame 拖拽状态变化
+          if (game is GraphGame) {
+            (game as GraphGame).setDraggingState(isDragging);
+          }
+        },
+      ),
+    );
 
     // 创建连接渲染器（先添加，在底层）
     _connectionRenderer = ConnectionRenderer(
@@ -59,9 +71,7 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     add(_connectionRenderer);
 
     // 创建初始节点组件
-    for (final node in graphBloc.state.nodes) {
-      _addNodeComponent(node);
-    }
+    graphBloc.state.nodes.forEach(_addNodeComponent);
 
     // 订阅 BLoC 状态变化
     _subscribeToBloc();
@@ -73,7 +83,10 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     subscribeToState(
       onnewStateState: (state) {
         _onNodesChanged(state.nodes, state.graph.nodePositions);
-        _onConnectionsChanged(state.connections, state.viewState.showConnections);
+        _onConnectionsChanged(
+          state.connections,
+          state.viewState.showConnections,
+        );
       },
       shouldUpdate: (oldState, newState) {
         // 检查是否需要更新（节点、连接、位置或显示状态变化）
@@ -85,14 +98,19 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
         // 实现方式：比较连接数量和连接内容
         // 重要性：当节点添加/移除引用时，connections 会变化，
         // 即使节点其他属性不变，也需要更新连接渲染
-        if (oldState.connections.length != newState.connections.length) return true;
+        if (oldState.connections.length != newState.connections.length) {
+          return true;
+        }
 
         // 检查连接内容是否变化（ID 集合比较）
         final oldConnectionIds = oldState.connections.map((c) => c.id).toSet();
         final newConnectionIds = newState.connections.map((c) => c.id).toSet();
         if (oldConnectionIds != newConnectionIds) return true;
 
-        if (oldState.viewState.showConnections != newState.viewState.showConnections) return true;
+        if (oldState.viewState.showConnections !=
+            newState.viewState.showConnections) {
+          return true;
+        }
 
         // 检查位置是否变化
         final oldPositions = oldState.graph.nodePositions;
@@ -149,10 +167,9 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   }
 
   /// 处理节点列表变化
-  void _onNodesChanged(List<dynamic> nodes, Map<String, Offset> nodePositions) {
-    final typedNodes = nodes as List<Node>;
+  void _onNodesChanged(List<Node> nodes, Map<String, Offset> nodePositions) {
     final currentIds = _nodeComponents.keys.toSet();
-    final newIds = typedNodes.map((n) => n.id).toSet();
+    final newIds = nodes.map((n) => n.id).toSet();
 
     // 移除不在新列表中的节点
     for (final id in currentIds) {
@@ -162,7 +179,7 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     }
 
     // 添加或更新节点
-    for (final node in typedNodes) {
+    for (final node in nodes) {
       // === 架构说明：位置转换 ===
       // graph.nodePositions 约定为中心位置
       // Node.position (Flame PositionComponent) 为左上角位置
@@ -170,7 +187,7 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
       // 因此需要将中心位置转换为左上角位置
 
       final position = nodePositions[node.id];
-      Node updatedNode = node;
+      var updatedNode = node;
 
       if (position != null) {
         // 计算节点尺寸（根据 viewMode 和节点类型）
@@ -199,9 +216,12 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   }
 
   /// 处理连接变化
-  void _onConnectionsChanged(List<dynamic> connections, bool showConnections) {
+  void _onConnectionsChanged(
+    List<Connection> connections,
+    bool showConnections,
+  ) {
     _connectionRenderer.updateConnections(
-      connections: connections as List<Connection>,
+      connections: connections,
       nodePositions: _getNodePositions(),
       showConnections: showConnections,
     );
@@ -232,9 +252,7 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
         // 双击节点时打开 Markdown 编辑器（AI 节点也可以编辑内容）
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (ctx) => MarkdownEditorPage(node: node),
-          ),
+          MaterialPageRoute(builder: (ctx) => MarkdownEditorPage(node: node)),
         );
       },
       onAIChatTap: (Node node) {
@@ -338,21 +356,22 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
 
     // 获取连接的节点对象
     final allNodes = graphBloc.state.nodes;
-    final connectedNodes = allNodes.where((n) => connectedNodeIds.contains(n.id)).toList();
+    final connectedNodes = allNodes
+        .where((n) => connectedNodeIds.contains(n.id))
+        .toList();
 
     // 显示对话框
     showDialog(
       context: context,
-      builder: (dialogContext) => AIChatDialog(
-        aiNode: aiNode,
-        connectedNodes: connectedNodes,
-      ),
+      builder: (dialogContext) =>
+          AIChatDialog(aiNode: aiNode, connectedNodes: connectedNodes),
     );
   }
 }
 
 /// 背景组件 - 绘制网格背景并处理空白区域拖拽
-class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGameReference {
+class _BackgroundComponent extends PositionComponent
+    with DragCallbacks, HasGameReference {
   _BackgroundComponent({
     required this.theme,
     required this.graphBloc,
@@ -377,7 +396,7 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
 
   @override
   void render(Canvas canvas) {
-    final gridSize = 50.0;
+    const gridSize = 50.0;
     final paint = Paint()
       ..color = theme.flame.gridLine
       ..strokeWidth = 0.5;
@@ -389,20 +408,12 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
     const centerY = 5000.0;
 
     // 绘制网格线，以世界原点为中心
-    for (double x = centerX - 2000; x <= centerX + 2000; x += gridSize) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.y),
-        paint,
-      );
+    for (var x = centerX - 2000; x <= centerX + 2000; x += gridSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.y), paint);
     }
 
-    for (double y = centerY - 2000; y <= centerY + 2000; y += gridSize) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.x, y),
-        paint,
-      );
+    for (var y = centerY - 2000; y <= centerY + 2000; y += gridSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.x, y), paint);
     }
 
     // 绘制原点标记
@@ -410,12 +421,12 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
       ..color = theme.flame.originAxis
       ..strokeWidth = 2.0;
 
-    canvas.drawLine(
+    canvas..drawLine(
       const Offset(centerX - 50, centerY),
       const Offset(centerX + 50, centerY),
       originPaint,
-    );
-    canvas.drawLine(
+    )
+    ..drawLine(
       const Offset(centerX, centerY - 50),
       const Offset(centerX, centerY + 50),
       originPaint,
@@ -425,7 +436,7 @@ class _BackgroundComponent extends PositionComponent with DragCallbacks, HasGame
   @override
   void onDragStart(DragStartEvent event) {
     super.onDragStart(event);
-    position = Vector2.zero();//固定位置
+    position = Vector2.zero(); //固定位置
     _isDragging = true;
     // === 架构说明：拖拽起始位置记录 ===
     // 必须使用 viewfinder.position（世界坐标系）

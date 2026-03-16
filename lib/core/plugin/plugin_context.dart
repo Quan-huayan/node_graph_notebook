@@ -1,8 +1,14 @@
 import 'package:flutter/widgets.dart';
+
 import '../commands/command_bus.dart';
 import '../events/app_events.dart';
-import '../repositories/node_repository.dart';
+import '../execution/cpu_task.dart';
+import '../execution/execution_engine.dart';
+import '../execution/task_registry.dart';
 import '../repositories/graph_repository.dart';
+import '../repositories/node_repository.dart';
+import '../services/infrastructure/settings_registry.dart';
+import '../services/infrastructure/theme_registry.dart';
 import 'api/api_registry.dart';
 import 'dependency_container.dart';
 import 'plugin_communication.dart';
@@ -13,6 +19,22 @@ import 'plugin_exception.dart';
 /// 提供插件与主系统交互的受限 API
 /// 插件通过此上下文访问系统功能，但不能直接访问内部实现
 class PluginContext {
+  /// 创建一个新的插件上下文实例。
+  ///
+  /// [pluginId] 插件的唯一标识符
+  /// [commandBus] 命令总线，用于执行写操作
+  /// [eventBus] 事件总线，用于订阅数据变化
+  /// [logger] 插件日志记录器
+  /// [apiRegistry] API 注册表，用于获取其他插件导出的 API
+  /// [nodeRepository] 节点仓库，用于读取节点数据
+  /// [graphRepository] 图仓库，用于读取图数据
+  /// [executionEngine] 执行引擎，用于 CPU 密集型任务
+  /// [dependencyContainer] 依赖注入容器
+  /// [communication] 插件通信接口
+  /// [taskRegistry] 任务注册表，用于注册自定义任务类型
+  /// [settingsRegistry] 设置注册表，用于注册插件设置
+  /// [themeRegistry] 主题注册表，用于注册主题扩展
+  /// [config] 插件配置
   PluginContext({
     required this.pluginId,
     required this.commandBus,
@@ -21,8 +43,12 @@ class PluginContext {
     this.apiRegistry,
     this.nodeRepository,
     this.graphRepository,
+    this.executionEngine,
     this.dependencyContainer,
     this.communication,
+    this.taskRegistry,
+    this.settingsRegistry,
+    this.themeRegistry,
     Map<String, dynamic>? config,
   }) : _config = config ?? {} {
     // 注册默认依赖
@@ -50,6 +76,18 @@ class PluginContext {
   /// 图仓库（用于读取图数据）
   final GraphRepository? graphRepository;
 
+  /// 执行引擎（用于 CPU 密集型任务）
+  final ExecutionEngine? executionEngine;
+
+  /// 任务注册表（用于注册自定义任务类型）
+  final TaskRegistry? taskRegistry;
+
+  /// 设置注册表（用于注册插件设置）
+  final SettingsRegistry? settingsRegistry;
+
+  /// 主题注册表（用于注册主题扩展）
+  final ThemeRegistry? themeRegistry;
+
   /// 依赖注入容器
   final DependencyContainer? dependencyContainer;
 
@@ -75,6 +113,18 @@ class PluginContext {
       }
       if (apiRegistry != null) {
         dependencyContainer!.register<APIRegistry>(apiRegistry!);
+      }
+      if (executionEngine != null) {
+        dependencyContainer!.register<ExecutionEngine>(executionEngine!);
+      }
+      if (taskRegistry != null) {
+        dependencyContainer!.register<TaskRegistry>(taskRegistry!);
+      }
+      if (settingsRegistry != null) {
+        dependencyContainer!.register<SettingsRegistry>(settingsRegistry!);
+      }
+      if (themeRegistry != null) {
+        dependencyContainer!.register<ThemeRegistry>(themeRegistry!);
       }
       if (communication != null) {
         dependencyContainer!.register<PluginCommunication>(communication!);
@@ -109,25 +159,19 @@ class PluginContext {
   ///   searchAPI.search(query);
   /// }
   /// ```
-  T? getAPI<T>(String apiName) {
-    return apiRegistry?.getAPI<T>(apiName);
-  }
+  T? getAPI<T>(String apiName) => apiRegistry?.getAPI<T>(apiName);
 
   /// 检查 API 是否存在
   ///
   /// [apiName] API 名称
   /// 返回 true 如果 API 已被其他插件导出
-  bool hasAPI(String apiName) {
-    return apiRegistry?.hasAPI(apiName) ?? false;
-  }
+  bool hasAPI(String apiName) => apiRegistry?.hasAPI(apiName) ?? false;
 
   /// 获取 API 版本
   ///
   /// [apiName] API 名称
   /// 返回 API 版本，如果不存在则返回 null
-  String? getAPIVersion(String apiName) {
-    return apiRegistry?.getAPIVersion(apiName);
-  }
+  String? getAPIVersion(String apiName) => apiRegistry?.getAPIVersion(apiName);
 
   /// 类型安全的依赖访问
   ///
@@ -146,13 +190,21 @@ class PluginContext {
     // 向后兼容
     if (T == NodeRepository) {
       if (nodeRepository == null) {
-        throw PluginStateException('plugin', 'uninitialized', 'NodeRepository available');
+        throw PluginStateException(
+          'plugin',
+          'uninitialized',
+          'NodeRepository available',
+        );
       }
       return nodeRepository as T;
     }
     if (T == GraphRepository) {
       if (graphRepository == null) {
-        throw PluginStateException('plugin', 'uninitialized', 'GraphRepository available');
+        throw PluginStateException(
+          'plugin',
+          'uninitialized',
+          'GraphRepository available',
+        );
       }
       return graphRepository as T;
     }
@@ -186,9 +238,7 @@ class PluginContext {
   ///   final repo = context.read<NodeRepository>();
   /// }
   /// ```
-  bool hasRepository<T>() {
-    return hasDependency<T>();
-  }
+  bool hasRepository<T>() => hasDependency<T>();
 
   /// 记录信息日志
   void info(String message) {
@@ -209,15 +259,46 @@ class PluginContext {
   void debug(String message) {
     logger?.debug(message);
   }
+
+  /// 执行 CPU 密集型任务
+  ///
+  /// 便捷方法：通过 ExecutionEngine 在后台 isolate 中执行任务
+  ///
+  /// [task] 要执行的 CPU 任务
+  /// 返回任务执行结果
+  ///
+  /// 示例：
+  /// ```dart
+  /// final result = await context.executeCPU(
+  ///   TextLayoutTask(text: 'Hello', fontSize: 14.0),
+  /// );
+  /// ```
+  Future<T> executeCPU<T>(CPUTask<T> task) async {
+    if (executionEngine == null) {
+      throw PluginStateException(
+        pluginId,
+        'uninitialized',
+        'ExecutionEngine not available',
+      );
+    }
+    return executionEngine!.executeCPU(task);
+  }
 }
 
 /// 插件日志记录器
 ///
 /// 为插件提供日志记录功能
 class PluginLogger {
+  /// 创建一个新的插件日志记录器实例。
+  ///
+  /// [pluginId] 插件的唯一标识符
+  /// [level] 日志级别，默认为 LogLevel.info
   PluginLogger(this.pluginId, [this.level = LogLevel.info]);
 
+  /// 插件的唯一标识符
   final String pluginId;
+  
+  /// 日志级别
   LogLevel level;
 
   void _log(LogLevel level, String message) {
@@ -228,10 +309,21 @@ class PluginLogger {
     debugPrint('[$timestamp] [$levelStr] [$pluginId] $message');
   }
 
+  /// 记录信息日志
+  ///
+  /// [message] 日志消息
   void info(String message) => _log(LogLevel.info, message);
 
+  /// 记录警告日志
+  ///
+  /// [message] 日志消息
   void warning(String message) => _log(LogLevel.warning, message);
 
+  /// 记录错误日志
+  ///
+  /// [message] 日志消息
+  /// [error] 错误对象
+  /// [stackTrace] 堆栈跟踪
   void error(String message, [dynamic error, StackTrace? stackTrace]) {
     _log(LogLevel.error, message);
     if (error != null) {
@@ -242,25 +334,36 @@ class PluginLogger {
     }
   }
 
+  /// 记录调试日志
+  ///
+  /// [message] 日志消息
   void debug(String message) => _log(LogLevel.debug, message);
 }
 
 /// 日志级别
 enum LogLevel {
+  /// 调试级别
   debug,
+  
+  /// 信息级别
   info,
+  
+  /// 警告级别
   warning,
-  error,
+  
+  /// 错误级别
+  error
 }
 
 /// 插件 API 提供者
 ///
 /// 为插件提供额外的 API 访问
 class PluginAPIProvider {
-  PluginAPIProvider({
-    this.storageAPI,
-    this.uiAPI,
-  });
+  /// 创建一个新的插件 API 提供者实例。
+  ///
+  /// [storageAPI] 存储 API，用于文件读写等操作
+  /// [uiAPI] UI API，用于对话框、菜单等操作
+  PluginAPIProvider({this.storageAPI, this.uiAPI});
 
   /// 存储 API（文件读写等）
   final StorageAPI? storageAPI;
@@ -311,6 +414,13 @@ abstract class UIAPI {
 
 /// 菜单项
 class MenuItem {
+  /// 创建一个新的菜单项实例。
+  ///
+  /// [id] 菜单项的唯一标识符
+  /// [label] 菜单项的显示文本
+  /// [icon] 菜单项的图标
+  /// [shortcut] 菜单项的快捷键
+  /// [onPressed] 菜单项被点击时的回调函数
   MenuItem({
     required this.id,
     required this.label,
@@ -319,10 +429,19 @@ class MenuItem {
     this.onPressed,
   });
 
+  /// 菜单项的唯一标识符
   final String id;
+  
+  /// 菜单项的显示文本
   final String label;
+  
+  /// 菜单项的图标
   final String? icon;
+  
+  /// 菜单项的快捷键
   final String? shortcut;
+  
+  /// 菜单项被点击时的回调函数
   final VoidCallback? onPressed;
 }
 

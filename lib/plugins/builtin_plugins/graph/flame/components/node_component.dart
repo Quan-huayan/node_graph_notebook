@@ -1,13 +1,20 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart' hide Image;
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
+
 import '../../../../../core/models/models.dart';
 import '../../../../../core/services/theme/app_theme.dart';
+import '../../bloc/graph_bloc.dart';
+import '../../bloc/graph_event.dart';
 
 /// Flame 节点渲染组件（BLoC 集成版本）
-class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, SecondaryTapCallbacks, DoubleTapCallbacks {
+class NodeComponent extends PositionComponent
+    with
+        DragCallbacks,
+        TapCallbacks,
+        SecondaryTapCallbacks,
+        DoubleTapCallbacks {
+  /// 创建节点渲染组件
   NodeComponent({
     required this.node,
     required this.viewConfig,
@@ -21,14 +28,16 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     this.onAIChatTap,
     Vector2? position,
   }) : super(
-          position: position ??
-              Vector2(node.position.dx.toDouble(), node.position.dy.toDouble()),
-          size: _calculateSize(node),
-        ) {
+         position:
+             position ??
+             Vector2(node.position.dx.toDouble(), node.position.dy.toDouble()),
+         size: _calculateSize(node),
+       ) {
     _initPaints();
     _initTextPainters();
   }
 
+  /// 计算节点大小
   static Vector2 _calculateSize(Node node) {
     // 文件夹节点使用稍大的尺寸
     if (node.isFolder) {
@@ -48,15 +57,24 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
 
   /// 节点数据（可更新，通过 updateNode 方法同步最新状态）
   Node node;
+  /// 视图配置
   final GraphViewConfig viewConfig;
+  /// 应用主题
   final AppThemeData theme;
-  final GraphBloc? bloc; // 可选的 BLoC，如果提供则使用 BLoC 模式
+  /// 可选的 BLoC，如果提供则使用 BLoC 模式
+  final GraphBloc? bloc;
+  /// 点击回调
   final Function(Node)? onTap;
-  final Function(Node, Offset)? onDragUpdateCallback; // 拖拽过程中回调
+  /// 拖拽过程中回调
+  final Function(Node, Offset)? onDragUpdateCallback;
+  /// 拖拽结束回调
   final Function(Node, Offset)? onDragEndCallback;
+  /// 右键点击回调
   final Function(Node, Offset)? onSecondaryTap;
+  /// 双击回调
   final Function(Node)? onDoubleTap;
-  final Function(Node)? onAIChatTap; // AI 节点点击回调
+  /// AI 节点点击回调
+  final Function(Node)? onAIChatTap;
 
   bool _isSelected = false;
   bool _isHovered = false;
@@ -89,10 +107,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     final icon = node.metadata['icon'] as String?;
     if (icon != null && icon.isNotEmpty) {
       _iconPainter = TextPainter(
-        text: TextSpan(
-          text: icon,
-          style: const TextStyle(fontSize: 16),
-        ),
+        text: TextSpan(text: icon, style: const TextStyle(fontSize: 16)),
         textDirection: TextDirection.ltr,
       );
       _iconPainter!.layout();
@@ -105,7 +120,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
       case NodeViewMode.compact:
         return 1.5;
       default:
-        return 2.0;
+        return 2;
     }
   }
 
@@ -132,10 +147,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
       _contentPainter = TextPainter(
         text: TextSpan(
           text: '$childCount item${childCount != 1 ? "s" : ""}',
-          style: TextStyle(
-            color: theme.text.secondary,
-            fontSize: 11,
-          ),
+          style: TextStyle(color: theme.text.secondary, fontSize: 11),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -171,10 +183,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         _contentPainter = TextPainter(
           text: TextSpan(
             text: preview,
-            style: TextStyle(
-              color: theme.text.secondary,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: theme.text.secondary, fontSize: 12),
           ),
           textDirection: TextDirection.ltr,
           maxLines: 3,
@@ -186,10 +195,13 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         if (node.content != null && node.content!.isNotEmpty) {
           // 计算内容区域可用高度（节点高度 - 标题高度 - padding）
           final titleHeight = _titlePainter.height;
-          final availableHeight = 300 - titleHeight - 24; // 8(top padding) + 8(title bottom) + 8(bottom padding)
+          final availableHeight =
+              300 -
+              titleHeight -
+              24; // 8(top padding) + 8(title bottom) + 8(bottom padding)
 
           // 根据字体高度（fontSize * lineSpacing）计算最大行数
-          final lineHeight = 11.0 * 1.4; // fontSize * height
+          const lineHeight = 11.0 * 1.4; // fontSize * height
           final maxLines = (availableHeight / lineHeight).floor();
 
           _fullContentPainter = TextPainter(
@@ -303,22 +315,21 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   void _renderFolder(Canvas canvas) {
     // 绘制文件夹图标样式的背景
     final path = Path();
-    final tabWidth = 40.0;
-    final tabHeight = 15.0;
+    const tabWidth = 40.0;
+    const tabHeight = 15.0;
 
     // 文件夹标签
-    path.moveTo(8, 0);
-    path.lineTo(8 + tabWidth, 0);
-    path.lineTo(8 + tabWidth + 8, tabHeight);
-    path.lineTo(width - 8, tabHeight);
-    path.lineTo(width - 8, height - 8);
-    path.lineTo(8, height - 8);
-    path.close();
+    path..moveTo(8, 0)
+    ..lineTo(8 + tabWidth, 0)
+    ..lineTo(8 + tabWidth + 8, tabHeight)
+    ..lineTo(width - 8, tabHeight)
+    ..lineTo(width - 8, height - 8)
+    ..lineTo(8, height - 8)
+    ..close();
 
-    canvas.drawPath(path, _backgroundPaint);
-
+    canvas..drawPath(path, _backgroundPaint)
     // 绘制边框
-    canvas.drawPath(path, _borderPaint);
+    ..drawPath(path, _borderPaint);
 
     // 绘制选中状态
     if (_isSelected) {
@@ -343,7 +354,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     _titlePainter.paint(canvas, Offset(8 + iconOffset, 10));
 
     // 绘制子项数量
-    _contentPainter.paint(canvas, Offset(8 + iconOffset, _titlePainter.height + 14));
+    _contentPainter.paint(
+      canvas,
+      Offset(8 + iconOffset, _titlePainter.height + 14),
+    );
 
     // 绘制引用计数
     _drawReferenceCount(canvas);
@@ -381,11 +395,7 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     }
 
     // 绘制边框
-    canvas.drawCircle(
-      Offset(centerX, centerY),
-      width / 2 - 2,
-      _borderPaint,
-    );
+    canvas.drawCircle(Offset(centerX, centerY), width / 2 - 2, _borderPaint);
 
     // === 架构说明：AI 图标绘制 ===
     // 实现方式：使用 TextPainter 绘制 IconData
@@ -401,8 +411,8 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         ),
       ),
       textDirection: TextDirection.ltr,
-    );
-    iconPainter.layout();
+    )
+    ..layout();
 
     // 居中绘制图标
     iconPainter.paint(
@@ -469,17 +479,16 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     }
 
     // 绘制边框
-    canvas.drawCircle(
-      Offset(centerX, centerY),
-      width / 2 - 2,
-      _borderPaint,
-    );
+    canvas.drawCircle(Offset(centerX, centerY), width / 2 - 2, _borderPaint);
 
     // 绘制首字母
     if (node.viewMode == NodeViewMode.compact) {
       _contentPainter.paint(
         canvas,
-        Offset(centerX - _contentPainter.width / 2, centerY - _contentPainter.height / 2),
+        Offset(
+          centerX - _contentPainter.width / 2,
+          centerY - _contentPainter.height / 2,
+        ),
       );
     }
   }
@@ -507,7 +516,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
           _iconPainter!.paint(canvas, const Offset(8, 10));
         }
         _titlePainter.paint(canvas, Offset(8 + iconOffset, 8));
-        _contentPainter.paint(canvas, Offset(8 + iconOffset, _titlePainter.height + 8));
+        _contentPainter.paint(
+          canvas,
+          Offset(8 + iconOffset, _titlePainter.height + 8),
+        );
         break;
       case NodeViewMode.fullContent:
         if (hasCustomIcon) {
@@ -517,7 +529,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         final painter = _fullContentPainter;
         // ignore: unnecessary_null_comparison
         if (painter != null) {
-          painter.paint(canvas, Offset(8 + iconOffset, _titlePainter.height + 12));
+          painter.paint(
+            canvas,
+            Offset(8 + iconOffset, _titlePainter.height + 12),
+          );
         }
         break;
     }
@@ -542,18 +557,21 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         ),
       ),
       textDirection: TextDirection.ltr,
-    );
-    countPainter.layout();
+    )
+    ..layout();
 
     final badgePaint = Paint()
       ..color = theme.ui.badgeBackground
       ..style = PaintingStyle.fill;
 
-    final badgeSize = 18.0;
+    const badgeSize = 18.0;
     final badgePosition = Offset(width - badgeSize - 4, height - badgeSize - 4);
 
     canvas.drawCircle(
-      Offset(badgePosition.dx + badgeSize / 2, badgePosition.dy + badgeSize / 2),
+      Offset(
+        badgePosition.dx + badgeSize / 2,
+        badgePosition.dy + badgeSize / 2,
+      ),
       badgeSize / 2,
       badgePaint,
     );
@@ -576,7 +594,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
         final distance = (point - Vector2(centerX, centerY)).length;
         return distance <= width / 2;
       default:
-        return point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height;
+        return point.x >= 0 &&
+            point.x <= width &&
+            point.y >= 0 &&
+            point.y <= height;
     }
   }
 
@@ -593,7 +614,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     position += event.localDelta;
 
     // 拖拽过程中实时通知更新连线位置（发送中心点）
-    final centerPosition = Offset(position.x + width / 2, position.y + height / 2);
+    final centerPosition = Offset(
+      position.x + width / 2,
+      position.y + height / 2,
+    );
     onDragUpdateCallback?.call(node, centerPosition);
   }
 
@@ -603,7 +627,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     _backgroundPaint.color = _getBackgroundColor();
 
     // 计算中心点位置
-    final centerPosition = Offset(position.x + width / 2, position.y + height / 2);
+    final centerPosition = Offset(
+      position.x + width / 2,
+      position.y + height / 2,
+    );
 
     // 如果有 BLoC，分发移动事件（存储中心点）
     if (bloc != null) {
@@ -624,7 +651,8 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     // === 架构说明：AI 节点特殊处理 ===
     // 设计意图：AI 节点点击时打开聊天对话框，而不是常规选择
     // 实现方式：通过 onAIChatTap 回调通知外部显示对话框
-    final isAINode = node.metadata.containsKey('isAI') && node.metadata['isAI'] == true;
+    final isAINode =
+        node.metadata.containsKey('isAI') && node.metadata['isAI'] == true;
 
     if (isAINode && onAIChatTap != null) {
       // AI 节点：打开聊天对话框
@@ -653,7 +681,10 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
   @override
   void onSecondaryTapDown(SecondaryTapDownEvent event) {
     // 使用 devicePosition 获取全局设备坐标
-    onSecondaryTap?.call(node, Offset(event.devicePosition.x, event.devicePosition.y));
+    onSecondaryTap?.call(
+      node,
+      Offset(event.devicePosition.x, event.devicePosition.y),
+    );
   }
 
   @override
@@ -661,10 +692,14 @@ class NodeComponent extends PositionComponent with DragCallbacks, TapCallbacks, 
     onDoubleTap?.call(node);
   }
 
+  /// 设置节点选中状态
   void setSelected(bool selected) {
     _isSelected = selected;
   }
 
+  /// 更新节点数据
+  ///
+  /// 同步最新的节点数据到组件，包括位置、尺寸和渲染属性
   void updateNode(Node newNode) {
     // === 架构说明：节点数据同步 ===
     // 设计意图：同步最新的节点数据到组件

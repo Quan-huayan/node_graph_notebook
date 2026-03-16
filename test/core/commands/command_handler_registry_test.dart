@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/commands/command.dart';
-import 'package:node_graph_notebook/core/commands/command_context.dart';
-import 'package:node_graph_notebook/core/commands/command_handler.dart';
 import 'package:node_graph_notebook/core/commands/command_handler_registry.dart';
+import 'package:node_graph_notebook/core/commands/models/command.dart';
+import 'package:node_graph_notebook/core/commands/models/command_context.dart';
+import 'package:node_graph_notebook/core/commands/models/command_handler.dart';
 
 // 测试命令
 class TestCommand extends Command<String> {
@@ -16,22 +16,16 @@ class TestCommand extends Command<String> {
   bool get isUndoable => false;
 
   @override
-  Future<CommandResult<String>> execute(CommandContext context) async {
-    return CommandResult.success('Test result');
-  }
+  Future<CommandResult<String>> execute(CommandContext context) async => CommandResult.success('Test result');
 
   @override
-  Future<void> undo(covariant CommandContext context) async {
-    throw UnsupportedError('Not undoable');
-  }
+  Future<void> undo(covariant CommandContext context) async => throw UnsupportedError('Not undoable');
 }
 
 // 测试命令处理器
 class TestCommandHandler extends CommandHandler<TestCommand> {
   @override
-  Future<CommandResult> execute(TestCommand command, CommandContext context) async {
-    return CommandResult.success('Test result');
-  }
+  Future<CommandResult> execute(TestCommand command, CommandContext context) async => CommandResult.success('Test result');
 }
 
 void main() {
@@ -65,8 +59,9 @@ void main() {
     final handler1 = TestCommandHandler();
     final handler2 = TestCommandHandler();
 
-    registry.register(handler1, TestCommand);
-    registry.register(handler2, TestCommand);
+    registry
+      ..register(handler1, TestCommand)
+      ..register(handler2, TestCommand);
 
     final retrievedHandler = registry.getHandler(TestCommand);
     expect(retrievedHandler, equals(handler2));

@@ -3,11 +3,10 @@ import '../../../../core/models/models.dart';
 
 /// 图形预览 widget - 显示节点关系的迷你图
 class GraphPreviewWidget extends StatelessWidget {
-  const GraphPreviewWidget({
-    super.key,
-    required this.nodes,
-  });
+  /// 创建图形预览 widget
+  const GraphPreviewWidget({super.key, required this.nodes});
 
+  /// 节点列表
   final List<Node> nodes;
 
   @override
@@ -31,9 +30,7 @@ class GraphPreviewWidget extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-              ),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
             ),
           ),
           child: Padding(
@@ -101,11 +98,7 @@ class _GraphPreviewPainter extends CustomPainter {
           final x2 = (targetIndex % cols) * cellWidth + cellWidth / 2;
           final y2 = (targetIndex ~/ cols) * cellHeight + cellHeight / 2;
 
-          canvas.drawLine(
-            Offset(x1, y1),
-            Offset(x2, y2),
-            linePaint,
-          );
+          canvas.drawLine(Offset(x1, y1), Offset(x2, y2), linePaint);
         }
       }
     }
@@ -129,8 +122,8 @@ class _GraphPreviewPainter extends CustomPainter {
 
       final nodeRadius = (cellWidth < cellHeight ? cellWidth : cellHeight) / 3;
 
-      canvas.drawCircle(Offset(x, y), nodeRadius, nodePaint);
-      canvas.drawCircle(Offset(x, y), nodeRadius, nodeStroke);
+      canvas..drawCircle(Offset(x, y), nodeRadius, nodePaint)
+      ..drawCircle(Offset(x, y), nodeRadius, nodeStroke);
 
       // 节点编号
       final textPainter = TextPainter(
@@ -144,8 +137,8 @@ class _GraphPreviewPainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       );
-      textPainter.layout();
-      textPainter.paint(
+      textPainter..layout()
+      ..paint(
         canvas,
         Offset(x - textPainter.width / 2, y - textPainter.height / 2),
       );
@@ -153,7 +146,5 @@ class _GraphPreviewPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GraphPreviewPainter oldDelegate) {
-    return oldDelegate.nodes != nodes;
-  }
+  bool shouldRepaint(_GraphPreviewPainter oldDelegate) => oldDelegate.nodes != nodes;
 }

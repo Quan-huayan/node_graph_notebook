@@ -1,16 +1,10 @@
 // 插件系统核心导出
 
+// 依赖解析
+export 'dependency_resolver.dart'
+    show DependencyResolver, DependencyResolutionResult;
 // 基础接口和类
-export 'plugin_base.dart'
-    show Plugin, internal;
-export 'plugin_metadata.dart'
-    show
-        PluginMetadata,
-        PluginType,
-        PluginPermission,
-        PluginState,
-        PluginDependency,
-        APIDependency;
+export 'plugin_base.dart' show Plugin, internal;
 export 'plugin_context.dart'
     show
         PluginContext,
@@ -21,6 +15,7 @@ export 'plugin_context.dart'
         UIAPI,
         MenuItem,
         WidgetBuilder;
+export 'plugin_discoverer.dart' show PluginDiscoverer, PluginFactory;
 export 'plugin_exception.dart'
     show
         PluginException,
@@ -39,31 +34,21 @@ export 'plugin_exception.dart'
         PluginConfigurationException,
         PluginVersionException,
         PluginApiException;
-
+export 'plugin_lifecycle.dart'
+    show PluginLifecycleManager, PluginStateListener, PluginWrapper;
+// 管理和生命周期
+export 'plugin_manager.dart' show PluginManager, IPluginManager;
+export 'plugin_metadata.dart'
+    show
+        PluginMetadata,
+        PluginType,
+        PluginPermission,
+        PluginState,
+        PluginDependency,
+        APIDependency;
+export 'plugin_registry.dart' show PluginRegistry;
 // Service 注册系统
 export 'service_binding.dart'
-    show
-        ServiceBinding,
-        ServiceResolver,
-        ServiceDependencyException;
+    show ServiceBinding, ServiceResolver, ServiceDependencyException;
 export 'service_registry.dart'
-    show
-        ServiceRegistry,
-        ServiceRegistrationException;
-
-// 管理和生命周期
-export 'plugin_manager.dart'
-    show PluginManager, IPluginManager;
-export 'plugin_registry.dart'
-    show PluginRegistry;
-export 'plugin_lifecycle.dart'
-    show
-        PluginLifecycleManager,
-        PluginStateListener,
-        PluginWrapper;
-export 'plugin_discoverer.dart'
-    show PluginDiscoverer, PluginFactory;
-
-// 依赖解析
-export 'dependency_resolver.dart'
-    show DependencyResolver, DependencyResolutionResult;
+    show ServiceRegistry, ServiceRegistrationException;

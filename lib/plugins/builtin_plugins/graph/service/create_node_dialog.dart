@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/core/models/models.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+
 import '../../../../core/services/theme_service.dart';
 import '../bloc/graph_bloc.dart';
+import '../bloc/graph_event.dart';
 import '../bloc/node_bloc.dart';
+import '../bloc/node_event.dart';
 
-// 创建节点对话框
+/// 创建节点对话框
 class CreateNodeDialog extends StatefulWidget {
+  /// 构造函数
   const CreateNodeDialog({super.key});
 
   @override
@@ -16,6 +17,7 @@ class CreateNodeDialog extends StatefulWidget {
 }
 
 class _CreateNodeDialogState extends State<CreateNodeDialog> {
+  /// 构造函数
   _CreateNodeDialogState();
 
   final _titleController = TextEditingController();
@@ -68,7 +70,7 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
                 maxLines: 6,
                 decoration: const InputDecoration(
                   labelText: 'Description',
-                  hintText:'Write your note in Markdown...',
+                  hintText: 'Write your note in Markdown...',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.edit_note),
                   helperText: 'Supports Markdown formatting',
@@ -118,17 +120,16 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
 
     try {
       // 发送创建节点事件
-      nodeBloc.add(NodeCreateEvent(
-        title: title,
-        content: content.isEmpty ? '' : content,
-      ));
+      nodeBloc.add(
+        NodeCreateEvent(title: title, content: content.isEmpty ? '' : content),
+      );
 
       // 等待节点创建完成
       await Future.delayed(const Duration(milliseconds: 100));
 
       // 获取新创建的节点
-      final Node newNode = nodeBloc.state.nodes.lastWhere(
-        (n) => n.title == title
+      final newNode = nodeBloc.state.nodes.lastWhere(
+        (n) => n.title == title,
       );
 
       // 添加到当前图

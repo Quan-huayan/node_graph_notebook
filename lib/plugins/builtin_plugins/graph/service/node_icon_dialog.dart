@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/services/theme_service.dart';
+import '../bloc/node_bloc.dart';
+import '../bloc/node_event.dart';
 
 /// 预定义图标选项
 const List<Map<String, dynamic>> _iconOptions = [
@@ -35,11 +36,12 @@ const List<Map<String, dynamic>> _iconOptions = [
 /// 节点图标选择对话框
 /// 用于为节点选择图标/emoji
 class NodeIconDialog extends StatefulWidget {
-  const NodeIconDialog({
-    super.key,
-    required this.node,
-  });
+  /// 构造函数
+  ///
+  /// [node] - 要编辑图标的节点
+  const NodeIconDialog({super.key, required this.node});
 
+  /// 要编辑图标的节点
   final Node node;
 
   @override
@@ -142,10 +144,7 @@ class _NodeIconDialogState extends State<NodeIconDialog> {
       newMetadata['icon'] = icon;
     }
 
-    nodeBloc.add(NodeUpdateEvent(
-      widget.node.id,
-      metadata: newMetadata,
-    ));
+    nodeBloc.add(NodeUpdateEvent(widget.node.id, metadata: newMetadata));
 
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(

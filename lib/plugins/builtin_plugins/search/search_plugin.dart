@@ -1,9 +1,14 @@
-import '../../../core/plugin/plugin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'service/search_service_bindings.dart';
-import 'bloc/search_bloc.dart';
+
+import '../../../core/commands/command_bus.dart';
+import '../../../core/plugin/plugin.dart';
 import '../graph/service/node_service.dart';
+import 'bloc/search_bloc.dart';
+import 'command/search_commands.dart';
+import 'handler/delete_search_preset_handler.dart';
+import 'handler/save_search_preset_handler.dart';
 import 'service/search_preset_service.dart';
+import 'service/search_service_bindings.dart';
 
 /// Search 插件
 ///
@@ -21,32 +26,32 @@ class SearchPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'search',
-        name: 'Search',
-        version: '1.0.0',
-        description: 'Node search and preset management',
-        author: 'Node Graph Notebook',
-        enabledByDefault: true,
-      );
+    id: 'search',
+    name: 'Search',
+    version: '1.0.0',
+    description: 'Node search and preset management',
+    author: 'Node Graph Notebook',
+    enabledByDefault: true,
+  );
 
   @override
-  List<ServiceBinding> registerServices() => [
-        SearchPresetServiceBinding(),
-      ];
+  List<ServiceBinding> registerServices() => [SearchPresetServiceBinding()];
 
   @override
   List<BlocProvider> registerBlocs() => [
-        BlocProvider<SearchBloc>(
-          create: (ctx) => SearchBloc(
-            nodeService: ctx.read<NodeService>(),
-            presetService: ctx.read<SearchPresetService>(),
-          ),
-        ),
-      ];
+    BlocProvider<SearchBloc>(
+      create: (ctx) => SearchBloc(
+        nodeService: ctx.read<NodeService>(),
+        presetService: ctx.read<SearchPresetService>(),
+        commandBus: ctx.read<CommandBus>(),
+      ),
+    ),
+  ];
 
   @override
   Future<void> onLoad(PluginContext context) async {
-    // 加载时的逻辑
+    // 注册命令处理器
+    _registerCommandHandlers(context);
   }
 
   @override
@@ -62,5 +67,17 @@ class SearchPlugin extends Plugin {
   @override
   Future<void> onUnload() async {
     // 卸载时的逻辑
+  }
+
+  /// 注册命令处理器
+  void _registerCommandHandlers(PluginContext context) {
+    final commandBus = context.commandBus;
+    final presetService = context.read<SearchPresetService>();
+
+    // 注册搜索预设命令处理器
+    commandBus.registerHandlers({
+      SaveSearchPresetCommand: SaveSearchPresetHandler(presetService),
+      DeleteSearchPresetCommand: DeleteSearchPresetHandler(presetService),
+    });
   }
 }

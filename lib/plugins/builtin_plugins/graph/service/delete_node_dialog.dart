@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/core/services/services.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
-import '../bloc/node_bloc.dart';
 
+import '../../../../core/services/services.dart';
+import '../bloc/node_bloc.dart';
+import '../bloc/node_event.dart';
+
+/// 删除节点对话框
 class DeleteNodeDialog {
+  /// 显示删除节点对话框
+  ///
+  /// [context] - 构建上下文
   static Future<void> show(BuildContext context) async {
     final nodeBloc = context.read<NodeBloc>();
     final nodeState = nodeBloc.state;
@@ -45,7 +50,7 @@ class DeleteNodeDialog {
       },
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       try {
         // 再删除节点本身
         nodeBloc.add(NodeDeleteEvent(node.id));

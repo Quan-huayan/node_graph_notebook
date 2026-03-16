@@ -1,15 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../service/import_export_service.dart';
+
 import '../models/models.dart';
+import '../service/import_export_service.dart';
 import 'converter_event.dart';
 import 'converter_state.dart';
 
-/// 转换器 BLoC
+/// 转换器 BLoC，处理转换相关的状态管理
 class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
-  ConverterBloc({
-    required ImportExportService importExportService,
-  })  : _importExportService = importExportService,
-        super(ConverterState.initial()) {
+  /// 创建转换器 BLoC
+  /// 
+  /// [importExportService] - 导入导出服务，用于执行导入导出操作
+  ConverterBloc({required ImportExportService importExportService})
+    : _importExportService = importExportService,
+      super(ConverterState.initial()) {
     on<ImportPreviewEvent>(_onImportPreview);
     on<ImportExecuteEvent>(_onImportExecute);
     on<ExportPreviewEvent>(_onExportPreview);
@@ -25,10 +28,7 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
     ImportPreviewEvent event,
     Emitter<ConverterState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoading: true,
-      error: null,
-    ));
+    emit(state.copyWith(isLoading: true, error: null));
 
     try {
       final nodes = await _importExportService.previewImport(
@@ -36,16 +36,15 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
         rule: event.rule,
       );
 
-      emit(state.copyWith(
-        importPreviewNodes: nodes,
-        isLoading: false,
-        error: null,
-      ));
+      emit(
+        state.copyWith(
+          importPreviewNodes: nodes,
+          isLoading: false,
+          error: null,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -54,10 +53,7 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
     ImportExecuteEvent event,
     Emitter<ConverterState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoading: true,
-      error: null,
-    ));
+    emit(state.copyWith(isLoading: true, error: null));
 
     try {
       final result = await _importExportService.executeImport(
@@ -67,16 +63,11 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
         addToGraph: event.addToGraph,
       );
 
-      emit(state.copyWith(
-        isLoading: false,
-        conversionResult: result,
-        error: null,
-      ));
+      emit(
+        state.copyWith(isLoading: false, conversionResult: result, error: null),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -85,10 +76,7 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
     ExportPreviewEvent event,
     Emitter<ConverterState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoading: true,
-      error: null,
-    ));
+    emit(state.copyWith(isLoading: true, error: null));
 
     try {
       final markdown = await _importExportService.previewExport(
@@ -96,16 +84,15 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
         rule: event.rule,
       );
 
-      emit(state.copyWith(
-        exportPreviewMarkdown: markdown,
-        isLoading: false,
-        error: null,
-      ));
+      emit(
+        state.copyWith(
+          exportPreviewMarkdown: markdown,
+          isLoading: false,
+          error: null,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -114,10 +101,7 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
     ExportExecuteEvent event,
     Emitter<ConverterState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoading: true,
-      error: null,
-    ));
+    emit(state.copyWith(isLoading: true, error: null));
 
     try {
       await _importExportService.executeExport(
@@ -134,16 +118,11 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
         createdNodeIds: event.nodeIds,
       );
 
-      emit(state.copyWith(
-        isLoading: false,
-        conversionResult: result,
-        error: null,
-      ));
+      emit(
+        state.copyWith(isLoading: false, conversionResult: result, error: null),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -152,47 +131,47 @@ class ConverterBloc extends Bloc<ConverterEvent, ConverterState> {
     BatchImportEvent event,
     Emitter<ConverterState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoading: true,
-      currentProgress: 0,
-      totalProgress: event.filePaths.length,
-      error: null,
-    ));
+    emit(
+      state.copyWith(
+        isLoading: true,
+        currentProgress: 0,
+        totalProgress: event.filePaths.length,
+        error: null,
+      ),
+    );
 
     try {
       final result = await _importExportService.batchImport(
         filePaths: event.filePaths,
         config: event.config,
         onProgress: (current, total) {
-          emit(state.copyWith(
-            currentProgress: current,
-            totalProgress: total,
-          ));
+          emit(state.copyWith(currentProgress: current, totalProgress: total));
         },
       );
 
-      emit(state.copyWith(
-        isLoading: false,
-        conversionResult: result,
-        currentProgress: null,
-        totalProgress: null,
-        error: null,
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          conversionResult: result,
+          currentProgress: null,
+          totalProgress: null,
+          error: null,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        currentProgress: null,
-        totalProgress: null,
-        error: e.toString(),
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          currentProgress: null,
+          totalProgress: null,
+          error: e.toString(),
+        ),
+      );
     }
   }
 
   /// 清除预览
-  void _onClearPreview(
-    ClearPreviewEvent event,
-    Emitter<ConverterState> emit,
-  ) {
+  void _onClearPreview(ClearPreviewEvent event, Emitter<ConverterState> emit) {
     emit(ConverterState.initial());
   }
 }

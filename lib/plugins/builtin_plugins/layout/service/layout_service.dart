@@ -1,11 +1,16 @@
-import 'dart:ui';
 import 'dart:math';
-import '../../../../utils/types.dart';
+import 'dart:ui';
+
 import '../../../../core/models/models.dart';
+import '../../../../utils/types.dart';
 
 /// 布局服务
 abstract class LayoutService {
   /// 应用布局，返回节点ID到新位置的映射
+  /// 
+  /// [nodes] - 要布局的节点列表
+  /// [algorithm] - 布局算法
+  /// [options] - 布局选项
   Future<Map<String, Offset>> applyLayout({
     required List<Node> nodes,
     required LayoutAlgorithm algorithm,
@@ -13,18 +18,27 @@ abstract class LayoutService {
   });
 
   /// 力导向布局
+  /// 
+  /// [nodes] - 要布局的节点列表
+  /// [options] - 力导向布局选项
   Future<void> forceDirectedLayout({
     required List<Node> nodes,
     ForceDirectedOptions? options,
   });
 
   /// 层级布局
+  /// 
+  /// [nodes] - 要布局的节点列表
+  /// [options] - 层级布局选项
   Future<void> hierarchicalLayout({
     required List<Node> nodes,
     HierarchicalOptions? options,
   });
 
   /// 环形布局
+  /// 
+  /// [nodes] - 要布局的节点列表
+  /// [options] - 环形布局选项
   Future<void> circularLayout({
     required List<Node> nodes,
     CircularOptions? options,
@@ -33,19 +47,38 @@ abstract class LayoutService {
 
 /// 布局选项
 class LayoutOptions {
+  /// 创建布局选项
+  /// 
+  /// [nodeSpacing] - 节点间距
+  /// [levelSpacing] - 层级间距
+  /// [alignToGrid] - 是否对齐到网格
   const LayoutOptions({
     this.nodeSpacing = 100.0,
     this.levelSpacing = 150.0,
     this.alignToGrid = false,
   });
 
+  /// 节点间距
   final double nodeSpacing;
+  
+  /// 层级间距
   final double levelSpacing;
+  
+  /// 是否对齐到网格
   final bool alignToGrid;
 }
 
 /// 力导向布局选项
 class ForceDirectedOptions extends LayoutOptions {
+  /// 创建力导向布局选项
+  /// 
+  /// [nodeSpacing] - 节点间距
+  /// [levelSpacing] - 层级间距
+  /// [alignToGrid] - 是否对齐到网格
+  /// [repulsion] - 排斥力强度
+  /// [attraction] - 吸引力强度
+  /// [iterations] - 迭代次数
+  /// [damping] - 阻尼系数
   const ForceDirectedOptions({
     super.nodeSpacing = 100.0,
     super.levelSpacing = 150.0,
@@ -56,14 +89,28 @@ class ForceDirectedOptions extends LayoutOptions {
     this.damping = 0.9,
   });
 
+  /// 排斥力强度
   final double repulsion;
+  
+  /// 吸引力强度
   final double attraction;
+  
+  /// 迭代次数
   final int iterations;
+  
+  /// 阻尼系数
   final double damping;
 }
 
 /// 层级布局选项
 class HierarchicalOptions extends LayoutOptions {
+  /// 创建层级布局选项
+  /// 
+  /// [nodeSpacing] - 节点间距
+  /// [levelSpacing] - 层级间距
+  /// [alignToGrid] - 是否对齐到网格
+  /// [nodeWidth] - 节点宽度
+  /// [nodeHeight] - 节点高度
   const HierarchicalOptions({
     super.nodeSpacing = 100.0,
     super.levelSpacing = 150.0,
@@ -72,12 +119,21 @@ class HierarchicalOptions extends LayoutOptions {
     this.nodeHeight = 200.0,
   });
 
+  /// 节点宽度
   final double nodeWidth;
+  
+  /// 节点高度
   final double nodeHeight;
 }
 
 /// 环形布局选项
 class CircularOptions extends LayoutOptions {
+  /// 创建环形布局选项
+  /// 
+  /// [nodeSpacing] - 节点间距
+  /// [levelSpacing] - 层级间距
+  /// [alignToGrid] - 是否对齐到网格
+  /// [radius] - 环形半径
   const CircularOptions({
     super.nodeSpacing = 100.0,
     super.levelSpacing = 150.0,
@@ -85,6 +141,7 @@ class CircularOptions extends LayoutOptions {
     this.radius = 300.0,
   });
 
+  /// 环形半径
   final double radius;
 }
 
@@ -93,7 +150,8 @@ class LayoutServiceImpl implements LayoutService {
   final Map<String, Offset> _lastLayoutPositions = {};
 
   /// 获取最后一次布局的位置
-  Map<String, Offset> get lastLayoutPositions => Map.unmodifiable(_lastLayoutPositions);
+  Map<String, Offset> get lastLayoutPositions =>
+      Map.unmodifiable(_lastLayoutPositions);
 
   @override
   Future<Map<String, Offset>> applyLayout({
@@ -156,7 +214,7 @@ class LayoutServiceImpl implements LayoutService {
     }
 
     // 计算力导向布局
-    for (int i = 0; i < opts.iterations; i++) {
+    for (var i = 0; i < opts.iterations; i++) {
       final velocities = <String, Vector2>{};
 
       for (final node in nodes) {
@@ -172,7 +230,8 @@ class LayoutServiceImpl implements LayoutService {
           final distance = diff.length;
 
           if (distance > 0) {
-            final repulsion = diff.normalized() * (opts.repulsion / (distance * distance));
+            final repulsion =
+                diff.normalized() * (opts.repulsion / (distance * distance));
             force += repulsion;
           }
         }
@@ -226,10 +285,10 @@ class LayoutServiceImpl implements LayoutService {
     final nodeLevel = <String, int>{};
 
     // 根节点（没有被引用的节点）
-    final referencedIds = nodes
-        .expand((n) => n.references.keys)
-        .toSet();
-    final rootNodes = nodes.where((n) => !referencedIds.contains(n.id)).toList();
+    final referencedIds = nodes.expand((n) => n.references.keys).toSet();
+    final rootNodes = nodes
+        .where((n) => !referencedIds.contains(n.id))
+        .toList();
 
     // BFS 计算层级
     final queue = <(Node, int)>[];
@@ -271,7 +330,8 @@ class LayoutServiceImpl implements LayoutService {
     for (final entry in levels.entries) {
       final level = entry.key;
       final nodesInLevel = entry.value;
-      maxWidths[level] = nodesInLevel.length * (opts.nodeWidth + opts.nodeSpacing);
+      maxWidths[level] =
+          nodesInLevel.length * (opts.nodeWidth + opts.nodeSpacing);
     }
 
     // 布局每层
@@ -298,10 +358,10 @@ class LayoutServiceImpl implements LayoutService {
     if (nodes.isEmpty) return;
 
     final opts = options ?? const CircularOptions();
-    final center = const Vector2(640.0, 400.0); // 画布中心
+    const center = Vector2(640, 400); // 画布中心
     final positions = <String, Vector2>{};
 
-    for (int i = 0; i < nodes.length; i++) {
+    for (var i = 0; i < nodes.length; i++) {
       final angle = (2 * pi * i) / nodes.length;
       final x = center.x + opts.radius * cos(angle);
       final y = center.y + opts.radius * sin(angle);

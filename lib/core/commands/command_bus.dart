@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'command.dart';
-import 'command_context.dart';
-import 'command_handler.dart';
-import 'command_handler_registry.dart';
-import 'middleware.dart';
-import '../plugin/middleware/middleware_plugin.dart';
+
 import '../plugin/middleware/middleware_pipeline.dart';
+import '../plugin/middleware/middleware_plugin.dart';
+import 'command_handler_registry.dart';
+import 'models/command.dart';
+import 'models/command_context.dart';
+import 'models/command_handler.dart';
+import 'models/middleware.dart';
 
 /// 命令总线
 ///
@@ -20,7 +21,7 @@ class CommandBus {
     _middlewarePipeline = MiddlewarePipeline();
     _handlerRegistry = CommandHandlerRegistry();
   }
-  
+
   /// 命令处理器注册表
   late final CommandHandlerRegistry _handlerRegistry;
 
@@ -58,6 +59,19 @@ class CommandBus {
     }
 
     _handlerRegistry.register(handler, commandType);
+  }
+
+  /// 批量注册命令处理器
+  ///
+  /// [handlers] 命令处理器映射，key为命令类型，value为对应的处理器
+  ///
+  /// 每个命令类型只能注册一个处理器，重复注册会覆盖
+  void registerHandlers(Map<Type, CommandHandler> handlers) {
+    if (_disposed) {
+      throw StateError('CommandBus 已释放，无法注册处理器');
+    }
+
+    _handlerRegistry.registerAll(handlers);
   }
 
   /// 添加中间件
@@ -114,10 +128,9 @@ class CommandBus {
     final context = CommandContext();
 
     // 发布命令开始事件
-    _commandStreamController.add(CommandStarted(
-      command: command,
-      timestamp: DateTime.now(),
-    ));
+    _commandStreamController.add(
+      CommandStarted(command: command, timestamp: DateTime.now()),
+    );
 
     try {
       // 1. 执行传统中间件（前置）
@@ -139,29 +152,31 @@ class CommandBus {
         handler,
       );
 
-
-
       // 6. 执行传统中间件（后置）
       for (final middleware in _middlewares) {
         await middleware.processAfter(command, context, result);
       }
 
       // 发布命令成功事件
-      _commandStreamController.add(CommandSucceeded(
-        command: command,
-        result: result,
-        timestamp: DateTime.now(),
-      ));
+      _commandStreamController.add(
+        CommandSucceeded(
+          command: command,
+          result: result,
+          timestamp: DateTime.now(),
+        ),
+      );
 
       return result as CommandResult<T>;
     } catch (e, stackTrace) {
       // 发布命令失败事件
-      _commandStreamController.add(CommandFailed(
-        command: command,
-        error: e,
-        stackTrace: stackTrace,
-        timestamp: DateTime.now(),
-      ));
+      _commandStreamController.add(
+        CommandFailed(
+          command: command,
+          error: e,
+          stackTrace: stackTrace,
+          timestamp: DateTime.now(),
+        ),
+      );
 
       // 返回失败结果
       return CommandResult.failureTyped<T>(e.toString());
@@ -187,17 +202,18 @@ class CommandBus {
     try {
       await command.undo(context);
 
-      _commandStreamController.add(CommandUndone(
-        command: command,
-        timestamp: DateTime.now(),
-      ));
+      _commandStreamController.add(
+        CommandUndone(command: command, timestamp: DateTime.now()),
+      );
     } catch (e, stackTrace) {
-      _commandStreamController.add(CommandUndoFailed(
-        command: command,
-        error: e,
-        stackTrace: stackTrace,
-        timestamp: DateTime.now(),
-      ));
+      _commandStreamController.add(
+        CommandUndoFailed(
+          command: command,
+          error: e,
+          stackTrace: stackTrace,
+          timestamp: DateTime.now(),
+        ),
+      );
 
       rethrow;
     }
@@ -221,10 +237,11 @@ class CommandBus {
 ///
 /// 表示命令总线生命周期中的各种事件
 abstract class CommandEvent {
-  CommandEvent({
-    required this.command,
-    required this.timestamp,
-  });
+  /// 创建一个命令事件
+  ///
+  /// [command] - 关联的命令
+  /// [timestamp] - 事件时间戳
+  CommandEvent({required this.command, required this.timestamp});
 
   /// 关联的命令
   final Command command;
@@ -235,14 +252,20 @@ abstract class CommandEvent {
 
 /// 命令开始执行事件
 class CommandStarted extends CommandEvent {
-  CommandStarted({
-    required super.command,
-    required super.timestamp,
-  });
+  /// 创建一个命令开始执行事件
+  ///
+  /// [command] - 关联的命令
+  /// [timestamp] - 事件时间戳
+  CommandStarted({required super.command, required super.timestamp});
 }
 
 /// 命令执行成功事件
 class CommandSucceeded extends CommandEvent {
+  /// 创建一个命令执行成功事件
+  ///
+  /// [command] - 关联的命令
+  /// [result] - 执行结果
+  /// [timestamp] - 事件时间戳
   CommandSucceeded({
     required super.command,
     required this.result,
@@ -255,6 +278,12 @@ class CommandSucceeded extends CommandEvent {
 
 /// 命令执行失败事件
 class CommandFailed extends CommandEvent {
+  /// 创建一个命令执行失败事件
+  ///
+  /// [command] - 关联的命令
+  /// [error] - 错误对象
+  /// [stackTrace] - 堆栈跟踪
+  /// [timestamp] - 事件时间戳
   CommandFailed({
     required super.command,
     required this.error,
@@ -271,14 +300,21 @@ class CommandFailed extends CommandEvent {
 
 /// 命令撤销成功事件
 class CommandUndone extends CommandEvent {
-  CommandUndone({
-    required super.command,
-    required super.timestamp,
-  });
+  /// 创建一个命令撤销成功事件
+  ///
+  /// [command] - 关联的命令
+  /// [timestamp] - 事件时间戳
+  CommandUndone({required super.command, required super.timestamp});
 }
 
 /// 命令撤销失败事件
 class CommandUndoFailed extends CommandEvent {
+  /// 创建一个命令撤销失败事件
+  ///
+  /// [command] - 关联的命令
+  /// [error] - 错误对象
+  /// [stackTrace] - 堆栈跟踪
+  /// [timestamp] - 事件时间戳
   CommandUndoFailed({
     required super.command,
     required this.error,

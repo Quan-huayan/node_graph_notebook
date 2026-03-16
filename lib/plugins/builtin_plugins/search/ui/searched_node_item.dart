@@ -4,6 +4,11 @@ import '../../../../ui/utilwidgets/highlight_text.dart';
 
 /// 搜索结果节点项组件
 class SearchedNodeItem extends StatelessWidget {
+  /// 创建搜索结果节点项组件
+  /// 
+  /// [node] - 节点数据
+  /// [query] - 搜索查询字符串，用于高亮显示
+  /// [onTap] - 点击事件回调
   const SearchedNodeItem({
     super.key,
     required this.node,
@@ -11,8 +16,13 @@ class SearchedNodeItem extends StatelessWidget {
     required this.onTap,
   });
 
+  /// 节点数据
   final Node node;
+  
+  /// 搜索查询字符串，用于高亮显示
   final String? query;
+  
+  /// 点击事件回调
   final VoidCallback onTap;
 
   @override
@@ -36,10 +46,7 @@ class SearchedNodeItem extends StatelessWidget {
 
     return ListTile(
       leading: leading,
-      title: HighlightText(
-        text: node.title,
-        query: query,
-      ),
+      title: HighlightText(text: node.title, query: query),
       subtitle: node.content != null && node.content!.isNotEmpty
           ? HighlightText(
               text: node.content!.length > 100

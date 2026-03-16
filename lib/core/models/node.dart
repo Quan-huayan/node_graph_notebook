@@ -1,8 +1,10 @@
 import 'dart:ui';
+
 import 'package:json_annotation/json_annotation.dart';
+
+import 'converters.dart';
 import 'enums.dart';
 import 'node_reference.dart';
-import 'converters.dart';
 
 part 'node.g.dart';
 
@@ -10,6 +12,19 @@ part 'node.g.dart';
 /// 所有元素（内容、关系、概念）都继承自统一的 Node 模型
 @JsonSerializable()
 class Node {
+  /// 创建一个统一节点模型
+  ///
+  /// [id] - 唯一标识符
+  /// [title] - 节点标题
+  /// [content] - Markdown 内容（可选）
+  /// [references] - 涉及的节点映射（key: 节点ID, value: 引用关系）
+  /// [position] - 位置坐标
+  /// [size] - 节点尺寸
+  /// [viewMode] - 显示模式
+  /// [color] - 颜色
+  /// [createdAt] - 创建时间
+  /// [updatedAt] - 更新时间
+  /// [metadata] - 元数据
   const Node({
     required this.id,
     required this.title,
@@ -73,20 +88,21 @@ class Node {
   }
 
   /// 便捷方法：是否是概念节点（已废弃，统一使用content类型）
-  @Deprecated('All nodes are now content type. Use isFolder to check if node is a folder.')
+  @Deprecated(
+    'All nodes are now content type. Use isFolder to check if node is a folder.',
+  )
   bool get isConcept => false;
 
   /// 便捷方法：是否是文件夹
-  bool get isFolder => metadata['isFolder'] == true ||
+  bool get isFolder =>
+      metadata['isFolder'] == true ||
       (metadata['isFolder'] is bool && metadata['isFolder'] as bool);
 
   /// 获取所有引用的节点ID
   List<String> get referencedNodeIds => references.keys.toList();
 
   /// 获取特定类型的引用
-  List<NodeReference> getReferencesByType(String type) {
-    return references.values.where((r) => r.type == type).toList();
-  }
+  List<NodeReference> getReferencesByType(String type) => references.values.where((r) => r.type == type).toList();
 
   /// 复制并更新部分字段
   Node copyWith({
@@ -101,8 +117,7 @@ class Node {
     DateTime? createdAt,
     DateTime? updatedAt,
     Map<String, dynamic>? metadata,
-  }) {
-    return Node(
+  }) => Node(
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
@@ -115,9 +130,11 @@ class Node {
       updatedAt: updatedAt ?? this.updatedAt,
       metadata: metadata ?? this.metadata,
     );
-  }
 
   /// 添加引用
+  ///
+  /// [nodeId] - 引用的节点ID
+  /// [reference] - 引用关系
   Node addReference(String nodeId, NodeReference reference) {
     final newReferences = Map<String, NodeReference>.from(references);
     newReferences[nodeId] = reference;
@@ -125,16 +142,16 @@ class Node {
   }
 
   /// 移除引用
+  ///
+  /// [nodeId] - 要移除的引用节点ID
   Node removeReference(String nodeId) {
-    final newReferences = Map<String, NodeReference>.from(references);
-    newReferences.remove(nodeId);
+    final newReferences = Map<String, NodeReference>.from(references)
+    ..remove(nodeId);
     return copyWith(references: newReferences);
   }
 
   /// 更新时间戳
-  Node updateTimestamp() {
-    return copyWith(updatedAt: DateTime.now());
-  }
+  Node updateTimestamp() => copyWith(updatedAt: DateTime.now());
 
   @override
   bool operator ==(Object other) =>

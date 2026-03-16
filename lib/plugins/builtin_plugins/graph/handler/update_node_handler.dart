@@ -1,15 +1,18 @@
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command_handler.dart';
-import '../command/node_commands.dart';
-import '../../../../core/models/node.dart';
-import '../service/node_service.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/events/app_events.dart';
+import '../../../../core/models/node.dart';
+import '../command/node_commands.dart';
+import '../service/node_service.dart';
 
 /// 更新节点处理器
 ///
 /// 处理更新节点的命令，包含验证逻辑和事件发布
 class UpdateNodeHandler implements CommandHandler<UpdateNodeCommand> {
+  /// 构造函数
+  ///
+  /// [_service] - 节点服务，用于更新节点
   UpdateNodeHandler(this._service);
 
   final NodeService _service;
@@ -38,11 +41,8 @@ class UpdateNodeHandler implements CommandHandler<UpdateNodeCommand> {
         metadata: command.newNode.metadata,
       );
 
-      // 发布事件
-      context.eventBus.publish(NodeDataChangedEvent(
-        changedNodes: [command.newNode],
-        action: DataChangeAction.update,
-      ));
+      // 发布事件（使用便捷方法）
+      context.publishSingleNodeEvent(command.newNode, DataChangeAction.update);
 
       return CommandResult.success(command.newNode);
     } catch (e) {

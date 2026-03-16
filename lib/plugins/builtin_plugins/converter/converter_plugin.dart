@@ -1,7 +1,8 @@
-import '../../../core/plugin/plugin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'service/converter_service_bindings.dart';
+
+import '../../../core/plugin/plugin.dart';
 import 'bloc/converter_bloc.dart';
+import 'service/converter_service_bindings.dart';
 import 'service/import_export_service.dart';
 
 /// Converter 插件
@@ -20,27 +21,24 @@ class ConverterPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'converter',
-        name: 'Converter',
-        version: '1.0.0',
-        description: 'Data import and export functionality',
-        author: 'Node Graph Notebook',
-        enabledByDefault: true,
-      );
+    id: 'converter',
+    name: 'Converter',
+    version: '1.0.0',
+    description: 'Data import and export functionality',
+    author: 'Node Graph Notebook',
+    enabledByDefault: true,
+  );
 
   @override
-  List<ServiceBinding> registerServices() => [
-        ConverterServiceBinding(),
-      ];
+  List<ServiceBinding> registerServices() => [ConverterServiceBinding()];
 
   @override
   List<BlocProvider> registerBlocs() => [
-        BlocProvider<ConverterBloc>(
-          create: (ctx) => ConverterBloc(
-            importExportService: ctx.read<ImportExportService>(),
-          ),
-        ),
-      ];
+    BlocProvider<ConverterBloc>(
+      create: (ctx) =>
+          ConverterBloc(importExportService: ctx.read<ImportExportService>()),
+    ),
+  ];
 
   @override
   Future<void> onLoad(PluginContext context) async {

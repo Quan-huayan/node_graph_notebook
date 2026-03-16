@@ -1,18 +1,20 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_state.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
+
 import '../../../../core/models/node.dart';
-import '../../graph/ui/node_selector_widget.dart';
+import '../../graph/bloc/graph_bloc.dart';
+import '../../graph/bloc/graph_event.dart';
 import '../../graph/ui/graph_preview_widget.dart';
+import '../../graph/ui/node_selector_widget.dart';
+import '../bloc/converter_bloc.dart';
+import '../bloc/converter_event.dart';
+import '../bloc/converter_state.dart';
 import '../models/models.dart';
 
 /// 导入 Markdown 对话框
 class ImportMarkdownDialog extends StatefulWidget {
+  /// 导入 Markdown 对话框构造函数
   const ImportMarkdownDialog({super.key});
 
   @override
@@ -67,7 +69,9 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
             // 显示成功消息
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Successfully imported ${result.successCount} nodes'),
+                content: Text(
+                  'Successfully imported ${result.successCount} nodes',
+                ),
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 2),
               ),
@@ -98,12 +102,12 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
                           height: 300,
                           child: ListView.builder(
                             itemCount: result.errors.length,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
+                            itemBuilder: (context, index) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
                                 child: Text('• ${result.errors[index]}'),
-                              );
-                            },
+                              ),
                           ),
                         ),
                         actions: [
@@ -138,25 +142,17 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
                 child: Row(
                   children: [
                     // 左列：模式选择
-                    SizedBox(
-                      width: 150,
-                      child: _buildModeSelector(theme),
-                    ),
+                    SizedBox(width: 150, child: _buildModeSelector(theme)),
 
                     const VerticalDivider(width: 1),
 
                     // 中列：节点选择
-                    Expanded(
-                      child: _buildNodeSelector(),
-                    ),
+                    Expanded(child: _buildNodeSelector()),
 
                     const VerticalDivider(width: 1),
 
                     // 右列：图形预览
-                    SizedBox(
-                      width: 200,
-                      child: _buildGraphPreview(),
-                    ),
+                    SizedBox(width: 200, child: _buildGraphPreview()),
                   ],
                 ),
               ),
@@ -169,9 +165,7 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: _canImport()
-                ? () => _importSelected(context)
-                : null,
+            onPressed: _canImport() ? () => _importSelected(context) : null,
             child: Text('Import Selected (${_selectedIndices.length})'),
           ),
         ],
@@ -179,16 +173,12 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
     );
   }
 
-  Widget _buildModeSelector(ThemeData theme) {
-    return Column(
+  Widget _buildModeSelector(ThemeData theme) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.all(8),
-          child: Text(
-            'Mode',
-            style: theme.textTheme.titleSmall,
-          ),
+          child: Text('Mode', style: theme.textTheme.titleSmall),
         ),
         const Divider(height: 1),
         ListView.builder(
@@ -220,10 +210,7 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
 
             return ListTile(
               leading: Icon(icon, size: 16),
-              title: Text(
-                label,
-                style: theme.textTheme.bodySmall,
-              ),
+              title: Text(label, style: theme.textTheme.bodySmall),
               selected: isSelected,
               onTap: () {
                 setState(() {
@@ -250,10 +237,8 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
         ),
       ],
     );
-  }
 
-  Widget _buildNodeSelector() {
-    return BlocBuilder<ConverterBloc, ConverterState>(
+  Widget _buildNodeSelector() => BlocBuilder<ConverterBloc, ConverterState>(
       builder: (context, state) {
         if (state.isLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -296,10 +281,8 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
         );
       },
     );
-  }
 
-  Widget _buildGraphPreview() {
-    return BlocBuilder<ConverterBloc, ConverterState>(
+  Widget _buildGraphPreview() => BlocBuilder<ConverterBloc, ConverterState>(
       builder: (context, state) {
         final selectedNodes = <Node>[];
         for (final index in _selectedIndices) {
@@ -311,7 +294,6 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
         return GraphPreviewWidget(nodes: selectedNodes);
       },
     );
-  }
 
   Future<void> _selectFile() async {
     final result = await FilePicker.platform.pickFiles(
@@ -333,25 +315,23 @@ class _ImportMarkdownDialogState extends State<ImportMarkdownDialog> {
     if (_filePath == null || _selectedRule == null) return;
 
     context.read<ConverterBloc>().add(
-          ImportPreviewEvent(_filePath!, _selectedRule!),
-        );
+      ImportPreviewEvent(_filePath!, _selectedRule!),
+    );
   }
 
-  bool _canImport() {
-    return _filePath != null && _selectedIndices.isNotEmpty;
-  }
+  bool _canImport() => _filePath != null && _selectedIndices.isNotEmpty;
 
   void _importSelected(BuildContext context) {
     if (_filePath == null || _selectedRule == null) return;
 
     final sortedIndices = _selectedIndices.toList()..sort();
     context.read<ConverterBloc>().add(
-          ImportExecuteEvent(
-            _filePath!,
-            _selectedRule!,
-            sortedIndices,
-            addToGraph: true, // 命名参数
-          ),
-        );
+      ImportExecuteEvent(
+        _filePath!,
+        _selectedRule!,
+        sortedIndices,
+        addToGraph: true, // 命名参数
+      ),
+    );
   }
 }

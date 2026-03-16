@@ -67,8 +67,8 @@ void main() {
 
   test('should clear all dependencies', () {
     final service = TestService();
-    container.register<TestService>(service);
-    container.registerFactory<TestServiceImpl>(
+    container..register<TestService>(service)
+    ..registerFactory<TestServiceImpl>(
       (container) => TestServiceImpl(),
     );
 

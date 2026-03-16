@@ -1,8 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/repositories/repositories.dart';
+
 import '../../../../core/commands/command_bus.dart';
-import '../command/node_commands.dart';
 import '../../../../core/events/app_events.dart';
+import '../../../../core/repositories/repositories.dart';
+import '../command/node_commands.dart';
 import 'node_event.dart';
 import 'node_state.dart';
 
@@ -19,13 +20,18 @@ import 'node_state.dart';
 /// - 读操作直接通过Repository（数据访问层）
 /// - BLoC只负责状态管理，不包含业务逻辑
 class NodeBloc extends Bloc<NodeEvent, NodeState> {
+  /// 创建 Node BLoC
+  /// 
+  /// [commandBus] - 命令总线，用于执行写操作
+  /// [nodeRepository] - 节点数据仓库，用于读操作
+  /// [eventBus] - 事件总线，用于订阅数据变化
   NodeBloc({
     required CommandBus commandBus,
     required NodeRepository nodeRepository,
     required AppEventBus eventBus,
-  })  : _commandBus = commandBus,
-        _nodeRepository = nodeRepository,
-        super(NodeState.initial()) {
+  }) : _commandBus = commandBus,
+       _nodeRepository = nodeRepository,
+       super(NodeState.initial()) {
     // 注册事件处理器
     on<NodeLoadEvent>(_onLoadNodes);
     on<NodeSearchEvent>(_onSearchNodes);
@@ -42,10 +48,12 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     // 订阅EventBus以响应其他BLoC的更改
     eventBus.stream.listen((event) {
       if (event is NodeDataChangedEvent) {
-        add(NodeDataChangedInternalEvent(
-          changedNodes: event.changedNodes,
-          action: event.action,
-        ));
+        add(
+          NodeDataChangedInternalEvent(
+            changedNodes: event.changedNodes,
+            action: event.action,
+          ),
+        );
       }
     });
   }
@@ -64,16 +72,9 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       // 直接查询Repository（读操作）
       // 使用 queryAll() 获取所有节点
       final nodes = await _nodeRepository.queryAll();
-      emit(state.copyWith(
-        nodes: nodes,
-        isLoading: false,
-        error: null,
-      ));
+      emit(state.copyWith(nodes: nodes, isLoading: false, error: null));
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -96,16 +97,9 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         title: event.query,
         content: event.query,
       );
-      emit(state.copyWith(
-        nodes: nodes,
-        isLoading: false,
-        error: null,
-      ));
+      emit(state.copyWith(nodes: nodes, isLoading: false, error: null));
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -133,25 +127,15 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         final newNode = result.data;
         if (newNode != null) {
           final newNodes = [...state.nodes, newNode];
-          emit(state.copyWith(
-            nodes: newNodes,
-            isLoading: false,
-            error: null,
-          ));
+          emit(state.copyWith(nodes: newNodes, isLoading: false, error: null));
         } else {
           emit(state.copyWith(isLoading: false));
         }
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: result.error,
-        ));
+        emit(state.copyWith(isLoading: false, error: result.error));
       }
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -177,25 +161,15 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         final newNode = result.data;
         if (newNode != null) {
           final newNodes = [...state.nodes, newNode];
-          emit(state.copyWith(
-            nodes: newNodes,
-            isLoading: false,
-            error: null,
-          ));
+          emit(state.copyWith(nodes: newNodes, isLoading: false, error: null));
         } else {
           emit(state.copyWith(isLoading: false));
         }
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: result.error,
-        ));
+        emit(state.copyWith(isLoading: false, error: result.error));
       }
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -229,28 +203,16 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         // result.data 可能是 null，需要检查
         final updatedNode = result.data;
         if (updatedNode != null) {
-          final newNodes = state.nodes.map((n) {
-            return n.id == event.nodeId ? updatedNode : n;
-          }).toList();
-          emit(state.copyWith(
-            nodes: newNodes,
-            isLoading: false,
-            error: null,
-          ));
+          final newNodes = state.nodes.map((n) => n.id == event.nodeId ? updatedNode : n).toList();
+          emit(state.copyWith(nodes: newNodes, isLoading: false, error: null));
         } else {
           emit(state.copyWith(isLoading: false));
         }
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: result.error,
-        ));
+        emit(state.copyWith(isLoading: false, error: result.error));
       }
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -266,10 +228,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
       final oldNode = state.nodes.firstWhere((n) => n.id == event.node.id);
 
       // 通过CommandBus执行写操作
-      final command = UpdateNodeCommand(
-        oldNode: oldNode,
-        newNode: event.node,
-      );
+      final command = UpdateNodeCommand(oldNode: oldNode, newNode: event.node);
 
       final result = await _commandBus.dispatch(command);
 
@@ -278,28 +237,16 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         // result.data 可能是 null，需要检查
         final updatedNode = result.data;
         if (updatedNode != null) {
-          final newNodes = state.nodes.map((n) {
-            return n.id == event.node.id ? updatedNode : n;
-          }).toList();
-          emit(state.copyWith(
-            nodes: newNodes,
-            isLoading: false,
-            error: null,
-          ));
+          final newNodes = state.nodes.map((n) => n.id == event.node.id ? updatedNode : n).toList();
+          emit(state.copyWith(nodes: newNodes, isLoading: false, error: null));
         } else {
           emit(state.copyWith(isLoading: false));
         }
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: result.error,
-        ));
+        emit(state.copyWith(isLoading: false, error: result.error));
       }
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -321,28 +268,30 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
 
       if (result.isSuccess) {
         // 事件已经由Handler发布，这里只需要更新状态
-        final newNodes = state.nodes.where((n) => n.id != event.nodeId).toList();
-        final updatedSelectedIds = state.selectedNodeIds.where((id) => id != event.nodeId).toSet();
-        final updatedSelectedNode = state.selectedNode?.id == event.nodeId ? null : state.selectedNode;
+        final newNodes = state.nodes
+            .where((n) => n.id != event.nodeId)
+            .toList();
+        final updatedSelectedIds = state.selectedNodeIds
+            .where((id) => id != event.nodeId)
+            .toSet();
+        final updatedSelectedNode = state.selectedNode?.id == event.nodeId
+            ? null
+            : state.selectedNode;
 
-        emit(state.copyWith(
-          nodes: newNodes,
-          selectedNodeIds: updatedSelectedIds,
-          selectedNode: updatedSelectedNode,
-          isLoading: false,
-          error: null,
-        ));
+        emit(
+          state.copyWith(
+            nodes: newNodes,
+            selectedNodeIds: updatedSelectedIds,
+            selectedNode: updatedSelectedNode,
+            isLoading: false,
+            error: null,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: result.error,
-        ));
+        emit(state.copyWith(isLoading: false, error: result.error));
       }
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -367,29 +316,19 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         // 重新加载节点以获取更新后的引用列表
         final fromNode = await _nodeRepository.load(event.fromNodeId);
         if (fromNode != null) {
-          final updatedNodes = state.nodes.map((n) {
-            return n.id == event.fromNodeId ? fromNode : n;
-          }).toList();
+          final updatedNodes = state.nodes.map((n) => n.id == event.fromNodeId ? fromNode : n).toList();
 
-          emit(state.copyWith(
-            nodes: updatedNodes,
-            isLoading: false,
-            error: null,
-          ));
+          emit(
+            state.copyWith(nodes: updatedNodes, isLoading: false, error: null),
+          );
         } else {
           emit(state.copyWith(isLoading: false));
         }
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: result.error,
-        ));
+        emit(state.copyWith(isLoading: false, error: result.error));
       }
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -413,37 +352,24 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         // 重新加载节点以获取更新后的引用列表
         final fromNode = await _nodeRepository.load(event.fromNodeId);
         if (fromNode != null) {
-          final updatedNodes = state.nodes.map((n) {
-            return n.id == event.fromNodeId ? fromNode : n;
-          }).toList();
+          final updatedNodes = state.nodes.map((n) => n.id == event.fromNodeId ? fromNode : n).toList();
 
-          emit(state.copyWith(
-            nodes: updatedNodes,
-            isLoading: false,
-            error: null,
-          ));
+          emit(
+            state.copyWith(nodes: updatedNodes, isLoading: false, error: null),
+          );
         } else {
           emit(state.copyWith(isLoading: false));
         }
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: result.error,
-        ));
+        emit(state.copyWith(isLoading: false, error: result.error));
       }
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
   /// 清除错误
-  void _onClearError(
-    NodeClearErrorEvent event,
-    Emitter<NodeState> emit,
-  ) {
+  void _onClearError(NodeClearErrorEvent event, Emitter<NodeState> emit) {
     emit(state.copyWith(error: null));
   }
 
@@ -481,9 +407,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
 
       case DataChangeAction.delete:
         // 移除已删除的节点
-        final remainingNodes = state.nodes.where((n) {
-          return !event.changedNodes.any((d) => d.id == n.id);
-        }).toList();
+        final remainingNodes = state.nodes.where((n) => !event.changedNodes.any((d) => d.id == n.id)).toList();
         emit(state.copyWith(nodes: remainingNodes));
         break;
     }

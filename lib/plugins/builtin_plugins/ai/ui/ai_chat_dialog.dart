@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
-import '../service/ai_service.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/services/services.dart';
-import '../../../../core/services/theme/app_theme.dart';
+import '../../graph/bloc/node_bloc.dart';
+import '../../graph/bloc/node_event.dart';
+import '../service/ai_service.dart';
 
 /// AI 聊天对话框
 ///
@@ -43,7 +43,8 @@ class _AIChatDialogState extends State<AIChatDialog> {
   // === 扩展点：自定义功能处理器 ===
   /// 功能命令处理器映射
   /// 格式: {命令前缀: 处理函数}
-  final Map<String, Future<String> Function(String, _ChatMessageBuilder)> _commandHandlers = {};
+  final Map<String, Future<String> Function(String, _ChatMessageBuilder)>
+  _commandHandlers = {};
 
   @override
   void initState() {
@@ -91,7 +92,10 @@ class _AIChatDialogState extends State<AIChatDialog> {
   /// 处理创建节点命令
   ///
   /// 格式: /create <节点标题>
-  Future<String> _handleCreateCommand(String command, _ChatMessageBuilder messageBuilder) async {
+  Future<String> _handleCreateCommand(
+    String command,
+    _ChatMessageBuilder messageBuilder,
+  ) async {
     final parts = command.split(' ');
     if (parts.length < 2) {
       return '❌ Usage: /create <node title>';
@@ -102,10 +106,12 @@ class _AIChatDialogState extends State<AIChatDialog> {
 
     try {
       // 创建新节点
-      nodeBloc.add(NodeCreateEvent(
-        title: title,
-        content: 'Created with assistance from ${widget.aiNode.title}',
-      ));
+      nodeBloc.add(
+        NodeCreateEvent(
+          title: title,
+          content: 'Created with assistance from ${widget.aiNode.title}',
+        ),
+      );
 
       return '✓ Created node: "$title". You can manually connect it to AI if needed.';
     } catch (e) {
@@ -116,7 +122,10 @@ class _AIChatDialogState extends State<AIChatDialog> {
   /// 处理总结命令
   ///
   /// 用途：让 AI 总结所有连接的节点内容
-  Future<String> _handleSummarizeCommand(String command, _ChatMessageBuilder messageBuilder) async {
+  Future<String> _handleSummarizeCommand(
+    String command,
+    _ChatMessageBuilder messageBuilder,
+  ) async {
     if (widget.connectedNodes.isEmpty) {
       return 'ℹ️ No connected nodes to summarize.';
     }
@@ -128,7 +137,9 @@ class _AIChatDialogState extends State<AIChatDialog> {
       }
 
       // 构建上下文（重命名变量以避免与 BuildContext 冲突）
-      final nodesContext = widget.connectedNodes.map((n) => '# ${n.title}\n${n.content ?? ""}').join('\n\n');
+      final nodesContext = widget.connectedNodes
+          .map((n) => '# ${n.title}\n${n.content ?? ""}')
+          .join('\n\n');
 
       // 调用 AI 总结
       final response = await _callAI('Summarize these nodes:\n\n$nodesContext');
@@ -140,8 +151,10 @@ class _AIChatDialogState extends State<AIChatDialog> {
   }
 
   /// 处理帮助命令
-  Future<String> _handleHelpCommand(String command, _ChatMessageBuilder messageBuilder) async {
-    return '''
+  Future<String> _handleHelpCommand(
+    String command,
+    _ChatMessageBuilder messageBuilder,
+  ) async => '''
 Available Commands:
 
 /create <title> - Create a new node
@@ -155,7 +168,6 @@ Available Commands:
 Extension Commands:
   (Add custom commands by extending _commandHandlers)
 ''';
-  }
 
   /// === 核心功能：发送消息 ===
   Future<void> _sendMessage(String text) async {
@@ -203,7 +215,9 @@ Extension Commands:
       final handler = _commandHandlers[commandPart];
 
       if (handler == null) {
-        _addSystemMessage('❓ Unknown command: $commandPart. Type /help for available commands.');
+        _addSystemMessage(
+          '❓ Unknown command: $commandPart. Type /help for available commands.',
+        );
         return;
       }
 
@@ -235,7 +249,9 @@ Extension Commands:
     if (widget.connectedNodes.isNotEmpty) {
       contextBuilder.writeln('Context: I am connected to these nodes:');
       for (final node in widget.connectedNodes) {
-        contextBuilder.writeln('- ${node.title}: ${node.content ?? "(no content)"}');
+        contextBuilder.writeln(
+          '- ${node.title}: ${node.content ?? "(no content)"}',
+        );
       }
       contextBuilder.writeln();
     }
@@ -283,25 +299,13 @@ Extension Commands:
 
   void _addSystemMessage(String text) {
     setState(() {
-      _messages.add(
-        _ChatMessage(
-          text: text,
-          isUser: false,
-          isSystem: true,
-        ),
-      );
+      _messages.add(_ChatMessage(text: text, isUser: false, isSystem: true));
     });
   }
 
   void _addMessage(String text, bool isUser) {
     setState(() {
-      _messages.add(
-        _ChatMessage(
-          text: text,
-          isUser: isUser,
-          isSystem: false,
-        ),
-      );
+      _messages.add(_ChatMessage(text: text, isUser: isUser, isSystem: false));
     });
   }
 
@@ -394,7 +398,7 @@ Extension Commands:
                             Text(
                               'Start a conversation with AI',
                               style: TextStyle(
-                                color: theme.text.onDark.withValues(alpha:0.5),
+                                color: theme.text.onDark.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
@@ -455,9 +459,7 @@ Extension Commands:
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(
-                                theme.ui.icon,
-                              ),
+                              valueColor: AlwaysStoppedAnimation(theme.ui.icon),
                             ),
                           )
                         : const Icon(Icons.send),
@@ -479,9 +481,7 @@ Extension Commands:
         decoration: BoxDecoration(
           color: theme.status.info.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: theme.status.info.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: theme.status.info.withValues(alpha: 0.3)),
         ),
         child: Text(
           message.text,

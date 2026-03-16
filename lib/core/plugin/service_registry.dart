@@ -13,6 +13,9 @@ import 'service_binding.dart';
 /// - 生成 Flutter Provider 列表
 /// - 管理 Service 生命周期
 class ServiceRegistry {
+  /// 创建一个新的 Service 注册表实例。
+  ServiceRegistry();
+
   /// Service 绑定注册表
   ///
   /// Key: Service 类型
@@ -62,10 +65,7 @@ class ServiceRegistry {
   ///
   /// [pluginId] 插件 ID
   /// [bindings] Service 绑定列表
-  void registerServices(
-    String pluginId,
-    List<ServiceBinding> bindings,
-  ) {
+  void registerServices(String pluginId, List<ServiceBinding> bindings) {
     for (final binding in bindings) {
       registerService(pluginId, binding);
     }
@@ -101,7 +101,9 @@ class ServiceRegistry {
     // 移除插件记录
     _pluginServices.remove(pluginId);
 
-    debugPrint('[ServiceRegistry] Unregistered ${serviceTypes.length} services from $pluginId');
+    debugPrint(
+      '[ServiceRegistry] Unregistered ${serviceTypes.length} services from $pluginId',
+    );
   }
 
   /// 生成 Provider 列表
@@ -175,11 +177,7 @@ class ServiceRegistry {
 
       visiting.add(type);
 
-      // 获取依赖的 Service 类型
-      final dependencies = _getDependencies(type);
-      for (final dep in dependencies) {
-        visit(dep);
-      }
+      _getDependencies(type).forEach(visit);
 
       visiting.remove(type);
       visited.add(type);
@@ -187,9 +185,7 @@ class ServiceRegistry {
     }
 
     // 访问所有 Service
-    for (final type in _bindings.keys) {
-      visit(type);
-    }
+    _bindings.keys.forEach(visit);
 
     return sorted;
   }
@@ -211,9 +207,7 @@ class ServiceRegistry {
   ///
   /// [T] Service 类型
   /// 返回 true 如果 Service 已注册
-  bool isRegistered<T>() {
-    return _bindings.containsKey(T);
-  }
+  bool isRegistered<T>() => _bindings.containsKey(T);
 
   /// 获取所有已注册的 Service 类型
   Set<Type> get registeredTypes => _bindings.keys.toSet();
@@ -222,9 +216,7 @@ class ServiceRegistry {
   ///
   /// [pluginId] 插件 ID
   /// 返回插件提供的所有 Service 类型
-  Set<Type> getPluginServices(String pluginId) {
-    return _pluginServices[pluginId] ?? {};
-  }
+  Set<Type> getPluginServices(String pluginId) => _pluginServices[pluginId] ?? {};
 
   /// 清空所有注册
   ///
@@ -253,8 +245,12 @@ class ServiceRegistry {
 ///
 /// 当 Service 注册失败时抛出
 class ServiceRegistrationException implements Exception {
+  /// 创建一个新的 Service 注册异常实例。
+  ///
+  /// [message] 错误消息
   const ServiceRegistrationException(this.message);
 
+  /// 错误消息
   final String message;
 
   @override

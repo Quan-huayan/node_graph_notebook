@@ -15,7 +15,7 @@
 /// node.metadata['${StandardMetadata.pluginPrefix}myPlugin.customField'] = 'value';
 /// ```
 class StandardMetadata {
-  // 私有构造函数，防止实例化
+  /// 私有构造函数，防止实例化
   StandardMetadata._();
 
   // ==================== 节点类型 ====================
@@ -130,8 +130,8 @@ class StandardMetadata {
 
   /// 创建插件元数据键
   ///
-  /// 参数 [pluginName] 插件名称
-  /// 参数 [key] 元数据键名
+  /// [pluginName] 插件名称
+  /// [key] 元数据键名
   ///
   /// 返回格式：'plugin.{pluginName}.{key}'
   ///
@@ -140,17 +140,16 @@ class StandardMetadata {
   /// final key = StandardMetadata.pluginKey('myPlugin', 'customField');
   /// // 返回：'plugin.myPlugin.customField'
   /// ```
-  static String pluginKey(String pluginName, String key) {
-    return '$pluginPrefix$pluginName.$key';
-  }
+  static String pluginKey(String pluginName, String key) => '$pluginPrefix$pluginName.$key';
 
   // ==================== 验证辅助方法 ====================
 
   /// 检查是否是标准元数据键
   ///
+  /// [key] 要检查的键
+  ///
   /// 返回 true 如果 [key] 是预定义的标准键
-  static bool isStandardKey(String key) {
-    return const {
+  static bool isStandardKey(String key) => const {
       nodeType,
       isFolder,
       isAI,
@@ -170,21 +169,20 @@ class StandardMetadata {
       version,
       author,
     }.contains(key);
-  }
 
   /// 检查是否是插件元数据键
   ///
+  /// [key] 要检查的键
+  ///
   /// 返回 true 如果 [key] 以 'plugin.' 开头
-  static bool isPluginKey(String key) {
-    return key.startsWith(pluginPrefix);
-  }
+  static bool isPluginKey(String key) => key.startsWith(pluginPrefix);
 }
 
 /// 优先级标准值
 ///
 /// 定义优先级的常量
 class Priorities {
-  // 私有构造函数
+  /// 私有构造函数
   Priorities._();
 
   /// 最低优先级

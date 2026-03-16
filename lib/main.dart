@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'core/services/services.dart';
+
 import 'app.dart';
+import 'core/services/services.dart';
 
 // 主函数
 void main() async {
@@ -22,8 +23,10 @@ void main() async {
     debugPrint('Stack trace: ${details.stack}');
   };
 
-  runApp(NodeGraphNotebookApp(
-    settingsService: settingsService,
-    themeService: themeService,
-  ));
+  runApp(
+    NodeGraphNotebookApp(
+      settingsService: settingsService,
+      themeService: themeService,
+    ),
+  );
 }

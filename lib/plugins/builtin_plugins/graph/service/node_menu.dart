@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_state.dart';
+
 import '../../../../core/models/models.dart';
 import '../../editor/ui/markdown_editor_page.dart';
+import '../bloc/node_bloc.dart';
+import '../bloc/node_event.dart';
+import '../bloc/node_state.dart';
 
 /// 显示节点菜单
 void showNodeMenu(BuildContext context, Node node) {
@@ -12,8 +13,7 @@ void showNodeMenu(BuildContext context, Node node) {
     context: context,
     builder: (ctx) => SafeArea(
       child: BlocBuilder<NodeBloc, NodeState>(
-        builder: (ctx, nodeState) {
-          return Column(
+        builder: (ctx, nodeState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
@@ -51,7 +51,8 @@ void showNodeMenu(BuildContext context, Node node) {
                     builder: (ctx) => AlertDialog(
                       title: const Text('Delete Node'),
                       content: Text(
-                          'Are you sure you want to delete "${node.title}"?'),
+                        'Are you sure you want to delete "${node.title}"?',
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
@@ -65,17 +66,15 @@ void showNodeMenu(BuildContext context, Node node) {
                     ),
                   );
 
-                  if (confirmed == true && ctx.mounted) {
+                  if ((confirmed ?? false) && ctx.mounted) {
                     Navigator.pop(ctx);
                     context.read<NodeBloc>().add(NodeDeleteEvent(node.id));
                   }
                 },
               ),
             ],
-          );
-        },
+          ),
       ),
     ),
   );
 }
-

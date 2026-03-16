@@ -4,11 +4,12 @@ import '../../../../core/services/services.dart';
 
 /// AI 配置对话框
 class AIConfigDialog extends StatefulWidget {
-  const AIConfigDialog({
-    super.key,
-    required this.settingsService,
-  });
+  /// 创建 AI 配置对话框
+  ///
+  /// [settingsService] - 设置服务实例
+  const AIConfigDialog({super.key, required this.settingsService});
 
+  /// 设置服务实例
   final SettingsService settingsService;
 
   @override
@@ -68,10 +69,7 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
               // AI 服务提供商选择
               const Text(
                 'AI Provider',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               SegmentedButton<String>(
@@ -107,10 +105,7 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
               // Base URL
               const Text(
                 'Base URL',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -128,10 +123,7 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
               // Model
               const Text(
                 'Model Name',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -149,10 +141,7 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
               // API Key
               const Text(
                 'API Key',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -180,10 +169,10 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: theme.status.info.withValues(alpha:0.1),
+                  color: theme.status.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: theme.status.info.withValues(alpha:0.5),
+                    color: theme.status.info.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(

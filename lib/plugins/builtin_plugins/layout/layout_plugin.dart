@@ -1,9 +1,9 @@
 import '../../../core/plugin/plugin.dart';
-import 'service/layout_service_bindings.dart';
-import 'handler/apply_layout_handler.dart';
-import 'command/layout_commands.dart';
-import 'service/layout_service.dart';
 import '../graph/service/graph_service.dart';
+import 'command/layout_commands.dart';
+import 'handler/apply_layout_handler.dart';
+import 'service/layout_service.dart';
+import 'service/layout_service_bindings.dart';
 
 /// Layout 插件
 ///
@@ -21,18 +21,16 @@ class LayoutPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'layout',
-        name: 'Layout',
-        version: '1.0.0',
-        description: 'Graph layout and node positioning',
-        author: 'Node Graph Notebook',
-        enabledByDefault: true,
-      );
+    id: 'layout',
+    name: 'Layout',
+    version: '1.0.0',
+    description: 'Graph layout and node positioning',
+    author: 'Node Graph Notebook',
+    enabledByDefault: true,
+  );
 
   @override
-  List<ServiceBinding> registerServices() => [
-        LayoutServiceBinding(),
-      ];
+  List<ServiceBinding> registerServices() => [LayoutServiceBinding()];
 
   @override
   Future<void> onLoad(PluginContext context) async {

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/models/node.dart';
 import '../../../core/plugin/plugin.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
-import 'service/ai_service_bindings.dart';
+import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import '../../../core/repositories/node_repository.dart';
 import 'command/ai_commands.dart';
 import 'handler/analyze_node_handler.dart';
-import '../../../core/repositories/node_repository.dart';
-import '../../../core/models/node.dart';
 import 'service/ai_service.dart';
-
+import 'service/ai_service_bindings.dart';
 
 /// AI 集成插件
 ///
@@ -29,26 +29,22 @@ class AIIntegrationPlugin extends MainToolbarHook {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'ai_integration',
-        name: 'AI Integration',
-        version: '1.0.0',
-        description: 'AI-powered node analysis and connection suggestions',
-        author: 'Node Graph Notebook',
-      );
+    id: 'ai_integration',
+    name: 'AI Integration',
+    version: '1.0.0',
+    description: 'AI-powered node analysis and connection suggestions',
+    author: 'Node Graph Notebook',
+  );
 
   @override
-  List<ServiceBinding> registerServices() => [
-    AIServiceBinding(),
-  ];
+  List<ServiceBinding> registerServices() => [AIServiceBinding()];
 
   @override
-  Widget renderToolbar(MainToolbarHookContext context) {
-    return IconButton(
+  Widget renderToolbar(MainToolbarHookContext context) => IconButton(
       icon: const Icon(Icons.psychology, color: Colors.purple),
       tooltip: 'AI Tools',
       onPressed: () => _showAIMenu(context),
     );
-  }
 
   /// 显示 AI 菜单
   void _showAIMenu(MainToolbarHookContext context) {
@@ -394,9 +390,9 @@ class AIIntegrationPlugin extends MainToolbarHook {
     List<ConnectionSuggestion> suggestions,
   ) {
     if (suggestions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('没有找到高置信度的连接建议')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('没有找到高置信度的连接建议')));
       return;
     }
 
@@ -412,7 +408,9 @@ class AIIntegrationPlugin extends MainToolbarHook {
             itemBuilder: (context, index) {
               final suggestion = suggestions[index];
               return ListTile(
-                title: Text('${suggestion.fromNodeId} → ${suggestion.toNodeId}'),
+                title: Text(
+                  '${suggestion.fromNodeId} → ${suggestion.toNodeId}',
+                ),
                 subtitle: Text(suggestion.reason),
                 trailing: Text(
                   '${(suggestion.confidence * 100).toStringAsFixed(0)}%',
@@ -420,8 +418,8 @@ class AIIntegrationPlugin extends MainToolbarHook {
                     color: suggestion.confidence > 0.8
                         ? Colors.green
                         : suggestion.confidence > 0.6
-                            ? Colors.orange
-                            : Colors.red,
+                        ? Colors.orange
+                        : Colors.red,
                   ),
                 ),
               );
@@ -530,10 +528,7 @@ class AIIntegrationPlugin extends MainToolbarHook {
   /// 显示错误消息
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 

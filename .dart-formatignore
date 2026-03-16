@@ -1,0 +1,13 @@
+# Files to ignore when running dart format
+
+# Generated files
+**/*.g.dart
+**/*.freezed.dart
+build/
+
+# Third-party packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Test files (optional - uncomment if you want to skip formatting tests)
+# test/**/*.dart

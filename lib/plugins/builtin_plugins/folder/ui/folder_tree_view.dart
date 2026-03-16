@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_state.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/service/node_service.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/services/services.dart';
 import '../../editor/ui/markdown_editor_page.dart';
+import '../../graph/bloc/graph_bloc.dart';
+import '../../graph/bloc/graph_event.dart';
+import '../../graph/bloc/node_bloc.dart';
+import '../../graph/bloc/node_event.dart';
+import '../../graph/bloc/node_state.dart';
+import '../../graph/service/node_service.dart';
 
 /// 文件夹树形视图
+///
+/// 展示和管理节点的文件夹结构，支持拖拽操作和文件夹展开/折叠
 class FolderTreeView extends StatefulWidget {
+  /// 创建文件夹树形视图
+  ///
+  /// [nodes] 所有非文件夹节点
+  /// [folders] 所有文件夹节点
+  /// [onNodeSelected] 节点选择回调函数
   const FolderTreeView({
     super.key,
     required this.nodes,
@@ -19,8 +27,11 @@ class FolderTreeView extends StatefulWidget {
     this.onNodeSelected,
   });
 
+  /// 所有非文件夹节点
   final List<Node> nodes;
+  /// 所有文件夹节点
   final List<Node> folders;
+  /// 节点选择回调函数
   final Function(String? nodeId)? onNodeSelected;
 
   @override
@@ -41,7 +52,8 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   @override
   void didUpdateWidget(FolderTreeView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.nodes != widget.nodes || oldWidget.folders != widget.folders) {
+    if (oldWidget.nodes != widget.nodes ||
+        oldWidget.folders != widget.folders) {
       _calculateDepths();
     }
   }
@@ -91,9 +103,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         .expand((folder) => folder.references.keys)
         .toSet();
 
-    return nodes.where((node) {
-      return !folderContainedIds.contains(node.id);
-    }).toList();
+    return nodes.where((node) => !folderContainedIds.contains(node.id)).toList();
   }
 
   /// 检测是否存在循环关系
@@ -142,7 +152,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       if (visited.contains(currentId)) continue;
       visited.add(currentId);
 
-      final currentNode = allNodes.firstWhere((n) => n.id == currentId, orElse: () => ancestor);
+      final currentNode = allNodes.firstWhere(
+        (n) => n.id == currentId,
+        orElse: () => ancestor,
+      );
       for (final refId in currentNode.references.keys) {
         if (!visited.contains(refId)) {
           queue.add(refId);
@@ -162,7 +175,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     if (_hasCircularContains(node, folder, allNodes)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cannot create circular folder structure')),
+          const SnackBar(
+            content: Text('Cannot create circular folder structure'),
+          ),
         );
       }
       return;
@@ -198,8 +213,8 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   Future<void> _removeFromFolder(Node node, Node folder) async {
     final nodeBloc = context.read<NodeBloc>();
 
-    final newReferences = Map<String, NodeReference>.from(folder.references);
-    newReferences.remove(node.id);
+    final newReferences = Map<String, NodeReference>.from(folder.references)
+    ..remove(node.id);
 
     final updatedFolder = folder.copyWith(references: newReferences);
     nodeBloc.add(NodeReplaceEvent(updatedFolder));
@@ -209,8 +224,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<NodeBloc, NodeState>(
+  Widget build(BuildContext context) => BlocBuilder<NodeBloc, NodeState>(
       builder: (context, nodeState) {
         // 从 NodeBloc 状态中获取最新的节点和文件夹
         final allNodes = nodeState.nodes;
@@ -240,7 +254,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         return ListView(
           children: [
             // 顶层文件夹列表
-            ...topLevelFolders.map((folder) => _buildFolderItem(context, folder, allNodesList, 0)),
+            ...topLevelFolders.map(
+              (folder) => _buildFolderItem(context, folder, allNodesList, 0),
+            ),
 
             // 分隔线
             if (topLevelFolders.isNotEmpty && rootNodes.isNotEmpty)
@@ -252,9 +268,13 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         );
       },
     );
-  }
 
-  Widget _buildFolderItem(BuildContext context, Node folder, List<Node> allNodes, int level) {
+  Widget _buildFolderItem(
+    BuildContext context,
+    Node folder,
+    List<Node> allNodes,
+    int level,
+  ) {
     final children = _getFolderChildren(folder, allNodes);
     final isExpanded = _expandedFolders.contains(folder.id);
     final theme = context.watch<ThemeService>().themeData;
@@ -287,16 +307,19 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           }
         }
 
-        final isValidTarget = isDraggingOver && draggedNodeId != null && draggedNodeId != folder.id;
+        final isValidTarget =
+            isDraggingOver &&
+            draggedNodeId != null &&
+            draggedNodeId != folder.id;
 
         return DecoratedBox(
           decoration: BoxDecoration(
-            color: isValidTarget
-                ? Colors.blue.withValues(alpha: 0.2)
-                : null,
+            color: isValidTarget ? Colors.blue.withValues(alpha: 0.2) : null,
             border: Border(
               left: BorderSide(
-                color: isSelected ? theme.nodes.folderPrimary : Colors.transparent,
+                color: isSelected
+                    ? theme.nodes.folderPrimary
+                    : Colors.transparent,
                 width: 3,
               ),
             ),
@@ -316,10 +339,13 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                   });
                 },
                 feedback: Material(
-                  elevation: 8.0,
+                  elevation: 8,
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -347,11 +373,16 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                       });
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       child: Row(
                         children: [
                           Icon(
-                            isExpanded ? Icons.expand_more : Icons.chevron_right,
+                            isExpanded
+                                ? Icons.expand_more
+                                : Icons.chevron_right,
                             size: 16,
                           ),
                           const SizedBox(width: 4),
@@ -394,9 +425,18 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                     children: children.map((child) {
                       // 如果子节点是文件夹，递归渲染
                       if (child.isFolder) {
-                        return _buildFolderItem(context, child, allNodes, level + 1);
+                        return _buildFolderItem(
+                          context,
+                          child,
+                          allNodes,
+                          level + 1,
+                        );
                       } else {
-                        return _buildNodeItem(context, child, parentFolder: folder);
+                        return _buildNodeItem(
+                          context,
+                          child,
+                          parentFolder: folder,
+                        );
                       }
                     }).toList(),
                   ),
@@ -427,18 +467,14 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         });
       },
       feedback: Material(
-        elevation: 8.0,
+        elevation: 8,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.note,
-                size: 16,
-                color: null,
-              ),
+              const Icon(Icons.note, size: 16, color: null),
               const SizedBox(width: 8),
               Text(node.title),
             ],
@@ -453,7 +489,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
             color: isSelected ? theme.backgrounds.secondary : null,
             border: Border(
               left: BorderSide(
-                color: isSelected ? theme.nodes.nodePrimary : Colors.transparent,
+                color: isSelected
+                    ? theme.nodes.nodePrimary
+                    : Colors.transparent,
                 width: 3,
               ),
             ),
@@ -475,17 +513,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
             child: Row(
               children: [
                 if (parentFolder == null) const SizedBox(width: 28),
-                const Icon(
-                  Icons.note,
-                  size: 16,
-                  color: null,
-                ),
+                const Icon(Icons.note, size: 16, color: null),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    node.title,
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  child: Text(node.title, style: const TextStyle(fontSize: 12)),
                 ),
                 if (parentFolder != null)
                   IconButton(
@@ -566,7 +597,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                       Navigator.pop(ctx);
                       // TODO: Implement disconnect functionality
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Disconnect feature coming soon')),
+                        const SnackBar(
+                          content: Text('Disconnect feature coming soon'),
+                        ),
                       );
                     },
                   ),
@@ -589,10 +622,11 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                     Navigator.pop(ctx);
                     final confirmed = await showDialog<bool>(
                       context: context,
-                      builder: (dialogCtx) {
-                        return AlertDialog(
+                      builder: (dialogCtx) => AlertDialog(
                           title: const Text('Delete Node'),
-                          content: Text('Are you sure you want to delete "${node.title}"?'),
+                          content: Text(
+                            'Are you sure you want to delete "${node.title}"?',
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(dialogCtx, false),
@@ -603,11 +637,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                               child: const Text('Delete'),
                             ),
                           ],
-                        );
-                      },
+                        ),
                     );
 
-                    if (confirmed == true) {
+                    if (confirmed ?? false) {
                       if (context.mounted) {
                         context.read<NodeBloc>().add(NodeDeleteEvent(node.id));
                       }
@@ -622,7 +655,11 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     );
   }
 
-  void _showFolderSelector(BuildContext context, Node node, List<Node> folders) {
+  void _showFolderSelector(
+    BuildContext context,
+    Node node,
+    List<Node> folders,
+  ) {
     final theme = context.read<ThemeService>().themeData;
 
     showDialog(
@@ -708,8 +745,12 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                       children: node.references.entries.map((entry) {
                         final ref = entry.value;
                         // 使用 allNodes 来查找节点，包括文件夹
-                        final matchingNodes = allNodes.where((n) => n.id == entry.key);
-                        final targetNode = matchingNodes.isNotEmpty ? matchingNodes.first : null;
+                        final matchingNodes = allNodes.where(
+                          (n) => n.id == entry.key,
+                        );
+                        final targetNode = matchingNodes.isNotEmpty
+                            ? matchingNodes.first
+                            : null;
 
                         // 如果找不到目标节点，显示简化信息
                         if (targetNode == null) {
@@ -728,9 +769,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
                         return ListTile(
                           leading: Icon(
-                            targetNode.isFolder
-                                ? Icons.folder
-                                : Icons.note,
+                            targetNode.isFolder ? Icons.folder : Icons.note,
                             size: 16,
                             color: targetNode.isFolder
                                 ? theme.nodes.folderPrimary
@@ -786,8 +825,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
 /// Node 扩展 - 检查是否为文件夹
 extension NodeExtension on Node {
-  bool get isFolder {
-    return metadata['isFolder'] == true ||
+  /// 检查节点是否为文件夹
+  ///
+  /// 通过检查节点的metadata中的isFolder属性来判断
+  bool get isFolder => metadata['isFolder'] == true ||
         (metadata['isFolder'] is bool && metadata['isFolder'] as bool);
-  }
 }

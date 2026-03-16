@@ -7,11 +7,11 @@ import '../models/models.dart';
 /// 采用单例模式，提供广播流机制实现发布-订阅模式。
 /// 用于 NodeBloc 和 GraphBloc 之间的解耦通信。
 class AppEventBus {
-  // 私有构造函数，实现单例模式
-  AppEventBus._internal();
 
   /// 获取事件总线实例（单例）
   factory AppEventBus() => _instance;
+  // 私有构造函数，实现单例模式
+  AppEventBus._internal();
 
   /// 创建用于测试的新实例
   ///
@@ -50,6 +50,7 @@ class AppEventBus {
 /// 所有通过事件总线传递的事件都必须继承此类。
 /// 使用 Equatable 实现值相等性比较，便于测试和状态比较。
 abstract class AppEvent extends Equatable {
+  /// 创建一个应用事件
   const AppEvent();
 
   @override
@@ -61,6 +62,10 @@ abstract class AppEvent extends Equatable {
 /// 当节点的数据发生变化时（创建、更新、删除），NodeBloc 会发布此事件。
 /// GraphBloc 订阅此事件以更新视图层的节点数据。
 class NodeDataChangedEvent extends AppEvent {
+  /// 创建一个节点数据变化事件
+  ///
+  /// [changedNodes] - 发生变化的节点列表
+  /// [action] - 变化类型，默认为更新
   const NodeDataChangedEvent({
     required this.changedNodes,
     this.action = DataChangeAction.update,
@@ -95,6 +100,11 @@ enum DataChangeAction {
 /// 当节点与图的关系发生变化时（添加到图、从图移除），GraphBloc 会发布此事件。
 /// 其他 BLoC 或组件可以订阅此事件以响应图结构变化。
 class GraphNodeRelationChangedEvent extends AppEvent {
+  /// 创建一个图节点关系变化事件
+  ///
+  /// [graphId] - 发生变化的图 ID
+  /// [nodeIds] - 涉及的节点 ID 列表
+  /// [action] - 变化类型
   const GraphNodeRelationChangedEvent({
     required this.graphId,
     required this.nodeIds,

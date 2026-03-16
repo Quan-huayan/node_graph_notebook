@@ -15,12 +15,12 @@ class ExportPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'export',
-        name: 'Export',
-        version: '1.0.0',
-        description: 'Export graph to various formats (JSON, PNG, Markdown)',
-        author: 'Node Graph Notebook',
-      );
+    id: 'export',
+    name: 'Export',
+    version: '1.0.0',
+    description: 'Export graph to various formats (JSON, PNG, Markdown)',
+    author: 'Node Graph Notebook',
+  );
 
   @override
   Future<void> onLoad(PluginContext context) async {

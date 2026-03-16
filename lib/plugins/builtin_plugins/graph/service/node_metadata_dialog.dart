@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/services/theme_service.dart';
+import '../bloc/node_bloc.dart';
+import '../bloc/node_event.dart';
 
 /// 节点元数据编辑对话框
 /// 用于编辑节点的标题、颜色、文件夹属性等元数据
 class NodeMetadataDialog extends StatefulWidget {
-  const NodeMetadataDialog({
-    super.key,
-    required this.node,
-  });
+  /// 构造函数
+  ///
+  /// [node] - 要编辑元数据的节点
+  const NodeMetadataDialog({super.key, required this.node});
 
+  /// 要编辑元数据的节点
   final Node node;
 
   @override
@@ -90,10 +92,7 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
             const SizedBox(height: 8),
 
             // 颜色选择
-            const Text(
-              'Color',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            const Text('Color', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -136,11 +135,10 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
             ),
             const SizedBox(height: 8),
             Text(
-              _colorOptions
-                      .firstWhere(
-                        (opt) => opt['color'] == _selectedColor,
-                        orElse: () => _colorOptions[0],
-                      )['name']
+              _colorOptions.firstWhere(
+                    (opt) => opt['color'] == _selectedColor,
+                    orElse: () => _colorOptions[0],
+                  )['name']
                   as String,
               style: const TextStyle(
                 fontSize: 12,
@@ -156,10 +154,7 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: _saveMetadata,
-          child: const Text('Save'),
-        ),
+        ElevatedButton(onPressed: _saveMetadata, child: const Text('Save')),
       ],
     );
   }
@@ -179,9 +174,9 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
   void _saveMetadata() {
     final newTitle = _titleController.text.trim();
     if (newTitle.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title cannot be empty')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Title cannot be empty')));
       return;
     }
 
@@ -191,16 +186,18 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
     final newMetadata = Map<String, dynamic>.from(widget.node.metadata);
     newMetadata['isFolder'] = _isFolder;
 
-    nodeBloc.add(NodeUpdateEvent(
-      widget.node.id,
-      title: newTitle,
-      color: _selectedColor,
-      metadata: newMetadata,
-    ));
+    nodeBloc.add(
+      NodeUpdateEvent(
+        widget.node.id,
+        title: newTitle,
+        color: _selectedColor,
+        metadata: newMetadata,
+      ),
+    );
 
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Metadata updated')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Metadata updated')));
   }
 }

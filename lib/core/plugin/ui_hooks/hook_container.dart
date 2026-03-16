@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 
-import 'hook_point.dart';
 import 'hook_context.dart';
+import 'hook_point.dart';
 import 'hook_registry.dart';
 
 /// Hook 容器组件
 class HookContainer {
-  HookContainer({
-    required this.hookPoint,
-    required this.context,
-  });
+  /// 创建一个新的 Hook 容器实例。
+  ///
+  /// [hookPoint] Hook 点
+  /// [context] Hook 上下文
+  HookContainer({required this.hookPoint, required this.context});
 
   /// Hook 点
   final HookPoint hookPoint;
-  
+
   /// Hook 上下文
   final HookContext context;
 
@@ -78,14 +79,10 @@ class HookContainer {
   }
 
   /// 检查是否有 Hook
-  bool get hasHooks {
-    return hookRegistry.hasHooks(hookPoint.id);
-  }
+  bool get hasHooks => hookRegistry.hasHooks(hookPoint.id);
 
   /// 获取 Hook 数量
-  int get hookCount {
-    return hookRegistry.getHooks(hookPoint.id).length;
-  }
+  int get hookCount => hookRegistry.getHooks(hookPoint.id).length;
 }
 
 /// Hook 容器工厂
@@ -94,58 +91,45 @@ class HookContainerFactory {
   ///
   /// [hookPoint] Hook 点
   /// [context] Hook 上下文
-  static HookContainer create(HookPoint hookPoint, HookContext context) {
-    return HookContainer(
-      hookPoint: hookPoint,
-      context: context,
-    );
-  }
+  static HookContainer create(HookPoint hookPoint, HookContext context) => HookContainer(hookPoint: hookPoint, context: context);
 
   /// 创建节点上下文菜单 Hook 容器
-  static HookContainer createNodeContextMenuContainer(NodeContextMenuHookContext context) {
-    return HookContainer(
+  static HookContainer createNodeContextMenuContainer(
+    NodeContextMenuHookContext context,
+  ) => HookContainer(
       hookPoint: StandardHookPoints.nodeContextMenu,
       context: context,
     );
-  }
 
   /// 创建图上下文菜单 Hook 容器
-  static HookContainer createGraphContextMenuContainer(GraphContextMenuHookContext context) {
-    return HookContainer(
+  static HookContainer createGraphContextMenuContainer(
+    GraphContextMenuHookContext context,
+  ) => HookContainer(
       hookPoint: StandardHookPoints.graphContextMenu,
       context: context,
     );
-  }
 
   /// 创建工具栏 Hook 容器
-  static HookContainer createToolbarContainer(HookContext context) {
-    return HookContainer(
+  static HookContainer createToolbarContainer(HookContext context) => HookContainer(
       hookPoint: StandardHookPoints.mainToolbar,
       context: context,
     );
-  }
 
   /// 创建侧边栏顶部 Hook 容器
-  static HookContainer createSidebarTopContainer(HookContext context) {
-    return HookContainer(
+  static HookContainer createSidebarTopContainer(HookContext context) => HookContainer(
       hookPoint: StandardHookPoints.sidebarTop,
       context: context,
     );
-  }
 
   /// 创建侧边栏底部 Hook 容器
-  static HookContainer createSidebarBottomContainer(HookContext context) {
-    return HookContainer(
+  static HookContainer createSidebarBottomContainer(HookContext context) => HookContainer(
       hookPoint: StandardHookPoints.sidebarBottom,
       context: context,
     );
-  }
 
   /// 创建状态栏 Hook 容器
-  static HookContainer createStatusBarContainer(HookContext context) {
-    return HookContainer(
+  static HookContainer createStatusBarContainer(HookContext context) => HookContainer(
       hookPoint: StandardHookPoints.statusBar,
       context: context,
     );
-  }
 }

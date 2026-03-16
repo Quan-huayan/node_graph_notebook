@@ -1,16 +1,14 @@
 import 'dart:ui';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/repositories/repositories.dart';
-import 'node_service.dart';
 import '../../layout/service/layout_service.dart';
+import 'node_service.dart';
 
 /// 图服务接口
 abstract class GraphService {
   /// 创建图
-  Future<Graph> createGraph({
-    required String name,
-    List<String>? nodeIds,
-  });
+  Future<Graph> createGraph({required String name, List<String>? nodeIds});
 
   /// 获取图
   Future<Graph?> getGraph(String graphId);
@@ -19,11 +17,12 @@ abstract class GraphService {
   Future<Graph?> getCurrentGraph();
 
   /// 更新图
-  Future<Graph> updateGraph(String graphId, {
+  Future<Graph> updateGraph(
+    String graphId, {
     String? name,
     List<String>? nodeIds,
     GraphViewConfig? viewConfig,
-    Map<String, Offset>? nodePositions
+    Map<String, Offset>? nodePositions,
   });
 
   /// 删除图
@@ -50,6 +49,11 @@ abstract class GraphService {
 
 /// 图服务实现
 class GraphServiceImpl implements GraphService {
+  /// 构造函数
+  ///
+  /// [_repository] - 图形仓库
+  /// [_nodeRepository] - 节点仓库
+  /// [layoutService] - 布局服务，可选
   GraphServiceImpl(
     this._repository,
     this._nodeRepository, [
@@ -65,7 +69,9 @@ class GraphServiceImpl implements GraphService {
     required String name,
     List<String>? nodeIds,
   }) async {
-    final graphNodes = nodeIds != null ? await _nodeRepository.loadAll(nodeIds) : [];
+    final graphNodes = nodeIds != null
+        ? await _nodeRepository.loadAll(nodeIds)
+        : [];
 
     final graph = Graph(
       id: __generateId(),
@@ -74,9 +80,7 @@ class GraphServiceImpl implements GraphService {
       viewConfig: GraphViewConfig.defaultConfig,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      nodePositions: {
-        for (Node node in graphNodes)
-        node.id: node.position}
+      nodePositions: {for (Node node in graphNodes) node.id: node.position},
     );
 
     await _repository.save(graph);
@@ -84,21 +88,18 @@ class GraphServiceImpl implements GraphService {
   }
 
   @override
-  Future<Graph?> getGraph(String graphId) async {
-    return _repository.load(graphId);
-  }
+  Future<Graph?> getGraph(String graphId) async => _repository.load(graphId);
 
   @override
-  Future<Graph?> getCurrentGraph() async {
-    return _repository.getCurrent();
-  }
+  Future<Graph?> getCurrentGraph() async => _repository.getCurrent();
 
   @override
-  Future<Graph> updateGraph(String graphId, {
+  Future<Graph> updateGraph(
+    String graphId, {
     String? name,
     List<String>? nodeIds,
     GraphViewConfig? viewConfig,
-    Map<String,Offset>? nodePositions
+    Map<String, Offset>? nodePositions,
   }) async {
     final graph = await _repository.load(graphId);
     if (graph == null) {
@@ -182,10 +183,7 @@ class GraphServiceImpl implements GraphService {
   }
 
   @override
-  Future<void> applyLayout(
-    String graphId,
-    LayoutAlgorithm algorithm,
-  ) async {
+  Future<void> applyLayout(String graphId, LayoutAlgorithm algorithm) async {
     final graph = await _repository.load(graphId);
     if (graph == null) {
       throw GraphNotFoundException(graphId);
@@ -216,9 +214,7 @@ class GraphServiceImpl implements GraphService {
     }
 
     // 更新图的布局算法配置和位置映射
-    final updatedConfig = graph.viewConfig.copyWith(
-      layoutAlgorithm: algorithm,
-    );
+    final updatedConfig = graph.viewConfig.copyWith(layoutAlgorithm: algorithm);
     final updatedGraph = graph.copyWith(
       viewConfig: updatedConfig,
       nodePositions: updatedNodePositions,
@@ -241,15 +237,19 @@ class GraphServiceImpl implements GraphService {
   }
 
   String __generateId() {
-    // 应该使用 uuid 包
+    // TODO: 应该使用 uuid 包
     return 'graph_${DateTime.now().millisecondsSinceEpoch}';
   }
 }
 
 /// 图未找到异常
 class GraphNotFoundException implements Exception {
+  /// 构造函数
+  ///
+  /// [graphId] - 未找到的图的 ID
   const GraphNotFoundException(this.graphId);
 
+  /// 未找到的图的 ID
   final String graphId;
 
   @override

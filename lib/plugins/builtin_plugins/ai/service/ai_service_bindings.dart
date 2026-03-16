@@ -8,6 +8,10 @@ import 'ai_service.dart';
 /// AIService 是 ChangeNotifier，需要特殊处理
 class AIServiceBinding extends ServiceBinding<AIServiceImpl> {
   @override
+  /// 创建 AIService 实例
+  ///
+  /// [resolver] - 服务解析器，用于获取依赖的服务
+  /// 返回创建的 AIService 实例
   AIServiceImpl createService(ServiceResolver resolver) {
     final settingsService = resolver.get<SettingsService>();
     final aiService = AIServiceImpl();
@@ -16,7 +20,9 @@ class AIServiceBinding extends ServiceBinding<AIServiceImpl> {
     _updateAIProvider(aiService, settingsService);
 
     // 监听设置变化
-    settingsService.addListener(() => _updateAIProvider(aiService, settingsService));
+    settingsService.addListener(
+      () => _updateAIProvider(aiService, settingsService),
+    );
 
     return aiService;
   }
@@ -39,6 +45,9 @@ class AIServiceBinding extends ServiceBinding<AIServiceImpl> {
   }
 
   @override
+  /// 清理 AIService 资源
+  ///
+  /// [service] - 要清理的 AIService 实例
   void dispose(AIServiceImpl service) {
     // 清理资源（如果需要）
   }

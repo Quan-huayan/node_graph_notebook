@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
 import '../../../../core/models/node.dart';
 import '../../../../core/models/node_reference.dart';
 import '../../../../core/repositories/node_repository.dart';
@@ -9,6 +9,7 @@ import '../../../../core/repositories/node_repository.dart';
 ///
 /// 用于创建新的概念节点
 class CreateNodeCommand extends Command<Node> {
+  /// 创建创建节点命令
   CreateNodeCommand({
     required this.title,
     this.content,
@@ -59,10 +60,8 @@ class CreateNodeCommand extends Command<Node> {
 ///
 /// 用于更新现有节点的内容和属性
 class UpdateNodeCommand extends Command<Node> {
-  UpdateNodeCommand({
-    required this.oldNode,
-    required this.newNode,
-  });
+  /// 创建更新节点命令
+  UpdateNodeCommand({required this.oldNode, required this.newNode});
 
   /// 旧节点状态（用于撤销）
   final Node oldNode;
@@ -94,10 +93,8 @@ class UpdateNodeCommand extends Command<Node> {
 ///
 /// 用于删除节点及其相关连接
 class DeleteNodeCommand extends Command<void> {
-  DeleteNodeCommand({
-    required this.node,
-    this.cascadeConnections = true,
-  });
+  /// 创建删除节点命令
+  DeleteNodeCommand({required this.node, this.cascadeConnections = true});
 
   /// 要删除的节点
   final Node node;
@@ -131,6 +128,7 @@ class DeleteNodeCommand extends Command<void> {
 ///
 /// 用于在两个节点之间创建引用关系
 class ConnectNodesCommand extends Command<void> {
+  /// 创建连接节点命令
   ConnectNodesCommand({
     required this.sourceId,
     required this.targetId,
@@ -167,11 +165,11 @@ class ConnectNodesCommand extends Command<void> {
     final sourceNode = await repository.load(sourceId);
     if (sourceNode != null) {
       // Node.references 是 Map<String, NodeReference>
-      final updatedReferences = Map<String, NodeReference>.from(sourceNode.references);
-      updatedReferences.remove(targetId);
-      await repository.save(sourceNode.copyWith(
-        references: updatedReferences,
-      ));
+      final updatedReferences = Map<String, NodeReference>.from(
+        sourceNode.references,
+      )
+      ..remove(targetId);
+      await repository.save(sourceNode.copyWith(references: updatedReferences));
     }
   }
 }
@@ -180,10 +178,8 @@ class ConnectNodesCommand extends Command<void> {
 ///
 /// 用于移除两个节点之间的引用关系
 class DisconnectNodesCommand extends Command<void> {
-  DisconnectNodesCommand({
-    required this.sourceId,
-    required this.targetId,
-  });
+  /// 创建断开节点连接命令
+  DisconnectNodesCommand({required this.sourceId, required this.targetId});
 
   /// 源节点ID
   final String sourceId;
@@ -215,11 +211,11 @@ class DisconnectNodesCommand extends Command<void> {
     final sourceNode = await repository.load(sourceId);
     if (sourceNode != null) {
       // Node.references 是 Map<String, NodeReference>
-      final updatedReferences = Map<String, NodeReference>.from(sourceNode.references);
+      final updatedReferences = Map<String, NodeReference>.from(
+        sourceNode.references,
+      );
       updatedReferences[targetId] = originalReference;
-      await repository.save(sourceNode.copyWith(
-        references: updatedReferences,
-      ));
+      await repository.save(sourceNode.copyWith(references: updatedReferences));
     }
   }
 }
@@ -228,10 +224,8 @@ class DisconnectNodesCommand extends Command<void> {
 ///
 /// 用于更新节点在图形中的位置
 class MoveNodeCommand extends Command<void> {
-  MoveNodeCommand({
-    required this.nodeId,
-    required this.newPosition,
-  });
+  /// 创建移动节点命令
+  MoveNodeCommand({required this.nodeId, required this.newPosition});
 
   /// 节点ID
   final String nodeId;
@@ -262,9 +256,7 @@ class MoveNodeCommand extends Command<void> {
     final repository = context.read<NodeRepository>();
     final node = await repository.load(nodeId);
     if (node != null) {
-      await repository.save(node.copyWith(
-        position: oldPosition,
-      ));
+      await repository.save(node.copyWith(position: oldPosition));
     }
   }
 }
@@ -273,10 +265,8 @@ class MoveNodeCommand extends Command<void> {
 ///
 /// 用于更新节点的大小
 class ResizeNodeCommand extends Command<void> {
-  ResizeNodeCommand({
-    required this.nodeId,
-    required this.newSize,
-  });
+  /// 创建调整节点大小命令
+  ResizeNodeCommand({required this.nodeId, required this.newSize});
 
   /// 节点ID
   final String nodeId;
@@ -307,9 +297,7 @@ class ResizeNodeCommand extends Command<void> {
     final repository = context.read<NodeRepository>();
     final node = await repository.load(nodeId);
     if (node != null) {
-      await repository.save(node.copyWith(
-        size: oldSize,
-      ));
+      await repository.save(node.copyWith(size: oldSize));
     }
   }
 }

@@ -9,43 +9,50 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "build/**"
+    - "lib/**/*.mocks.dart"
 
   errors:
+    # === Critical Errors ===
     # Treat missing required parameters as errors
     missing_required_param: error
-    # Treat missing returns as errors
     missing_return: error
-    # Ignore TODO comments in production
-    todo: ignore
     # Avoid printing in production code
     avoid_print: error
     # Use key in widget constructors
     use_key_in_widget_constructors: error
+    # Sort constructors before other members
+    sort_constructors_first: error
+    # Avoid slow async IO
+    avoid_slow_async_io: error
+    # Avoid unused imports
+    unused_import: error
+    # Avoid unused local variables
+    unused_local_variable: error
+
+    # === Warnings (not blocking) ===
+    # Documentation requirements
+    public_member_api_docs: warning
+    # Import ordering (info only)
+    directives_ordering: info
+    prefer_relative_imports: info
+    # Expression function bodies (suggestion)
+    prefer_expression_function_bodies: info
+    unnecessary_lambdas: info
+    # Unnamed constructor ordering
+    sort_unnamed_constructors_first: info
 
 linter:
   rules:
-    # Dart Style
-    - prefer_single_quotes
-    - sort_constructors_first
+    # === Dart Core ===
+    # Type Safety
     - always_declare_return_types
-    - prefer_final_fields
-    - prefer_final_locals
-    - unnecessary_const
-    - unnecessary_new
-    - unnecessary_this
-
-    # Flutter Style
-    - prefer_const_constructors
-    - prefer_const_literals_to_create_immutables
-    - avoid_unnecessary_containers
-    - use_colored_box
-    - use_decorated_box
-    - prefer_const_constructors_in_immutables
-    - prefer_is_empty
-    - prefer_is_not_empty
+    - avoid_dynamic_calls
+    - avoid_null_checks_in_equality_operators
+    - prefer_relative_imports
+    - prefer_typing_uninitialized_variables
+    - void_checks
 
     # Error Prevention
-    - avoid_dynamic_calls
     - avoid_empty_else
     - avoid_print
     - avoid_relative_lib_imports
@@ -64,13 +71,82 @@ linter:
     - unrelated_type_equality_checks
     - valid_regexps
 
-    # Style
-    - join_return_with_assignment
-    - prefer_collection_literals
+    # Style & Consistency
+    - prefer_single_quotes
+    - sort_constructors_first
+    - prefer_final_fields
+    - prefer_final_locals
+    - unnecessary_const
+    - unnecessary_new
+    - unnecessary_this
+    - omit_local_variable_types
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - prefer_const_declarations
+    - prefer_if_elements_to_conditional_expressions
+    - prefer_is_empty
+    - prefer_is_not_empty
+    - prefer_spread_collections
     - prefer_for_elements_to_map_fromIterable
     - prefer_if_null_operators
     - prefer_inlined_adds
-    - prefer_spread_collections
+    - join_return_with_assignment
+    - prefer_collection_literals
     - unnecessary_await_in_return
     - unnecessary_brace_in_string_interps
     - unnecessary_getters_setters
+    - unnecessary_lambdas
+    - unnecessary_null_aware_assignments
+    - unnecessary_null_checks
+    - unnecessary_null_in_if_null_operators
+    - unnecessary_overrides
+    - unnecessary_parenthesis
+    - unnecessary_string_interpolations
+    - unnecessary_string_escapes
+    - use_string_buffers
+    - use_rethrow_when_possible
+
+    # Documentation
+    - public_member_api_docs
+    - slash_for_doc_comments
+    - package_names
+    - package_prefixed_library_names
+
+    # Flutter Specific
+    - avoid_unnecessary_containers
+    - use_colored_box
+    - use_decorated_box
+    - prefer_const_constructors_in_immutables
+    - avoid_bool_literals_in_conditional_expressions
+    - avoid_function_literals_in_foreach_calls
+    - prefer_expression_function_bodies
+    - prefer_int_literals
+    - prefer_null_aware_method_calls
+    - sized_box_for_whitespace
+    - sized_box_shrink_expand
+
+    # Code Organization
+    - directives_ordering
+    - library_names
+    - library_prefixes
+    - leading_newlines_in_multiline_strings
+    - require_trailing_commas
+    - sort_child_properties_last
+    - sort_unnamed_constructors_first
+
+    # Modern Dart Features
+    - cascade_invocations
+    - use_enums
+    - use_if_null_to_convert_nulls_to_bools
+    - use_is_even_rather_than_modulo
+
+    # Performance
+    - avoid_js_rounded_ints
+    - avoid_setters_without_getters
+    - prefer_foreach
+    - prefer_mixin
+
+    # Security & Safety
+    - control_flow_in_finally
+    - empty_statements
+    - test_types_in_equals

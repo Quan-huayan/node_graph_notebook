@@ -5,6 +5,15 @@ part 'search_preset_model.g.dart';
 /// 搜索预设模型
 @JsonSerializable()
 class SearchPreset {
+  /// 创建搜索预设
+  /// 
+  /// [id] - 唯一标识符
+  /// [name] - 预设名称
+  /// [titleQuery] - 标题查询
+  /// [contentQuery] - 内容查询
+  /// [tags] - 标签列表
+  /// [createdAt] - 创建时间
+  /// [lastUsed] - 最后使用时间
   const SearchPreset({
     required this.id,
     required this.name,
@@ -52,8 +61,7 @@ class SearchPreset {
     List<String>? tags,
     DateTime? createdAt,
     DateTime? lastUsed,
-  }) {
-    return SearchPreset(
+  }) => SearchPreset(
       id: id ?? this.id,
       name: name ?? this.name,
       titleQuery: titleQuery ?? this.titleQuery,
@@ -62,7 +70,6 @@ class SearchPreset {
       createdAt: createdAt ?? this.createdAt,
       lastUsed: lastUsed ?? this.lastUsed,
     );
-  }
 
   @override
   bool operator ==(Object other) =>

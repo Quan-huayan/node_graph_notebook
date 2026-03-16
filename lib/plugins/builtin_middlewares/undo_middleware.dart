@@ -1,6 +1,6 @@
-import '../../core/commands/command.dart';
-import '../../core/commands/command_context.dart';
-import '../../core/commands/middleware.dart';
+import '../../core/commands/models/command.dart';
+import '../../core/commands/models/command_context.dart';
+import '../../core/commands/models/middleware.dart';
 
 /// 撤销中间件
 ///
@@ -16,9 +16,10 @@ import '../../core/commands/middleware.dart';
 /// - 执行失败的命令不会被添加到撤销栈
 /// - 撤销栈大小限制为 50 条，超过时会移除最早的记录
 class UndoMiddleware extends CommandMiddlewareBase {
-  UndoMiddleware({
-    int maxStackSize = 50,
-  }) : _maxStackSize = maxStackSize;
+  /// 创建撤销中间件
+  ///
+  /// [maxStackSize] 撤销栈的最大大小，默认 50
+  UndoMiddleware({int maxStackSize = 50}) : _maxStackSize = maxStackSize;
 
   /// 撤销栈
   ///

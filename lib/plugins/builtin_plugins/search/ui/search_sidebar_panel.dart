@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/bloc/search_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/bloc/search_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/bloc/search_state.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/model/search_preset_model.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/model/search_query.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/ui/searched_node_item.dart';
+import '../../graph/bloc/graph_bloc.dart';
+import '../../graph/bloc/graph_event.dart';
+import '../bloc/search_bloc.dart';
+import '../bloc/search_event.dart';
+import '../bloc/search_state.dart';
+import '../model/search_preset_model.dart';
+import '../model/search_query.dart';
+import 'searched_node_item.dart';
 
 /// 搜索侧边栏面板
 class SearchSidebarPanel extends StatefulWidget {
+  /// 构造函数
   const SearchSidebarPanel({super.key});
 
   @override
@@ -56,9 +57,15 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     // 设置新的防抖定时器（500毫秒后执行搜索）
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       final query = SearchQuery(
-        searchText: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
-        titleQuery: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
-        contentQuery: _contentController.text.trim().isEmpty ? null : _contentController.text.trim(),
+        searchText: _searchController.text.trim().isEmpty
+            ? null
+            : _searchController.text.trim(),
+        titleQuery: _titleController.text.trim().isEmpty
+            ? null
+            : _titleController.text.trim(),
+        contentQuery: _contentController.text.trim().isEmpty
+            ? null
+            : _contentController.text.trim(),
         tags: _selectedTags.isEmpty ? null : _selectedTags,
       );
 
@@ -72,9 +79,15 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     _debounceTimer?.cancel();
 
     final query = SearchQuery(
-      searchText: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
-      titleQuery: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
-      contentQuery: _contentController.text.trim().isEmpty ? null : _contentController.text.trim(),
+      searchText: _searchController.text.trim().isEmpty
+          ? null
+          : _searchController.text.trim(),
+      titleQuery: _titleController.text.trim().isEmpty
+          ? null
+          : _titleController.text.trim(),
+      contentQuery: _contentController.text.trim().isEmpty
+          ? null
+          : _contentController.text.trim(),
       tags: _selectedTags.isEmpty ? null : _selectedTags,
     );
 
@@ -90,9 +103,15 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     }
 
     final query = SearchQuery(
-      searchText: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
-      titleQuery: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
-      contentQuery: _contentController.text.trim().isEmpty ? null : _contentController.text.trim(),
+      searchText: _searchController.text.trim().isEmpty
+          ? null
+          : _searchController.text.trim(),
+      titleQuery: _titleController.text.trim().isEmpty
+          ? null
+          : _titleController.text.trim(),
+      contentQuery: _contentController.text.trim().isEmpty
+          ? null
+          : _contentController.text.trim(),
       tags: _selectedTags.isEmpty ? null : _selectedTags,
     );
 
@@ -101,7 +120,12 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
       context: context,
       builder: (dialogCtx) {
         final nameController = TextEditingController(
-          text: _searchController.text.trim().substring(0, _searchController.text.trim().length > 20 ? 20 : _searchController.text.trim().length),
+          text: _searchController.text.trim().substring(
+            0,
+            _searchController.text.trim().length > 20
+                ? 20
+                : _searchController.text.trim().length,
+          ),
         );
         return AlertDialog(
           title: const Text('Save Search'),
@@ -150,10 +174,11 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
   void _deletePreset(String id) {
     showDialog<bool>(
       context: context,
-      builder: (dialogCtx) {
-        return AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
           title: const Text('Delete Preset'),
-          content: const Text('Are you sure you want to delete this search preset?'),
+          content: const Text(
+            'Are you sure you want to delete this search preset?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
@@ -164,10 +189,9 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
               child: const Text('Delete'),
             ),
           ],
-        );
-      },
+        ),
     ).then((confirmed) {
-      if (confirmed == true) {
+      if (confirmed ?? false) {
         context.read<SearchBloc>().add(SearchDeletePresetEvent(id));
         if (_selectedPreset?.id == id) {
           setState(() {
@@ -220,15 +244,13 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                       onSelected: (presetId) {
                         // 这个会在下面的 BlocBuilder 中处理
                       },
-                      itemBuilder: (context) {
-                        return [
+                      itemBuilder: (context) => [
                           const PopupMenuItem(
                             enabled: false,
                             child: Text('Saved Searches'),
                           ),
                           const PopupMenuDivider(),
-                        ];
-                      },
+                        ],
                     ),
               border: const OutlineInputBorder(),
             ),
@@ -249,7 +271,9 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                       _showAdvanced = !_showAdvanced;
                     });
                   },
-                  icon: Icon(_showAdvanced ? Icons.expand_less : Icons.expand_more),
+                  icon: Icon(
+                    _showAdvanced ? Icons.expand_less : Icons.expand_more,
+                  ),
                   label: const Text('Advanced Filters'),
                 ),
               ),
@@ -277,10 +301,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Advanced Filters',
-                      style: theme.textTheme.titleSmall,
-                    ),
+                    Text('Advanced Filters', style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _titleController,
@@ -305,12 +326,10 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                     // 标签选择
                     Wrap(
                       spacing: 4,
-                      children: _selectedTags.map((tag) {
-                        return Chip(
+                      children: _selectedTags.map((tag) => Chip(
                           label: Text(tag),
                           onDeleted: () => _removeTag(tag),
-                        );
-                      }).toList(),
+                        )).toList(),
                     ),
                     Row(
                       children: [
@@ -366,10 +385,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                   padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
                   child: Text(
                     'Saved Searches',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
                 for (final preset in state.presets)
@@ -409,7 +425,9 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                 return Center(
                   child: Text(
                     'Error: ${state.error}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 );
               }
@@ -439,9 +457,10 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                         // === 搜索高亮策略 ===
                         // 优先使用主要搜索文本，其次使用标题或内容查询
                         // 这样可以确保用户输入的内容能够被高亮显示
-                        final highlightQuery = state.currentQuery?.searchText ??
-                                           state.currentQuery?.titleQuery ??
-                                           state.currentQuery?.contentQuery;
+                        final highlightQuery =
+                            state.currentQuery?.searchText ??
+                            state.currentQuery?.titleQuery ??
+                            state.currentQuery?.contentQuery;
 
                         return SearchedNodeItem(
                           node: node,
@@ -456,12 +475,11 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                               node.position.dy + node.size.height / 2,
                             );
                             context.read<GraphBloc>().add(
-                              NodeAddEvent(
-                                node.id,
-                                position: centerPosition,
-                              ),
+                              NodeAddEvent(node.id, position: centerPosition),
                             );
-                            context.read<GraphBloc>().add(NodeSelectEvent(node.id));
+                            context.read<GraphBloc>().add(
+                              NodeSelectEvent(node.id),
+                            );
                           },
                         );
                       },
@@ -479,10 +497,12 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
   String _getPresetDescription(SearchPreset preset) {
     final parts = <String>[];
     if (preset.titleQuery != null) parts.add('Title: ${preset.titleQuery}');
-    if (preset.contentQuery != null) parts.add('Content: ${preset.contentQuery}');
-    if (preset.tags != null && preset.tags!.isNotEmpty) parts.add('Tags: ${preset.tags!.join(', ')}');
+    if (preset.contentQuery != null) {
+      parts.add('Content: ${preset.contentQuery}');
+    }
+    if (preset.tags != null && preset.tags!.isNotEmpty) {
+      parts.add('Tags: ${preset.tags!.join(', ')}');
+    }
     return parts.isEmpty ? 'No filters' : parts.join(' | ');
   }
 }
-
-

@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+
 import '../../plugins/builtin_plugins/converter/ui/import_export_page.dart';
-import '../pages/plugin_market_page.dart';
+import '../../plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
+import '../../plugins/builtin_plugins/graph/bloc/graph_event.dart';
+import '../../plugins/builtin_plugins/graph/bloc/node_bloc.dart';
+import '../../plugins/builtin_plugins/graph/bloc/node_event.dart';
 import '../dialogs/settings_dialog.dart';
+import '../pages/plugin_market_page.dart';
 
 /// 应用程序的顶部导航栏
+///
+/// 包含AI助手、插件市场、导入导出和设置等功能按钮
 class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
+  /// 创建一个应用程序顶部导航栏
   const NoteAppBarWidget({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) {
-    return AppBar(
+  Widget build(BuildContext context) => AppBar(
       title: const Text('Node Graph Notebook'),
       actions: [
         // AI按钮
@@ -49,7 +52,6 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
           tooltip: 'Import & Export',
         ),
 
-
         IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
@@ -62,19 +64,23 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         ),
       ],
     );
-  }
 
+  /// 添加AI助手节点到图中
+  ///
+  /// [context] - 构建上下文
   void _addAIAssistant(BuildContext context) {
     final nodeBloc = BlocProvider.of<NodeBloc>(context);
     final graphBloc = BlocProvider.of<GraphBloc>(context);
 
     try {
       // 创建AI助手节点
-      nodeBloc.add(const NodeCreateEvent(
-        title: 'AI Assistant',
-        content: 'Your AI assistant. Click to start a conversation!',
-        metadata: {'isAI': true, 'character': 'assistant'}, 
-      ));
+      nodeBloc.add(
+        const NodeCreateEvent(
+          title: 'AI Assistant',
+          content: 'Your AI assistant. Click to start a conversation!',
+          metadata: {'isAI': true, 'character': 'assistant'},
+        ),
+      );
 
       // 等待节点创建完成后添加到图中
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -87,26 +93,25 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         // 添加到图中，位置稍微随机
         // 注意：graphBloc.add 中的 position 参数约定为节点中心位置
         // AI 节点默认使用 titleWithPreview 模式，尺寸为 250x120
-        final nodeWidth = 250.0;
-        final nodeHeight = 120.0;
+        const nodeWidth = 250.0;
+        const nodeHeight = 120.0;
         final topLeftX = 100 + (DateTime.now().millisecond % 300).toDouble();
         final topLeftY = 100 + (DateTime.now().microsecond % 300).toDouble();
         // 转换左上角位置为中心位置
         final centerX = topLeftX + nodeWidth / 2;
         final centerY = topLeftY + nodeHeight / 2;
-        graphBloc.add(NodeAddEvent(
-          aiNode.id,
-          position: Offset(centerX, centerY),
-        ));
+        graphBloc.add(
+          NodeAddEvent(aiNode.id, position: Offset(centerX, centerY)),
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('AI Assistant added to the graph!')),
         );
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add AI Assistant: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to add AI Assistant: $e')));
     }
   }
 }

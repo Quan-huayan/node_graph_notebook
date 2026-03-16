@@ -11,18 +11,18 @@ abstract class PluginCommunication {
   /// [data] 消息数据
   /// 返回插件的响应
   Future<dynamic> sendMessage(String pluginId, String message, dynamic data);
-  
+
   /// 注册消息处理器
   ///
   /// [message] 消息类型
   /// [handler] 消息处理函数
   void registerMessageHandler(String message, Function(dynamic data) handler);
-  
+
   /// 注销消息处理器
   ///
   /// [message] 消息类型
   void unregisterMessageHandler(String message);
-  
+
   /// 消息流
   ///
   /// 用于订阅所有消息
@@ -38,16 +38,16 @@ class PluginMessage {
     required this.data,
     required this.timestamp,
   });
-  
+
   /// 发送插件ID
   final String fromPluginId;
-  
+
   /// 消息类型
   final String message;
-  
+
   /// 消息数据
   final dynamic data;
-  
+
   /// 时间戳
   final DateTime timestamp;
 }
@@ -56,23 +56,29 @@ class PluginMessage {
 class PluginCommunicationImpl implements PluginCommunication {
   /// 消息处理器映射
   final Map<String, List<Function(dynamic)>> _handlers = {};
-  
+
   /// 消息流控制器
   final _messageStreamController = StreamController<PluginMessage>.broadcast();
-  
+
   @override
-  Future<dynamic> sendMessage(String pluginId, String message, dynamic data) async {
+  Future<dynamic> sendMessage(
+    String pluginId,
+    String message,
+    dynamic data,
+  ) async {
     // 这里需要实现消息发送逻辑
     // 例如通过插件管理器找到目标插件并调用其处理方法
-    _messageStreamController.add(PluginMessage(
-      fromPluginId: 'system',
-      message: message,
-      data: data,
-      timestamp: DateTime.now(),
-    ));
+    _messageStreamController.add(
+      PluginMessage(
+        fromPluginId: 'system',
+        message: message,
+        data: data,
+        timestamp: DateTime.now(),
+      ),
+    );
     return null;
   }
-  
+
   @override
   void registerMessageHandler(String message, Function(dynamic data) handler) {
     if (!_handlers.containsKey(message)) {
@@ -80,15 +86,15 @@ class PluginCommunicationImpl implements PluginCommunication {
     }
     _handlers[message]!.add(handler);
   }
-  
+
   @override
   void unregisterMessageHandler(String message) {
     _handlers.remove(message);
   }
-  
+
   @override
   Stream<PluginMessage> get messageStream => _messageStreamController.stream;
-  
+
   /// 处理接收到的消息
   void handleMessage(PluginMessage message) {
     if (_handlers.containsKey(message.message)) {
@@ -97,7 +103,7 @@ class PluginCommunicationImpl implements PluginCommunication {
       }
     }
   }
-  
+
   /// 释放资源
   void dispose() {
     _messageStreamController.close();

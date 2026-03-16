@@ -4,6 +4,15 @@ import 'standard_metadata.dart';
 ///
 /// 定义元数据值的类型和验证规则
 class MetadataSchema {
+  /// 创建元数据 Schema
+  ///
+  /// [type] 元数据值类型
+  /// [required] 是否必需
+  /// [defaultValue] 默认值
+  /// [allowedValues] 允许的值列表（用于枚举类型）
+  /// [minValue] 最小值（用于数字类型）
+  /// [maxValue] 最大值（用于数字类型）
+  /// [description] 描述信息
   const MetadataSchema({
     required this.type,
     this.required = false,
@@ -37,6 +46,8 @@ class MetadataSchema {
 
   /// 验证值是否符合 Schema
   ///
+  /// [value] 要验证的值
+  ///
   /// 返回验证结果，包含是否有效和错误信息
   MetadataValidationResult validate(dynamic value) {
     // 检查必需值
@@ -53,19 +64,25 @@ class MetadataSchema {
     switch (type) {
       case MetadataType.string:
         if (value is! String) {
-          return MetadataValidationResult.invalid('Expected String, got ${value.runtimeType}');
+          return MetadataValidationResult.invalid(
+            'Expected String, got ${value.runtimeType}',
+          );
         }
         break;
 
       case MetadataType.bool:
         if (value is! bool) {
-          return MetadataValidationResult.invalid('Expected bool, got ${value.runtimeType}');
+          return MetadataValidationResult.invalid(
+            'Expected bool, got ${value.runtimeType}',
+          );
         }
         break;
 
       case MetadataType.int:
         if (value is! int) {
-          return MetadataValidationResult.invalid('Expected int, got ${value.runtimeType}');
+          return MetadataValidationResult.invalid(
+            'Expected int, got ${value.runtimeType}',
+          );
         }
         if (minValue != null && value < minValue!) {
           return MetadataValidationResult.invalid('Value must be >= $minValue');
@@ -77,7 +94,9 @@ class MetadataSchema {
 
       case MetadataType.double:
         if (value is! double && value is! int) {
-          return MetadataValidationResult.invalid('Expected double, got ${value.runtimeType}');
+          return MetadataValidationResult.invalid(
+            'Expected double, got ${value.runtimeType}',
+          );
         }
         final numValue = value is double ? value : (value as int).toDouble();
         if (minValue != null && numValue < minValue!) {
@@ -90,22 +109,30 @@ class MetadataSchema {
 
       case MetadataType.stringList:
         if (value is! List) {
-          return MetadataValidationResult.invalid('Expected List, got ${value.runtimeType}');
+          return MetadataValidationResult.invalid(
+            'Expected List, got ${value.runtimeType}',
+          );
         }
         if (value.any((e) => e is! String)) {
-          return MetadataValidationResult.invalid('List must contain only Strings');
+          return MetadataValidationResult.invalid(
+            'List must contain only Strings',
+          );
         }
         break;
 
       case MetadataType.map:
         if (value is! Map) {
-          return MetadataValidationResult.invalid('Expected Map, got ${value.runtimeType}');
+          return MetadataValidationResult.invalid(
+            'Expected Map, got ${value.runtimeType}',
+          );
         }
         break;
 
       case MetadataType.dateTime:
         if (value is! String && value is! DateTime) {
-          return MetadataValidationResult.invalid('Expected DateTime or String, got ${value.runtimeType}');
+          return MetadataValidationResult.invalid(
+            'Expected DateTime or String, got ${value.runtimeType}',
+          );
         }
         break;
     }
@@ -147,23 +174,19 @@ enum MetadataType {
 
 /// 元数据验证结果
 class MetadataValidationResult {
-  const MetadataValidationResult._({
-    required this.isValid,
-    this.errorMessage,
-  });
+  /// 创建元数据验证结果
+  ///
+  /// [isValid] 是否有效
+  /// [errorMessage] 错误信息（无效时）
+  const MetadataValidationResult._({required this.isValid, this.errorMessage});
 
   /// 创建有效结果
-  factory MetadataValidationResult.valid() {
-    return const MetadataValidationResult._(isValid: true);
-  }
+  factory MetadataValidationResult.valid() => const MetadataValidationResult._(isValid: true);
 
   /// 创建无效结果
-  factory MetadataValidationResult.invalid(String message) {
-    return MetadataValidationResult._(
-      isValid: false,
-      errorMessage: message,
-    );
-  }
+  ///
+  /// [message] 错误信息
+  factory MetadataValidationResult.invalid(String message) => MetadataValidationResult._(isValid: false, errorMessage: message);
 
   /// 是否有效
   final bool isValid;
@@ -171,6 +194,7 @@ class MetadataValidationResult {
   /// 错误信息（无效时）
   final String? errorMessage;
 
+  /// 转换为字符串表示
   @override
   String toString() {
     if (isValid) return 'Valid';
@@ -290,8 +314,7 @@ class StandardSchemas {
   );
 
   /// 获取所有标准 Schema 的映射
-  static Map<String, MetadataSchema> getAll() {
-    return {
+  static Map<String, MetadataSchema> getAll() => {
       StandardMetadata.nodeType: nodeType,
       StandardMetadata.isFolder: isFolder,
       StandardMetadata.isAI: isAI,
@@ -306,5 +329,4 @@ class StandardSchemas {
       StandardMetadata.aiScore: aiScore,
       StandardMetadata.aiAnalysis: aiAnalysis,
     };
-  }
 }

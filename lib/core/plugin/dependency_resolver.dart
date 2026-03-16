@@ -2,6 +2,10 @@ import 'plugin_metadata.dart';
 
 /// 依赖解析结果
 class DependencyResolutionResult {
+  /// 构造函数
+  ///
+  /// [loadOrder] - 插件加载顺序
+  /// [errors] - 解析过程中的错误列表，默认空列表
   const DependencyResolutionResult({
     required this.loadOrder,
     this.errors = const [],
@@ -34,9 +38,7 @@ class DependencyResolver {
     void visit(String pluginId) {
       // 检查循环依赖
       if (temp.contains(pluginId)) {
-        errors.add(
-          'Circular dependency detected involving plugin: $pluginId',
-        );
+        errors.add('Circular dependency detected involving plugin: $pluginId');
         return;
       }
 
@@ -72,14 +74,9 @@ class DependencyResolver {
     }
 
     // 访问所有插件
-    for (final pluginId in plugins.keys) {
-      visit(pluginId);
-    }
+    plugins.keys.forEach(visit);
 
-    return DependencyResolutionResult(
-      loadOrder: loadOrder,
-      errors: errors,
-    );
+    return DependencyResolutionResult(loadOrder: loadOrder, errors: errors);
   }
 
   /// 验证插件版本兼容性
@@ -119,10 +116,7 @@ class DependencyResolver {
         if (recStack.contains(dep)) {
           // 找到循环
           final cycleStart = recStack.indexOf(dep);
-          final cycle = <String>[
-            ...recStack.sublist(cycleStart),
-            dep,
-          ];
+          final cycle = <String>[...recStack.sublist(cycleStart), dep];
           cycles.add(cycle);
         } else if (!visited.contains(dep)) {
           visit(dep, graph);
@@ -193,9 +187,9 @@ class DependencyResolver {
 
     for (final entry in plugins.entries) {
       if (entry.value.dependencies.contains(pluginId)) {
-        dependents.add(entry.key);
+        dependents..add(entry.key)
         // 递归查找依赖该插件的插件
-        dependents.addAll(getDependents(entry.key, plugins));
+        ..addAll(getDependents(entry.key, plugins));
       }
     }
 

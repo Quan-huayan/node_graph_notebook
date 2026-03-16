@@ -1,15 +1,18 @@
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command_handler.dart';
-import '../command/node_commands.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
+import '../../../../core/events/app_events.dart';
 import '../../../../core/models/node_reference.dart';
 import '../../../../core/repositories/node_repository.dart';
-import '../../../../core/events/app_events.dart';
+import '../command/node_commands.dart';
 
 /// 连接节点处理器
 ///
 /// 处理连接节点的命令，创建节点间的引用关系
 class ConnectNodesHandler implements CommandHandler<ConnectNodesCommand> {
+  /// 构造函数
+  ///
+  /// [_repository] - 节点仓库，用于加载和保存节点
   ConnectNodesHandler(this._repository);
 
   final NodeRepository _repository;
@@ -48,19 +51,16 @@ class ConnectNodesHandler implements CommandHandler<ConnectNodesCommand> {
 
       // 更新源节点的引用映射
       // 使用 Node 的 addReference 方法或直接复制 Map
-      final updatedReferences = Map<String, NodeReference>.from(sourceNode.references);
-      updatedReferences[command.targetId] = reference;
-      final updatedNode = sourceNode.copyWith(
-        references: updatedReferences,
+      final updatedReferences = Map<String, NodeReference>.from(
+        sourceNode.references,
       );
+      updatedReferences[command.targetId] = reference;
+      final updatedNode = sourceNode.copyWith(references: updatedReferences);
 
       await _repository.save(updatedNode);
 
-      // 发布事件
-      context.eventBus.publish(NodeDataChangedEvent(
-        changedNodes: [updatedNode],
-        action: DataChangeAction.update,
-      ));
+      // 发布事件（使用便捷方法）
+      context.publishSingleNodeEvent(updatedNode, DataChangeAction.update);
 
       return CommandResult.success();
     } catch (e) {

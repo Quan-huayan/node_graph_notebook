@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import '../../../../core/models/models.dart';
 
+import '../../../../core/models/models.dart';
+import '../../graph/bloc/graph_bloc.dart';
+import '../../graph/bloc/graph_event.dart';
+
+/// 布局菜单
 class LayoutMenu {
+  /// 显示布局菜单
+  ///
+  /// [context] - 构建上下文
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,

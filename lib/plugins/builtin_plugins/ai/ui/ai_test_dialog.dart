@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../service/ai_service.dart';
+
 import '../../../../core/services/services.dart';
-import '../../../../core/services/theme/app_theme.dart';
+import '../service/ai_service.dart';
 
 /// AI 测试对话框
 class AITestDialog extends StatefulWidget {
+  /// 创建 AI 测试对话框
   const AITestDialog({super.key});
 
   @override
@@ -21,7 +22,9 @@ class _AITestDialogState extends State<AITestDialog> {
   void initState() {
     super.initState();
     _messageController = TextEditingController();
-    _addSystemMessage('AI connection test initialized. Type a message to test.');
+    _addSystemMessage(
+      'AI connection test initialized. Type a message to test.',
+    );
   }
 
   @override
@@ -32,25 +35,13 @@ class _AITestDialogState extends State<AITestDialog> {
 
   void _addSystemMessage(String text) {
     setState(() {
-      _messages.add(
-        _ChatMessage(
-          text: text,
-          isUser: false,
-          isSystem: true,
-        ),
-      );
+      _messages.add(_ChatMessage(text: text, isUser: false, isSystem: true));
     });
   }
 
   void _addMessage(String text, bool isUser) {
     setState(() {
-      _messages.add(
-        _ChatMessage(
-          text: text,
-          isUser: isUser,
-          isSystem: false,
-        ),
-      );
+      _messages.add(_ChatMessage(text: text, isUser: isUser, isSystem: false));
     });
   }
 
@@ -70,7 +61,9 @@ class _AITestDialogState extends State<AITestDialog> {
 
       // 验证配置
       if (!settingsService.isAIConfigured) {
-        _addSystemMessage('❌ AI not configured. Please configure AI settings first.');
+        _addSystemMessage(
+          '❌ AI not configured. Please configure AI settings first.',
+        );
         setState(() {
           _isLoading = false;
         });
@@ -112,7 +105,7 @@ class _AITestDialogState extends State<AITestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final AppThemeData theme = context.read<ThemeService>().themeData;
+    final theme = context.read<ThemeService>().themeData;
 
     return Dialog(
       child: Container(
@@ -133,17 +126,11 @@ class _AITestDialogState extends State<AITestDialog> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    color: theme.ui.icon,
-                  ),
+                  Icon(Icons.chat_bubble_outline, color: theme.ui.icon),
                   const SizedBox(width: 12),
                   const Text(
                     'Test AI Connection',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   IconButton(
@@ -220,9 +207,7 @@ class _AITestDialogState extends State<AITestDialog> {
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(
-                                theme.ui.icon,
-                              ),
+                              valueColor: AlwaysStoppedAnimation(theme.ui.icon),
                             ),
                           )
                         : const Icon(Icons.send),
@@ -244,9 +229,7 @@ class _AITestDialogState extends State<AITestDialog> {
         decoration: BoxDecoration(
           color: theme.status.info.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: theme.status.info.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: theme.status.info.withValues(alpha: 0.3)),
         ),
         child: Text(
           message.text,

@@ -1,7 +1,8 @@
-import '../plugin.dart';
-import 'hook_point.dart';
-import 'hook_context.dart';
 import 'package:flutter/widgets.dart';
+
+import '../plugin.dart';
+import 'hook_context.dart';
+import 'hook_point.dart';
 
 /// UI Hook 接口
 abstract class UIHook extends Plugin {

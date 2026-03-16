@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/models/models.dart';
@@ -6,17 +5,22 @@ import '../../../../../core/services/theme/app_theme.dart';
 
 /// 连接线渲染组件
 class ConnectionRenderer extends Component {
+  /// 创建连接线渲染组件
   ConnectionRenderer({
     required List<Connection> connections,
     required Map<String, Vector2> nodePositions,
     required this.theme,
     this.showConnections = true,
-  })  : _connections = connections,
-        _nodePositions = nodePositions;
+  }) : _connections = connections,
+       _nodePositions = nodePositions;
 
+  /// 连接线列表
   List<Connection> _connections;
+  /// 节点位置映射
   Map<String, Vector2> _nodePositions;
+  /// 应用主题
   final AppThemeData theme;
+  /// 是否显示连接
   bool showConnections;
 
   /// 更新连接和节点位置
@@ -32,13 +36,15 @@ class ConnectionRenderer extends Component {
     }
   }
 
+  /// 获取连接线列表
   List<Connection> get connections => _connections;
+  /// 获取节点位置映射
   Map<String, Vector2> get nodePositions => _nodePositions;
 
   @override
   void render(Canvas canvas) {
     if (!showConnections) return;
-    
+
     for (final connection in connections) {
       _drawConnection(canvas, connection);
     }
@@ -69,13 +75,15 @@ class ConnectionRenderer extends Component {
     }
   }
 
-  void _drawLine(Canvas canvas, Vector2 start, Vector2 end, Paint paint, LineStyle lineStyle) {
+  void _drawLine(
+    Canvas canvas,
+    Vector2 start,
+    Vector2 end,
+    Paint paint,
+    LineStyle lineStyle,
+  ) {
     if (lineStyle == LineStyle.solid) {
-      canvas.drawLine(
-        Offset(start.x, start.y),
-        Offset(end.x, end.y),
-        paint,
-      );
+      canvas.drawLine(Offset(start.x, start.y), Offset(end.x, end.y), paint);
     } else {
       // 虚线或点线
       final path = Path()
@@ -93,17 +101,20 @@ class ConnectionRenderer extends Component {
   }
 
   Path _createDashedPath(Path source, double dashWidth, double dashSpace) {
-    final Path dest = Path();
-    final PathMetrics metrics = source.computeMetrics();
+    final dest = Path();
+    final metrics = source.computeMetrics();
 
-    for (final PathMetric metric in metrics) {
-      double distance = 0.0;
-      bool draw = true;
+    for (final metric in metrics) {
+      double distance = 0;
+      var draw = true;
 
       while (distance < metric.length) {
-        final double len = draw ? dashWidth : dashSpace;
+        final len = draw ? dashWidth : dashSpace;
         if (draw) {
-          dest.addPath(metric.extractPath(distance, distance + len), Offset.zero);
+          dest.addPath(
+            metric.extractPath(distance, distance + len),
+            Offset.zero,
+          );
         }
         distance += len;
         draw = !draw;
@@ -113,8 +124,12 @@ class ConnectionRenderer extends Component {
     return dest;
   }
 
-  Vector2 _calculateEdgePoint(Vector2 from, Vector2 to, {required bool isStart}) {
-    // 简化：直接返回中心点
+  Vector2 _calculateEdgePoint(
+    Vector2 from,
+    Vector2 to, {
+    required bool isStart,
+  }) {
+    // TODO: 简化：直接返回中心点
     // 实际应该根据节点尺寸计算边缘交点
     return from;
   }
@@ -130,15 +145,16 @@ class ConnectionRenderer extends Component {
 
   // LineStyle 现在在 _drawLine 方法中处理
 
-
   void _drawArrow(Canvas canvas, Vector2 start, Vector2 end, Paint paint) {
     final direction = (end - start).normalized();
-    final arrowSize = 10.0;
+    const arrowSize = 10.0;
 
     // 计算箭头两侧的点
     final perpendicular = Vector2(-direction.y, direction.x);
-    final arrowPoint1 = end - direction * arrowSize + perpendicular * (arrowSize / 2);
-    final arrowPoint2 = end - direction * arrowSize - perpendicular * (arrowSize / 2);
+    final arrowPoint1 =
+        end - direction * arrowSize + perpendicular * (arrowSize / 2);
+    final arrowPoint2 =
+        end - direction * arrowSize - perpendicular * (arrowSize / 2);
 
     final arrowPaint = Paint()
       ..color = paint.color
@@ -159,15 +175,11 @@ class ConnectionRenderer extends Component {
     final textPainter = TextPainter(
       text: TextSpan(
         text: label,
-        style: TextStyle(
-          color: theme.text.secondary,
-          fontSize: 10,
-        ),
+        style: TextStyle(color: theme.text.secondary, fontSize: 10),
       ),
       textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
+    )
+    ..layout();
 
     // 绘制标签背景
     final bgPaint = Paint()

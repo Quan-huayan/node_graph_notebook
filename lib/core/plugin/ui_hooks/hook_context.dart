@@ -3,9 +3,16 @@ import '../plugin_context.dart';
 
 /// Hook 上下文基础类
 abstract class HookContext {
+  /// 创建一个新的 Hook 上下文实例。
+  ///
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   HookContext(this.data, {this.pluginContext});
 
+  /// 上下文数据
   final Map<String, dynamic> data;
+  
+  /// 插件上下文
   final PluginContext? pluginContext;
 
   /// 获取数据
@@ -20,13 +27,15 @@ abstract class HookContext {
   }
 
   /// 检查是否有数据
-  bool contains(String key) {
-    return data.containsKey(key);
-  }
+  bool contains(String key) => data.containsKey(key);
 }
 
 /// 主工具栏 Hook 上下文
 class MainToolbarHookContext extends HookContext {
+  /// 创建一个新的主工具栏 Hook 上下文实例。
+  ///
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   MainToolbarHookContext({
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
@@ -41,14 +50,20 @@ class MainToolbarHookContext extends HookContext {
 
 /// 节点上下文菜单 Hook 上下文
 class NodeContextMenuHookContext extends HookContext {
+  /// 创建一个新的节点上下文菜单 Hook 上下文实例。
+  ///
+  /// [node] 当前节点
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   NodeContextMenuHookContext({
     Node? node,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}..['node'] = node,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['node'] = node,
+         pluginContext: pluginContext,
+       );
 
   /// 当前节点
   Node? get node => get<Node>('node');
@@ -59,17 +74,23 @@ class NodeContextMenuHookContext extends HookContext {
 
 /// 图上下文菜单 Hook 上下文
 class GraphContextMenuHookContext extends HookContext {
+  /// 创建一个新的图上下文菜单 Hook 上下文实例。
+  ///
+  /// [mousePosition] 鼠标位置
+  /// [selectedNodeCount] 选中的节点数量
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   GraphContextMenuHookContext({
     Offset? mousePosition,
     int? selectedNodeCount,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}
-            ..['mousePosition'] = mousePosition
-            ..['selectedNodeCount'] = selectedNodeCount,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['mousePosition'] = mousePosition
+           ..['selectedNodeCount'] = selectedNodeCount,
+         pluginContext: pluginContext,
+       );
 
   /// 鼠标位置
   Offset? get mousePosition => get<Offset>('mousePosition');
@@ -80,17 +101,23 @@ class GraphContextMenuHookContext extends HookContext {
 
 /// 侧边栏 Hook 上下文
 class SidebarHookContext extends HookContext {
+  /// 创建一个新的侧边栏 Hook 上下文实例。
+  ///
+  /// [isExpanded] 是否展开
+  /// [width] 侧边栏宽度
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   SidebarHookContext({
     bool? isExpanded,
     double? width,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}
-            ..['isExpanded'] = isExpanded
-            ..['width'] = width,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['isExpanded'] = isExpanded
+           ..['width'] = width,
+         pluginContext: pluginContext,
+       );
 
   /// 是否展开
   bool get isExpanded => get<bool>('isExpanded') ?? true;
@@ -101,6 +128,13 @@ class SidebarHookContext extends HookContext {
 
 /// 状态栏 Hook 上下文
 class StatusBarHookContext extends HookContext {
+  /// 创建一个新的状态栏 Hook 上下文实例。
+  ///
+  /// [nodeCount] 节点数量
+  /// [connectionCount] 连接数量
+  /// [currentMode] 当前模式
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   StatusBarHookContext({
     int? nodeCount,
     int? connectionCount,
@@ -108,12 +142,12 @@ class StatusBarHookContext extends HookContext {
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}
-            ..['nodeCount'] = nodeCount
-            ..['connectionCount'] = connectionCount
-            ..['currentMode'] = currentMode,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['nodeCount'] = nodeCount
+           ..['connectionCount'] = connectionCount
+           ..['currentMode'] = currentMode,
+         pluginContext: pluginContext,
+       );
 
   /// 节点数量
   int get nodeCount => get<int>('nodeCount') ?? 0;
@@ -127,17 +161,23 @@ class StatusBarHookContext extends HookContext {
 
 /// 节点编辑器 Hook 上下文
 class NodeEditorHookContext extends HookContext {
+  /// 创建一个新的节点编辑器 Hook 上下文实例。
+  ///
+  /// [node] 当前节点
+  /// [isReadOnly] 是否为只读模式
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   NodeEditorHookContext({
     Node? node,
     bool? isReadOnly,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}
-            ..['node'] = node
-            ..['isReadOnly'] = isReadOnly,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['node'] = node
+           ..['isReadOnly'] = isReadOnly,
+         pluginContext: pluginContext,
+       );
 
   /// 当前节点
   Node? get node => get<Node>('node');
@@ -148,17 +188,23 @@ class NodeEditorHookContext extends HookContext {
 
 /// 导入导出 Hook 上下文
 class ImportExportHookContext extends HookContext {
+  /// 创建一个新的导入导出 Hook 上下文实例。
+  ///
+  /// [importFormats] 支持的导入格式
+  /// [exportFormats] 支持的导出格式
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   ImportExportHookContext({
     List<String>? importFormats,
     List<String>? exportFormats,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}
-            ..['importFormats'] = importFormats
-            ..['exportFormats'] = exportFormats,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['importFormats'] = importFormats
+           ..['exportFormats'] = exportFormats,
+         pluginContext: pluginContext,
+       );
 
   /// 支持的导入格式
   List<String> get importFormats => get<List<String>>('importFormats') ?? [];
@@ -169,29 +215,42 @@ class ImportExportHookContext extends HookContext {
 
 /// 设置 Hook 上下文
 class SettingsHookContext extends HookContext {
+  /// 创建一个新的设置 Hook 上下文实例。
+  ///
+  /// [currentSettings] 当前设置
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   SettingsHookContext({
     Map<String, dynamic>? currentSettings,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}..['currentSettings'] = currentSettings,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['currentSettings'] = currentSettings,
+         pluginContext: pluginContext,
+       );
 
   /// 当前设置
-  Map<String, dynamic> get currentSettings => get<Map<String, dynamic>>('currentSettings') ?? {};
+  Map<String, dynamic> get currentSettings =>
+      get<Map<String, dynamic>>('currentSettings') ?? {};
 }
 
 /// 帮助 Hook 上下文
 class HelpHookContext extends HookContext {
+  /// 创建一个新的帮助 Hook 上下文实例。
+  ///
+  /// [helpItems] 帮助文档列表
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
   HelpHookContext({
     List<HelpItem>? helpItems,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
   }) : super(
-          data ?? {}..['helpItems'] = helpItems,
-          pluginContext: pluginContext,
-        );
+         data ?? {}
+           ..['helpItems'] = helpItems,
+         pluginContext: pluginContext,
+       );
 
   /// 帮助文档列表
   List<HelpItem> get helpItems => get<List<HelpItem>>('helpItems') ?? [];
@@ -199,21 +258,34 @@ class HelpHookContext extends HookContext {
 
 /// 帮助项
 class HelpItem {
-  HelpItem({
-    required this.title,
-    required this.content,
-    this.icon,
-  });
+  /// 创建一个新的帮助项实例。
+  ///
+  /// [title] 帮助项标题
+  /// [content] 帮助项内容
+  /// [icon] 帮助项图标
+  HelpItem({required this.title, required this.content, this.icon});
 
+  /// 帮助项标题
   final String title;
+  
+  /// 帮助项内容
   final String content;
+  
+  /// 帮助项图标
   final String? icon;
 }
 
 /// 偏移量
 class Offset {
+  /// 创建一个新的偏移量实例。
+  ///
+  /// [dx] x 方向的偏移
+  /// [dy] y 方向的偏移
   Offset(this.dx, this.dy);
 
+  /// x 方向的偏移
   final double dx;
+  
+  /// y 方向的偏移
   final double dy;
 }

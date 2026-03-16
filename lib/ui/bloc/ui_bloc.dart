@@ -3,7 +3,10 @@ import 'ui_event.dart';
 import 'ui_state.dart';
 
 /// UI BLoC - UI 状态管理核心
+///
+/// 负责管理整个应用的UI状态，包括节点显示模式、连接线显示、背景样式、侧边栏状态等
 class UIBloc extends Bloc<UIEvent, UIState> {
+  /// 创建一个新的 UI BLoC
   UIBloc() : super(UIState.initial()) {
     // 注册事件处理器
     on<UISetNodeViewModeEvent>(_onSetNodeViewMode);
@@ -22,10 +25,7 @@ class UIBloc extends Bloc<UIEvent, UIState> {
   }
 
   /// 设置节点显示模式
-  void _onSetNodeViewMode(
-    UISetNodeViewModeEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onSetNodeViewMode(UISetNodeViewModeEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(nodeViewMode: event.mode));
   }
 
@@ -46,10 +46,7 @@ class UIBloc extends Bloc<UIEvent, UIState> {
   }
 
   /// 设置连接线显示
-  void _onSetConnections(
-    UISetConnectionsEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onSetConnections(UISetConnectionsEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(showConnections: event.show));
   }
 
@@ -62,68 +59,44 @@ class UIBloc extends Bloc<UIEvent, UIState> {
   }
 
   /// 切换侧边栏
-  void _onToggleSidebar(
-    UIToggleSidebarEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onToggleSidebar(UIToggleSidebarEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(isSidebarOpen: !state.isSidebarOpen));
   }
 
   /// 设置侧边栏
-  void _onSetSidebar(
-    UISetSidebarEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onSetSidebar(UISetSidebarEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(isSidebarOpen: event.open));
   }
 
   /// 打开侧边栏
-  void _onOpenSidebar(
-    UIOpenSidebarEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onOpenSidebar(UIOpenSidebarEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(isSidebarOpen: true));
   }
 
   /// 关闭侧边栏
-  void _onCloseSidebar(
-    UICloseSidebarEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onCloseSidebar(UICloseSidebarEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(isSidebarOpen: false));
   }
 
   /// 选择标签页
-  void _onSelectTab(
-    UISelectTabEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onSelectTab(UISelectTabEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(selectedTab: event.tab));
   }
 
   /// 设置侧边栏宽度
-  void _onSetSidebarWidth(
-    UISetSidebarWidthEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onSetSidebarWidth(UISetSidebarWidthEvent event, Emitter<UIState> emit) {
     // 限制侧边栏宽度范围
     final width = event.width.clamp(150.0, 500.0);
     emit(state.copyWith(sidebarWidth: width));
   }
 
   /// 切换工具栏展开状态
-  void _onToggleToolbar(
-    UIToggleToolbarEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onToggleToolbar(UIToggleToolbarEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(isToolbarExpanded: !state.isToolbarExpanded));
   }
 
   /// 设置工具栏展开状态
-  void _onSetToolbar(
-    UISetToolbarEvent event,
-    Emitter<UIState> emit,
-  ) {
+  void _onSetToolbar(UISetToolbarEvent event, Emitter<UIState> emit) {
     emit(state.copyWith(isToolbarExpanded: event.expanded));
   }
 }

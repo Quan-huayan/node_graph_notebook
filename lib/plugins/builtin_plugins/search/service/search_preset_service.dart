@@ -1,6 +1,8 @@
 import 'dart:convert';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/model/search_preset_model.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../model/search_preset_model.dart';
 
 /// 搜索预设服务接口
 abstract class SearchPresetService {
@@ -22,6 +24,9 @@ abstract class SearchPresetService {
 
 /// 搜索预设服务实现
 class SearchPresetServiceImpl implements SearchPresetService {
+  /// 创建搜索预设服务实现
+  /// 
+  /// [prefs] - 异步 SharedPreferences 实例
   SearchPresetServiceImpl(SharedPreferencesAsync prefs) : _prefs = prefs;
 
   final SharedPreferencesAsync _prefs;
@@ -99,9 +104,7 @@ class SearchPresetServiceImpl implements SearchPresetService {
   }
 
   Future<void> _savePresets(List<SearchPreset> presets) async {
-    final jsonString = json.encode(
-      presets.map((p) => p.toJson()).toList(),
-    );
+    final jsonString = json.encode(presets.map((p) => p.toJson()).toList());
     await _prefs.setString(_key, jsonString);
   }
 }

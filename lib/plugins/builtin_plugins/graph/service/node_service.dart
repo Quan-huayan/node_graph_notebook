@@ -18,7 +18,8 @@ abstract class NodeService {
   });
 
   /// 更新节点
-  Future<Node> updateNode(String nodeId, {
+  Future<Node> updateNode(
+    String nodeId, {
     String? title,
     String? content,
     Offset? position,
@@ -59,6 +60,7 @@ abstract class NodeService {
 
   /// 批量操作
   Future<void> batchUpdate(List<NodeUpdate> updates);
+  /// 批量删除节点
   Future<void> batchDelete(List<String> nodeIds);
 
   /// 计算节点图中每个节点的深度（层级）
@@ -80,6 +82,9 @@ abstract class NodeService {
 
 /// 节点服务实现
 class NodeServiceImpl implements NodeService {
+  /// 构造函数
+  ///
+  /// [_repository] - 节点仓库
   NodeServiceImpl(this._repository);
 
   final NodeRepository _repository;
@@ -102,10 +107,12 @@ class NodeServiceImpl implements NodeService {
     final now = DateTime.now();
 
     // 如果没有指定位置，生成一个稍微随机的位置，避免重叠
-    final defaultPosition = position ?? Offset(
-      100 + (now.millisecond % 300).toDouble(),
-      100 + (now.microsecond % 300).toDouble(),
-    );
+    final defaultPosition =
+        position ??
+        Offset(
+          100 + (now.millisecond % 300).toDouble(),
+          100 + (now.microsecond % 300).toDouble(),
+        );
 
     final node = Node(
       id: _uuid.v4(),
@@ -113,7 +120,7 @@ class NodeServiceImpl implements NodeService {
       content: content,
       references: references ?? {},
       position: defaultPosition,
-      size: size ?? const Size(200, 250),  // 减小默认尺寸
+      size: size ?? const Size(200, 250), // 减小默认尺寸
       viewMode: NodeViewMode.titleWithPreview,
       color: color,
       createdAt: now,
@@ -126,7 +133,8 @@ class NodeServiceImpl implements NodeService {
   }
 
   @override
-  Future<Node> updateNode(String nodeId, {
+  Future<Node> updateNode(
+    String nodeId, {
     String? title,
     String? content,
     Offset? position,
@@ -173,19 +181,13 @@ class NodeServiceImpl implements NodeService {
   }
 
   @override
-  Future<Node?> getNode(String nodeId) async {
-    return _repository.load(nodeId);
-  }
+  Future<Node?> getNode(String nodeId) async => _repository.load(nodeId);
 
   @override
-  Future<List<Node>> getAllNodes() async {
-    return _repository.queryAll();
-  }
+  Future<List<Node>> getAllNodes() async => _repository.queryAll();
 
   @override
-  Future<List<Node>> searchNodes(String query) async {
-    return _repository.search(title: query, content: query);
-  }
+  Future<List<Node>> searchNodes(String query) async => _repository.search(title: query, content: query);
 
   @override
   Future<void> connectNodes({
@@ -277,7 +279,7 @@ class NodeServiceImpl implements NodeService {
         depths[nodeId] = 0;
       } else {
         // 计算所有父节点的最大深度
-        int maxParentDepth = -1;
+        var maxParentDepth = -1;
         for (final parent in parents) {
           final parentDepth = getDepth(parent.id);
           if (parentDepth == -1) {
@@ -317,6 +319,15 @@ class NodeServiceImpl implements NodeService {
 
 /// 节点更新
 class NodeUpdate {
+  /// 构造函数
+  ///
+  /// [nodeId] - 节点ID
+  /// [title] - 标题，可选
+  /// [content] - 内容，可选
+  /// [position] - 位置，可选
+  /// [size] - 大小，可选
+  /// [viewMode] - 视图模式，可选
+  /// [references] - 引用，可选
   const NodeUpdate({
     required this.nodeId,
     this.title,
@@ -327,19 +338,30 @@ class NodeUpdate {
     this.references,
   });
 
+  /// 节点ID
   final String nodeId;
+  /// 标题，可选
   final String? title;
+  /// 内容，可选
   final String? content;
+  /// 位置，可选
   final Offset? position;
+  /// 大小，可选
   final Size? size;
+  /// 视图模式，可选
   final NodeViewMode? viewMode;
+  /// 引用，可选
   final Map<String, NodeReference>? references;
 }
 
 /// 节点未找到异常
 class NodeNotFoundException implements Exception {
+  /// 构造函数
+  ///
+  /// [nodeId] - 未找到的节点的 ID
   const NodeNotFoundException(this.nodeId);
 
+  /// 未找到的节点的 ID
   final String nodeId;
 
   @override
@@ -348,8 +370,12 @@ class NodeNotFoundException implements Exception {
 
 /// 验证异常
 class ValidationException implements Exception {
+  /// 构造函数
+  ///
+  /// [message] - 验证失败的消息
   const ValidationException(this.message);
 
+  /// 验证失败的消息
   final String message;
 
   @override

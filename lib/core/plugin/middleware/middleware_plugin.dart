@@ -1,6 +1,6 @@
+import '../../commands/models/command.dart';
+import '../../commands/models/command_context.dart';
 import '../plugin.dart';
-import '../../commands/command.dart';
-import '../../commands/command_context.dart';
 
 /// 中间件插件接口
 abstract class MiddlewarePlugin extends Plugin {
@@ -41,19 +41,16 @@ abstract class QueryMiddlewarePlugin extends MiddlewarePlugin {
 }
 
 /// 下一个中间件函数类型
-typedef NextMiddleware = Future<CommandResult?> Function(
-  Command command,
-  CommandContext context,
-);
+typedef NextMiddleware =
+    Future<CommandResult?> Function(Command command, CommandContext context);
 
 /// 下一个查询中间件函数类型
-typedef NextQueryMiddleware = Future<dynamic> Function(
-  dynamic query,
-  dynamic context,
-);
+typedef NextQueryMiddleware =
+    Future<dynamic> Function(dynamic query, dynamic context);
 
 /// 中间件插件上下文
 class MiddlewarePluginContext {
+  /// 创建中间件插件上下文
   MiddlewarePluginContext({
     required this.commandBus,
     required this.eventBus,
@@ -61,8 +58,12 @@ class MiddlewarePluginContext {
     required this.config,
   });
 
+  /// 命令总线
   final dynamic commandBus;
+  /// 事件总线
   final dynamic eventBus;
+  /// 插件日志器
   final PluginLogger logger;
+  /// 插件配置
   final Map<String, dynamic> config;
 }

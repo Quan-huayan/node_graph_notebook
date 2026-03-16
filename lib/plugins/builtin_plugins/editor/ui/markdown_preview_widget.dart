@@ -3,13 +3,20 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 /// Markdown 预览 widget
 class MarkdownPreviewWidget extends StatefulWidget {
+  /// 创建 Markdown 预览 widget
+  /// 
+  /// [markdown] - 要预览的 Markdown 内容
+  /// [isRenderMode] - 是否以渲染模式显示，默认为 false
   const MarkdownPreviewWidget({
     super.key,
     required this.markdown,
     this.isRenderMode = false,
   });
 
+  /// 要预览的 Markdown 内容
   final String markdown;
+  
+  /// 是否以渲染模式显示
   final bool isRenderMode;
 
   @override
@@ -40,16 +47,13 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       children: [
         // 工具栏
         DecoratedBox(
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-              ),
+              bottom: BorderSide(color: Theme.of(context).dividerColor),
             ),
           ),
           child: Padding(
@@ -99,33 +103,32 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
           child: widget.markdown.isEmpty
               ? const Center(child: Text('No preview available'))
               : _isRenderMode
-                  ? Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Markdown(
-                        data: widget.markdown,
-                        selectable: true,
-                        padding: EdgeInsets.zero,
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      // 同时支持水平和垂直滚动
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SelectableText(
-                          widget.markdown,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
+              ? Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Markdown(
+                    data: widget.markdown,
+                    selectable: true,
+                    padding: EdgeInsets.zero,
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  // 同时支持水平和垂直滚动
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      widget.markdown,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
+                  ),
+                ),
         ),
       ],
     );
-  }
 }
 
 /// 模式切换按钮（紧凑型）
@@ -143,8 +146,7 @@ class _ModeButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Tooltip(
+  Widget build(BuildContext context) => Tooltip(
       message: tooltip,
       child: InkWell(
         onTap: onTap,
@@ -172,5 +174,4 @@ class _ModeButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }

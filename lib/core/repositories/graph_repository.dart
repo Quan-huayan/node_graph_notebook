@@ -1,48 +1,78 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
+
 import '../models/models.dart';
 import 'exceptions.dart';
 
 /// 图仓库接口
+///
+/// 负责图数据的持久化和检索操作
 abstract class GraphRepository {
-  /// 保存图
+  /// 保存图到存储
+  ///
+  /// [graph]: 要保存的图对象
   Future<void> save(Graph graph);
 
-  /// 加载图
+  /// 根据ID加载图
+  ///
+  /// [graphId]: 图的唯一标识符
+  ///
+  /// 返回: 加载的图，如果不存在则返回null
   Future<Graph?> load(String graphId);
 
-  /// 删除图
+  /// 删除指定ID的图
+  ///
+  /// [graphId]: 要删除的图ID
   Future<void> delete(String graphId);
 
   /// 获取所有图
+  ///
+  /// 返回: 所有图的列表
   Future<List<Graph>> getAll();
 
-  /// 获取当前图
+  /// 获取当前活动的图
+  ///
+  /// 返回: 当前图，如果不存在则返回null
   Future<Graph?> getCurrent();
 
-  /// 设置当前图
+  /// 设置当前活动的图
+  ///
+  /// [graphId]: 要设置为当前图的ID
   Future<void> setCurrent(String graphId);
 
-  /// 导出图
+  /// 导出图到文件
+  ///
+  /// [graphId]: 要导出的图ID
+  /// [filePath]: 导出文件的路径
   Future<void> export(String graphId, String filePath);
 
-  /// 导入图
+  /// 从文件导入图
+  ///
+  /// [filePath]: 要导入的文件路径
+  ///
+  /// 返回: 导入的图对象
   Future<Graph> import(String filePath);
 }
 
 /// 文件系统图仓库实现
 class FileSystemGraphRepository implements GraphRepository {
+  /// 创建文件系统图仓库
+  ///
+  /// [graphsDir]: 图文件存储目录，默认为 'data/graphs'
   FileSystemGraphRepository({String graphsDir = 'data/graphs'})
-      : _graphsDir = graphsDir,
-        _uuid = const Uuid();
+    : _graphsDir = graphsDir,
+      _uuid = const Uuid();
 
   final String _graphsDir;
   final Uuid _uuid;
 
-  /// 初始化目录
+  /// 初始化图存储目录
+  ///
+  /// 创建必要的目录结构并验证写入权限
   Future<void> init() async {
     final dir = Directory(_graphsDir);
     if (!dir.existsSync()) {
@@ -150,7 +180,7 @@ class FileSystemGraphRepository implements GraphRepository {
     }
 
     final graphs = <Graph>[];
-    final List<String> corruptedFiles = [];
+    final corruptedFiles = <String>[];
 
     try {
       await for (final entity in dir.list()) {
@@ -301,6 +331,10 @@ class FileSystemGraphRepository implements GraphRepository {
   }
 
   /// 创建默认图
+  ///
+  /// 创建一个新的默认图并设置为当前图
+  ///
+  /// 返回: 创建的默认图对象
   Future<Graph> createDefaultGraph() async {
     final graph = Graph(
       id: _uuid.v4(),
@@ -309,7 +343,7 @@ class FileSystemGraphRepository implements GraphRepository {
       viewConfig: GraphViewConfig.defaultConfig,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      nodePositions: {}
+      nodePositions: {},
     );
 
     await save(graph);
@@ -318,9 +352,7 @@ class FileSystemGraphRepository implements GraphRepository {
     return graph;
   }
 
-  File _getGraphFilePath(String graphId) {
-    return File(path.join(_graphsDir, '$graphId.json'));
-  }
+  File _getGraphFilePath(String graphId) => File(path.join(_graphsDir, '$graphId.json'));
 
   Future<void> _clearCurrent() async {
     final settingsFile = File(path.join(_graphsDir, 'current.json'));
@@ -329,13 +361,9 @@ class FileSystemGraphRepository implements GraphRepository {
     }
   }
 
-  String _encodeJson(Map<String, dynamic> json) {
-    return jsonEncode(json);
-  }
+  String _encodeJson(Map<String, dynamic> json) => jsonEncode(json);
 
-  Map<String, dynamic> _decodeJson(String content) {
-    return jsonDecode(content) as Map<String, dynamic>;
-  }
+  Map<String, dynamic> _decodeJson(String content) => jsonDecode(content) as Map<String, dynamic>;
 
   /// 清理当前图设置（如果引用的图已损坏或不存在）
   Future<void> _cleanupCurrentGraphIfNeeded(List<Graph> validGraphs) async {
@@ -351,7 +379,9 @@ class FileSystemGraphRepository implements GraphRepository {
         // 检查当前图是否在有效图列表中
         final currentExists = validGraphs.any((g) => g.id == currentGraphId);
         if (!currentExists) {
-          debugPrint('Current graph $currentGraphId is corrupted or missing, clearing settings');
+          debugPrint(
+            'Current graph $currentGraphId is corrupted or missing, clearing settings',
+          );
           await _clearCurrent();
         }
       }

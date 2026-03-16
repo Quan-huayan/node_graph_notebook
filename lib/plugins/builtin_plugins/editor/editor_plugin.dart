@@ -16,12 +16,12 @@ class EditorPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'editor_plugin',
-        name: 'Editor Plugin',
-        version: '1.0.0',
-        description: 'Provides node content editing functionality',
-        author: 'Node Graph Notebook',
-      );
+    id: 'editor_plugin',
+    name: 'Editor Plugin',
+    version: '1.0.0',
+    description: 'Provides node content editing functionality',
+    author: 'Node Graph Notebook',
+  );
 
   @override
   Future<void> onLoad(PluginContext context) async {

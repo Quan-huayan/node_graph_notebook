@@ -1,12 +1,20 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
-import '../repositories/repositories.dart';
+
 import '../repositories/exceptions.dart';
+import '../repositories/repositories.dart';
 import '../services/services.dart';
 
 /// 数据恢复结果
 class DataRecoveryResult {
+  /// 创建数据恢复结果
+  ///
+  /// [success] - 是否成功
+  /// [repairedIssues] - 修复的问题数量
+  /// [issuesFound] - 发现的问题数量
+  /// [message] - 结果消息
   const DataRecoveryResult({
     required this.success,
     required this.repairedIssues,
@@ -14,9 +22,16 @@ class DataRecoveryResult {
     this.message,
   });
 
+  /// 是否成功
   final bool success;
+  
+  /// 修复的问题数量
   final int repairedIssues;
+  
+  /// 发现的问题数量
   final int issuesFound;
+  
+  /// 结果消息
   final String? message;
 }
 
@@ -24,19 +39,29 @@ class DataRecoveryResult {
 ///
 /// 提供数据验证和恢复功能，处理文件被外部删除或损坏的情况
 class DataRecoveryService {
+  /// 创建数据恢复服务
+  ///
+  /// [nodeRepository] - 节点仓库
+  /// [graphRepository] - 图仓库
+  /// [settingsService] - 设置服务
   DataRecoveryService({
     required this.nodeRepository,
     required this.graphRepository,
     required this.settingsService,
   });
 
+  /// 节点仓库
   final NodeRepository nodeRepository;
+  
+  /// 图仓库
   final GraphRepository graphRepository;
+  
+  /// 设置服务
   final SettingsService settingsService;
 
   /// 验证数据完整性
   Future<DataRecoveryResult> validateData() async {
-    int issuesFound = 0;
+    var issuesFound = 0;
 
     try {
       // 1. 验证存储目录是否存在
@@ -70,7 +95,9 @@ class DataRecoveryService {
         final index = await nodeRepository.getMetadataIndex();
         if (index.nodes.length != nodes.length) {
           issuesFound++;
-          debugPrint('Index mismatch: ${index.nodes.length} in index, ${nodes.length} actual files');
+          debugPrint(
+            'Index mismatch: ${index.nodes.length} in index, ${nodes.length} actual files',
+          );
         }
       } catch (e) {
         issuesFound++;
@@ -94,9 +121,7 @@ class DataRecoveryService {
         success: true,
         repairedIssues: 0,
         issuesFound: issuesFound,
-        message: issuesFound == 0
-            ? '所有数据验证通过'
-            : '发现 $issuesFound 个问题',
+        message: issuesFound == 0 ? '所有数据验证通过' : '发现 $issuesFound 个问题',
       );
     } catch (e) {
       return DataRecoveryResult(
@@ -110,8 +135,8 @@ class DataRecoveryService {
 
   /// 修复数据问题
   Future<DataRecoveryResult> repairData() async {
-    int repairedIssues = 0;
-    int issuesFound = 0;
+    var repairedIssues = 0;
+    var issuesFound = 0;
 
     try {
       // 1. 重建存储目录
@@ -199,9 +224,7 @@ class DataRecoveryService {
         success: true,
         repairedIssues: repairedIssues,
         issuesFound: issuesFound,
-        message: repairedIssues > 0
-            ? '成功修复 $repairedIssues 个问题'
-            : '没有需要修复的问题',
+        message: repairedIssues > 0 ? '成功修复 $repairedIssues 个问题' : '没有需要修复的问题',
       );
     } catch (e) {
       return DataRecoveryResult(
@@ -239,7 +262,8 @@ class DataRecoveryService {
       } else {
         // 创建默认图
         if (graphRepository is FileSystemGraphRepository) {
-          await (graphRepository as FileSystemGraphRepository).createDefaultGraph();
+          await (graphRepository as FileSystemGraphRepository)
+              .createDefaultGraph();
           debugPrint('Created default graph');
         }
       }
@@ -249,7 +273,8 @@ class DataRecoveryService {
   /// 备份当前数据
   Future<String?> backupData() async {
     try {
-      final backupPath = '${await settingsService.getStoragePath()}/backup_${DateTime.now().millisecondsSinceEpoch}';
+      final backupPath =
+          '${await settingsService.getStoragePath()}/backup_${DateTime.now().millisecondsSinceEpoch}';
       final backupDir = Directory(backupPath);
       await backupDir.create(recursive: true);
 
@@ -282,7 +307,9 @@ class DataRecoveryService {
         final newPath = path.join(destination.path, path.basename(entity.path));
         await entity.copy(newPath);
       } else if (entity is Directory) {
-        final newDir = Directory(path.join(destination.path, path.basename(entity.path)));
+        final newDir = Directory(
+          path.join(destination.path, path.basename(entity.path)),
+        );
         await _copyDirectory(entity, newDir);
       }
     }

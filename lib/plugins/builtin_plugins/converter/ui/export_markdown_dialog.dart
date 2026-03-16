@@ -1,17 +1,19 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_state.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_state.dart';
-import '../../editor/ui/markdown_preview_widget.dart';
-import '../models/models.dart';
+
 import '../../../../core/models/models.dart';
+import '../../editor/ui/markdown_preview_widget.dart';
+import '../../graph/bloc/node_bloc.dart';
+import '../../graph/bloc/node_state.dart';
+import '../bloc/converter_bloc.dart';
+import '../bloc/converter_event.dart';
+import '../bloc/converter_state.dart';
+import '../models/models.dart';
 
 /// 导出 Markdown 对话框
 class ExportMarkdownDialog extends StatefulWidget {
+  /// 导出 Markdown 对话框构造函数
   const ExportMarkdownDialog({super.key});
 
   @override
@@ -50,25 +52,17 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
   }
 
   /// 判断节点是否可以导出（非 folder 且非 ai）
-  bool _isExportable(Node node) {
-    return !node.isFolder && node.metadata['isAI'] != true;
-  }
+  bool _isExportable(Node node) => !node.isFolder && node.metadata['isAI'] != true;
 
   /// 判断节点是否有子节点（用于树形显示）
   ///
   /// 基于引用结构：检查节点是否引用了其他节点
-  bool _hasChildren(Node node, List<Node> allNodes) {
-    return node.references.keys.any((nodeId) =>
-      allNodes.any((n) => n.id == nodeId)
+  bool _hasChildren(Node node, List<Node> allNodes) => node.references.keys.any(
+      (nodeId) => allNodes.any((n) => n.id == nodeId),
     );
-  }
 
   /// 获取节点的直接子节点（被引用的节点）
-  List<Node> _getDirectChildren(Node parent, List<Node> allNodes) {
-    return allNodes.where((node) {
-      return parent.references.containsKey(node.id);
-    }).toList();
-  }
+  List<Node> _getDirectChildren(Node parent, List<Node> allNodes) => allNodes.where((node) => parent.references.containsKey(node.id)).toList();
 
   /// 获取顶层父节点（没有被其他节点引用的节点）
   List<Node> _getTopLevelParents(List<Node> allNodes) {
@@ -78,9 +72,12 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
     }
 
     // 返回有子节点但未被其他节点引用的节点
-    return allNodes.where((node) =>
-      _hasChildren(node, allNodes) && !referencedIds.contains(node.id)
-    ).toList();
+    return allNodes
+        .where(
+          (node) =>
+              _hasChildren(node, allNodes) && !referencedIds.contains(node.id),
+        )
+        .toList();
   }
 
   /// 获取未被任何节点引用的可导出节点
@@ -90,9 +87,11 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
       referencedIds.addAll(node.references.keys);
     }
 
-    return allNodes.where((node) =>
-      _isExportable(node) && !referencedIds.contains(node.id)
-    ).toList();
+    return allNodes
+        .where(
+          (node) => _isExportable(node) && !referencedIds.contains(node.id),
+        )
+        .toList();
   }
 
   /// 获取过滤后的节点列表
@@ -102,24 +101,23 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
     }
 
     final query = _searchQuery.toLowerCase();
-    return nodes.where((node) {
-      return node.title.toLowerCase().contains(query) ||
-          (node.content?.toLowerCase().contains(query) ?? false);
-    }).toList();
+    return nodes.where((node) => node.title.toLowerCase().contains(query) ||
+          (node.content?.toLowerCase().contains(query) ?? false)).toList();
   }
 
   /// 获取扁平化的选中节点列表（用于显示在右侧）
-  List<Node> _getSelectedNodes(List<Node> allNodes) {
-    return _selectedNodeIds
-        .map((id) => allNodes.firstWhere((n) => n.id == id, orElse: () => allNodes.first))
+  List<Node> _getSelectedNodes(List<Node> allNodes) => _selectedNodeIds
+        .map(
+          (id) => allNodes.firstWhere(
+            (n) => n.id == id,
+            orElse: () => allNodes.first,
+          ),
+        )
         .where((n) => n.id.isNotEmpty)
         .toList();
-  }
 
   /// 检查节点是否被选中
-  bool _isNodeSelected(String nodeId) {
-    return _selectedNodeIds.contains(nodeId);
-  }
+  bool _isNodeSelected(String nodeId) => _selectedNodeIds.contains(nodeId);
 
   /// 切换节点选择状态
   void _toggleNode(String nodeId) {
@@ -176,8 +174,7 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
+  Widget build(BuildContext context) => AlertDialog(
       title: const Text('Export Markdown'),
       content: SizedBox(
         width: 800,
@@ -191,18 +188,12 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
               child: Row(
                 children: [
                   // 左侧：节点选择器（包含树形视图和紧凑排序列表）
-                  Expanded(
-                    flex: 7,
-                    child: _buildNodeSelectorWithOrdering(),
-                  ),
+                  Expanded(flex: 7, child: _buildNodeSelectorWithOrdering()),
 
                   const VerticalDivider(width: 1),
 
                   // 右侧：Markdown 预览
-                  Expanded(
-                    flex: 3,
-                    child: _buildMarkdownPreview(),
-                  ),
+                  Expanded(flex: 3, child: _buildMarkdownPreview()),
                 ],
               ),
             ),
@@ -215,25 +206,18 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: _canExport()
-              ? () => _exportSelected(context)
-              : null,
+          onPressed: _canExport() ? () => _exportSelected(context) : null,
           child: Text('Export (${_selectedNodeIds.length})'),
         ),
       ],
     );
-  }
 
   /// 构建策略选择栏（顶部）
-  Widget _buildStrategyBar() {
-    return Container(
+  Widget _buildStrategyBar() => Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
         ),
       ),
       child: Row(
@@ -261,7 +245,9 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
                 _selectedStrategy = selection.first;
                 _selectedRule = MergeRule(
                   strategy: _selectedStrategy,
-                  sequenceRule: const SequenceMergeRule(separator: '\n\n---\n\n'),
+                  sequenceRule: const SequenceMergeRule(
+                    separator: '\n\n---\n\n',
+                  ),
                   hierarchyRule: const HierarchyMergeRule(),
                 );
                 _loadPreview();
@@ -271,11 +257,9 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
         ],
       ),
     );
-  }
 
   /// 构建节点选择器（包含树形视图和紧凑排序列表）
-  Widget _buildNodeSelectorWithOrdering() {
-    return BlocBuilder<NodeBloc, NodeState>(
+  Widget _buildNodeSelectorWithOrdering() => BlocBuilder<NodeBloc, NodeState>(
       builder: (context, state) {
         final allNodes = state.nodes;
         final exportableNodes = allNodes.where(_isExportable).toList();
@@ -323,11 +307,9 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
         );
       },
     );
-  }
 
   /// 构建搜索框和操作按钮栏
-  Widget _buildSearchAndActionsBar(List<Node> exportableNodes) {
-    return Column(
+  Widget _buildSearchAndActionsBar(List<Node> exportableNodes) => Column(
       children: [
         // 搜索框
         Padding(
@@ -354,7 +336,9 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
           child: Row(
             children: [
               Checkbox(
-                value: _selectedNodeIds.length == exportableNodes.length && exportableNodes.isNotEmpty,
+                value:
+                    _selectedNodeIds.length == exportableNodes.length &&
+                    exportableNodes.isNotEmpty,
                 onChanged: (_) => _toggleAll(exportableNodes),
               ),
               TextButton(
@@ -380,29 +364,27 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
         ),
       ],
     );
-  }
 
   /// 构建带序号的树形视图
   Widget _buildTreeViewWithOrderNumbers(
     List<Node> topLevelParents,
     List<Node> rootNodes,
     List<Node> allNodes,
-  ) {
-    return ListView(
+  ) => ListView(
       children: [
         // 顶层父节点列表（有子节点的节点）
-        ...topLevelParents.map((parent) =>
-            _buildParentNodeItem(parent, allNodes)),
+        ...topLevelParents.map(
+          (parent) => _buildParentNodeItem(parent, allNodes),
+        ),
 
         // 分隔线
         if (topLevelParents.isNotEmpty && rootNodes.isNotEmpty)
           const Divider(height: 32),
 
         // 根级别的可导出节点（未被包含的）
-        ...rootNodes.map((node) => _buildExportableNodeItemWithOrder(node)),
+        ...rootNodes.map(_buildExportableNodeItemWithOrder),
       ],
     );
-  }
 
   /// 构建父节点项（可展开，显示子节点）
   Widget _buildParentNodeItem(Node parent, List<Node> allNodes) {
@@ -432,27 +414,17 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
                   size: 16,
                 ),
                 const SizedBox(width: 4),
-                const Icon(
-                  Icons.folder,
-                  size: 16,
-                  color: Colors.blue,
-                ),
+                const Icon(Icons.folder, size: 16, color: Colors.blue),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     parent.title,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.blue),
                   ),
                 ),
                 Text(
                   '(${exportableChildren.length})',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
             ),
@@ -574,7 +546,7 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
 
         // 可展开的排序列表
         if (_orderingPanelExpanded)
-          Container(
+          SizedBox(
             height: 120,
             child: ReorderableListView.builder(
               buildDefaultDragHandles: false,
@@ -600,8 +572,7 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
   }
 
   /// 构建紧凑的排序项
-  Widget _buildCompactOrderingItem(Node node, int index) {
-    return Container(
+  Widget _buildCompactOrderingItem(Node node, int index) => SizedBox(
       key: ValueKey(node.id),
       height: 32,
       child: Row(
@@ -615,10 +586,7 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
           // 序号
           SizedBox(
             width: 20,
-            child: Text(
-              '${index + 1}.',
-              style: const TextStyle(fontSize: 11),
-            ),
+            child: Text('${index + 1}.', style: const TextStyle(fontSize: 11)),
           ),
           const SizedBox(width: 8),
           // 节点标题
@@ -657,11 +625,9 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
         ],
       ),
     );
-  }
 
   /// 构建 Markdown 预览
-  Widget _buildMarkdownPreview() {
-    return BlocBuilder<ConverterBloc, ConverterState>(
+  Widget _buildMarkdownPreview() => BlocBuilder<ConverterBloc, ConverterState>(
       builder: (context, state) {
         if (state.isLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -706,24 +672,18 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
         );
       },
     );
-  }
 
   /// 加载预览
   void _loadPreview() {
     if (_selectedNodeIds.isEmpty || _selectedRule == null) return;
 
     context.read<ConverterBloc>().add(
-          ExportPreviewEvent(
-            _selectedNodeIds,
-            _selectedRule!,
-          ),
-        );
+      ExportPreviewEvent(_selectedNodeIds, _selectedRule!),
+    );
   }
 
   /// 检查是否可以导出
-  bool _canExport() {
-    return _selectedNodeIds.isNotEmpty;
-  }
+  bool _canExport() => _selectedNodeIds.isNotEmpty;
 
   /// 执行导出
   Future<void> _exportSelected(BuildContext context) async {
@@ -740,18 +700,16 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
     if (outputPath == null) return;
 
     context.read<ConverterBloc>().add(
-          ExportExecuteEvent(
-            _selectedNodeIds,
-            _selectedRule!,
-            outputPath,
-          ),
-        );
+      ExportExecuteEvent(_selectedNodeIds, _selectedRule!, outputPath),
+    );
 
     // 显示完成提示
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Exported ${_selectedNodeIds.length} nodes to $outputPath'),
+          content: Text(
+            'Exported ${_selectedNodeIds.length} nodes to $outputPath',
+          ),
           duration: const Duration(seconds: 3),
         ),
       );
@@ -762,8 +720,7 @@ class _ExportMarkdownDialogState extends State<ExportMarkdownDialog> {
 
 /// Node 扩展 - 检查是否为文件夹
 extension NodeExtension on Node {
-  bool get isFolder {
-    return metadata['isFolder'] == true ||
+  /// 检查节点是否为文件夹
+  bool get isFolder => metadata['isFolder'] == true ||
         (metadata['isFolder'] is bool && metadata['isFolder'] as bool);
-  }
 }

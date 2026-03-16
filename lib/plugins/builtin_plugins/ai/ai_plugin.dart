@@ -16,14 +16,12 @@ class AIIntegrationPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'ai_integration',
-        name: 'AI Integration',
-        version: '1.0.0',
-        description: 'Provides AI-powered node analysis and connection suggestions',
-        author: 'Node Graph Notebook',
-      );
-
-
+    id: 'ai_integration',
+    name: 'AI Integration',
+    version: '1.0.0',
+    description: 'Provides AI-powered node analysis and connection suggestions',
+    author: 'Node Graph Notebook',
+  );
 
   @override
   Future<void> onLoad(PluginContext context) async {

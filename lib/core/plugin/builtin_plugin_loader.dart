@@ -1,17 +1,19 @@
 import 'package:flutter/foundation.dart';
-import 'plugin_manager.dart';
-import 'plugin_discoverer.dart';
+
+import '../../plugins/builtin_plugins/ai/ai_integration_plugin.dart';
+import '../../plugins/builtin_plugins/converter/converter_plugin.dart';
+import '../../plugins/builtin_plugins/data_recovery/data_recovery_plugin.dart';
+import '../../plugins/builtin_plugins/delete/delete_plugin.dart';
+import '../../plugins/builtin_plugins/folder/folder_plugin.dart';
+import '../../plugins/builtin_plugins/graph/graph_plugin.dart';
+import '../../plugins/builtin_plugins/layout/layout_plugin.dart';
+import '../../plugins/builtin_plugins/search/search_plugin.dart';
+import '../../plugins/builtin_plugins/sidebarNode/sidebar_plugin.dart';
 import 'dependency_resolver.dart';
+import 'plugin_discoverer.dart';
+import 'plugin_manager.dart';
 import 'ui_hooks/hook_registry.dart';
 import 'ui_hooks/ui_hook.dart';
-import '../../plugins/builtin_plugins/delete/delete_plugin.dart';
-import '../../plugins/builtin_plugins/layout/layout_plugin.dart';
-import '../../plugins/builtin_plugins/folder/folder_plugin.dart';
-import '../../plugins/builtin_plugins/ai/ai_integration_plugin.dart';
-import '../../plugins/builtin_plugins/sidebarNode/sidebar_plugin.dart';
-import '../../plugins/builtin_plugins/graph/graph_plugin.dart';
-import '../../plugins/builtin_plugins/search/search_plugin.dart';
-import '../../plugins/builtin_plugins/converter/converter_plugin.dart';
 
 /// 内置插件加载器
 ///
@@ -24,10 +26,14 @@ import '../../plugins/builtin_plugins/converter/converter_plugin.dart';
 /// 4. 自动启用默认启用的插件
 /// 5. 将 UI Hook 插件注册到 HookRegistry
 class BuiltinPluginLoader {
+  /// 构造函数
+  ///
+  /// [pluginManager] - 插件管理器
+  /// [hookRegistry] - UI Hook 注册表，可选
   BuiltinPluginLoader({
     required PluginManager pluginManager,
     HookRegistry? hookRegistry,
-  })  : _pluginManager = pluginManager,
+  }) : _pluginManager = pluginManager,
        _hookRegistry = hookRegistry,
        _discoverer = pluginManager.discoverer,
        _dependencyResolver = DependencyResolver();
@@ -40,27 +46,29 @@ class BuiltinPluginLoader {
   /// 所有内置 UI Hook 插件
   final List<UIHookFactory> _builtinUIHookFactories = [
     // 删除功能插件
-    () => DeletePlugin(),
+    DeletePlugin.new,
 
     // AI 集成插件
-    () => AIIntegrationPlugin(),
+    AIIntegrationPlugin.new,
 
     // 侧边栏插件
-    () => SidebarPlugin(),
+    SidebarPlugin.new,
   ];
 
   /// 所有内置普通插件工厂
   final List<PluginFactory> _builtinPluginFactories = [
     // 文件夹插件
-    () => FolderPlugin(),
+    FolderPlugin.new,
     // 图插件
-    () => GraphPlugin(),
+    GraphPlugin.new,
     // 布局插件
-    () => LayoutPlugin(),
+    LayoutPlugin.new,
     // 搜索插件
-    () => SearchPlugin(),
+    SearchPlugin.new,
     // 转换器插件
-    () => ConverterPlugin(),
+    ConverterPlugin.new,
+    // 数据恢复插件
+    DataRecoveryPlugin.new,
   ];
 
   /// 已加载的插件列表
@@ -76,7 +84,7 @@ class BuiltinPluginLoader {
   /// 3. 按顺序加载并启用插件
   /// 4. 注册 UI Hook 到 HookRegistry
   Future<int> loadAllBuiltinPlugins() async {
-    int loadedCount = 0;
+    var loadedCount = 0;
 
     try {
       // 步骤 1：注册所有内置插件工厂
@@ -96,7 +104,9 @@ class BuiltinPluginLoader {
         // 继续加载，但可能会失败
       }
 
-      debugPrint('[BuiltinPluginLoader] Plugin load order: ${resolution.loadOrder}');
+      debugPrint(
+        '[BuiltinPluginLoader] Plugin load order: ${resolution.loadOrder}',
+      );
 
       // 步骤 4：按顺序加载插件
       for (final pluginId in resolution.loadOrder) {
@@ -114,22 +124,27 @@ class BuiltinPluginLoader {
               await _pluginManager.enablePlugin(pluginId);
               debugPrint('[BuiltinPluginLoader] ✓ Enabled plugin: $pluginId');
             } catch (e) {
-              debugPrint('[BuiltinPluginLoader] ✗ Failed to enable plugin $pluginId: $e');
+              debugPrint(
+                '[BuiltinPluginLoader] ✗ Failed to enable plugin $pluginId: $e',
+              );
             }
           }
         } catch (e) {
-          debugPrint('[BuiltinPluginLoader] ✗ Failed to load plugin $pluginId: $e');
+          debugPrint(
+            '[BuiltinPluginLoader] ✗ Failed to load plugin $pluginId: $e',
+          );
           // 继续加载其他插件
         }
       }
 
-      debugPrint('[BuiltinPluginLoader] Summary: Loaded $loadedCount/${allPluginMetadata.length} builtin plugins');
+      debugPrint(
+        '[BuiltinPluginLoader] Summary: Loaded $loadedCount/${allPluginMetadata.length} builtin plugins',
+      );
 
       // 步骤 5：将 UI Hook 插件注册到 HookRegistry
       if (_hookRegistry != null) {
         _registerUIHooks();
       }
-
     } catch (e) {
       debugPrint('[BuiltinPluginLoader] Error loading builtin plugins: $e');
     }
@@ -151,19 +166,25 @@ class BuiltinPluginLoader {
       _discoverer.registerFactory(plugin.metadata.id, factory);
     }
 
-    debugPrint('[BuiltinPluginLoader] Registered ${_builtinUIHookFactories.length} UI Hook factories');
-    debugPrint('[BuiltinPluginLoader] Registered ${_builtinPluginFactories.length} regular plugin factories');
+    debugPrint(
+      '[BuiltinPluginLoader] Registered ${_builtinUIHookFactories.length} UI Hook factories',
+    );
+    debugPrint(
+      '[BuiltinPluginLoader] Registered ${_builtinPluginFactories.length} regular plugin factories',
+    );
   }
 
   /// 将 UI Hooks 注册到 HookRegistry
   void _registerUIHooks() {
     if (_hookRegistry == null) {
-      debugPrint('[BuiltinPluginLoader] HookRegistry is null, skipping UI Hook registration');
+      debugPrint(
+        '[BuiltinPluginLoader] HookRegistry is null, skipping UI Hook registration',
+      );
       return;
     }
 
     final allPlugins = _pluginManager.getAllPlugins();
-    int uiHookCount = 0;
+    var uiHookCount = 0;
 
     for (final wrapper in allPlugins) {
       if (wrapper.plugin is UIHook) {
@@ -171,14 +192,20 @@ class BuiltinPluginLoader {
         try {
           _hookRegistry.registerHook(uiHook);
           uiHookCount++;
-          debugPrint('[BuiltinPluginLoader] ✓ Registered UI Hook: ${uiHook.metadata.id} to ${uiHook.hookPoint}');
+          debugPrint(
+            '[BuiltinPluginLoader] ✓ Registered UI Hook: ${uiHook.metadata.id} to ${uiHook.hookPoint}',
+          );
         } catch (e) {
-          debugPrint('[BuiltinPluginLoader] ✗ Failed to register UI Hook ${uiHook.metadata.id}: $e');
+          debugPrint(
+            '[BuiltinPluginLoader] ✗ Failed to register UI Hook ${uiHook.metadata.id}: $e',
+          );
         }
       }
     }
 
-    debugPrint('[BuiltinPluginLoader] Registered $uiHookCount UI Hooks to HookRegistry');
+    debugPrint(
+      '[BuiltinPluginLoader] Registered $uiHookCount UI Hooks to HookRegistry',
+    );
   }
 
   /// 卸载所有内置插件
@@ -195,7 +222,9 @@ class BuiltinPluginLoader {
         await _pluginManager.unloadPlugin(pluginId);
         debugPrint('[BuiltinPluginLoader] ✓ Unloaded plugin: $pluginId');
       } catch (e) {
-        debugPrint('[BuiltinPluginLoader] ✗ Failed to unload plugin $pluginId: $e');
+        debugPrint(
+          '[BuiltinPluginLoader] ✗ Failed to unload plugin $pluginId: $e',
+        );
       }
     }
 

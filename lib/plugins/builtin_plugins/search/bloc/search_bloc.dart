@@ -1,22 +1,29 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/model/search_preset_model.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/search/model/search_query.dart';
-import 'package:uuid/uuid.dart';
+
+import '../../../../core/commands/command_bus.dart';
 import '../../../../core/models/node.dart';
 import '../../graph/service/node_service.dart';
+import '../command/search_commands.dart';
+import '../model/search_query.dart';
 import '../service/search_preset_service.dart';
 import 'search_event.dart';
 import 'search_state.dart';
 
 /// 搜索 BLoC
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
+  /// 创建搜索 BLoC
+  /// 
+  /// [nodeService] - 节点服务
+  /// [presetService] - 搜索预设服务
+  /// [commandBus] - 命令总线
   SearchBloc({
     required NodeService nodeService,
     required SearchPresetService presetService,
-  })  : _nodeService = nodeService,
-        _presetService = presetService,
-        _uuid = const Uuid(),
-        super(SearchState.initial()) {
+    required CommandBus commandBus,
+  }) : _nodeService = nodeService,
+       _presetService = presetService,
+       _commandBus = commandBus,
+       super(SearchState.initial()) {
     on<SearchPerformEvent>(_onPerformSearch);
     on<SearchLoadPresetsEvent>(_onLoadPresets);
     on<SearchSavePresetEvent>(_onSavePreset);
@@ -30,7 +37,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   final NodeService _nodeService;
   final SearchPresetService _presetService;
-  final Uuid _uuid;
+  final CommandBus _commandBus;
 
   /// 执行搜索
   Future<void> _onPerformSearch(
@@ -41,20 +48,18 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
     // 如果是空查询，清除结果
     if (query.isEmpty) {
-      emit(state.copyWith(
-        results: [],
-        currentQuery: query,
-        isLoading: false,
-        error: null,
-      ));
+      emit(
+        state.copyWith(
+          results: [],
+          currentQuery: query,
+          isLoading: false,
+          error: null,
+        ),
+      );
       return;
     }
 
-    emit(state.copyWith(
-      isLoading: true,
-      currentQuery: query,
-      error: null,
-    ));
+    emit(state.copyWith(isLoading: true, currentQuery: query, error: null));
 
     try {
       // 构建搜索字符串
@@ -80,7 +85,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       final results = allNodes.where((node) {
         // 标题过滤
         if (query.titleQuery != null && query.titleQuery!.isNotEmpty) {
-          if (!node.title.toLowerCase().contains(query.titleQuery!.toLowerCase())) {
+          if (!node.title.toLowerCase().contains(
+            query.titleQuery!.toLowerCase(),
+          )) {
             return false;
           }
         }
@@ -88,7 +95,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         // 内容过滤
         if (query.contentQuery != null && query.contentQuery!.isNotEmpty) {
           final content = node.content ?? '';
-          if (!content.toLowerCase().contains(query.contentQuery!.toLowerCase())) {
+          if (!content.toLowerCase().contains(
+            query.contentQuery!.toLowerCase(),
+          )) {
             return false;
           }
         }
@@ -97,7 +106,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         if (query.searchText != null && query.searchText!.isNotEmpty) {
           final searchLower = query.searchText!.toLowerCase();
           final titleMatch = node.title.toLowerCase().contains(searchLower);
-          final contentMatch = (node.content ?? '').toLowerCase().contains(searchLower);
+          final contentMatch = (node.content ?? '').toLowerCase().contains(
+            searchLower,
+          );
           if (!titleMatch && !contentMatch) {
             return false;
           }
@@ -106,7 +117,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         // 标签过滤
         if (query.tags != null && query.tags!.isNotEmpty) {
           final nodeTags = _extractTags(node);
-          final hasAllTags = query.tags!.every((tag) => nodeTags.contains(tag));
+          final hasAllTags = query.tags!.every(nodeTags.contains);
           if (!hasAllTags) {
             return false;
           }
@@ -134,16 +145,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         return true;
       }).toList();
 
-      emit(state.copyWith(
-        results: results,
-        isLoading: false,
-        error: null,
-      ));
+      emit(state.copyWith(results: results, isLoading: false, error: null));
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
@@ -154,14 +158,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   ) async {
     try {
       final presets = await _presetService.getAllPresets();
-      emit(state.copyWith(
-        presets: presets,
-        error: null,
-      ));
+      emit(state.copyWith(presets: presets, error: null));
     } catch (e) {
-      emit(state.copyWith(
-        error: e.toString(),
-      ));
+      emit(state.copyWith(error: e.toString()));
     }
   }
 
@@ -173,31 +172,27 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(state.copyWith(isSavingPreset: true));
 
     try {
-      final preset = SearchPreset(
-        id: _uuid.v4(),
-        name: event.name,
+      // 写操作：通过 CommandBus
+      final command = SaveSearchPresetCommand(
+        presetName: event.name,
         titleQuery: event.query.titleQuery,
         contentQuery: event.query.contentQuery,
         tags: event.query.tags,
-        createdAt: DateTime.now(),
-        lastUsed: DateTime.now(),
       );
+      final result = await _commandBus.dispatch(command);
 
-      await _presetService.savePreset(preset);
+      if (result.isSuccess) {
+        // 重新加载预设列表
+        final presets = await _presetService.getAllPresets();
 
-      // 重新加载预设列表
-      final presets = await _presetService.getAllPresets();
-
-      emit(state.copyWith(
-        presets: presets,
-        isSavingPreset: false,
-        error: null,
-      ));
+        emit(
+          state.copyWith(presets: presets, isSavingPreset: false, error: null),
+        );
+      } else {
+        emit(state.copyWith(isSavingPreset: false, error: result.error));
+      }
     } catch (e) {
-      emit(state.copyWith(
-        isSavingPreset: false,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(isSavingPreset: false, error: e.toString()));
     }
   }
 
@@ -225,32 +220,26 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     try {
-      await _presetService.deletePreset(event.id);
+      // 写操作：通过 CommandBus
+      final command = DeleteSearchPresetCommand(id: event.id);
+      final result = await _commandBus.dispatch(command);
 
-      // 重新加载预设列表
-      final presets = await _presetService.getAllPresets();
+      if (result.isSuccess) {
+        // 重新加载预设列表
+        final presets = await _presetService.getAllPresets();
 
-      emit(state.copyWith(
-        presets: presets,
-        error: null,
-      ));
+        emit(state.copyWith(presets: presets, error: null));
+      } else {
+        emit(state.copyWith(error: result.error));
+      }
     } catch (e) {
-      emit(state.copyWith(
-        error: e.toString(),
-      ));
+      emit(state.copyWith(error: e.toString()));
     }
   }
 
   /// 清除搜索
-  void _onClear(
-    SearchClearEvent event,
-    Emitter<SearchState> emit,
-  ) {
-    emit(state.copyWith(
-      results: [],
-      currentQuery: null,
-      error: null,
-    ));
+  void _onClear(SearchClearEvent event, Emitter<SearchState> emit) {
+    emit(state.copyWith(results: [], currentQuery: null, error: null));
   }
 
   /// 从节点内容中提取标签

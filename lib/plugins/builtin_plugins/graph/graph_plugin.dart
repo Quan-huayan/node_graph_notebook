@@ -1,32 +1,37 @@
-import '../../../core/plugin/plugin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'service/graph_service_bindings.dart';
-import 'bloc/graph_bloc.dart';
-import 'bloc/node_bloc.dart';
-import 'bloc/graph_event.dart';
-import 'bloc/node_event.dart';
-import 'handler/create_node_handler.dart';
-import 'handler/update_node_handler.dart';
-import 'handler/delete_node_handler.dart';
-import 'handler/connect_nodes_handler.dart';
-import 'handler/disconnect_nodes_handler.dart';
-import 'handler/move_node_handler.dart';
-import 'handler/resize_node_handler.dart';
-import 'handler/load_graph_handler.dart';
-import 'handler/create_graph_handler.dart';
-import 'handler/update_graph_handler.dart';
-import 'handler/rename_graph_handler.dart';
-import 'handler/add_node_to_graph_handler.dart';
-import 'handler/remove_node_from_graph_handler.dart';
-import 'handler/update_node_position_handler.dart';
-import 'command/node_commands.dart';
-import 'command/graph_commands.dart';
-import '../../../core/repositories/node_repository.dart';
-import '../../../core/repositories/graph_repository.dart';
-import '../../../core/events/app_events.dart';
+import 'package:vector_math/vector_math.dart';
 import '../../../core/commands/command_bus.dart';
-import 'service/node_service.dart';
+import '../../../core/events/app_events.dart';
+import '../../../core/models/models.dart';
+import '../../../core/plugin/plugin.dart';
+import '../../../core/repositories/graph_repository.dart';
+import '../../../core/repositories/node_repository.dart';
+import 'bloc/graph_bloc.dart';
+import 'bloc/graph_event.dart';
+import 'bloc/node_bloc.dart';
+import 'bloc/node_event.dart';
+import 'command/graph_commands.dart';
+import 'command/node_commands.dart';
+import 'handler/add_node_to_graph_handler.dart';
+import 'handler/connect_nodes_handler.dart';
+import 'handler/create_graph_handler.dart';
+import 'handler/create_node_handler.dart';
+import 'handler/delete_node_handler.dart';
+import 'handler/disconnect_nodes_handler.dart';
+import 'handler/load_graph_handler.dart';
+import 'handler/move_node_handler.dart';
+import 'handler/remove_node_from_graph_handler.dart';
+import 'handler/rename_graph_handler.dart';
+import 'handler/resize_node_handler.dart';
+import 'handler/update_graph_handler.dart';
+import 'handler/update_node_handler.dart';
+import 'handler/update_node_position_handler.dart';
 import 'service/graph_service.dart';
+import 'service/graph_service_bindings.dart';
+import 'service/node_service.dart';
+import 'tasks/connection_path_task.dart';
+import 'tasks/node_sizing_task.dart';
+import 'tasks/text_layout_task.dart';
 
 /// Graph 插件
 ///
@@ -44,43 +49,110 @@ class GraphPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'graph',
-        name: 'Graph',
-        version: '1.0.0',
-        description: 'Graph management and node operations',
-        author: 'Node Graph Notebook',
-        enabledByDefault: true,
-      );
+    id: 'graph',
+    name: 'Graph',
+    version: '1.0.0',
+    description: 'Graph management and node operations',
+    author: 'Node Graph Notebook',
+    enabledByDefault: true,
+  );
 
   @override
   List<ServiceBinding> registerServices() => [
-        NodeServiceBinding(),
-        GraphServiceBinding(),
-      ];
+    NodeServiceBinding(),
+    GraphServiceBinding(),
+  ];
 
   @override
   List<BlocProvider> registerBlocs() => [
-        BlocProvider<NodeBloc>(
-          create: (ctx) => NodeBloc(
-            commandBus: ctx.read<CommandBus>(),
-            nodeRepository: ctx.read<NodeRepository>(),
-            eventBus: ctx.read<AppEventBus>(),
-          )..add(const NodeLoadEvent()),
-        ),
-        BlocProvider<GraphBloc>(
-          create: (ctx) => GraphBloc(
-            commandBus: ctx.read<CommandBus>(),
-            graphRepository: ctx.read<GraphRepository>(),
-            nodeRepository: ctx.read<NodeRepository>(),
-            eventBus: ctx.read<AppEventBus>(),
-          )..add(const GraphInitializeEvent()),
-        ),
-      ];
+    BlocProvider<NodeBloc>(
+      create: (ctx) => NodeBloc(
+        commandBus: ctx.read<CommandBus>(),
+        nodeRepository: ctx.read<NodeRepository>(),
+        eventBus: ctx.read<AppEventBus>(),
+      )..add(const NodeLoadEvent()),
+    ),
+    BlocProvider<GraphBloc>(
+      create: (ctx) => GraphBloc(
+        commandBus: ctx.read<CommandBus>(),
+        graphRepository: ctx.read<GraphRepository>(),
+        nodeRepository: ctx.read<NodeRepository>(),
+        eventBus: ctx.read<AppEventBus>(),
+      )..add(const GraphInitializeEvent()),
+    ),
+  ];
 
   @override
   Future<void> onLoad(PluginContext context) async {
+    // 注册任务类型
+    _registerTaskTypes(context);
+
     // 注册命令处理器
     _registerCommandHandlers(context);
+  }
+
+  /// 注册任务类型到 TaskRegistry
+  void _registerTaskTypes(PluginContext context) {
+    final taskRegistry = context.taskRegistry;
+    if (taskRegistry == null) {
+      context.logger?.warning('TaskRegistry not available, skipping task registration');
+      return;
+    }
+
+    // 注册 TextLayout 任务
+    taskRegistry..registerTaskType(
+      'TextLayout',
+      TextLayoutTaskSerialized.new,
+      (result) => TextLayoutResult(
+        width: result['width'] as double,
+        height: result['height'] as double,
+        didExceedMaxWidth: result['didExceedMaxWidth'] as bool? ?? false,
+        lineCount: const [],
+      ),
+    )
+
+    // 注册 NodeSizing 任务
+    ..registerTaskType(
+      'NodeSizing',
+      NodeSizingTaskSerialized.new,
+      (result) => NodeSizeResult(
+        width: result['width'] as double,
+        height: result['height'] as double,
+        isFolder: result['isFolder'] as bool? ?? false,
+        viewMode: result['viewMode'] != null
+            ? NodeViewMode.values.firstWhere(
+                (e) => e.name == result['viewMode'],
+                orElse: () => NodeViewMode.titleOnly,
+              )
+            : null,
+      ),
+    )
+
+    // 注册 ConnectionPath 任务
+    ..registerTaskType(
+      'ConnectionPath',
+      ConnectionPathTaskSerialized.new,
+      (result) {
+        final pathData = result['path'] as List;
+        final points = pathData
+            .map((p) => Vector2(
+                  (p as Map)['x'] as double,
+                  p['y'] as double,
+                ))
+            .toList();
+        final controlPointData = result['controlPoint'] as Map<String, dynamic>?;
+        return ConnectionPathResult(
+          path: points,
+          length: result['length'] as double,
+          controlPoint: controlPointData != null
+              ? Vector2(
+                  controlPointData['x'] as double,
+                  controlPointData['y'] as double,
+                )
+              : null,
+        );
+      },
+    );
   }
 
   @override
@@ -106,64 +178,25 @@ class GraphPlugin extends Plugin {
     final nodeService = context.read<NodeService>();
     final graphService = context.read<GraphService>();
 
-    // 注册节点命令处理器
-    commandBus.registerHandler<CreateNodeCommand>(
-      CreateNodeHandler(nodeService),
-      CreateNodeCommand,
-    );
-    commandBus.registerHandler<UpdateNodeCommand>(
-      UpdateNodeHandler(nodeService),
-      UpdateNodeCommand,
-    );
-    commandBus.registerHandler<DeleteNodeCommand>(
-      DeleteNodeHandler(nodeService),
-      DeleteNodeCommand,
-    );
-    commandBus.registerHandler<ConnectNodesCommand>(
-      ConnectNodesHandler(nodeRepository),
-      ConnectNodesCommand,
-    );
-    commandBus.registerHandler<DisconnectNodesCommand>(
-      DisconnectNodesHandler(nodeRepository),
-      DisconnectNodesCommand,
-    );
-    commandBus.registerHandler<MoveNodeCommand>(
-      MoveNodeHandler(nodeRepository),
-      MoveNodeCommand,
-    );
-    commandBus.registerHandler<ResizeNodeCommand>(
-      ResizeNodeHandler(nodeRepository),
-      ResizeNodeCommand,
-    );
-
-    // 注册图命令处理器
-    commandBus.registerHandler<LoadGraphCommand>(
-      LoadGraphHandler(graphService),
-      LoadGraphCommand,
-    );
-    commandBus.registerHandler<CreateGraphCommand>(
-      CreateGraphHandler(graphService),
-      CreateGraphCommand,
-    );
-    commandBus.registerHandler<UpdateGraphCommand>(
-      UpdateGraphHandler(graphService),
-      UpdateGraphCommand,
-    );
-    commandBus.registerHandler<RenameGraphCommand>(
-      RenameGraphHandler(graphService),
-      RenameGraphCommand,
-    );
-    commandBus.registerHandler<AddNodeToGraphCommand>(
-      AddNodeToGraphHandler(graphService),
-      AddNodeToGraphCommand,
-    );
-    commandBus.registerHandler<RemoveNodeFromGraphCommand>(
-      RemoveNodeFromGraphHandler(graphService),
-      RemoveNodeFromGraphCommand,
-    );
-    commandBus.registerHandler<UpdateNodePositionCommand>(
-      UpdateNodePositionHandler(graphRepository),
-      UpdateNodePositionCommand,
-    );
+    // 注册命令处理器
+    commandBus.registerHandlers({
+      // 节点命令处理器
+      CreateNodeCommand: CreateNodeHandler(nodeService),
+      UpdateNodeCommand: UpdateNodeHandler(nodeService),
+      DeleteNodeCommand: DeleteNodeHandler(nodeService),
+      ConnectNodesCommand: ConnectNodesHandler(nodeRepository),
+      DisconnectNodesCommand: DisconnectNodesHandler(nodeRepository),
+      MoveNodeCommand: MoveNodeHandler(nodeRepository),
+      ResizeNodeCommand: ResizeNodeHandler(nodeRepository),
+      
+      // 图命令处理器
+      LoadGraphCommand: LoadGraphHandler(graphService),
+      CreateGraphCommand: CreateGraphHandler(graphService),
+      UpdateGraphCommand: UpdateGraphHandler(graphService),
+      RenameGraphCommand: RenameGraphHandler(graphService),
+      AddNodeToGraphCommand: AddNodeToGraphHandler(graphService),
+      RemoveNodeFromGraphCommand: RemoveNodeFromGraphHandler(graphService),
+      UpdateNodePositionCommand: UpdateNodePositionHandler(graphRepository),
+    });
   }
 }

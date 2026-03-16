@@ -1,14 +1,21 @@
 import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:file_picker/file_picker.dart';
+
+import 'infrastructure/storage_path_service.dart';
 
 /// 应用设置服务
 class SettingsService with ChangeNotifier {
-  // 构造函数
-  SettingsService._internal();
+  /// 工厂构造函数
   factory SettingsService() => _instance;
+
+  /// 私有构造函数
+  SettingsService._internal();
+  
+  /// 单例实例
   static final SettingsService _instance = SettingsService._internal();
 
   // 存储键常量
@@ -20,13 +27,25 @@ class SettingsService with ChangeNotifier {
   static const String _aiModelKey = 'ai_model';
   static const String _aiApiKeyKey = 'ai_api_key';
 
-  // 私有字段
+  /// 自定义存储路径
   String? _customStoragePath;
+  
+  /// 主题模式
   ThemeMode _themeMode = ThemeMode.system;
+  
+  /// 默认视图模式
   String? _defaultViewMode;
+  
+  /// AI 提供商
   String _aiProvider = 'openai'; // openai or anthropic
+  
+  /// AI API 基础 URL
   String _aiBaseUrl = 'https://api.openai.com/v1';
+  
+  /// AI 模型
   String _aiModel = 'gpt-4';
+  
+  /// AI API 密钥
   String? _aiApiKey;
 
   /// 初始化设置
@@ -181,8 +200,8 @@ class SettingsService with ChangeNotifier {
     final basePath = await getStoragePath();
     final totalSize = await _calculateDirectorySize(Directory(basePath));
 
-    int nodesCount = 0;
-    int graphsCount = 0;
+    var nodesCount = 0;
+    var graphsCount = 0;
 
     try {
       final nodesDir = Directory(await getNodesPath());
@@ -215,7 +234,7 @@ class SettingsService with ChangeNotifier {
 
   /// 计算目录大小
   Future<int> _calculateDirectorySize(Directory dir) async {
-    int size = 0;
+    var size = 0;
     try {
       await for (final entity in dir.list(recursive: true)) {
         if (entity is File) {
@@ -320,31 +339,4 @@ class SettingsService with ChangeNotifier {
 
   /// 是否已配置 AI
   bool get isAIConfigured => _aiApiKey != null && _aiApiKey!.isNotEmpty;
-}
-
-/// 存储使用情况
-class StorageUsage {
-  // 构造函数
-  StorageUsage({
-    required this.totalSize,
-    required this.nodesCount,
-    required this.graphsCount,
-  });
-
-  final int totalSize;
-  final int nodesCount;
-  final int graphsCount;
-
-  /// 格式化大小显示
-  String get formattedSize {
-    if (totalSize < 1024) {
-      return '$totalSize B';
-    } else if (totalSize < 1024 * 1024) {
-      return '${(totalSize / 1024).toStringAsFixed(1)} KB';
-    } else if (totalSize < 1024 * 1024 * 1024) {
-      return '${(totalSize / (1024 * 1024)).toStringAsFixed(1)} MB';
-    } else {
-      return '${(totalSize / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-    }
-  }
 }

@@ -6,6 +6,13 @@ import '../../../../core/models/models.dart';
 
 /// AI 节点分析结果
 class NodeAnalysis {
+  /// 创建 AI 节点分析结果
+  ///
+  /// [nodeId] - 节点 ID
+  /// [summary] - 节点内容摘要
+  /// [keywords] - 关键词列表
+  /// [topics] - 主题列表
+  /// [sentiment] - 情感倾向
   const NodeAnalysis({
     required this.nodeId,
     required this.summary,
@@ -14,15 +21,27 @@ class NodeAnalysis {
     this.sentiment,
   });
 
+  /// 节点 ID
   final String nodeId;
+  /// 节点内容摘要
   final String summary;
+  /// 关键词列表
   final List<String> keywords;
+  /// 主题列表
   final List<String> topics;
+  /// 情感倾向
   final String? sentiment;
 }
 
 /// 连接建议
 class ConnectionSuggestion {
+  /// 创建连接建议
+  ///
+  /// [fromNodeId] - 源节点 ID
+  /// [toNodeId] - 目标节点 ID
+  /// [reason] - 连接原因
+  /// [confidence] - 置信度 (0.0-1.0)
+  /// [relationType] - 关系类型，默认为 'relatesTo'
   const ConnectionSuggestion({
     required this.fromNodeId,
     required this.toNodeId,
@@ -31,7 +50,13 @@ class ConnectionSuggestion {
     this.relationType = 'relatesTo',
   });
 
-  // 从 sourceId/targetId 创建（兼容旧格式）
+  /// 从 sourceId/targetId 创建（兼容旧格式）
+  ///
+  /// [sourceId] - 源节点 ID
+  /// [targetId] - 目标节点 ID
+  /// [reason] - 连接原因
+  /// [confidence] - 置信度 (0.0-1.0)
+  /// [relationType] - 关系类型，默认为 'relates_to'
   // ignore: prefer_initializing_formals
   ConnectionSuggestion.withSourceTarget({
     required String sourceId,
@@ -39,18 +64,30 @@ class ConnectionSuggestion {
     required this.reason,
     required this.confidence,
     this.relationType = 'relates_to',
-  })  : fromNodeId = sourceId,
-        toNodeId = targetId;
+  }) : fromNodeId = sourceId,
+       toNodeId = targetId;
 
+  /// 源节点 ID
   final String fromNodeId;
+  /// 目标节点 ID
   final String toNodeId;
+  /// 连接原因
   final String reason;
+  /// 置信度 (0.0-1.0)
   final double confidence; // 0.0 - 1.0
+  /// 关系类型
   final String relationType;
 }
 
 /// 概念提取结果
 class ConceptExtraction {
+  /// 创建概念提取结果
+  ///
+  /// [conceptTitle] - 概念标题
+  /// [conceptDescription] - 概念描述
+  /// [containedNodeIds] - 包含的节点 ID 列表
+  /// [conceptType] - 概念类型
+  /// [reason] - 提取原因
   const ConceptExtraction({
     required this.conceptTitle,
     required this.conceptDescription,
@@ -59,24 +96,41 @@ class ConceptExtraction {
     required this.reason,
   });
 
+  /// 概念标题
   final String conceptTitle;
+  /// 概念描述
   final String conceptDescription;
+  /// 包含的节点 ID 列表
   final List<String> containedNodeIds;
+  /// 概念类型
   final ConceptType conceptType;
+  /// 提取原因
   final String reason;
 }
 
 /// 概念类型
 enum ConceptType {
+  /// 因果链
   causalChain,
+  /// 分类
   classification,
+  /// 抽象
   abstraction,
+  /// 关系
   relationship,
+  /// 过程
   process,
 }
 
 /// 图摘要
 class GraphSummary {
+  /// 创建图摘要
+  ///
+  /// [title] - 摘要标题
+  /// [description] - 摘要描述
+  /// [keyTopics] - 关键主题列表
+  /// [nodeCount] - 节点数量
+  /// [connectionCount] - 连接数量
   const GraphSummary({
     required this.title,
     required this.description,
@@ -85,60 +139,97 @@ class GraphSummary {
     required this.connectionCount,
   });
 
+  /// 摘要标题
   final String title;
+  /// 摘要描述
   final String description;
+  /// 关键主题列表
   final List<String> keyTopics;
+  /// 节点数量
   final int nodeCount;
+  /// 连接数量
   final int connectionCount;
 }
 
 /// AI 服务接口
 abstract class AIService {
   /// 设置 AI 提供商
+  ///
+  /// [provider] - AI 提供商实例
   void setProvider(AIProvider provider);
 
   /// 生成节点内容
+  ///
+  /// [prompt] - 生成提示词
+  /// [options] - 可选参数
+  /// 返回生成的节点
   Future<Node> generateNode({
     required String prompt,
     Map<String, dynamic>? options,
   });
 
   /// 生成摘要
+  ///
+  /// [node] - 要摘要的节点
+  /// 返回节点内容的摘要
   Future<String> summarizeNode(Node node);
 
   /// 智能拆分
-  Future<List<Node>> intelligentSplit({
-    required String markdown,
-  });
+  ///
+  /// [markdown] - 要拆分的 Markdown 内容
+  /// 返回拆分后的节点列表
+  Future<List<Node>> intelligentSplit({required String markdown});
 
   /// 回答问题
+  ///
+  /// [question] - 问题
+  /// [context] - 上下文节点列表
+  /// 返回问题的答案
   Future<String> answerQuestion({
     required String question,
     required List<Node> context,
   });
 
   /// 分析节点内容
+  ///
+  /// [node] - 要分析的节点
+  /// 返回节点分析结果
   Future<NodeAnalysis> analyzeNode(Node node);
 
   /// 推荐连接
+  ///
+  /// [nodes] - 节点列表
+  /// [maxSuggestions] - 最大推荐数量
+  /// 返回连接建议列表
   Future<List<ConnectionSuggestion>> suggestConnections({
     required List<Node> nodes,
     int? maxSuggestions,
   });
 
   /// 提取概念
+  ///
+  /// [nodes] - 节点列表
+  /// [connections] - 连接列表
+  /// 返回概念提取结果列表
   Future<List<ConceptExtraction>> extractConcepts({
     required List<Node> nodes,
     required List<Connection> connections,
   });
 
   /// 生成图摘要
+  ///
+  /// [nodes] - 节点列表
+  /// [connections] - 连接列表
+  /// 返回图摘要
   Future<GraphSummary> generateGraphSummary(
     List<Node> nodes,
     List<Connection> connections,
   );
 
   /// 根据主题建议新节点
+  ///
+  /// [existingNodes] - 现有节点列表
+  /// 返回建议的主题列表
   Future<List<String>> suggestNodeTopics(List<Node> existingNodes);
 
   /// 检查服务是否可用
@@ -150,8 +241,10 @@ abstract class AIService {
 
 /// AI 服务实现
 class AIServiceImpl extends ChangeNotifier implements AIService {
-  AIServiceImpl([AIProvider? initialProvider])
-      : _provider = initialProvider;
+  /// 创建 AI 服务实现
+  ///
+  /// [initialProvider] - 初始 AI 提供商（可选）
+  AIServiceImpl([AIProvider? initialProvider]) : _provider = initialProvider;
 
   final _uuid = const Uuid();
   AIProvider? _provider;
@@ -181,7 +274,10 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
 
     // 简单解析响应
     final lines = response.split('\n');
-    final title = lines.firstWhere((l) => l.isNotEmpty, orElse: () => 'Untitled');
+    final title = lines.firstWhere(
+      (l) => l.isNotEmpty,
+      orElse: () => 'Untitled',
+    );
     final content = lines.skip(1).join('\n').trim();
 
     return Node(
@@ -220,17 +316,20 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
     // 简化实现：基于标题相似度推荐
     final suggestions = <ConnectionSuggestion>[];
 
-    for (int i = 0; i < nodes.length; i++) {
-      for (int j = i + 1; j < nodes.length; j++) {
+    for (var i = 0; i < nodes.length; i++) {
+      for (var j = i + 1; j < nodes.length; j++) {
         final similarity = _calculateSimilarity(nodes[i], nodes[j]);
         if (similarity > 0.3) {
-          suggestions.add(ConnectionSuggestion(
-            fromNodeId: nodes[i].id,
-            toNodeId: nodes[j].id,
-            relationType: 'relatesTo',
-            reason: 'Similar content: ${(similarity * 100).toStringAsFixed(0)}%',
-            confidence: similarity,
-          ));
+          suggestions.add(
+            ConnectionSuggestion(
+              fromNodeId: nodes[i].id,
+              toNodeId: nodes[j].id,
+              relationType: 'relatesTo',
+              reason:
+                  'Similar content: ${(similarity * 100).toStringAsFixed(0)}%',
+              confidence: similarity,
+            ),
+          );
         }
       }
     }
@@ -252,9 +351,7 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
   }
 
   @override
-  Future<List<Node>> intelligentSplit({
-    required String markdown,
-  }) async {
+  Future<List<Node>> intelligentSplit({required String markdown}) async {
     if (_provider == null) {
       throw AIServiceException('AI provider not set');
     }
@@ -282,7 +379,8 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
       throw AIServiceException('AI provider not set');
     }
 
-    final prompt = 'Analyze this node and provide summary, keywords, and topics:\n\n${node.content ?? node.title}';
+    final prompt =
+        'Analyze this node and provide summary, keywords, and topics:\n\n${node.content ?? node.title}';
     final response = await _provider!.generate(prompt);
 
     return NodeAnalysis(
@@ -303,7 +401,8 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
       throw AIServiceException('AI provider not set');
     }
 
-    final prompt = 'Summarize this graph with ${nodes.length} nodes and ${connections.length} connections';
+    final prompt =
+        'Summarize this graph with ${nodes.length} nodes and ${connections.length} connections';
     final response = await _provider!.generate(prompt);
 
     return GraphSummary(
@@ -333,7 +432,7 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
     final titleB = b.title.toLowerCase();
 
     // 简单的相似度计算
-    if (titleA == titleB) return 1.0;
+    if (titleA == titleB) return 1;
 
     // 检查是否包含彼此的标题
     if (titleA.contains(titleB) || titleB.contains(titleA)) {
@@ -349,15 +448,17 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
     return total > 0 ? overlap / total : 0.0;
   }
 
-  List<String> _extractKeywords(String title) {
-    return title.split(' ').take(3).toList();
-  }
+  List<String> _extractKeywords(String title) => title.split(' ').take(3).toList();
 }
 
 /// Mock AI 服务（用于测试和开发）
 class MockAIService extends ChangeNotifier implements AIService {
+  /// 创建 Mock AI 服务
+  ///
+  /// [available] - 服务是否可用，默认为 true
   MockAIService({this.available = true});
 
+  /// 服务是否可用
   final bool available;
 
   @override
@@ -429,9 +530,7 @@ class MockAIService extends ChangeNotifier implements AIService {
   }
 
   @override
-  Future<List<Node>> intelligentSplit({
-    required String markdown,
-  }) async {
+  Future<List<Node>> intelligentSplit({required String markdown}) async {
     await Future.delayed(const Duration(milliseconds: 500));
     return [];
   }
@@ -470,7 +569,8 @@ class MockAIService extends ChangeNotifier implements AIService {
 
     return GraphSummary(
       title: 'Graph Summary',
-      description: 'This graph contains ${nodes.length} nodes and ${connections.length} connections.',
+      description:
+          'This graph contains ${nodes.length} nodes and ${connections.length} connections.',
       keyTopics: ['Topic 1', 'Topic 2', 'Topic 3'],
       nodeCount: nodes.length,
       connectionCount: connections.length,
@@ -481,16 +581,16 @@ class MockAIService extends ChangeNotifier implements AIService {
   Future<List<String>> suggestNodeTopics(List<Node> existingNodes) async {
     await Future.delayed(const Duration(milliseconds: 500));
 
-    return [
-      'New Topic 1',
-      'New Topic 2',
-      'New Topic 3',
-    ];
+    return ['New Topic 1', 'New Topic 2', 'New Topic 3'];
   }
 }
 
 /// AI 提供商接口
 abstract class AIProvider {
+  /// 生成 AI 响应
+  ///
+  /// [prompt] - 提示词
+  /// 返回生成的文本
   Future<String> generate(String prompt);
 
   /// 获取提供商名称
@@ -499,6 +599,12 @@ abstract class AIProvider {
 
 /// OpenAI 提供商
 class OpenAIProvider implements AIProvider {
+  /// 创建 OpenAI 提供商
+  ///
+  /// [apiKey] - OpenAI API 密钥
+  /// [model] - 模型名称，默认为 'gpt-4'
+  /// [maxTokens] - 最大令牌数，默认为 2000
+  /// [baseUrl] - API 基础 URL，默认为 'https://api.openai.com/v1'
   OpenAIProvider({
     required this.apiKey,
     this.model = 'gpt-4',
@@ -506,9 +612,13 @@ class OpenAIProvider implements AIProvider {
     this.baseUrl = 'https://api.openai.com/v1',
   });
 
+  /// OpenAI API 密钥
   final String apiKey;
+  /// 模型名称
   final String model;
+  /// 最大令牌数
   final int maxTokens;
+  /// API 基础 URL
   final String baseUrl;
 
   @override
@@ -554,6 +664,12 @@ class OpenAIProvider implements AIProvider {
 
 /// Anthropic 提供商
 class AnthropicProvider implements AIProvider {
+  /// 创建 Anthropic 提供商
+  ///
+  /// [apiKey] - Anthropic API 密钥
+  /// [model] - 模型名称，默认为 'claude-3-sonnet-20240229'
+  /// [maxTokens] - 最大令牌数，默认为 4000
+  /// [baseUrl] - API 基础 URL，默认为 'https://api.anthropic.com'
   AnthropicProvider({
     required this.apiKey,
     this.model = 'claude-3-sonnet-20240229',
@@ -561,10 +677,15 @@ class AnthropicProvider implements AIProvider {
     this.baseUrl = 'https://api.anthropic.com',
   });
 
+  /// Anthropic API 密钥
   final String apiKey;
+  /// 模型名称
   final String model;
+  /// 最大令牌数
   final int maxTokens;
+  /// API 基础 URL
   final String baseUrl;
+  /// API 版本
   static const String _apiVersion = '2023-06-01';
 
   @override
@@ -609,8 +730,12 @@ class AnthropicProvider implements AIProvider {
 
 /// AI 服务异常
 class AIServiceException implements Exception {
+  /// 创建 AI 服务异常
+  ///
+  /// [message] - 异常消息
   AIServiceException(this.message);
 
+  /// 异常消息
   final String message;
 
   @override

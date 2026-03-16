@@ -7,10 +7,16 @@ import 'theme/app_theme.dart';
 ///
 /// 管理应用的主题数据，支持亮色/暗色主题切换和自定义主题
 class ThemeService extends ChangeNotifier {
+  /// 自定义主题存储键
   static const String _customThemeKey = 'custom_theme';
+  
+  /// 使用自定义主题存储键
   static const String _useCustomThemeKey = 'use_custom_theme';
 
+  /// 自定义主题数据
   AppThemeData? _customTheme;
+  
+  /// 是否使用自定义主题
   bool _isUsingCustomTheme = false;
 
   /// 获取当前主题数据

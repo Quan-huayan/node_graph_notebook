@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 /// 插件市场页面
 class PluginMarketPage extends StatelessWidget {
+  /// 创建插件市场页面
   const PluginMarketPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Plugin Market'),
         leading: IconButton(
@@ -15,32 +15,26 @@ class PluginMarketPage extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
               'Available Plugins',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             // 插件列表
             Expanded(
               child: ListView.builder(
                 itemCount: 5, // 示例插件数量
-                itemBuilder: (context, index) {
-                  return _buildPluginCard(context, index);
-                },
+                itemBuilder: _buildPluginCard,
               ),
             ),
           ],
         ),
       ),
     );
-  }
 
   /// 构建插件卡片
   Widget _buildPluginCard(BuildContext context, int index) {
@@ -72,7 +66,7 @@ class PluginMarketPage extends StatelessWidget {
         'description': 'Integrate AI capabilities into your workflow',
         'version': '1.1.0',
         'author': 'AI Team',
-        'icon': Icons.smart_toy      
+        'icon': Icons.smart_toy,
       },
       {
         'name': 'Theme Manager',
@@ -89,7 +83,7 @@ class PluginMarketPage extends StatelessWidget {
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -133,7 +127,9 @@ class PluginMarketPage extends StatelessWidget {
                   onPressed: () {
                     // TODO: 实现插件安装功能
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Installing ${plugin['name']}...')),
+                      SnackBar(
+                        content: Text('Installing ${plugin['name']}...'),
+                      ),
                     );
                   },
                   child: const Text('Install'),
@@ -143,9 +139,7 @@ class PluginMarketPage extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               plugin['description'] as String,
-              style: const TextStyle(
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontSize: 14),
             ),
           ],
         ),

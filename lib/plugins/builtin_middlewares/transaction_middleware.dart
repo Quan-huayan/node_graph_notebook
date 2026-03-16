@@ -1,6 +1,6 @@
-import '../../core/commands/command.dart';
-import '../../core/commands/command_context.dart';
-import '../../core/commands/middleware.dart';
+import '../../core/commands/models/command.dart';
+import '../../core/commands/models/command_context.dart';
+import '../../core/commands/models/middleware.dart';
 
 /// 事务中间件
 ///
@@ -11,13 +11,10 @@ import '../../core/commands/middleware.dart';
 /// 注意：此中间件依赖于命令的 undo 方法实现
 class TransactionMiddleware extends CommandMiddlewareBase {
   @override
-  Future<void> processBefore(
-    Command command,
-    CommandContext context,
-  ) async {
+  Future<void> processBefore(Command command, CommandContext context) async {
     // 标记事务开始
-    context.setMetadata('_transaction_active', true);
-    context.setMetadata('_transaction_command', command);
+    context..setMetadata('_transaction_active', true)
+    ..setMetadata('_transaction_command', command);
   }
 
   @override

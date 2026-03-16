@@ -1,18 +1,21 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+
 import '../../../../core/models/models.dart';
+import '../../graph/bloc/node_bloc.dart';
+import '../../graph/bloc/node_event.dart';
 
 /// Markdown 编辑器页面
 class MarkdownEditorPage extends StatefulWidget {
-  const MarkdownEditorPage({
-    super.key,
-    this.node,
-  });
+  /// 创建 Markdown 编辑器页面
+  /// 
+  /// [node] - 要编辑的节点，如果为 null 则创建新节点
+  const MarkdownEditorPage({super.key, this.node});
 
+  /// 要编辑的节点
   final Node? node;
 
   @override
@@ -31,7 +34,9 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.node?.title ?? '');
-    _contentController = TextEditingController(text: widget.node?.content ?? '');
+    _contentController = TextEditingController(
+      text: widget.node?.content ?? '',
+    );
   }
 
   @override
@@ -42,8 +47,7 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Markdown Editor'),
         actions: [
@@ -67,10 +71,8 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
       ),
       body: _isPreviewMode ? _buildPreview() : _buildEditor(),
     );
-  }
 
-  Widget _buildEditor() {
-    return Column(
+  Widget _buildEditor() => Column(
       children: [
         // 标题编辑
         Padding(
@@ -95,10 +97,7 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
               controller: _contentController,
               maxLines: null,
               expands: true,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
               decoration: const InputDecoration(
                 hintText: 'Write your content in Markdown...',
                 border: InputBorder.none,
@@ -111,7 +110,6 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
         _buildMarkdownToolbar(),
       ],
     );
-  }
 
   Widget _buildPreview() {
     final title = _titleController.text.trim();
@@ -124,39 +122,29 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
         children: [
           // 标题
           if (title.isNotEmpty)
-            Text(
-              '# $title',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text('# $title', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 16),
 
           // 内容
           if (content.isNotEmpty)
-            MarkdownBody(
-              data: content,
-              selectable: true,
-            )
+            MarkdownBody(data: content, selectable: true)
           else
             Text(
               'Nothing to preview',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildMarkdownToolbar() {
-    return Container(
+  Widget _buildMarkdownToolbar() => Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+          top: BorderSide(color: Theme.of(context).dividerColor, width: 1),
         ),
         color: Theme.of(context).colorScheme.surface,
       ),
@@ -206,7 +194,6 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
         ],
       ),
     );
-  }
 
   void _insertMarkdown(String prefix, String suffix) {
     final controller = _contentController;
@@ -248,9 +235,9 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
 
   Future<void> _saveNode() async {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title cannot be empty')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Title cannot be empty')));
       return;
     }
 
@@ -263,17 +250,21 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
     try {
       if (widget.node == null) {
         // 创建新节点
-        nodeBloc.add(NodeCreateContentEvent(
-          title: _titleController.text.trim(),
-          content: _contentController.text.trim(),
-        ));
+        nodeBloc.add(
+          NodeCreateContentEvent(
+            title: _titleController.text.trim(),
+            content: _contentController.text.trim(),
+          ),
+        );
       } else {
         // 更新现有节点
-        nodeBloc.add(NodeUpdateEvent(
-          widget.node!.id,
-          title: _titleController.text.trim(),
-          content: _contentController.text.trim(),
-        ));
+        nodeBloc.add(
+          NodeUpdateEvent(
+            widget.node!.id,
+            title: _titleController.text.trim(),
+            content: _contentController.text.trim(),
+          ),
+        );
       }
 
       // 等待操作完成
@@ -282,14 +273,16 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(widget.node == null ? 'Node created' : 'Node saved')),
+          SnackBar(
+            content: Text(widget.node == null ? 'Node created' : 'Node saved'),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
       }
     } finally {
       if (mounted) {
@@ -314,41 +307,35 @@ class _ToolbarButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Tooltip(
+  Widget build(BuildContext context) => Tooltip(
       message: label,
       child: IconButton(
         icon: Icon(icon),
         onPressed: onPressed,
         padding: const EdgeInsets.all(8),
-        constraints: const BoxConstraints(
-          minWidth: 32,
-          minHeight: 32,
-        ),
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
       ),
     );
-  }
 }
 
 /// Markdown 查看器组件
 class MarkdownViewer extends StatelessWidget {
-  const MarkdownViewer({
-    super.key,
-    required this.content,
-  });
+  /// 创建 Markdown 查看器组件
+  /// 
+  /// [content] - 要显示的 Markdown 内容
+  const MarkdownViewer({super.key, required this.content});
 
+  /// 要显示的 Markdown 内容
   final String content;
 
   @override
-  Widget build(BuildContext context) {
-    return MarkdownBody(
+  Widget build(BuildContext context) => MarkdownBody(
       data: content,
       selectable: true,
       onTapLink: (text, href, title) {
         _handleLinkClick(href, context);
       },
     );
-  }
 
   Future<void> _handleLinkClick(String? url, BuildContext context) async {
     if (url == null || url.isEmpty) return;
@@ -357,9 +344,9 @@ class MarkdownViewer extends StatelessWidget {
     if (url.startsWith('[[') && url.endsWith(']]')) {
       final nodeName = url.substring(2, url.length - 2);
       // TODO: 导航到对应的节点
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('跳转到节点: $nodeName')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('跳转到节点: $nodeName')));
       return;
     }
 
@@ -377,29 +364,29 @@ class MarkdownViewer extends StatelessWidget {
             await Process.run('xdg-open', [uri.toString()]);
           }
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('无法打开链接: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('无法打开链接: $e')));
         }
       }
       // 文件链接
       else if (uri.scheme == 'file') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('文件链接: $uri')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('文件链接: $uri')));
       }
       // 其他协议
       else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('不支持的协议: ${uri.scheme}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('不支持的协议: ${uri.scheme}')));
       }
     }
     // 可能是相对路径或内部链接
     else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('内部链接: $url')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('内部链接: $url')));
     }
   }
 }

@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/services/theme_service.dart';
-import '../../sidebarNode/ui/node_item.dart';
+import '../../graph/bloc/node_bloc.dart';
+import '../../graph/bloc/node_event.dart';
 import '../../graph/service/node_menu.dart';
+import '../../sidebarNode/ui/node_item.dart';
 
 /// 文件夹项组件
+///
+/// 展示单个文件夹的UI组件，支持展开/折叠、拖拽操作和子节点管理
 class FolderItem extends StatefulWidget {
+  /// 创建文件夹项组件
+  ///
+  /// [folder] 当前文件夹节点
+  /// [allNodes] 所有节点列表
+  /// [level] 文件夹层级
+  /// [expandedFolders] 已展开的文件夹集合
+  /// [onExpandedFoldersChanged] 展开状态变更回调
+  /// [draggedNodeId] 当前拖拽的节点ID
+  /// [onDragStarted] 拖拽开始回调
+  /// [onDragEnd] 拖拽结束回调
+  /// [onNodeSelected] 节点选择回调
   const FolderItem({
     super.key,
     required this.folder,
@@ -22,14 +36,23 @@ class FolderItem extends StatefulWidget {
     required this.onNodeSelected,
   });
 
+  /// 当前文件夹节点
   final Node folder;
+  /// 所有节点列表
   final List<Node> allNodes;
+  /// 文件夹层级
   final int level;
+  /// 已展开的文件夹集合
   final Set<String> expandedFolders;
+  /// 展开状态变更回调
   final Function(Set<String>) onExpandedFoldersChanged;
+  /// 当前拖拽的节点ID
   final String? draggedNodeId;
+  /// 拖拽开始回调
   final Function(String) onDragStarted;
+  /// 拖拽结束回调
   final Function(DraggableDetails) onDragEnd;
+  /// 节点选择回调
   final Function(String?)? onNodeSelected;
 
   @override
@@ -41,11 +64,8 @@ class _FolderItemState extends State<FolderItem> {
   ///
   /// 基于引用结构：文件夹引用的所有节点都是其子节点
   /// 不再使用 ref.type 进行过滤
-  List<Node> _getFolderChildren(Node folder, List<Node> nodes) {
-    return nodes.where((node) {
-      return folder.references.containsKey(node.id);
-    }).toList();
-  }
+  List<Node> _getFolderChildren(Node folder, List<Node> nodes) 
+    => nodes.where((node) => folder.references.containsKey(node.id)).toList();
 
   /// 检测是否存在循环 contains 关系
   bool _hasCircularContains(Node node, Node folder, List<Node> allNodes) {
@@ -72,8 +92,13 @@ class _FolderItemState extends State<FolderItem> {
 
     // 递归检查 parentFolder 的所有直接子文件夹
     for (final entry in parentFolder.references.entries) {
-      final childNode = allNodes.firstWhere((n) => n.id == entry.key, orElse: () => parentFolder);
-      if (childNode.id.isNotEmpty && childNode.isFolder && _isChildFolder(folder, childNode, allNodes)) {
+      final childNode = allNodes.firstWhere(
+        (n) => n.id == entry.key,
+        orElse: () => parentFolder,
+      );
+      if (childNode.id.isNotEmpty &&
+          childNode.isFolder &&
+          _isChildFolder(folder, childNode, allNodes)) {
         return true;
       }
     }
@@ -90,7 +115,9 @@ class _FolderItemState extends State<FolderItem> {
     if (_hasCircularContains(node, folder, allNodes)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cannot create circular folder structure')),
+          const SnackBar(
+            content: Text('Cannot create circular folder structure'),
+          ),
         );
       }
       return;
@@ -121,8 +148,8 @@ class _FolderItemState extends State<FolderItem> {
   Future<void> _removeFromFolder(Node node, Node folder) async {
     final nodeBloc = context.read<NodeBloc>();
 
-    final newReferences = Map<String, NodeReference>.from(folder.references);
-    newReferences.remove(node.id);
+    final newReferences = Map<String, NodeReference>.from(folder.references)
+    ..remove(node.id);
 
     final updatedFolder = folder.copyWith(references: newReferences);
     nodeBloc.add(NodeReplaceEvent(updatedFolder));
@@ -154,7 +181,9 @@ class _FolderItemState extends State<FolderItem> {
         final draggedNodeId = details.data;
         if (draggedNodeId != widget.folder.id) {
           // 从所有节点中查找被拖拽的节点
-          final draggedNode = widget.allNodes.firstWhere((n) => n.id == draggedNodeId);
+          final draggedNode = widget.allNodes.firstWhere(
+            (n) => n.id == draggedNodeId,
+          );
           if (draggedNode.id.isNotEmpty) {
             await _addToFolder(draggedNode, widget.folder);
           }
@@ -174,16 +203,19 @@ class _FolderItemState extends State<FolderItem> {
           }
         }
 
-        final isValidTarget = isDraggingOver && draggedNodeId != null && draggedNodeId != widget.folder.id;
+        final isValidTarget =
+            isDraggingOver &&
+            draggedNodeId != null &&
+            draggedNodeId != widget.folder.id;
 
         return DecoratedBox(
           decoration: BoxDecoration(
-            color: isValidTarget
-                ? Colors.blue.withValues(alpha: 0.2)
-                : null,
+            color: isValidTarget ? Colors.blue.withValues(alpha: 0.2) : null,
             border: Border(
               left: BorderSide(
-                color: isSelected ? theme.nodes.folderPrimary : Colors.transparent,
+                color: isSelected
+                    ? theme.nodes.folderPrimary
+                    : Colors.transparent,
                 width: 3,
               ),
             ),
@@ -199,10 +231,13 @@ class _FolderItemState extends State<FolderItem> {
                   widget.onDragEnd(details);
                 },
                 feedback: Material(
-                  elevation: 8.0,
+                  elevation: 8,
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -222,21 +257,30 @@ class _FolderItemState extends State<FolderItem> {
                   child: InkWell(
                     onTap: () {
                       if (widget.expandedFolders.contains(widget.folder.id)) {
-                        final updated = Set<String>.from(widget.expandedFolders);
-                        updated.remove(widget.folder.id);
+                        final updated = Set<String>.from(
+                          widget.expandedFolders,
+                        )
+                        ..remove(widget.folder.id);
                         widget.onExpandedFoldersChanged(updated);
                       } else {
-                        final updated = Set<String>.from(widget.expandedFolders);
-                        updated.add(widget.folder.id);
+                        final updated = Set<String>.from(
+                          widget.expandedFolders,
+                        )
+                        ..add(widget.folder.id);
                         widget.onExpandedFoldersChanged(updated);
                       }
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       child: Row(
                         children: [
                           Icon(
-                            isExpanded ? Icons.expand_more : Icons.chevron_right,
+                            isExpanded
+                                ? Icons.expand_more
+                                : Icons.chevron_right,
                             size: 16,
                           ),
                           const SizedBox(width: 4),
@@ -264,7 +308,8 @@ class _FolderItemState extends State<FolderItem> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.more_vert, size: 16),
-                            onPressed: () => showNodeMenu(context, widget.folder),
+                            onPressed: () =>
+                                showNodeMenu(context, widget.folder),
                           ),
                         ],
                       ),
@@ -284,7 +329,8 @@ class _FolderItemState extends State<FolderItem> {
                           allNodes: widget.allNodes,
                           level: widget.level + 1,
                           expandedFolders: widget.expandedFolders,
-                          onExpandedFoldersChanged: widget.onExpandedFoldersChanged,
+                          onExpandedFoldersChanged:
+                              widget.onExpandedFoldersChanged,
                           draggedNodeId: widget.draggedNodeId,
                           onDragStarted: widget.onDragStarted,
                           onDragEnd: widget.onDragEnd,

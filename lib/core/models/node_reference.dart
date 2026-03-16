@@ -20,10 +20,11 @@ part 'node_reference.g.dart';
 /// ```
 @JsonSerializable()
 class NodeReference {
-  const NodeReference({
-    required this.nodeId,
-    required this.properties,
-  });
+  /// 创建一个节点引用关系
+  ///
+  /// [nodeId] - 被引用的节点ID
+  /// [properties] - 关系属性（包含类型、角色、权重等所有信息）
+  const NodeReference({required this.nodeId, required this.properties});
 
   /// 从JSON创建
   factory NodeReference.fromJson(Map<String, dynamic> json) =>
@@ -50,15 +51,10 @@ class NodeReference {
   Map<String, dynamic> toJson() => _$NodeReferenceToJson(this);
 
   /// 复制并更新部分字段
-  NodeReference copyWith({
-    String? nodeId,
-    Map<String, dynamic>? properties,
-  }) {
-    return NodeReference(
+  NodeReference copyWith({String? nodeId, Map<String, dynamic>? properties}) => NodeReference(
       nodeId: nodeId ?? this.nodeId,
       properties: properties ?? this.properties,
     );
-  }
 
   @override
   bool operator ==(Object other) =>

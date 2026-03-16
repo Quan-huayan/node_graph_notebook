@@ -75,9 +75,7 @@ class APIRegistry {
   ///
   /// [apiName] API 名称
   /// 返回 API 版本，如果不存在则返回 null
-  String? getAPIVersion(String apiName) {
-    return _apis[apiName]?.version;
-  }
+  String? getAPIVersion(String apiName) => _apis[apiName]?.version;
 
   /// 注销插件的所有 API
   ///
@@ -97,18 +95,22 @@ class APIRegistry {
   ///
   /// [pluginId] 插件 ID
   /// 返回该插件导出的 API 名称列表
-  List<String> getPluginAPIs(String pluginId) {
-    return _apis.entries
+  List<String> getPluginAPIs(String pluginId) => _apis.entries
         .where((entry) => entry.value.pluginId == pluginId)
         .map((entry) => entry.key)
         .toList();
-  }
 }
 
 /// API 注册信息
 ///
 /// 记录已注册 API 的元数据
 class APIRegistration {
+  /// 创建一个 API 注册信息
+  ///
+  /// [pluginId] - 插件 ID
+  /// [apiName] - API 名称
+  /// [version] - API 版本
+  /// [api] - API 实例
   APIRegistration({
     required this.pluginId,
     required this.apiName,
@@ -137,6 +139,11 @@ class APIRegistration {
 ///
 /// 当尝试注册已存在的 API 时抛出
 class APIAlreadyExistsException implements Exception {
+  /// 创建一个 API 已存在异常
+  ///
+  /// [apiName] - API 名称
+  /// [existingPluginId] - 已注册该 API 的插件 ID
+  /// [newPluginId] - 尝试注册该 API 的插件 ID
   APIAlreadyExistsException(
     this.apiName,
     this.existingPluginId,
@@ -162,10 +169,11 @@ class APIAlreadyExistsException implements Exception {
 ///
 /// 当插件依赖的 API 未注册时抛出
 class MissingAPIDependencyException implements Exception {
-  MissingAPIDependencyException(
-    this.pluginId,
-    this.missingAPI,
-  );
+  /// 创建一个缺失 API 依赖异常
+  ///
+  /// [pluginId] - 插件 ID
+  /// [missingAPI] - 缺失的 API 名称
+  MissingAPIDependencyException(this.pluginId, this.missingAPI);
 
   /// 插件 ID
   final String pluginId;
@@ -182,6 +190,12 @@ class MissingAPIDependencyException implements Exception {
 ///
 /// 当 API 版本不满足依赖要求时抛出
 class APIVersionException implements Exception {
+  /// 创建一个 API 版本异常
+  ///
+  /// [pluginId] - 插件 ID
+  /// [apiName] - API 名称
+  /// [requiredVersion] - 要求的版本
+  /// [availableVersion] - 可用的版本
   APIVersionException(
     this.pluginId,
     this.apiName,

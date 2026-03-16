@@ -2,6 +2,18 @@
 ///
 /// 包含插件的基本信息和配置
 class PluginMetadata {
+  /// 创建一个新的插件元数据实例。
+  ///
+  /// [id] 插件唯一标识符，格式为反向域名表示法
+  /// [name] 插件名称
+  /// [version] 插件版本（语义化版本）
+  /// [description] 插件描述
+  /// [author] 插件作者
+  /// [homepage] 插件主页 URL
+  /// [dependencies] 依赖的其他插件 ID 列表
+  /// [apiDependencies] 依赖的 API 列表
+  /// [minimumAppVersion] 最低应用版本要求
+  /// [enabledByDefault] 是否默认启用
   const PluginMetadata({
     required this.id,
     required this.name,
@@ -68,7 +80,7 @@ class PluginMetadata {
     final appParts = appVersion.split('.').map(int.parse).toList();
     final minParts = minVersion.split('.').map(int.parse).toList();
 
-    for (int i = 0; i < minParts.length; i++) {
+    for (var i = 0; i < minParts.length; i++) {
       if (i >= appParts.length) return false;
       if (appParts[i] > minParts[i]) return true;
       if (appParts[i] < minParts[i]) return false;
@@ -78,9 +90,7 @@ class PluginMetadata {
   }
 
   @override
-  String toString() {
-    return 'PluginMetadata(id: $id, name: $name, version: $version)';
-  }
+  String toString() => 'PluginMetadata(id: $id, name: $name, version: $version)';
 }
 
 /// 插件类型
@@ -174,6 +184,11 @@ enum PluginState {
 
 /// 插件依赖项
 class PluginDependency {
+  /// 创建一个新的插件依赖项实例。
+  ///
+  /// [pluginId] 依赖的插件 ID
+  /// [minimumVersion] 最低版本要求
+  /// [maximumVersion] 最高版本限制
   const PluginDependency({
     required this.pluginId,
     this.minimumVersion,
@@ -198,7 +213,7 @@ class PluginDependency {
       final minParts = minimumVersion!.split('.').map(int.parse).toList();
       final verParts = version.split('.').map(int.parse).toList();
 
-      for (int i = 0; i < minParts.length; i++) {
+      for (var i = 0; i < minParts.length; i++) {
         if (i >= verParts.length) return false;
         if (verParts[i] < minParts[i]) return false;
       }
@@ -208,7 +223,7 @@ class PluginDependency {
       final maxParts = maximumVersion!.split('.').map(int.parse).toList();
       final verParts = version.split('.').map(int.parse).toList();
 
-      for (int i = 0; i < maxParts.length; i++) {
+      for (var i = 0; i < maxParts.length; i++) {
         if (i >= verParts.length) return false;
         if (verParts[i] > maxParts[i]) return false;
       }
@@ -222,6 +237,11 @@ class PluginDependency {
 ///
 /// 声明插件对其他插件导出的 API 的依赖
 class APIDependency {
+  /// 创建一个新的 API 依赖项实例。
+  ///
+  /// [apiName] API 名称
+  /// [minimumVersion] 最低版本要求（可选）
+  /// [maximumVersion] 最高版本限制（可选）
   const APIDependency({
     required this.apiName,
     this.minimumVersion,
@@ -246,7 +266,7 @@ class APIDependency {
       final minParts = minimumVersion!.split('.').map(int.parse).toList();
       final verParts = version.split('.').map(int.parse).toList();
 
-      for (int i = 0; i < minParts.length; i++) {
+      for (var i = 0; i < minParts.length; i++) {
         if (i >= verParts.length) return false;
         if (verParts[i] < minParts[i]) return false;
       }
@@ -256,7 +276,7 @@ class APIDependency {
       final maxParts = maximumVersion!.split('.').map(int.parse).toList();
       final verParts = version.split('.').map(int.parse).toList();
 
-      for (int i = 0; i < maxParts.length; i++) {
+      for (var i = 0; i < maxParts.length; i++) {
         if (i >= verParts.length) return false;
         if (verParts[i] > maxParts[i]) return false;
       }

@@ -1,20 +1,34 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/service/graph_service.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/service/node_service.dart';
-import '../../../../core/models/models.dart';
-import 'converter_service.dart';
-import '../models/models.dart';
 
-/// 导入导出服务接口
+import 'package:flutter/foundation.dart';
+
+import '../../../../core/models/models.dart';
+import '../../graph/service/graph_service.dart';
+import '../../graph/service/node_service.dart';
+import '../models/models.dart';
+import 'converter_service.dart';
+
+/// 导入导出服务接口，提供文件导入导出功能
 abstract class ImportExportService {
-  /// 预览导入
+  /// 预览导入结果，不实际创建节点
+  /// 
+  /// [filePath] - 要导入的文件路径
+  /// [rule] - 转换规则，定义如何拆分 Markdown
+  /// 
+  /// 返回转换后的节点列表，用于预览
   Future<List<Node>> previewImport({
     required String filePath,
     required ConversionRule rule,
   });
 
-  /// 执行导入
+  /// 执行导入操作，创建节点并处理引用关系
+  /// 
+  /// [filePath] - 要导入的文件路径
+  /// [rule] - 转换规则，定义如何拆分 Markdown
+  /// [selectedIndices] - 要导入的节点索引列表
+  /// [addToGraph] - 是否将创建的节点添加到当前图，默认为 true
+  /// 
+  /// 返回导入结果，包含成功和失败的统计信息
   Future<ConversionResult> executeImport({
     required String filePath,
     required ConversionRule rule,
@@ -22,20 +36,37 @@ abstract class ImportExportService {
     bool addToGraph = true,
   });
 
-  /// 预览导出
+  /// 预览导出结果，生成 Markdown 内容但不写入文件
+  /// 
+  /// [nodeIds] - 要导出的节点 ID 列表
+  /// [rule] - 合并规则，定义如何将多个节点合并为单个 Markdown 文档
+  /// 
+  /// 返回生成的 Markdown 字符串
   Future<String> previewExport({
     required List<String> nodeIds,
     required MergeRule rule,
   });
 
-  /// 执行导出
+  /// 执行导出操作，生成 Markdown 并写入文件
+  /// 
+  /// [nodeIds] - 要导出的节点 ID 列表
+  /// [rule] - 合并规则，定义如何将多个节点合并为单个 Markdown 文档
+  /// [outputPath] - 输出文件路径
+  /// 
+  /// 返回保存的文件
   Future<File> executeExport({
     required List<String> nodeIds,
     required MergeRule rule,
     required String outputPath,
   });
 
-  /// 批量导入
+  /// 批量导入多个文件
+  /// 
+  /// [filePaths] - 要导入的文件路径列表
+  /// [config] - 转换配置
+  /// [onProgress] - 进度回调函数，参数为当前处理的节点数和总文件数
+  /// 
+  /// 返回导入结果，包含成功和失败的统计信息
   Future<ConversionResult> batchImport({
     required List<String> filePaths,
     required ConversionConfig config,
@@ -45,6 +76,11 @@ abstract class ImportExportService {
 
 /// 导入导出服务实现
 class ImportExportServiceImpl implements ImportExportService {
+  /// 导入导出服务实现构造函数
+  /// 
+  /// [_converterService] - 转换服务，用于文件和节点之间的转换
+  /// [_nodeService] - 节点服务，用于节点的创建和管理
+  /// [_graphService] - 图服务，用于管理节点在图中的关系
   ImportExportServiceImpl(
     this._converterService,
     this._nodeService,
@@ -60,12 +96,7 @@ class ImportExportServiceImpl implements ImportExportService {
   Future<List<Node>> previewImport({
     required String filePath,
     required ConversionRule rule,
-  }) async {
-    return _converterService.fileToNodes(
-      filePath: filePath,
-      rule: rule,
-    );
-  }
+  }) async => _converterService.fileToNodes(filePath: filePath, rule: rule);
 
   @override
   Future<ConversionResult> executeImport({
@@ -74,14 +105,11 @@ class ImportExportServiceImpl implements ImportExportService {
     required List<int> selectedIndices,
     bool addToGraph = true,
   }) async {
-    _stopwatch.reset();
-    _stopwatch.start();
+    _stopwatch..reset()
+    ..start();
 
     // 获取所有节点
-    final allNodes = await previewImport(
-      filePath: filePath,
-      rule: rule,
-    );
+    final allNodes = await previewImport(filePath: filePath, rule: rule);
 
     // 筛选选中的节点
     final selectedNodes = <Node>[];
@@ -140,7 +168,9 @@ class ImportExportServiceImpl implements ImportExportService {
             );
           } else {
             // 被引用的节点可能没有被选中导入，忽略此引用
-            debugPrint('Reference $oldRefId not found in imported nodes, skipping');
+            debugPrint(
+              'Reference $oldRefId not found in imported nodes, skipping',
+            );
           }
         }
 
@@ -151,7 +181,9 @@ class ImportExportServiceImpl implements ImportExportService {
             references: updatedReferences.isNotEmpty ? updatedReferences : {},
           );
         } catch (e) {
-          errors.add('Failed to update references for "${node.title}": ${e.toString()}');
+          errors.add(
+            'Failed to update references for "${node.title}": ${e.toString()}',
+          );
         }
       }
     }
@@ -164,9 +196,13 @@ class ImportExportServiceImpl implements ImportExportService {
           for (final nodeId in createdNodeIds) {
             await _graphService.addNodeToGraph(currentGraph.id, nodeId);
           }
-          debugPrint('Added ${createdNodeIds.length} nodes to graph ${currentGraph.id}');
+          debugPrint(
+            'Added ${createdNodeIds.length} nodes to graph ${currentGraph.id}',
+          );
         } else {
-          errors.add('No active graph found. Nodes were created but not added to any graph.');
+          errors.add(
+            'No active graph found. Nodes were created but not added to any graph.',
+          );
         }
       } catch (e) {
         errors.add('Failed to add nodes to graph: ${e.toString()}');
@@ -202,10 +238,7 @@ class ImportExportServiceImpl implements ImportExportService {
       throw const FormatException('No valid nodes found for export');
     }
 
-    return _converterService.nodesToMarkdown(
-      nodes: nodes,
-      rule: rule,
-    );
+    return _converterService.nodesToMarkdown(nodes: nodes, rule: rule);
   }
 
   @override
@@ -215,10 +248,7 @@ class ImportExportServiceImpl implements ImportExportService {
     required String outputPath,
   }) async {
     // 生成 markdown
-    final markdown = await previewExport(
-      nodeIds: nodeIds,
-      rule: rule,
-    );
+    final markdown = await previewExport(nodeIds: nodeIds, rule: rule);
 
     // 写入文件
     final file = File(outputPath);
@@ -233,11 +263,11 @@ class ImportExportServiceImpl implements ImportExportService {
     required ConversionConfig config,
     void Function(int current, int total)? onProgress,
   }) async {
-    _stopwatch.reset();
-    _stopwatch.start();
+    _stopwatch..reset()
+    ..start();
 
-    int successCount = 0;
-    int failureCount = 0;
+    var successCount = 0;
+    var failureCount = 0;
     final errors = <String>[];
     final createdNodeIds = <String>[];
 
@@ -308,7 +338,9 @@ class ImportExportServiceImpl implements ImportExportService {
                   references: updatedReferences,
                 );
               } catch (e) {
-                errors.add('Failed to update references for "${node.title}": ${e.toString()}');
+                errors.add(
+                  'Failed to update references for "${node.title}": ${e.toString()}',
+                );
               }
             }
           }
@@ -332,9 +364,13 @@ class ImportExportServiceImpl implements ImportExportService {
           for (final nodeId in createdNodeIds) {
             await _graphService.addNodeToGraph(currentGraph.id, nodeId);
           }
-          debugPrint('Added ${createdNodeIds.length} nodes to graph ${currentGraph.id}');
+          debugPrint(
+            'Added ${createdNodeIds.length} nodes to graph ${currentGraph.id}',
+          );
         } else {
-          errors.add('No active graph found. Nodes were created but not added to any graph.');
+          errors.add(
+            'No active graph found. Nodes were created but not added to any graph.',
+          );
         }
       } catch (e) {
         errors.add('Failed to add nodes to graph: ${e.toString()}');

@@ -1,16 +1,18 @@
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/repositories/node_repository.dart';
 import 'dart:ui';
+
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/repositories/node_repository.dart';
 
 /// 应用布局命令
 ///
 /// 对当前图应用指定的布局算法
 class ApplyLayoutCommand extends Command<Map<String, Offset>> {
-  ApplyLayoutCommand({
-    required this.layoutType,
-    this.graphId,
-  });
+  /// 构造函数
+  ///
+  /// [layoutType] - 布局类型
+  /// [graphId] - 图 ID，可选，默认使用当前图
+  ApplyLayoutCommand({required this.layoutType, this.graphId});
 
   /// 布局类型
   ///
@@ -31,7 +33,9 @@ class ApplyLayoutCommand extends Command<Map<String, Offset>> {
   String get description => '应用布局: $layoutType';
 
   @override
-  Future<CommandResult<Map<String, Offset>>> execute(CommandContext context) async {
+  Future<CommandResult<Map<String, Offset>>> execute(
+    CommandContext context,
+  ) async {
     // 由 ApplyLayoutHandler 处理
     throw UnimplementedError('命令执行由处理器处理');
   }
@@ -47,9 +51,10 @@ class ApplyLayoutCommand extends Command<Map<String, Offset>> {
 ///
 /// 用于布局算法批量更新节点位置
 class BatchMoveNodesCommand extends Command<void> {
-  BatchMoveNodesCommand({
-    required this.positions,
-  });
+  /// 构造函数
+  ///
+  /// [positions] - 节点位置映射，Key: 节点 ID, Value: 新位置
+  BatchMoveNodesCommand({required this.positions});
 
   /// 节点位置映射
   ///
@@ -82,9 +87,7 @@ class BatchMoveNodesCommand extends Command<void> {
     for (final entry in oldPositions.entries) {
       final node = await repository.load(entry.key);
       if (node != null) {
-        await repository.save(node.copyWith(
-          position: entry.value,
-        ));
+        await repository.save(node.copyWith(position: entry.value));
       }
     }
   }

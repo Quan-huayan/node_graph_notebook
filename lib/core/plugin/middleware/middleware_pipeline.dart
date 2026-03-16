@@ -1,6 +1,6 @@
-import '../../commands/command.dart';
-import '../../commands/command_context.dart';
-import '../../commands/command_handler.dart';
+import '../../commands/models/command.dart';
+import '../../commands/models/command_context.dart';
+import '../../commands/models/command_handler.dart';
 import 'middleware_plugin.dart';
 
 /// 中间件管道
@@ -9,8 +9,8 @@ class MiddlewarePipeline {
   MiddlewarePipeline({
     List<CommandMiddlewarePlugin>? commandMiddleware,
     List<QueryMiddlewarePlugin>? queryMiddleware,
-  })  : _commandMiddleware = commandMiddleware ?? [],
-        _queryMiddleware = queryMiddleware ?? [] {
+  }) : _commandMiddleware = commandMiddleware ?? [],
+       _queryMiddleware = queryMiddleware ?? [] {
     // 按优先级排序（数值越小优先级越高）
     _commandMiddleware.sort((a, b) => a.priority.compareTo(b.priority));
     _queryMiddleware.sort((a, b) => a.priority.compareTo(b.priority));
@@ -25,7 +25,7 @@ class MiddlewarePipeline {
     CommandContext context,
     CommandHandler handler,
   ) async {
-    int index = 0;
+    var index = 0;
 
     Future<CommandResult?> next(Command cmd, CommandContext ctx) async {
       if (index < _commandMiddleware.length) {
@@ -53,7 +53,7 @@ class MiddlewarePipeline {
     dynamic context,
     QueryHandler handler,
   ) async {
-    int index = 0;
+    var index = 0;
 
     Future<dynamic> next(dynamic q, dynamic ctx) async {
       if (index < _queryMiddleware.length) {
@@ -76,14 +76,14 @@ class MiddlewarePipeline {
 
   /// 添加命令中间件
   void addCommandMiddleware(CommandMiddlewarePlugin middleware) {
-    _commandMiddleware.add(middleware);
-    _commandMiddleware.sort((a, b) => a.priority.compareTo(b.priority));
+    _commandMiddleware..add(middleware)
+    ..sort((a, b) => a.priority.compareTo(b.priority));
   }
 
   /// 添加查询中间件
   void addQueryMiddleware(QueryMiddlewarePlugin middleware) {
-    _queryMiddleware.add(middleware);
-    _queryMiddleware.sort((a, b) => a.priority.compareTo(b.priority));
+    _queryMiddleware..add(middleware)
+    ..sort((a, b) => a.priority.compareTo(b.priority));
   }
 
   /// 移除命令中间件
@@ -110,7 +110,4 @@ class MiddlewarePipeline {
 }
 
 /// 查询处理器类型
-typedef QueryHandler = Future<dynamic> Function(
-  dynamic query,
-  dynamic context,
-);
+typedef QueryHandler = Future<dynamic> Function(dynamic query, dynamic context);

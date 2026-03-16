@@ -1,7 +1,8 @@
-import 'plugin_metadata.dart';
-import 'plugin_context.dart';
-import 'service_binding.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'plugin_context.dart';
+import 'plugin_metadata.dart';
+import 'service_binding.dart';
 
 /// 插件基础接口
 ///
@@ -133,7 +134,8 @@ abstract class Plugin {
   set state(PluginState newState);
 
   /// 检查插件是否已加载
-  bool get isLoaded => state == PluginState.loaded ||
+  bool get isLoaded =>
+      state == PluginState.loaded ||
       state == PluginState.enabled ||
       state == PluginState.disabled;
 

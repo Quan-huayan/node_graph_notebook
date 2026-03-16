@@ -16,90 +16,194 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Data import/export functionality
 - Theme customization (light/dark modes)
 
-## ⚠️ Active Refactoring
+## ⚠️ Architecture Implementation Status
 
-**The project is currently undergoing a major architectural refactoring. Please read the refactoring documentation before making significant changes.**
+**The project has completed a major architectural refactoring implementing Command Bus and Plugin patterns.**
 
-### Current Phase: Phase 1 - Command Bus Implementation
+### Current Status: ✅ Implementation Complete (95%+)
 
-The project is implementing a Command Bus pattern to improve separation of concerns and testability. This refactoring introduces:
+The refactoring has successfully introduced:
 
-- **Command Bus**: Centralized business logic execution
-- **CQRS Pattern**: Separate read (Repository) and write (Command) operations
-- **Middleware Pipeline**: Cross-cutting concerns (logging, validation, transactions)
-- **BLoC Restructuring**: BLoCs now only manage UI state, not business logic
+- **Command Bus**: Centralized business logic execution with middleware pipeline
+- **CQRS Pattern**: Complete separation of read (Repository) and write (Command) operations
+- **Plugin System**: Fully functional plugin architecture with UI hooks, service providers, and middleware plugins
+- **BLoC Restructuring**: BLoCs now only manage UI state, all business logic in Command Handlers
+- **Event-Driven Architecture**: EventBus for cross-component communication
 
-### Important Documentation
+### Implementation Summary
 
-**Before making changes, read:**
-- [Refactoring README](docs/refactor/README.md) - Overview of refactoring process
-- [Phase 1 Plan](docs/refactor/phase_1_command_bus/refactor_plan.md) - Detailed plan for current phase
-- [Phase 1 Status](docs/refactor/phase_1_command_bus/refactor_status.md) - Current implementation status
-- [Phase 1 Changes](docs/refactor/phase_1_command_bus/refactor_changes.md) - Detailed architecture changes
+**Completed Components:**
+- ✅ Core Command Bus infrastructure (`lib/core/commands/`)
+- ✅ Command Handler system with 15+ handlers
+- ✅ Middleware system (Logging, Validation, Transaction, Undo)
+- ✅ Plugin Manager with lifecycle management
+- ✅ UI Hook system with HookRegistry
+- ✅ NodeBloc refactored to use CommandBus
+- ✅ Service Registry for plugin-provided services
+- ✅ API Registry for inter-plugin communication
+
+**Remaining Work:**
+- ⏳ Test coverage for new Command Handlers
+- ⏳ Performance optimization for large datasets
+- ⏳ Documentation updates for plugin development
 
 ### Key Architecture Changes
 
 **New Architecture:**
 ```
-UI → BLoC → CommandBus → Handlers → Service/Repository
-     (UI State)   (Business Logic)
+UI Layer (Widgets)
+    ↓
+BLoC Layer (UI State Management)
+    ↓
+CommandBus (Business Logic Gateway)
+    ↓
+Command Handlers (Business Logic)
+    ↓
+Services/Repositories (Data Access)
 ```
 
-**Important:**
-- ✅ **Write operations** (create, update, delete) → Use `CommandBus.dispatch()`
-- ✅ **Read operations** (load, search) → Use `Repository` directly
+**Important Patterns:**
+- ✅ **Write operations** → Use `CommandBus.dispatch(command)`
+- ✅ **Read operations** → Use `Repository` directly
 - ✅ **BLoCs** → Only manage UI state (isLoading, error, selection)
-- ✅ **EventBus** → Subscribe to data changes from other BLoCs
+- ✅ **EventBus** → Subscribe to data changes from other components
+- ✅ **Plugins** → Extend functionality via hooks, services, and middleware
 
-### Implementation Status
-
-Phase 1 is approximately **85% complete**:
-- ✅ Core Command Bus infrastructure
-- ✅ Node commands and handlers (7 commands)
-- ✅ Middleware system (3 middleware)
-- ✅ NodeBloc refactored
-- ⏳ API alignment issues (some compilation errors)
-- ⏳ Tests not yet written
-
-**Current blockers:**
-- API alignment between handlers and existing services
-- Missing EventBus integration in CommandContext
-- Compilation errors need fixing before testing
-
-### How to Work with the New Architecture
+### Working with the Current Architecture
 
 #### Adding New Commands
 
-1. Create command class in `lib/core/commands/impl/`
-2. Create handler in `lib/core/commands/handlers/`
-3. Register handler in `lib/app.dart`
+1. Create command class in `lib/plugins/builtin_plugins/{plugin_name}/command/`
+2. Create handler in `lib/plugins/builtin_plugins/{plugin_name}/handler/`
+3. Register handler in plugin's `registerCommandHandlers()` method
 4. Use in BLoC via `commandBus.dispatch(command)`
+
+**Example:**
+```dart
+// Define command
+class MyCommand extends Command<Result> {
+  final String param;
+  MyCommand(this.param);
+
+  @override
+  Future<void> execute(CommandContext context) async {
+    // Command logic
+  }
+}
+
+// Define handler
+class MyCommandHandler extends CommandHandler<MyCommand> {
+  @override
+  Future<CommandResult<Result>> execute(
+    MyCommand command,
+    CommandContext context,
+  ) async {
+    // Business logic
+    return CommandResult.success(result);
+  }
+}
+
+// Register in plugin
+@override
+List<CommandHandlerBinding> registerCommandHandlers() {
+  return [
+    CommandHandlerBinding(MyCommand, () => MyCommandHandler()),
+  ];
+}
+
+// Use in BLoC
+final result = await _commandBus.dispatch(MyCommand('value'));
+```
 
 #### Adding New Middleware
 
-1. Create middleware class in `lib/core/commands/middleware/`
-2. Register in `lib/app.dart` with `commandBus.addMiddleware()`
+1. Create middleware class implementing `CommandMiddleware`
+2. Implement `processBefore()` and/or `processAfter()` methods
+3. Register in plugin's `registerMiddleware()` method or in `app.dart`
 
-#### Modifying BLoCs
+**Example:**
+```dart
+class MyMiddleware implements CommandMiddleware {
+  @override
+  Future<void> processBefore(
+    Command command,
+    CommandContext context,
+  ) async {
+    // Pre-processing logic
+  }
 
-- Write operations → Use `CommandBus`
-- Read operations → Use `Repository` directly
-- Subscribe to `EventBus` for data changes
-- Do NOT include business logic in BLoC
+  @override
+  Future<void> processAfter(
+    Command command,
+    CommandContext context,
+    CommandResult result,
+  ) async {
+    // Post-processing logic
+  }
+}
+```
+
+#### Creating Plugins
+
+**Plugin Types:**
+1. **Service Plugins** - Provide business logic services
+2. **UI Hook Plugins** - Extend UI at specific hook points
+3. **Middleware Plugins** - Intercept command processing
+
+**Example Plugin:**
+```dart
+class MyPlugin extends Plugin {
+  @override
+  PluginMetadata get metadata => const PluginMetadata(
+    id: 'com.example.myPlugin',
+    name: 'My Plugin',
+    version: '1.0.0',
+    dependencies: [],
+  );
+
+  @override
+  Future<void> onLoad(PluginContext context) async {
+    // Initialize plugin
+  }
+
+  @override
+  List<CommandHandlerBinding> registerCommandHandlers() {
+    return [
+      // Register command handlers
+    ];
+  }
+
+  @override
+  List<ServiceBinding> registerServices() {
+    return [
+      // Register services
+    ];
+  }
+}
+```
 
 ### Related Files
 
-**New Command Bus Files:**
-- `lib/core/commands/command.dart`
-- `lib/core/commands/command_bus.dart`
-- `lib/core/commands/command_context.dart`
-- `lib/core/commands/impl/node_commands.dart`
-- `lib/core/commands/handlers/*.dart`
-- `lib/core/commands/middleware/*.dart`
+**Command Bus Core:**
+- `lib/core/commands/command.dart` - Command base classes
+- `lib/core/commands/command_bus.dart` - Command bus implementation
+- `lib/core/commands/command_context.dart` - Execution context
+- `lib/core/commands/command_handler.dart` - Handler interface
 
-**Modified Files:**
-- `lib/app.dart` - Added CommandBus provider
-- `lib/bloc/node/node_bloc.dart` - Refactored to use CommandBus
+**Plugin System:**
+- `lib/core/plugin/plugin.dart` - Plugin base interface
+- `lib/core/plugin/plugin_manager.dart` - Plugin lifecycle management
+- `lib/core/plugin/ui_hooks/` - UI hook system
+- `lib/plugins/builtin_plugins/` - Built-in plugin implementations
+
+**Middleware:**
+- `lib/plugins/builtin_middlewares/logging_middleware.dart`
+- `lib/plugins/builtin_middlewares/validation_middleware.dart`
+- `lib/plugins/builtin_middlewares/transaction_middleware.dart`
+- `lib/plugins/builtin_middlewares/undo_middleware.dart`
+
+**BLoC Examples:**
+- `lib/plugins/builtin_plugins/graph/bloc/node_bloc.dart` - Refactored NodeBloc
 
 ## Development Commands
 
@@ -170,53 +274,89 @@ UI Layer (widgets)
 
 **2. Provider/BLoC Organization** (see `lib/app.dart`)
 
-The application initializes dependencies in layers using Provider:
+The application initializes dependencies in strict layers using Provider:
 
 ```dart
-// 0. Settings & Theme Services
-ChangeNotifierProvider<SettingsService>,
-ChangeNotifierProvider<ThemeService>,
-Provider<SharedPreferencesAsync>,
+// === Core System Providers ===
+// 0. Settings & Theme Services (must be first - plugins may depend on these)
+ChangeNotifierProvider<SettingsService>.value(...),
+ChangeNotifierProvider<ThemeService>.value(...),
+Provider<SharedPreferencesAsync>...,
 
-// 1. Repository Layer
-Provider<NodeRepository>,
-Provider<GraphRepository>,
+// 1. Repository Layer (data access - foundation for all services)
+Provider<NodeRepository>.value(...),
+Provider<GraphRepository>.value(...),
 
-// 2. Service Layer
-Provider<NodeService>,
-Provider<GraphService>,
-Provider<SearchPresetService>,
-Provider<ConverterService>,
-Provider<ImportExportService>,
-ChangeNotifierProvider<AIServiceImpl>,
-Provider<LayoutService>,
+// 2. Event Bus (for cross-component communication)
+Provider<AppEventBus>.value(...),
 
-// 3. Event Bus & Command Bus
-Provider<AppEventBus>,
-Provider<CommandBus>,
+// 3. Command Bus (business logic gateway)
+Provider<CommandBus>.value(...),
 
-// 4. Command Handler Registration (via ProxyProvider)
-// - Registers Node, Graph, Layout, and AI command handlers
+// === Plugin System Providers ===
+// 4. Plugin-provided Services (auto-generated from plugins)
+...pluginManager.serviceRegistry.generateProviders(),
 
-// 5. BLoC Layer
-BlocProvider<NodeBloc>,
-BlocProvider<GraphBloc>,
-BlocProvider<UIBloc>,
-BlocProvider<SearchBloc>,
-BlocProvider<ConverterBloc>,
+// 5. Plugin-provided BLoCs (auto-generated from plugins)
+...pluginManager.generateBlocProviders(),
 
-// 6. Plugin System (loaded synchronously before UI)
-Provider<HookRegistry>,
-Provider<PluginManager>,
+// === Core UI BLoCs ===
+// 6. UI BLoC (core UI state management)
+BlocProvider<UIBloc>...,
+
+// === Plugin System ===
+// 7. Hook Registry (global singleton for UI extensions)
+Provider<HookRegistry>...,
+
+// 8. Plugin Manager (plugin lifecycle management)
+Provider<PluginManager>.value(...),
 ```
 
-**Plugin Loading:**
-- Built-in plugins are loaded via `FutureBuilder` before app UI displays
-- `BuiltinPluginLoader` registers plugin factories to `PluginDiscoverer`
-- `DependencyResolver` determines load order based on dependencies
-- Plugins are loaded through `PluginManager` in dependency order
-- UI Hook plugins are registered to `HookRegistry` after loading
-- App shows "Loading plugins..." screen during plugin initialization
+**Critical Dependency Order:**
+1. **Settings/Theme** first - plugins may need these during initialization
+2. **Repositories** second - all services depend on data access
+3. **EventBus** third - command handlers and services need event publishing
+4. **CommandBus** fourth - handlers need all services registered first
+5. **Plugin Services** fifth - plugins provide services after core system is ready
+6. **Plugin BLoCs** sixth - plugin BLoCs depend on plugin services
+7. **UI BLoC** seventh - core UI state management
+8. **Plugin System** last - HookRegistry and PluginManager orchestrate everything
+
+**Plugin Loading Process:**
+1. **Initialization Phase** (`app.dart:147-152`)
+   - Create PluginManager with core dependencies
+   - Pass CommandBus, EventBus, Repositories to plugins
+
+2. **Loading Phase** (`app.dart:155-177`)
+   - FutureBuilder waits for `_loadPlugins()` to complete
+   - Shows "Loading plugins..." screen during initialization
+   - BuiltinPluginLoader loads all built-in plugins
+
+3. **Discovery & Registration** (`builtin_plugin_loader.dart`)
+   - PluginDiscoverer instantiates plugins via factory functions
+   - DependencyResolver determines load order (topological sort)
+   - Plugins loaded according to dependency relationships
+
+4. **Plugin Lifecycle** (`plugin_manager.dart:102-183`)
+   - `loadPlugin()` → Call `plugin.onLoad(context)`
+   - Register plugin services to ServiceRegistry
+   - Register plugin APIs to APIRegistry
+   - Validate plugin dependencies
+
+5. **Provider Generation** (`app.dart:207-210`)
+   - `serviceRegistry.generateProviders()` - Create providers for plugin services
+   - `pluginManager.generateBlocProviders()` - Create providers for plugin BLoCs
+
+6. **UI Extension** (after MultiProvider)
+   - UI Hook plugins render widgets at hook points via HookRegistry
+   - Hook points: toolbar, sidebar, context menus, dialogs, etc.
+
+**Key Points:**
+- Plugins are loaded **before** UI renders, ensuring all services available
+- Plugin services are injected into Provider tree automatically
+- Plugin BLoCs are registered alongside core BLoCs
+- UI Hooks extend UI at specific points via HookRegistry
+- Dependency order is enforced via topological sorting
 
 **3. Provider/BLoC Usage Rules**
 
@@ -234,85 +374,186 @@ Provider<PluginManager>,
 
 ### BLoC Architecture
 
-The application uses **BLoC (Business Logic Component)** pattern for state management, organized by domain:
+The application uses **BLoC (Business Logic Component)** pattern for state management. After refactoring, BLoCs are organized differently:
 
-**BLoC Structure** (`lib/bloc/`):
+**BLoC Location Changes:**
+- **Core UI BLoCs** (`lib/ui/bloc/`):
+  - `UIBloc` - Manages UI state (sidebar, panels, dialogs)
 
-- `NodeBloc` - Manages node state (CRUD operations, loading)
-- `GraphBloc` - Manages graph state and node relationships
-- `UIBloc` - Manages UI state (sidebar, panels, dialogs)
-- `SearchBloc` - Manages search functionality and presets
-- `ConverterBloc` - Manages import/export operations
+- **Plugin-Provided BLoCs** (`lib/plugins/builtin_plugins/{plugin}/bloc/`):
+  - `NodeBloc` (Graph plugin) - Manages node state
+  - `GraphBloc` (Graph plugin) - Manages graph state
+  - Other domain-specific BLoCs provided by plugins
+
+**BLoC Responsibilities (After Refactoring):**
+
+```dart
+// ✅ CORRECT: BLoC manages UI state only
+class NodeBloc extends Bloc<NodeEvent, NodeState> {
+  Future<void> _onCreateNode(NodeCreateEvent event, Emitter emit) async {
+    emit(state.copyWith(isLoading: true));
+
+    // Write operations go through CommandBus
+    final result = await _commandBus.dispatch(CreateNodeCommand(...));
+
+    if (result.isSuccess) {
+      // Update UI state based on result
+      emit(state.copyWith(
+        nodes: [...state.nodes, result.data],
+        isLoading: false,
+      ));
+    } else {
+      emit(state.copyWith(isLoading: false, error: result.error));
+    }
+  }
+
+  Future<void> _onLoadNodes(NodeLoadEvent event, Emitter emit) async {
+    // Read operations go directly to Repository
+    final nodes = await _nodeRepository.queryAll();
+    emit(state.copyWith(nodes: nodes));
+  }
+}
+
+// ❌ WRONG: Business logic in BLoC
+class NodeBloc extends Bloc<NodeEvent, NodeState> {
+  Future<void> _onCreateNode(NodeCreateEvent event, Emitter emit) async {
+    // Don't do this! Business logic belongs in Command Handlers
+    final node = Node(id: uuid.v4(), title: event.title);
+    await _nodeRepository.save(node);
+    await _graphService.addNodeToGraph(node.id);
+    emit(state.copyWith(nodes: [...state.nodes, node]));
+  }
+}
+```
 
 **Event Bus Pattern** (`lib/core/events/app_events.dart`):
 
-The `AppEventBus` enables **cross-BLoC communication** without direct dependencies:
+The `AppEventBus` enables **cross-component communication**:
 
 ```dart
-// Singleton event bus for pub-sub communication
-final eventBus = AppEventBus();
-
-// NodeBloc publishes node changes
+// Command Handlers publish events after operations
 eventBus.publish(NodeDataChangedEvent(
-  changedNodes: nodes,
+  changedNodes: [updatedNode],
   action: DataChangeAction.update,
 ));
 
-// GraphBloc subscribes to node changes
+// BLoCs subscribe to EventBus for updates
 eventBus.stream.listen((event) {
   if (event is NodeDataChangedEvent) {
-    // Update graph visualization
+    // React to data changes from other components
+    add(NodeDataChangedInternalEvent(...));
   }
 });
 ```
 
 **Key Benefits:**
-- **Decoupling**: NodeBloc and GraphBloc communicate without direct dependencies
-- **Scalability**: Easy to add new BLoCs that subscribe to events
-- **Testability**: Each BLoC can be tested independently
+- **Decoupling**: Components communicate without direct dependencies
+- **Reactivity**: BLoCs automatically update when data changes
+- **Scalability**: Easy to add new components that subscribe to events
+- **Testability**: Each component can be tested independently
 
 **Event Types:**
-- `NodeDataChangedEvent` - Published when nodes are created/updated/deleted
-- `GraphNodeRelationChangedEvent` - Published when node-graph relationships change
+- `NodeDataChangedEvent` - Nodes created/updated/deleted
+- `GraphNodeRelationChangedEvent` - Node-graph relationships changed
+- Custom events can be defined by plugins
 
-**4. Command Pattern (Undo/Redo)**
+**4. Command Bus Pattern**
 
-The UndoManager uses the Command pattern for undoable operations:
+The Command Bus is the central business logic execution engine:
 
+**Command Definition:**
 ```dart
-// Define a command
-class AddNodeCommand extends Command {
-  final Node node;
-  AddNodeCommand(this.node);
+class CreateNodeCommand extends Command<Node> {
+  final String title;
+  final String content;
+
+  CreateNodeCommand({required this.title, required this.content});
 
   @override
-  Future<void> execute() async {
-    // Add node logic
+  Future<void> execute(CommandContext context) async {
+    // Command validation/setup logic (if needed)
+    // Actual business logic is in Handler
   }
 
   @override
-  Future<void> undo() async {
-    // Remove node logic
+  Future<void> undo(CommandContext context) async {
+    // Undo logic (optional - for undoable commands)
   }
 }
+```
 
-// Execute with undo support
-await context.read<UndoManager>().execute(AddNodeCommand(newNode));
+**Command Handler:**
+```dart
+class CreateNodeHandler extends CommandHandler<CreateNodeCommand> {
+  final NodeRepository _repository;
+  final AppEventBus _eventBus;
 
-// Undo last operation
-await context.read<UndoManager>().undo();
+  CreateNodeHandler(this._repository, this._eventBus);
+
+  @override
+  Future<CommandResult<Node>> execute(
+    CreateNodeCommand command,
+    CommandContext context,
+  ) async {
+    // Business logic implementation
+    final node = Node(
+      id: uuid.v4(),
+      title: command.title,
+      content: command.content,
+    );
+
+    await _repository.save(node);
+
+    // Publish event for other components
+    _eventBus.publish(NodeDataChangedEvent(
+      changedNodes: [node],
+      action: DataChangeAction.create,
+    ));
+
+    return CommandResult.success(node);
+  }
+}
+```
+
+**Command Execution Flow:**
+```
+UI → BLoC → CommandBus.dispatch()
+              ↓
+         [Middleware Pipeline]
+              ↓
+         CommandHandler.execute()
+              ↓
+         Service/Repository
+              ↓
+         [Publish Events]
+              ↓
+         CommandResult<T>
+```
+
+**Middleware Pipeline:**
+```dart
+// Middleware can intercept before/after command execution
+class LoggingMiddleware implements CommandMiddleware {
+  @override
+  Future<void> processBefore(Command cmd, CommandContext ctx) async {
+    debugPrint('Executing: ${cmd.name}');
+  }
+
+  @override
+  Future<void> processAfter(
+    Command cmd,
+    CommandContext ctx,
+    CommandResult result,
+  ) async {
+    debugPrint('Result: ${result.isSuccess ? "Success" : "Failed"}');
+  }
+}
 ```
 
 **Command Locations:**
-- `lib/core/services/commands/command.dart` - Base Command interface
-- `lib/core/services/commands/node_commands.dart` - Node-related commands
-- `lib/core/services/commands/graph_command.dart` - Graph-related commands
-
-**Usage Guidelines:**
-- Implement `execute()` and `undo()` methods for all commands
-- Commands should be idempotent (can be executed multiple times safely)
-- UndoManager maintains a stack of up to 50 commands
-- Commands are automatically added to the undo stack when executed
+- Commands: `lib/plugins/builtin_plugins/{plugin}/command/`
+- Handlers: `lib/plugins/builtin_plugins/{plugin}/handler/`
+- Middleware: `lib/plugins/builtin_middlewares/`
 
 ### Core Components
 
@@ -320,52 +561,73 @@ await context.read<UndoManager>().undo();
 
 - `models/` - Core data models (Node, Graph, NodeReference, Connection, etc.)
   - `Connection` - Defines relationships between nodes (computed from NodeReference)
-- `repositories/` - File-based data persistence (FileSystemNodeRepository, FileSystemGraphRepository)
+- `repositories/` - File-based data persistence
+  - `FileSystemNodeRepository` - Node storage as Markdown files
+  - `FileSystemGraphRepository` - Graph storage as JSON files
   - `MetadataIndex` - Efficient node metadata indexing for fast lookups
-- `services/` - Business logic services:
-  - `NodeService` - Node CRUD operations
-  - `GraphService` - Graph management operations
-  - `SearchPresetService` - Saved search configurations
-  - `ConverterService` - Format conversion (internal ↔ external formats)
-  - `ImportExportService` - Data import/export functionality
-  - `UndoManager` - Command pattern for undo/redo operations
-  - `LayoutService` - Graph layout algorithms
-  - `DataRecoveryService` - Automatic data repair on corruption
-  - `AIIntegrationService` - AI service integration layer
-  - `SettingsService` - App configuration management
-  - `ThemeService` - Theme customization
-- `events/` - Event bus system for cross-BLoC communication
+- `commands/` - Command Bus system
+  - `command.dart` - Command base classes and interfaces
+  - `command_bus.dart` - Central command dispatcher with middleware pipeline
+  - `command_context.dart` - Execution context for commands
+  - `command_handler.dart` - Handler interface for commands
+- `events/` - Event bus system for cross-component communication
   - `AppEventBus` - Singleton broadcast stream for decoupled communication
+- `plugin/` - Plugin system core
+  - `plugin.dart` - Base Plugin interface and lifecycle
+  - `plugin_manager.dart` - Plugin lifecycle management
+  - `plugin_discoverer.dart` - Plugin discovery and instantiation
+  - `builtin_plugin_loader.dart` - Built-in plugin loader
+  - `ui_hooks/` - UI Hook system
+  - `api/` - API registry for inter-plugin communication
+  - `middleware/` - Middleware plugin support
 
-**Converter Layer** (`lib/converter/`)
+**Plugin-Based Services** (`lib/plugins/builtin_plugins/`)
 
-- `ConverterService` - Converts between internal node format and external formats
-- Supports markdown with YAML frontmatter for round-trip editing
+**Graph Plugin** (`graph/`):
+- `bloc/node_bloc.dart` - Node state management
+- `bloc/graph_bloc.dart` - Graph state management
+- `command/node_commands.dart` - Node-related commands
+- `handler/*` - Command handlers (15+ handlers for node/graph operations)
+- `service/` - Graph-specific services
 
-**BLoC Layer** (`lib/bloc/`)
+**Layout Plugin** (`layout/`):
+- `handler/apply_layout_handler.dart` - Layout algorithm commands
+- Service providers for graph layout
 
-- Domain-specific BLoCs for state management
-- Each BLoC has corresponding Event and State classes
-- Uses flutter_bloc library for BLoC implementation
+**AI Plugin** (`ai/`):
+- `handler/analyze_node_handler.dart` - AI analysis commands
+- Service providers for AI integration
+- UI Hooks for AI features
+
+**Converter Plugin** (`converter/`):
+- Import/export functionality
+- Format conversion services
+
+**Middlewares** (`builtin_middlewares/`):
+- `logging_middleware.dart` - Command execution logging
+- `validation_middleware.dart` - Command validation
+- `transaction_middleware.dart` - Transaction management
+- `undo_middleware.dart` - Undo/redo stack management
 
 **UI Layer** (`lib/ui/`)
 
+- `bloc/ui_bloc.dart` - Core UI state management
 - `models/` - State management models (NodeModel, GraphModel, UIModel)
 - `pages/` - Full-screen pages
 - `widgets/` - Reusable components
 - `dialogs/` - Dialogs and modals
 - `views/` - View widgets (graph view, folder tree, etc.)
+- Hook points for plugin extension
 
 **Visualization** (`lib/flame/`)
 
 - Flame engine components for interactive node graphs
 - Custom rendering and interaction handling
 
-**AI Integration** (`lib/ai/`)
+**Converter Layer** (`lib/converter/`)
 
-- `AIServiceImpl` - Main AI service implementation
-- Supports OpenAI and Anthropic providers
-- Requires API keys configuration
+- Format conversion between internal and external formats
+- Markdown with YAML frontmatter support for round-trip editing
 
 **Plugin System** (`lib/core/plugin/` & `lib/plugins/`)
 
@@ -635,17 +897,52 @@ flutter test --coverage
 
 ## Important Notes
 
-1. **Always regenerate code** after modifying models with `@JsonSerializable` annotation
-2. **Provider/BLoC dependency order matters** - repositories → services → event bus → command bus → BLoCs → plugins
-3. **Don't use `print()`** - use `debugPrint()` or a logging service
-4. **File I/O should be async** - avoid blocking the UI thread with sync operations
-5. **Flame performance** - cache Paint/Text objects, don't allocate in `render()` method
-6. **Error recovery** - app has built-in data recovery on initialization failures
-7. **BLoC event handling** - always add initial events when creating BLoCs (e.g., `..add(const NodeLoadEvent())`)
-8. **Event bus usage** - use AppEventBus for cross-BLoC communication, avoid direct BLoC-to-BLoC dependencies
-9. **Command pattern** - use CommandBus for write operations (define commands in `lib/plugins/builtin_plugins/*/command/`)
-10. **SharedPreferences async** - use `SharedPreferencesAsync` for non-blocking preference access
-11. **Plugin loading** - plugins are loaded synchronously at app startup in dependency order
-12. **Plugin dependencies** - always declare plugin dependencies in metadata to ensure correct load order
-13. **Plugin lifecycle** - use `onLoad()` for initialization, `onEnable()` for activation
-14. **UI Hooks** - register UI Hook plugins to HookRegistry to extend UI at specific points
+### Architecture Patterns
+
+1. **CQRS Pattern**: Separate read (Repository) and write (CommandBus) operations
+2. **Event-Driven**: Use EventBus for cross-component communication
+3. **Plugin Architecture**: Extend functionality via plugins, not direct modifications
+4. **Dependency Injection**: Follow strict Provider ordering
+
+### Development Guidelines
+
+5. **Always regenerate code** after modifying models with `@JsonSerializable` annotation
+6. **Provider dependency order is critical**:
+   - Settings/Theme → Repositories → EventBus → CommandBus → Plugin Services → Plugin BLoCs → Core BLoCs → Plugin System
+7. **Don't use `print()`** - use `debugPrint()` or LoggingMiddleware
+8. **File I/O should be async** - avoid blocking the UI thread with sync operations
+9. **Flame performance** - cache Paint/Text objects, don't allocate in `render()` method
+10. **Error recovery** - app has built-in data recovery on initialization failures
+
+### Command Bus Usage
+
+11. **Write operations** → Always use `CommandBus.dispatch(command)`
+12. **Read operations** → Use `Repository` directly (don't go through CommandBus)
+13. **Business logic** → Implement in Command Handlers, not in BLoCs or Services
+14. **Event publishing** → Publish events in Command Handlers after data changes
+15. **Undo support** → Implement `undo()` method in Command if operation should be undoable
+
+### BLoC Best Practices
+
+16. **BLoC responsibilities** → Only manage UI state (isLoading, error, selection)
+17. **No business logic in BLoCs** → Delegate to CommandBus
+18. **Subscribe to EventBus** → React to data changes from other components
+19. **Initial events** → Always add initial events when creating BLoCs
+20. **State updates** → Update state based on CommandResult, not directly
+
+### Plugin Development
+
+21. **Plugin location** → Create plugins in `lib/plugins/builtin_plugins/{plugin_name}/`
+22. **Plugin dependencies** → Always declare in metadata to ensure correct load order
+23. **Plugin lifecycle** → Use `onLoad()` for initialization, `onEnable()` for activation
+24. **Service registration** → Use `registerServices()` to provide plugin services
+25. **Command handlers** → Register via `registerCommandHandlers()` method
+26. **UI Hooks** → Extend UI at specific hook points via HookRegistry
+27. **API exports** → Export APIs via `exportAPIs()` for inter-plugin communication
+
+### Testing Considerations
+
+28. **Test isolation** → Mock CommandBus, Repository, and EventBus
+29. **Test Command Handlers** → Test business logic in isolation
+30. **Test BLoCs** → Test state management, not business logic
+31. **Integration tests** → Test full command flow from UI to Repository

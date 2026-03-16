@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 
 /// 快捷键管理器
 class ShortcutManager {
+  /// 创建快捷键管理器
   ShortcutManager();
 
+  /// 快捷键映射
   final Map<ShortcutActivator, VoidCallback> _shortcuts = {};
 
   /// 注册快捷键
@@ -32,36 +34,39 @@ class ShortcutManager {
 
 /// 快捷键配置
 class AppShortcuts {
-  static final createNode = const SingleActivator(
-    LogicalKeyboardKey.keyN,
-  );
+  /// 创建节点快捷键 (N)
+  static const createNode = SingleActivator(LogicalKeyboardKey.keyN);
 
-  static final save = const SingleActivator(
+  /// 保存快捷键 (Ctrl+S)
+  static const save = SingleActivator(
     LogicalKeyboardKey.keyS,
     control: true,
   );
 
-  static final undo = const SingleActivator(
+  /// 撤销快捷键 (Ctrl+Z)
+  static const undo = SingleActivator(
     LogicalKeyboardKey.keyZ,
     control: true,
   );
 
-  static final redo = const SingleActivator(
+  /// 重做快捷键 (Ctrl+Shift+Z)
+  static const redo = SingleActivator(
     LogicalKeyboardKey.keyZ,
     control: true,
     shift: true,
   );
 
-  static final delete = const SingleActivator(
-    LogicalKeyboardKey.delete,
-  );
+  /// 删除快捷键 (Delete)
+  static const delete = SingleActivator(LogicalKeyboardKey.delete);
 
-  static final search = const SingleActivator(
+  /// 搜索快捷键 (Ctrl+F)
+  static const search = SingleActivator(
     LogicalKeyboardKey.keyF,
     control: true,
   );
 
-  static final export = const SingleActivator(
+  /// 导出快捷键 (Ctrl+E)
+  static const export = SingleActivator(
     LogicalKeyboardKey.keyE,
     control: true,
   );

@@ -55,6 +55,7 @@ dependencies:
   collection: ^1.18.0
   isolate: ^2.1.1
   crypto: ^3.0.3
+  worker_pool: ^0.0.5
 
   # Development Tools
   flutter_lints: ^3.0.0

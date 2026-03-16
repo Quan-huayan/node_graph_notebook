@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/services/theme_service.dart';
+import '../../graph/bloc/node_bloc.dart';
+import '../../graph/bloc/node_event.dart';
 
-/// 文件夹选择器
+/// 显示文件夹选择器对话框
+///
+/// 用于选择将节点移动到哪个文件夹
+///
+/// [context] 构建上下文
+/// [node] 要移动的节点
+/// [folders] 可选的文件夹列表
 void showFolderSelector(BuildContext context, Node node, List<Node> folders) {
   final theme = context.read<ThemeService>().themeData;
 
@@ -49,11 +56,15 @@ void showFolderSelector(BuildContext context, Node node, List<Node> folders) {
 }
 
 /// 从文件夹中移除节点
-Future<void> _removeFromFolder(Node node, Node folder, BuildContext context) async {
+Future<void> _removeFromFolder(
+  Node node,
+  Node folder,
+  BuildContext context,
+) async {
   final nodeBloc = context.read<NodeBloc>();
 
-  final newReferences = Map<String, NodeReference>.from(folder.references);
-  newReferences.remove(node.id);
+  final newReferences = Map<String, NodeReference>.from(folder.references)
+  ..remove(node.id);
 
   final updatedFolder = folder.copyWith(references: newReferences);
   nodeBloc.add(NodeReplaceEvent(updatedFolder));
@@ -68,7 +79,9 @@ Future<void> _addToFolder(Node node, Node folder, BuildContext context) async {
   if (_hasCircularContains(node, folder, allNodes)) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot create circular folder structure')),
+        const SnackBar(
+          content: Text('Cannot create circular folder structure'),
+        ),
       );
     }
     return;
@@ -110,8 +123,13 @@ bool _isChildFolder(Node folder, Node parentFolder, List<Node> allNodes) {
 
   // 递归检查 parentFolder 的所有直接子文件夹
   for (final entry in parentFolder.references.entries) {
-    final childNode = allNodes.firstWhere((n) => n.id == entry.key, orElse: () => parentFolder);
-    if (childNode.id.isNotEmpty && childNode.isFolder && _isChildFolder(folder, childNode, allNodes)) {
+    final childNode = allNodes.firstWhere(
+      (n) => n.id == entry.key,
+      orElse: () => parentFolder,
+    );
+    if (childNode.id.isNotEmpty &&
+        childNode.isFolder &&
+        _isChildFolder(folder, childNode, allNodes)) {
       return true;
     }
   }

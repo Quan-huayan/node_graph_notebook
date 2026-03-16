@@ -1,19 +1,22 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
-import '../service/converter_service_impl.dart';
+
 import '../../../../core/models/models.dart';
 import '../../../../core/repositories/repositories.dart';
+import '../../graph/bloc/graph_bloc.dart';
+import '../../graph/bloc/graph_event.dart';
+import '../../graph/bloc/node_bloc.dart';
+import '../../graph/bloc/node_event.dart';
 import '../models/models.dart';
+import '../service/converter_service_impl.dart';
 import 'convert_config_panel.dart';
 import 'convert_preview_panel.dart';
 
 /// 转换配置页面
 class ConverterPage extends StatefulWidget {
+  /// 转换配置页面构造函数
   const ConverterPage({super.key});
 
   @override
@@ -57,11 +60,8 @@ class _ConverterPageState extends State<ConverterPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Markdown Converter'),
-      ),
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('Markdown Converter')),
       body: Row(
         children: [
           // 配置面板
@@ -99,7 +99,6 @@ class _ConverterPageState extends State<ConverterPage> {
         ],
       ),
     );
-  }
 
   Future<void> _previewConversion() async {
     if (_selectedPath == null) return;
@@ -121,7 +120,11 @@ class _ConverterPageState extends State<ConverterPage> {
           if (isDir) {
             // 批量预览 - 只处理前几个文件
             final dir = Directory(_selectedPath!);
-            final files = await dir.list().where((f) => f.path.endsWith('.md')).take(5).toList();
+            final files = await dir
+                .list()
+                .where((f) => f.path.endsWith('.md'))
+                .take(5)
+                .toList();
 
             nodes = <Node>[];
             for (final file in files) {
@@ -155,9 +158,9 @@ class _ConverterPageState extends State<ConverterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Preview failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Preview failed: $e')));
       }
     } finally {
       if (mounted) {
@@ -239,9 +242,9 @@ class _ConverterPageState extends State<ConverterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Conversion failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Conversion failed: $e')));
       }
     } finally {
       setState(() {

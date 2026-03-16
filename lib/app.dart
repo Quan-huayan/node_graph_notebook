@@ -1,30 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:node_graph_notebook/core/services/theme/app_theme.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'core/commands/command_bus.dart';
+import 'core/events/app_events.dart';
+import 'core/execution/execution_engine.dart';
+import 'core/execution/task_registry.dart';
+import 'core/plugin/builtin_plugin_loader.dart';
+import 'core/plugin/plugin_manager.dart';
+import 'core/plugin/ui_hooks/hook_registry.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
-import 'core/events/app_events.dart';
-import 'core/commands/command_bus.dart';
 import 'plugins/builtin_middlewares/logging_middleware.dart';
-import 'plugins/builtin_middlewares/validation_middleware.dart';
 import 'plugins/builtin_middlewares/transaction_middleware.dart';
 import 'plugins/builtin_middlewares/undo_middleware.dart';
-import 'core/plugin/plugin_manager.dart';
-import 'core/plugin/builtin_plugin_loader.dart';
-import 'core/plugin/ui_hooks/hook_registry.dart';
+import 'plugins/builtin_middlewares/validation_middleware.dart';
+import 'ui/bloc/ui_bloc.dart';
 import 'ui/pages/home_page.dart';
 
+/// 应用程序的主类
+///
+/// 负责初始化应用程序的核心组件，包括仓库、服务、命令总线和插件系统
 class NodeGraphNotebookApp extends StatefulWidget {
+  /// 创建一个新的应用程序实例
+  ///
+  /// [settingsService] - 设置服务
+  /// [themeService] - 主题服务
   const NodeGraphNotebookApp({
     super.key,
     required this.settingsService,
     required this.themeService,
   });
 
+  /// 设置服务
   final SettingsService settingsService;
+
+  /// 主题服务
   final ThemeService themeService;
 
   @override
@@ -36,20 +48,33 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   late GraphRepository _graphRepository;
   late CommandBus _commandBus;
   late AppEventBus _eventBus;
+  late TaskRegistry _taskRegistry;
+  late SettingsRegistry _settingsRegistry;
+  late ThemeRegistry _themeRegistry;
+  late ExecutionEngine _executionEngine;
+  late StoragePathService _storagePathService;
   bool _isInitialized = false;
   Object? _initError;
 
   @override
   void initState() {
     super.initState();
-    _initializeRepositories();
+    _initializeCore();
   }
 
-  Future<void> _initializeRepositories() async {
+  Future<void> _initializeCore() async {
     try {
-      final nodesPath = await widget.settingsService.getNodesPath();
-      final graphsPath = await widget.settingsService.getGraphsPath();
+      // 1. 初始化 SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
 
+      // 2. 创建存储路径服务
+      _storagePathService = StoragePathService(prefs);
+
+      // 3. 获取存储路径
+      final nodesPath = await _storagePathService.getNodesPath();
+      final graphsPath = await _storagePathService.getGraphsPath();
+
+      // 4. 初始化 Repositories
       _nodeRepository = FileSystemNodeRepository(nodesDir: nodesPath);
       _graphRepository = FileSystemGraphRepository(graphsDir: graphsPath);
 
@@ -61,9 +86,23 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         await (_graphRepository as FileSystemGraphRepository).init();
       }
 
-      // 初始化 CommandBus 和 EventBus
+      // 5. 初始化 CommandBus 和 EventBus
       _commandBus = _createCommandBus();
       _eventBus = AppEventBus();
+
+      // 6. 创建三个注册表
+      _taskRegistry = TaskRegistry();
+      _settingsRegistry = SettingsRegistry(prefs);
+      _themeRegistry = ThemeRegistry();
+
+      // 7. 初始化 ExecutionEngine（使用 TaskRegistry）
+      _executionEngine = ExecutionEngine();
+      await _executionEngine.initialize(
+        taskRegistry: _taskRegistry,
+      );
+
+      // 8. 注册核心设置到 SettingsRegistry
+      _registerCoreSettings();
 
       setState(() {
         _isInitialized = true;
@@ -77,17 +116,41 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     }
   }
 
+  /// 注册核心设置（不依赖插件的基础设置）
+  void _registerCoreSettings() {
+    // 主题模式设置
+    _settingsRegistry..register(SettingDefinition<String>(
+      key: 'core.themeMode',
+      defaultValue: 'system',
+      displayName: 'Theme Mode',
+      description: 'Application theme mode (light, dark, system)',
+      category: 'Core',
+      validator: (value) => ['light', 'dark', 'system'].contains(value) ? value : 'system',
+    ))
+
+    // 默认视图模式
+    ..register(const SettingDefinition<String?>(
+      key: 'core.defaultViewMode',
+      defaultValue: null,
+      displayName: 'Default View Mode',
+      description: 'Default node view mode',
+      category: 'Core',
+    ));
+  }
+
   /// 创建 CommandBus 并注册所有命令处理器
   CommandBus _createCommandBus() {
     // 创建中间件
     final undoMiddleware = UndoMiddleware(maxStackSize: 50);
 
     final commandBus = CommandBus()
-      ..addMiddleware(LoggingMiddleware(
-        logLevel: LogLevel.info,
-        includeTimestamp: true,
-        includeDuration: true,
-      ))
+      ..addMiddleware(
+        LoggingMiddleware(
+          logLevel: LogLevel.info,
+          includeTimestamp: true,
+          includeDuration: true,
+        ),
+      )
       ..addMiddleware(TransactionMiddleware())
       ..addMiddleware(ValidationMiddleware())
       ..addMiddleware(undoMiddleware);
@@ -149,6 +212,10 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       eventBus: _eventBus,
       nodeRepository: _nodeRepository,
       graphRepository: _graphRepository,
+      executionEngine: _executionEngine,
+      taskRegistry: _taskRegistry,
+      settingsRegistry: _settingsRegistry,
+      themeRegistry: _themeRegistry,
     );
 
     // 使用 FutureBuilder 等待插件加载完成
@@ -177,79 +244,93 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         }
 
         // 插件加载完成，显示应用界面
-    return MultiProvider(
-      providers: [
-        // === 核心系统 Provider ===
-        // 0. 设置服务（必须在插件 Service 之前，因为 AIService 依赖 SettingsService）
-        ChangeNotifierProvider<SettingsService>.value(
-          value: widget.settingsService,
-        ),
-        // 0.1 主题服务
-        ChangeNotifierProvider<ThemeService>.value(
-          value: widget.themeService,
-        ),
-        Provider<SharedPreferencesAsync>(
-          create: (_) => SharedPreferencesAsync(),
-        ),
+        return MultiProvider(
+          providers: [
+            // === 核心系统 Provider ===
+            // 0. 设置服务（必须在插件 Service 之前，因为 AIService 依赖 SettingsService）
+            ChangeNotifierProvider<SettingsService>.value(
+              value: widget.settingsService,
+            ),
+            // 0.1 主题服务
+            ChangeNotifierProvider<ThemeService>.value(
+              value: widget.themeService,
+            ),
+            Provider<SharedPreferencesAsync>(
+              create: (_) => SharedPreferencesAsync(),
+            ),
 
-        // 1. Repository 层（核心基础设施）
-        Provider<NodeRepository>.value(value: _nodeRepository),
-        Provider<GraphRepository>.value(value: _graphRepository),
+            // 0.2 存储路径服务
+            ChangeNotifierProvider<StoragePathService>.value(
+              value: _storagePathService,
+            ),
 
-        // 2. 事件总线（在 BLoC 之前注入，供 BLoC 使用）
-        Provider<AppEventBus>.value(value: _eventBus),
+            // 0.3 注册表（插件和 UI 都需要）
+            Provider<TaskRegistry>.value(value: _taskRegistry),
+            ChangeNotifierProvider<SettingsRegistry>.value(
+              value: _settingsRegistry,
+            ),
+            ChangeNotifierProvider<ThemeRegistry>.value(
+              value: _themeRegistry,
+            ),
 
-        // 3. 命令总线（Command Bus - 业务逻辑统一入口）
-        Provider<CommandBus>.value(value: _commandBus),
+            // 0.4 执行引擎
+            Provider<ExecutionEngine>.value(value: _executionEngine),
 
-        // === 插件系统 Provider ===
-        // 4. 插件提供的 Service（由 PluginManager.serviceRegistry 自动生成）
-        ...pluginManager.serviceRegistry.generateProviders(),
+            // 1. Repository 层（核心基础设施）
+            Provider<NodeRepository>.value(value: _nodeRepository),
+            Provider<GraphRepository>.value(value: _graphRepository),
 
-        // 5. 插件提供的 Bloc（由 PluginManager 自动生成）
-        ...pluginManager.generateBlocProviders(),
+            // 2. 事件总线（在 BLoC 之前注入，供 BLoC 使用）
+            Provider<AppEventBus>.value(value: _eventBus),
 
-        // === BLoC 层 ===
-        // UI Bloc（核心 UI 状态管理）
-        BlocProvider<UIBloc>(
-          create: (_) => UIBloc(),
-        ),
+            // 3. 命令总线（Command Bus - 业务逻辑统一入口）
+            Provider<CommandBus>.value(value: _commandBus),
 
-        // === 插件系统 ===
-        // Hook Registry（全局单例）
-        Provider<HookRegistry>(
-          create: (_) => hookRegistry,
-          dispose: (_, registry) => registry.clear(),
-        ),
+            // === 插件系统 Provider ===
+            // 4. 插件提供的 Service（由 PluginManager.serviceRegistry 自动生成）
+            ...pluginManager.serviceRegistry.generateProviders(),
 
-        // Plugin Manager（已经在 FutureBuilder 中初始化）
-        Provider<PluginManager>.value(value: pluginManager),
-      ],
-      child: Consumer2<SettingsService, ThemeService>(
-        builder: (context, settings, themeService, child) {
-          final appTheme = themeService.getThemeForMode(
-            settings.themeMode,
-            MediaQuery.of(context).platformBrightness,
-          );
+            // 5. 插件提供的 Bloc（由 PluginManager 自动生成）
+            ...pluginManager.generateBlocProviders(),
 
-          return MaterialApp(
-            title: 'Node Graph Notebook',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.getMaterialTheme(appTheme, Brightness.light),
-            darkTheme: AppTheme.getMaterialTheme(appTheme, Brightness.dark),
-            themeMode: settings.themeMode,
-            home: const HomePage(),
-          );
-        },
-      ),
+            // === BLoC 层 ===
+            // UI Bloc（核心 UI 状态管理）
+            BlocProvider<UIBloc>(create: (_) => UIBloc()),
+
+            // === 插件系统 ===
+            // Hook Registry（全局单例）
+            Provider<HookRegistry>(
+              create: (_) => hookRegistry,
+              dispose: (_, registry) => registry.clear(),
+            ),
+
+            // Plugin Manager（已经在 FutureBuilder 中初始化）
+            Provider<PluginManager>.value(value: pluginManager),
+          ],
+          child: Consumer2<SettingsService, ThemeService>(
+            builder: (context, settings, themeService, child) {
+              final appTheme = themeService.getThemeForMode(
+                settings.themeMode,
+                MediaQuery.of(context).platformBrightness,
+              );
+
+              return MaterialApp(
+                title: 'Node Graph Notebook',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.getMaterialTheme(appTheme, Brightness.light),
+                darkTheme: AppTheme.getMaterialTheme(appTheme, Brightness.dark),
+                themeMode: settings.themeMode,
+                home: const HomePage(),
+              );
+            },
+          ),
+        );
+      },
     );
-  }
-);
   }
 
   /// 构建错误界面
-  Widget _buildErrorUI() {
-    return MaterialApp(
+  Widget _buildErrorUI() => MaterialApp(
       home: Scaffold(
         body: Center(
           child: Column(
@@ -268,7 +349,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => _initializeRepositories(),
+                onPressed: _initializeCore,
                 child: const Text('Retry'),
               ),
             ],
@@ -276,5 +357,4 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         ),
       ),
     );
-  }
 }

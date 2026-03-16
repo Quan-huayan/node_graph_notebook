@@ -41,27 +41,13 @@ abstract class Command<T> {
 /// 封装命令执行的结果，支持成功和失败两种状态
 class CommandResult<T> {
   /// 私有构造函数
-  CommandResult._({
-    required this.isSuccess,
-    this.data,
-    this.error,
-  });
+  CommandResult._({required this.isSuccess, this.data, this.error});
 
   /// 创建成功结果
-  factory CommandResult.success([T? data]) {
-    return CommandResult._(
-      isSuccess: true,
-      data: data,
-    );
-  }
+  factory CommandResult.success([T? data]) => CommandResult._(isSuccess: true, data: data);
 
   /// 创建失败结果
-  factory CommandResult.failure(String error) {
-    return CommandResult._(
-      isSuccess: false,
-      error: error,
-    );
-  }
+  factory CommandResult.failure(String error) => CommandResult._(isSuccess: false, error: error);
 
   /// 是否成功
   final bool isSuccess;
@@ -75,12 +61,7 @@ class CommandResult<T> {
   /// 创建带类型的失败结果（用于类型转换）
   ///
   /// 当需要在错误处理中转换结果类型时使用
-  static CommandResult<T> failureTyped<T>(String error) {
-    return CommandResult<T>._(
-      isSuccess: false,
-      error: error,
-    );
-  }
+  static CommandResult<T> failureTyped<T>(String error) => CommandResult<T>._(isSuccess: false, error: error);
 
   /// 获取数据或抛出异常
   ///
@@ -113,6 +94,9 @@ class CommandResult<T> {
 ///
 /// 当命令执行失败时抛出
 class CommandExecutionException implements Exception {
+  /// 创建一个命令执行异常
+  ///
+  /// [message] - 错误信息
   CommandExecutionException(this.message);
 
   /// 错误信息

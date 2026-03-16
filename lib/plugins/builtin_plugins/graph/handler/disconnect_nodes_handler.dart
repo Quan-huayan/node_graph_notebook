@@ -1,15 +1,18 @@
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command_handler.dart';
-import '../command/node_commands.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
+import '../../../../core/events/app_events.dart';
 import '../../../../core/models/node_reference.dart';
 import '../../../../core/repositories/node_repository.dart';
-import '../../../../core/events/app_events.dart';
+import '../command/node_commands.dart';
 
 /// 断开节点连接处理器
 ///
 /// 处理断开节点连接的命令，移除节点间的引用关系
 class DisconnectNodesHandler implements CommandHandler<DisconnectNodesCommand> {
+  /// 构造函数
+  ///
+  /// [_repository] - 节点仓库，用于加载和保存节点
   DisconnectNodesHandler(this._repository);
 
   final NodeRepository _repository;
@@ -37,20 +40,17 @@ class DisconnectNodesHandler implements CommandHandler<DisconnectNodesCommand> {
       command.originalReference = reference;
 
       // 移除引用
-      final updatedReferences = Map<String, NodeReference>.from(sourceNode.references);
-      updatedReferences.remove(command.targetId);
+      final updatedReferences = Map<String, NodeReference>.from(
+        sourceNode.references,
+      )
+      ..remove(command.targetId);
 
-      final updatedNode = sourceNode.copyWith(
-        references: updatedReferences,
-      );
+      final updatedNode = sourceNode.copyWith(references: updatedReferences);
 
       await _repository.save(updatedNode);
 
-      // 发布事件
-      context.eventBus.publish(NodeDataChangedEvent(
-        changedNodes: [updatedNode],
-        action: DataChangeAction.update,
-      ));
+      // 发布事件（使用便捷方法）
+      context.publishSingleNodeEvent(updatedNode, DataChangeAction.update);
 
       return CommandResult.success();
     } catch (e) {

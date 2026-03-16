@@ -1,38 +1,54 @@
 import 'dart:async';
-import 'package:flame/game.dart';
+
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_state.dart';
-import 'package:node_graph_notebook/ui/bloc/ui_state.dart';
+
 import '../../../../../core/models/models.dart';
+import '../../../../core/execution/execution_engine.dart';
 import '../../../../core/services/theme/app_theme.dart';
+import '../../../../ui/bloc/ui_state.dart';
+import '../bloc/graph_bloc.dart';
+import '../bloc/graph_event.dart';
+import '../bloc/graph_state.dart';
 import 'graph_world.dart';
 
 /// Flame 游戏实例 - BLoC 集成版本
 class GraphGame extends FlameGame {
+  /// 创建 Flame 游戏实例
   GraphGame({
     required this.bloc,
     required this.uiState,
     required this.theme,
     required this.context,
+    this.executionEngine,
     this.onZoomChanged,
-  })  : graph = bloc.state.graph,
-        nodes = bloc.state.nodes,
-        connections = bloc.state.connections,
-        viewConfig = bloc.state.graph.viewConfig;
+  }) : graph = bloc.state.graph,
+       nodes = bloc.state.nodes,
+       connections = bloc.state.connections,
+       viewConfig = bloc.state.graph.viewConfig;
 
+  /// 图 BLoC
   final GraphBloc bloc;
+  /// 图数据
   final Graph graph;
+  /// 节点列表
   final List<Node> nodes;
+  /// 连接列表
   final List<Connection> connections;
+  /// 视图配置
   final GraphViewConfig viewConfig;
+  /// UI 状态
   final UIState uiState;
+  /// 应用主题
   final AppThemeData theme;
+  /// 构建上下文
   final BuildContext context;
+  /// 执行引擎
+  final ExecutionEngine? executionEngine;
+  /// 缩放变化回调
   final Function(double)? onZoomChanged;
 
   GraphWorld? _graphWorld;
@@ -70,10 +86,10 @@ class GraphGame extends FlameGame {
 
     // 初始化 viewfinder（世界坐标系）
     camera.viewfinder.position = Vector2(
-      cameraConfig.x,  // ← 使用持久化的 x
-      cameraConfig.y,  // ← 使用持久化的 y
+      cameraConfig.x, // ← 使用持久化的 x
+      cameraConfig.y, // ← 使用持久化的 y
     );
-    camera.viewfinder.zoom = cameraConfig.zoom;  // ← 使用持久化的 zoom
+    camera.viewfinder.zoom = cameraConfig.zoom; // ← 使用持久化的 zoom
 
     // 创建 GraphWorld 并添加到 FlameGame 的 world 中
     _graphWorld = GraphWorld(
@@ -81,6 +97,7 @@ class GraphGame extends FlameGame {
       uiState: uiState,
       theme: theme,
       context: context,
+      executionEngine: executionEngine,
     );
 
     await world.add(_graphWorld!);
@@ -103,7 +120,10 @@ class GraphGame extends FlameGame {
     // 检查是否有待处理的位置（拖拽刚结束）
     if (_pendingPosition != null) {
       final pending = _pendingPosition!;
-      final statePosition = Vector2(cameraState.position.dx, cameraState.position.dy);
+      final statePosition = Vector2(
+        cameraState.position.dx,
+        cameraState.position.dy,
+      );
 
       // 如果新状态位置与待处理位置一致，说明拖拽状态已同步
       if ((pending - statePosition).length < 1.0) {
@@ -122,7 +142,10 @@ class GraphGame extends FlameGame {
 
     // 只在非拖拽状态下同步位置
     if (!_isDragging && _pendingPosition == null) {
-      final newPosition = Vector2(cameraState.position.dx, cameraState.position.dy);
+      final newPosition = Vector2(
+        cameraState.position.dx,
+        cameraState.position.dy,
+      );
       // 使用距离检查避免浮点数精度问题
       if ((camera.viewfinder.position - newPosition).length > 0.1) {
         camera.viewfinder.position = newPosition;
@@ -178,7 +201,7 @@ class GraphGame extends FlameGame {
     // 2. 缩放后，调整相机位置使该世界坐标仍在鼠标下
 
     const zoomFactor = 0.001;
-    final zoomChange = -delta * zoomFactor;  // 反转符号：向上滚=放大
+    final zoomChange = -delta * zoomFactor; // 反转符号：向上滚=放大
 
     final currentZoom = camera.viewfinder.zoom;
     final newZoom = (currentZoom * (1 + zoomChange)).clamp(0.1, 5.0);
@@ -213,10 +236,12 @@ class GraphGame extends FlameGame {
       camera.viewfinder.zoom = newZoom;
 
       // 发送事件到 BLoC（包含位置信息）
-      bloc.add(ViewZoomEvent(
-        newZoom,
-        position: Offset(newCameraPos.x, newCameraPos.y),
-      ));
+      bloc.add(
+        ViewZoomEvent(
+          newZoom,
+          position: Offset(newCameraPos.x, newCameraPos.y),
+        ),
+      );
     } else {
       // 没有鼠标位置，只缩放不移动
       camera.viewfinder.zoom = newZoom;
@@ -235,17 +260,25 @@ class GraphGame extends FlameGame {
 
 /// Flame 图视图 Widget - BLoC 集成版本
 class GraphFlameWidget extends StatefulWidget {
+  /// 创建 Flame 图视图 Widget
   const GraphFlameWidget({
     super.key,
     required this.uiState,
     required this.theme,
+    this.executionEngine,
     this.onZoomChanged,
     this.onNodeDropped,
   });
 
+  /// UI 状态
   final UIState uiState;
+  /// 应用主题
   final AppThemeData theme;
+  /// 执行引擎
+  final ExecutionEngine? executionEngine;
+  /// 缩放变化回调
   final Function(double)? onZoomChanged;
+  /// 节点拖放回调
   final Function(String nodeId, Offset position)? onNodeDropped;
 
   @override
@@ -268,6 +301,7 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
       uiState: widget.uiState,
       theme: widget.theme,
       context: context,
+      executionEngine: widget.executionEngine,
       onZoomChanged: widget.onZoomChanged,
     );
   }
@@ -276,19 +310,18 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
   void didUpdateWidget(GraphFlameWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 更新主题或 UIState 变化
-    if (oldWidget.theme != widget.theme || oldWidget.uiState != widget.uiState) {
+    if (oldWidget.theme != widget.theme ||
+        oldWidget.uiState != widget.uiState) {
       // 重新创建游戏（主题变化需要重建）
       // 实际应用中可能需要更细粒度的更新
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
+  Widget build(BuildContext context) => LayoutBuilder(
       key: _widgetKey,
-      builder: (context, constraints) {
-        // 确保占据整个可用空间
-        return SizedBox(
+      builder: (context, constraints) => SizedBox(
+          // 确保占据整个可用空间
           width: constraints.maxWidth.isInfinite
               ? double.infinity
               : constraints.maxWidth,
@@ -363,16 +396,12 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
                         );
                       }
                     },
-                    child: GameWidget(
-                      game: _game,
-                    ),
+                    child: GameWidget(game: _game),
                   ),
                 ),
               );
             },
           ),
-        );
-      },
+        ),
     );
-  }
 }

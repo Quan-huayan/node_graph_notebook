@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_event.dart';
+
 import '../../../../core/models/models.dart';
+import '../bloc/graph_bloc.dart';
+import '../bloc/graph_event.dart';
 import '../bloc/node_bloc.dart';
-import 'node_metadata_dialog.dart';
+import '../bloc/node_event.dart';
 import 'node_icon_dialog.dart';
+import 'node_metadata_dialog.dart';
 
 /// 菜单操作类型
 enum _MenuAction {
@@ -176,7 +177,7 @@ Future<void> showNodeContextMenu(
         ),
       ),
     ],
-    elevation: 8.0,
+    elevation: 8,
   );
 
   // 处理用户选择
@@ -211,10 +212,7 @@ Future<void> showNodeContextMenu(
       // 切换显示模式
       final newMode = _actionToViewMode(selectedAction);
       if (newMode != null && newMode != node.viewMode) {
-        nodeBloc.add(NodeUpdateEvent(
-          node.id,
-          viewMode: newMode,
-        ));
+        nodeBloc.add(NodeUpdateEvent(node.id, viewMode: newMode));
       }
   }
 }
@@ -240,21 +238,14 @@ Widget _buildMenuItem({
   required IconData icon,
   required String label,
   required bool isSelected,
-}) {
-  return Row(
+}) => Row(
     children: [
       Icon(icon, size: 18),
       const SizedBox(width: 12),
       Expanded(child: Text(label)),
-      if (isSelected)
-        const Icon(
-          Icons.check,
-          size: 18,
-          color: Colors.blue,
-        ),
+      if (isSelected) const Icon(Icons.check, size: 18, color: Colors.blue),
     ],
   );
-}
 
 /// 获取显示模式的标签
 String _getModeLabel(NodeViewMode mode) {
@@ -280,8 +271,7 @@ Future<void> _handleDelete(
   // 确认删除
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (ctx) {
-      return AlertDialog(
+    builder: (ctx) => AlertDialog(
         title: const Text('Delete Node'),
         content: Text('Are you sure you want to delete "${node.title}"?'),
         actions: [
@@ -294,11 +284,10 @@ Future<void> _handleDelete(
             child: const Text('Delete'),
           ),
         ],
-      );
-    },
+      ),
   );
 
-  if (confirmed == true && context.mounted) {
+  if ((confirmed ?? false) && context.mounted) {
     try {
       // 再删除节点本身
       nodeBloc.add(NodeDeleteEvent(node.id));
@@ -360,8 +349,7 @@ Future<void> _handleChangeColor(
 
   final selectedColor = await showDialog<String?>(
     context: context,
-    builder: (context) {
-      return AlertDialog(
+    builder: (context) => AlertDialog(
         title: const Text('Select Color'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -372,9 +360,7 @@ Future<void> _handleChangeColor(
               children: colors.map((colorHex) {
                 Color color = Colors.grey;
                 if (colorHex != null) {
-                  color = Color(
-                    int.parse(colorHex.replaceFirst('#', '0xFF')),
-                  );
+                  color = Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
                 }
                 final isSelected = node.color == colorHex;
 
@@ -395,11 +381,7 @@ Future<void> _handleChangeColor(
                       ),
                     ),
                     child: isSelected
-                        ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 20,
-                          )
+                        ? const Icon(Icons.check, color: Colors.white, size: 20)
                         : null,
                   ),
                 );
@@ -413,15 +395,11 @@ Future<void> _handleChangeColor(
             child: const Text('Cancel'),
           ),
         ],
-      );
-    },
+      ),
   );
 
   if (selectedColor != null && context.mounted) {
-    nodeBloc.add(NodeUpdateEvent(
-      node.id,
-      color: selectedColor,
-    ));
+    nodeBloc.add(NodeUpdateEvent(node.id, color: selectedColor));
   }
 }
 
@@ -433,8 +411,7 @@ Future<void> _handleDuplicate(
 ) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (context) {
-      return AlertDialog(
+    builder: (context) => AlertDialog(
         title: const Text('Duplicate Node'),
         content: Text('Create a copy of "${node.title}"?'),
         actions: [
@@ -447,19 +424,15 @@ Future<void> _handleDuplicate(
             child: const Text('Duplicate'),
           ),
         ],
-      );
-    },
+      ),
   );
 
-  if (confirmed == true && context.mounted) {
+  if ((confirmed ?? false) && context.mounted) {
     // 创建副本，偏移位置
-    final newPosition = Offset(
-      node.position.dx + 50,
-      node.position.dy + 50,
-    );
+    final newPosition = Offset(node.position.dx + 50, node.position.dy + 50);
 
     // 生成新标题
-    String newTitle = node.title;
+    var newTitle = node.title;
     final match = RegExp(r'^(.+?)\s*\((\d+)\)$').firstMatch(newTitle);
     if (match != null) {
       final baseTitle = match.group(1)!;
@@ -470,18 +443,20 @@ Future<void> _handleDuplicate(
     }
 
     // 创建新节点事件
-    nodeBloc.add(NodeCreateEvent(
-      title: newTitle,
-      content: node.content,
-      position: newPosition,
-      color: node.color,
-      metadata: Map<String, dynamic>.from(node.metadata),
-    ));
+    nodeBloc.add(
+      NodeCreateEvent(
+        title: newTitle,
+        content: node.content,
+        position: newPosition,
+        color: node.color,
+        metadata: Map<String, dynamic>.from(node.metadata),
+      ),
+    );
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Duplicated: $newTitle')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Duplicated: $newTitle')));
     }
   }
 }
@@ -493,23 +468,22 @@ void _handleFocus(BuildContext context, Node node) {
   context.read<GraphBloc>().add(FocusNodeEvent(node.id));
 
   if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Focusing on ${node.title}')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Focusing on ${node.title}')));
   }
 }
 
 /// 空的 overlay widget，用于保持兼容性
 class NodeContextMenuOverlay extends StatelessWidget {
-  const NodeContextMenuOverlay({
-    super.key,
-    required this.child,
-  });
+  /// 构造函数
+  ///
+  /// [child] - 子组件
+  const NodeContextMenuOverlay({super.key, required this.child});
 
+  /// 子组件
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return child;
-  }
+  Widget build(BuildContext context) => child;
 }

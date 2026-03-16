@@ -1,0 +1,28 @@
+# Pre-commit hooks for Node Graph Notebook
+# Install: pip install pre-commit
+# Run: pre-commit install
+
+repos:
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: Dart Format
+        entry: dart format --set-exit-if-changed .
+        language: system
+        types: [dart]
+
+      - id: dart-analyze
+        name: Dart Analyze
+        entry: dart analyze --fatal-infos
+        language: system
+        types: [dart]
+        pass_filenames: false
+
+      - id: build-runner
+        name: Build Runner
+        entry: bash -c "flutter pub run build_runner build --delete-conflicting-outputs"
+        language: system
+        types: [dart]
+        pass_filenames: false
+        # Only run when model files change
+        files: ^lib/core/models/.*\.dart$

@@ -1,14 +1,17 @@
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command_handler.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/models/graph.dart';
-import '../service/graph_service.dart';
 import '../command/graph_commands.dart';
+import '../service/graph_service.dart';
 
 /// 重命名图处理器
 ///
 /// 处理重命名图的命令
 class RenameGraphHandler implements CommandHandler<RenameGraphCommand> {
+  /// 构造函数
+  ///
+  /// [_service] - 图形服务，用于获取和更新图
   RenameGraphHandler(this._service);
 
   final GraphService _service;

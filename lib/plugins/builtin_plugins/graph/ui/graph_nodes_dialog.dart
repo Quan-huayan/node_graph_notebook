@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
-import '../../../../core/services/theme_service.dart';
+
 import '../../../../core/services/settings_service.dart';
+import '../../../../core/services/theme_service.dart';
+import '../bloc/graph_bloc.dart';
+import '../bloc/graph_event.dart';
+import '../bloc/node_bloc.dart';
 
 /// 图节点管理对话框
 /// 允许用户选择哪些节点显示在节点图中
 class GraphNodesDialog extends StatefulWidget {
+  /// 创建图节点管理对话框
   const GraphNodesDialog({
     super.key,
     required this.graphBloc,
     required this.nodeBloc,
   });
 
+  /// 图 BLoC
   final GraphBloc graphBloc;
+  /// 节点 BLoC
   final NodeBloc nodeBloc;
 
   @override
@@ -30,9 +34,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
     super.initState();
     // 初始化选中的节点ID - 当前图中所有节点的ID
     final state = widget.graphBloc.state;
-    _selectedNodeIds = state.nodes
-        .map((n) => n.id)
-        .toSet();
+    _selectedNodeIds = state.nodes.map((n) => n.id).toSet();
   }
 
   @override
@@ -86,9 +88,8 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
                     children: [
                       Text(
                         '${_selectedNodeIds.length}',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: theme.nodes.nodePrimary,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(color: theme.nodes.nodePrimary),
                       ),
                       Text(
                         'Selected',
@@ -100,9 +101,8 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
                     children: [
                       Text(
                         '${availableNodes.length}',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: theme.text.secondary,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(color: theme.text.secondary),
                       ),
                       Text(
                         'Available',
@@ -142,7 +142,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
                     value: isSelected,
                     onChanged: (bool? value) {
                       setState(() {
-                        if (value == true) {
+                        if (value ?? false) {
                           _selectedNodeIds.add(node.id);
                         } else {
                           _selectedNodeIds.remove(node.id);
@@ -157,10 +157,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
                         fontSize: 12,
                       ),
                     ),
-                    secondary: Icon(
-                      Icons.note,
-                      color: theme.nodes.nodePrimary,
-                    ),
+                    secondary: Icon(Icons.note, color: theme.nodes.nodePrimary),
                   );
                 },
               ),
@@ -173,10 +170,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: _applyChanges,
-          child: const Text('Apply'),
-        ),
+        ElevatedButton(onPressed: _applyChanges, child: const Text('Apply')),
       ],
     );
   }

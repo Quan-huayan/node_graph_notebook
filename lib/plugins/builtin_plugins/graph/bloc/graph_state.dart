@@ -5,6 +5,15 @@ import '../../../../core/models/models.dart';
 /// 图状态 - 整个图的不可变快照
 @immutable
 class GraphState extends Equatable {
+  /// 创建图状态
+  /// 
+  /// [graph] - 当前图对象
+  /// [nodes] - 图中的节点列表
+  /// [connections] - 节点之间的连接关系
+  /// [selectionState] - 选择状态
+  /// [viewState] - 视图状态
+  /// [loadingState] - 加载状态
+  /// [error] - 错误信息
   const GraphState({
     required this.graph,
     required this.nodes,
@@ -36,31 +45,45 @@ class GraphState extends Equatable {
     );
   }
 
-  // 核心数据
+  /// 核心数据
+  /// 当前图对象
   final Graph graph;
+  
+  /// 图中的节点列表
   final List<Node> nodes;
+  
+  /// 节点之间的连接关系
   final List<Connection> connections;
 
-  // 选择状态
+  /// 选择状态
   final SelectionState selectionState;
 
-  // 视图状态
+  /// 视图状态
   final ViewState viewState;
 
-  // 加载状态
+  /// 加载状态
   final LoadingState loadingState;
 
-  // 错误状态
+  /// 错误状态
   final String? error;
 
   /// 便捷方法
+  /// 是否正在加载
   bool get isLoading => loadingState == LoadingState.loading;
+  /// 是否已加载完成
   bool get isLoaded => loadingState == LoadingState.loaded;
+  /// 是否有错误
   bool get hasError => error != null;
+  /// 是否有图
   bool get hasGraph => graph.id.isNotEmpty;
+  /// 选中的节点 ID 集合
   Set<String> get selectedNodeIds => selectionState.selectedNodeIds;
 
   /// 获取节点
+  /// 
+  /// [id] - 节点 ID
+  /// 
+  /// 返回对应的节点，如果不存在则返回 null
   Node? getNode(String id) {
     for (final node in nodes) {
       if (node.id == id) return node;
@@ -69,11 +92,21 @@ class GraphState extends Equatable {
   }
 
   /// 获取节点位置
-  Offset? getNodePosition(String id) {
-    return graph.nodePositions[id];
-  }
+  /// 
+  /// [id] - 节点 ID
+  /// 
+  /// 返回节点的位置，如果不存在则返回 null
+  Offset? getNodePosition(String id) => graph.nodePositions[id];
 
   /// 复制并更新部分字段
+  /// 
+  /// [graph] - 当前图对象
+  /// [nodes] - 图中的节点列表
+  /// [connections] - 节点之间的连接关系
+  /// [selectionState] - 选择状态
+  /// [viewState] - 视图状态
+  /// [loadingState] - 加载状态
+  /// [error] - 错误信息
   GraphState copyWith({
     Graph? graph,
     List<Node>? nodes,
@@ -82,8 +115,7 @@ class GraphState extends Equatable {
     ViewState? viewState,
     LoadingState? loadingState,
     String? error,
-  }) {
-    return GraphState(
+  }) => GraphState(
       graph: graph ?? this.graph,
       nodes: nodes ?? this.nodes,
       connections: connections ?? this.connections,
@@ -92,31 +124,38 @@ class GraphState extends Equatable {
       loadingState: loadingState ?? this.loadingState,
       error: error,
     );
-  }
 
   @override
   List<Object?> get props => [
-        graph,
-        nodes,
-        connections,
-        selectionState,
-        viewState,
-        loadingState,
-        error,
-      ];
+    graph,
+    nodes,
+    connections,
+    selectionState,
+    viewState,
+    loadingState,
+    error,
+  ];
 }
 
 /// 选择状态
 @immutable
 class SelectionState extends Equatable {
+  /// 创建选择状态
+  /// 
+  /// [selectedNodeIds] - 选中的节点 ID 集合
+  /// [lastSelectedId] - 最后选中的节点 ID
+  /// [selectionMode] - 选择模式
   const SelectionState({
     this.selectedNodeIds = const {},
     this.lastSelectedId,
     this.selectionMode = SelectionMode.single,
   });
 
+  /// 选中的节点 ID 集合
   final Set<String> selectedNodeIds;
+  /// 最后选中的节点 ID
   final String? lastSelectedId;
+  /// 选择模式
   final SelectionMode selectionMode;
 
   /// 是否有选中的节点
@@ -131,28 +170,44 @@ class SelectionState extends Equatable {
   /// 是否多选
   bool get isMultiSelection => selectionMode == SelectionMode.multi;
 
+  /// 复制并更新部分字段
+  /// 
+  /// [selectedNodeIds] - 选中的节点 ID 集合
+  /// [lastSelectedId] - 最后选中的节点 ID
+  /// [selectionMode] - 选择模式
   SelectionState copyWith({
     Set<String>? selectedNodeIds,
     String? lastSelectedId,
     SelectionMode? selectionMode,
-  }) {
-    return SelectionState(
+  }) => SelectionState(
       selectedNodeIds: selectedNodeIds ?? this.selectedNodeIds,
       lastSelectedId: lastSelectedId ?? this.lastSelectedId,
       selectionMode: selectionMode ?? this.selectionMode,
     );
-  }
 
   @override
   List<Object?> get props => [selectedNodeIds, lastSelectedId, selectionMode];
 }
 
 /// 选择模式
-enum SelectionMode { single, multi, range }
+enum SelectionMode {
+  /// 单选模式
+  single,
+  /// 多选模式
+  multi,
+  /// 范围选择模式
+  range
+}
 
 /// 视图状态
 @immutable
 class ViewState extends Equatable {
+  /// 创建视图状态
+  /// 
+  /// [camera] - 相机状态
+  /// [showConnections] - 是否显示连接线
+  /// [gridVisible] - 是否显示网格
+  /// [zoomLevel] - 缩放级别
   const ViewState({
     this.camera = const CameraState(),
     this.showConnections = true,
@@ -160,24 +215,32 @@ class ViewState extends Equatable {
     this.zoomLevel = 1.0,
   });
 
+  /// 相机状态
   final CameraState camera;
+  /// 是否显示连接线
   final bool showConnections;
+  /// 是否显示网格
   final bool gridVisible;
+  /// 缩放级别
   final double zoomLevel;
 
+  /// 复制并更新部分字段
+  /// 
+  /// [camera] - 相机状态
+  /// [showConnections] - 是否显示连接线
+  /// [gridVisible] - 是否显示网格
+  /// [zoomLevel] - 缩放级别
   ViewState copyWith({
     CameraState? camera,
     bool? showConnections,
     bool? gridVisible,
     double? zoomLevel,
-  }) {
-    return ViewState(
+  }) => ViewState(
       camera: camera ?? this.camera,
       showConnections: showConnections ?? this.showConnections,
       gridVisible: gridVisible ?? this.gridVisible,
       zoomLevel: zoomLevel ?? this.zoomLevel,
     );
-  }
 
   @override
   List<Object?> get props => [camera, showConnections, gridVisible, zoomLevel];
@@ -186,27 +249,38 @@ class ViewState extends Equatable {
 /// 相机状态
 @immutable
 class CameraState extends Equatable {
-  const CameraState({
-    this.position = Offset.zero,
-    this.zoom = 1.0,
-  });
+  /// 创建相机状态
+  /// 
+  /// [position] - 相机位置
+  /// [zoom] - 相机缩放级别
+  const CameraState({this.position = Offset.zero, this.zoom = 1.0});
 
+  /// 相机位置
   final Offset position;
+  /// 相机缩放级别
   final double zoom;
 
-  CameraState copyWith({
-    Offset? position,
-    double? zoom,
-  }) {
-    return CameraState(
+  /// 复制并更新部分字段
+  /// 
+  /// [position] - 相机位置
+  /// [zoom] - 相机缩放级别
+  CameraState copyWith({Offset? position, double? zoom}) => CameraState(
       position: position ?? this.position,
       zoom: zoom ?? this.zoom,
     );
-  }
 
   @override
   List<Object?> get props => [position, zoom];
 }
 
 /// 加载状态
-enum LoadingState { initial, loading, loaded, error }
+enum LoadingState {
+  /// 初始状态
+  initial,
+  /// 加载中
+  loading,
+  /// 加载完成
+  loaded,
+  /// 加载错误
+  error
+}

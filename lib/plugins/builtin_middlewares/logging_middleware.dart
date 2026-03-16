@@ -1,8 +1,8 @@
 import 'dart:developer' as developer;
 
-import '../../core/commands/command.dart';
-import '../../core/commands/command_context.dart';
-import '../../core/commands/middleware.dart';
+import '../../core/commands/models/command.dart';
+import '../../core/commands/models/command_context.dart';
+import '../../core/commands/models/middleware.dart';
 
 /// 日志中间件
 ///
@@ -12,13 +12,18 @@ import '../../core/commands/middleware.dart';
 /// - 命令失败
 /// - 命令撤销
 class LoggingMiddleware extends CommandMiddlewareBase {
+  /// 创建日志中间件
+  ///
+  /// [logLevel] 日志级别，默认 info
+  /// [includeTimestamp] 是否包含时间戳，默认 true
+  /// [includeDuration] 是否包含执行时长，默认 true
   LoggingMiddleware({
     LogLevel logLevel = LogLevel.info,
     bool includeTimestamp = true,
     bool includeDuration = true,
-  })  : _logLevel = logLevel,
-        _includeTimestamp = includeTimestamp,
-        _includeDuration = includeDuration;
+  }) : _logLevel = logLevel,
+       _includeTimestamp = includeTimestamp,
+       _includeDuration = includeDuration;
 
   /// 日志级别
   final LogLevel _logLevel;
@@ -33,17 +38,10 @@ class LoggingMiddleware extends CommandMiddlewareBase {
   final Map<Command, DateTime> _startTimes = {};
 
   @override
-  Future<void> processBefore(
-    Command command,
-    CommandContext context,
-  ) async {
+  Future<void> processBefore(Command command, CommandContext context) async {
     _startTimes[command] = DateTime.now();
 
-    _log(
-      LogLevel.info,
-      '↗️ 执行命令: ${command.name}',
-      command: command,
-    );
+    _log(LogLevel.info, '↗️ 执行命令: ${command.name}', command: command);
   }
 
   @override
@@ -77,11 +75,7 @@ class LoggingMiddleware extends CommandMiddlewareBase {
   }
 
   /// 记录日志
-  void _log(
-    LogLevel level,
-    String message, {
-    required Command command,
-  }) {
+  void _log(LogLevel level, String message, {required Command command}) {
     if (level.index < _logLevel.index) {
       return; // 日志级别不够，不记录
     }
@@ -93,11 +87,7 @@ class LoggingMiddleware extends CommandMiddlewareBase {
     final logMessage = '$timestamp$levelStr$message$commandInfo';
 
     // 使用 Dart 的 log 函数
-    developer.log(
-      logMessage,
-      level: level.value,
-      name: 'CommandBus',
-    );
+    developer.log(logMessage, level: level.value, name: 'CommandBus');
   }
 }
 

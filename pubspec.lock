@@ -1140,6 +1140,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.15.0"
+  worker_pool:
+    dependency: "direct main"
+    description:
+      name: worker_pool
+      sha256: fe8b040a2fd7a6643cada553f832b14eeb054c719fa51de7a904609cca19cd38
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.5"
   xdg_directories:
     dependency: transitive
     description:

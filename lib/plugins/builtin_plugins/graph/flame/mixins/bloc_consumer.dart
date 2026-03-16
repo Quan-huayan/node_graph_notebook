@@ -1,6 +1,10 @@
 import 'dart:async';
+
 import 'package:flame/components.dart' hide Timer;
 import 'package:flutter/material.dart';
+import '../../../../../core/models/connection.dart';
+import '../../../../../core/models/node.dart';
+
 import '../../bloc/graph_bloc.dart';
 import '../../bloc/graph_event.dart';
 import '../../bloc/graph_state.dart';
@@ -36,7 +40,8 @@ mixin BlocConsumerMixin<T> on Component {
 
     _stateSubscription = graphBloc.stream.listen((newStateState) {
       // 检查是否需要更新
-      final needsUpdate = shouldUpdate?.call(_previousState!, newStateState) ?? true;
+      final needsUpdate =
+          shouldUpdate?.call(_previousState!, newStateState) ?? true;
 
       if (needsUpdate && onnewStateState != null) {
         onnewStateState(newStateState);
@@ -83,9 +88,7 @@ mixin BlocConsumerMixin<T> on Component {
       onnewStateState: (state) {
         onSelectionChanged?.call(state.selectedNodeIds);
       },
-      shouldUpdate: (oldState, newState) {
-        return oldState.selectedNodeIds != newState.selectedNodeIds;
-      },
+      shouldUpdate: (oldState, newState) => oldState.selectedNodeIds != newState.selectedNodeIds,
     );
   }
 
@@ -93,7 +96,7 @@ mixin BlocConsumerMixin<T> on Component {
   ///
   /// [onConnectionsChanged] - 连接变化回调
   void subscribeToConnections({
-    void Function(List<dynamic> connections)? onConnectionsChanged,
+    void Function(List<Connection> connections)? onConnectionsChanged,
   }) {
     subscribeToState(
       onnewStateState: (state) {
@@ -106,7 +109,7 @@ mixin BlocConsumerMixin<T> on Component {
         }
 
         // 检查连接是否相同
-        for (int i = 0; i < oldState.connections.length; i++) {
+        for (var i = 0; i < oldState.connections.length; i++) {
           if (oldState.connections[i] != newState.connections[i]) {
             return true;
           }
@@ -120,9 +123,7 @@ mixin BlocConsumerMixin<T> on Component {
   /// 订阅节点列表变化
   ///
   /// [onNodesChanged] - 节点变化回调
-  void subscribeToNodes({
-    void Function(List<dynamic> nodes)? onNodesChanged,
-  }) {
+  void subscribeToNodes({void Function(List<Node> nodes)? onNodesChanged}) {
     subscribeToState(
       onnewStateState: (state) {
         onNodesChanged?.call(state.nodes);
@@ -134,7 +135,7 @@ mixin BlocConsumerMixin<T> on Component {
         }
 
         // 检查节点是否相同
-        for (int i = 0; i < oldState.nodes.length; i++) {
+        for (var i = 0; i < oldState.nodes.length; i++) {
           if (oldState.nodes[i].id != newState.nodes[i].id) {
             return true;
           }
@@ -158,9 +159,7 @@ mixin BlocConsumerMixin<T> on Component {
           state.viewState.showConnections,
         );
       },
-      shouldUpdate: (oldState, newState) {
-        return oldState.viewState != newState.viewState;
-      },
+      shouldUpdate: (oldState, newState) => oldState.viewState != newState.viewState,
     );
   }
 
@@ -196,11 +195,7 @@ mixin BlocDebounceMixin {
   /// [key] - 防抖键（不同的操作使用不同的键）
   /// [duration] - 防抖延迟时间
   /// [callback] - 要执行的回调
-  void debounce(
-    String key,
-    Duration duration,
-    VoidCallback callback,
-  ) {
+  void debounce(String key, Duration duration, VoidCallback callback) {
     // 取消之前的定时器
     _timers[key]?.cancel();
 

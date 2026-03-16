@@ -1,12 +1,18 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:provider/single_child_widget.dart';
-import 'plugin.dart';
+
 import '../commands/command_bus.dart';
 import '../events/app_events.dart';
-import '../repositories/node_repository.dart';
+import '../execution/execution_engine.dart';
+import '../execution/task_registry.dart';
 import '../repositories/graph_repository.dart';
+import '../repositories/node_repository.dart';
+import '../services/infrastructure/settings_registry.dart';
+import '../services/infrastructure/theme_registry.dart';
 import 'api/api_registry.dart';
+import 'plugin.dart';
 import 'ui_hooks/ui_hook.dart';
 
 /// 插件管理器接口
@@ -39,29 +45,53 @@ abstract class IPluginManager {
 /// 支持 API 导出/导入系统，允许插件间通信
 /// 统一管理插件提供的 Service 依赖注入
 class PluginManager implements IPluginManager {
+  /// 创建一个新的插件管理器实例。
+  ///
+  /// [commandBus] 命令总线，用于执行写操作
+  /// [eventBus] 事件总线，用于订阅数据变化
+  /// [nodeRepository] 节点仓库，用于读取节点数据
+  /// [graphRepository] 图仓库，用于读取图数据
+  /// [executionEngine] 执行引擎，用于 CPU 密集型任务
+  /// [discoverer] 插件发现器，用于发现和实例化插件
+  /// [serviceRegistry] 服务注册表，用于管理插件提供的服务
+  /// [taskRegistry] 任务注册表，用于管理插件注册的任务类型
+  /// [settingsRegistry] 设置注册表，用于管理插件注册的设置项
+  /// [themeRegistry] 主题注册表，用于管理插件注册的主题扩展
   PluginManager({
     required CommandBus commandBus,
     AppEventBus? eventBus,
     NodeRepository? nodeRepository,
     GraphRepository? graphRepository,
+    ExecutionEngine? executionEngine,
     PluginDiscoverer? discoverer,
     ServiceRegistry? serviceRegistry,
-  })  : _commandBus = commandBus,
-        _eventBus = eventBus,
-        _nodeRepository = nodeRepository,
-        _graphRepository = graphRepository,
-        _apiRegistry = APIRegistry(),
-        _discoverer = discoverer ?? PluginDiscoverer(),
-        _serviceRegistry = serviceRegistry ?? ServiceRegistry();
+    TaskRegistry? taskRegistry,
+    SettingsRegistry? settingsRegistry,
+    ThemeRegistry? themeRegistry,
+  }) : _commandBus = commandBus,
+       _eventBus = eventBus,
+       _nodeRepository = nodeRepository,
+       _graphRepository = graphRepository,
+       _executionEngine = executionEngine,
+       _apiRegistry = APIRegistry(),
+       _discoverer = discoverer ?? PluginDiscoverer(),
+       _serviceRegistry = serviceRegistry ?? ServiceRegistry(),
+       _taskRegistry = taskRegistry ?? TaskRegistry(),
+       _settingsRegistry = settingsRegistry,
+       _themeRegistry = themeRegistry ?? ThemeRegistry();
 
   final CommandBus _commandBus;
   final AppEventBus? _eventBus;
   final NodeRepository? _nodeRepository;
   final GraphRepository? _graphRepository;
+  final ExecutionEngine? _executionEngine;
   final APIRegistry _apiRegistry;
   final PluginDiscoverer _discoverer;
   final PluginRegistry _registry = PluginRegistry();
   final ServiceRegistry _serviceRegistry;
+  final TaskRegistry _taskRegistry;
+  final SettingsRegistry? _settingsRegistry;
+  final ThemeRegistry _themeRegistry;
 
   /// API 注册表（只读访问）
   ///
@@ -81,17 +111,32 @@ class PluginManager implements IPluginManager {
   /// 管理所有插件提供的 Service
   ServiceRegistry get serviceRegistry => _serviceRegistry;
 
+  /// 任务注册表（只读访问）
+  ///
+  /// 管理插件注册的任务类型
+  TaskRegistry get taskRegistry => _taskRegistry;
+
+  /// 设置注册表（只读访问）
+  ///
+  /// 管理插件注册的设置项
+  SettingsRegistry? get settingsRegistry => _settingsRegistry;
+
+  /// 主题注册表（只读访问）
+  ///
+  /// 管理插件注册的主题扩展
+  ThemeRegistry get themeRegistry => _themeRegistry;
+
   /// 生成所有插件的 BlocProvider 列表
   ///
   /// 返回 BlocProvider 列表，可直接用于 MultiProvider
   List<SingleChildWidget> generateBlocProviders() {
     final blocs = <SingleChildWidget>[];
-    
+
     for (final wrapper in _registry.getAllPlugins()) {
       final pluginBlocs = wrapper.plugin.registerBlocs();
       blocs.addAll(pluginBlocs);
     }
-    
+
     return blocs;
   }
 
@@ -129,6 +174,10 @@ class PluginManager implements IPluginManager {
       apiRegistry: _apiRegistry,
       nodeRepository: _nodeRepository,
       graphRepository: _graphRepository,
+      executionEngine: _executionEngine,
+      taskRegistry: _taskRegistry,
+      settingsRegistry: _settingsRegistry,
+      themeRegistry: _themeRegistry,
     );
 
     // 创建生命周期管理器
@@ -142,8 +191,7 @@ class PluginManager implements IPluginManager {
 
     // 如果是 UIHook，设置 pluginContext 引用
     if (plugin is UIHook) {
-      final uiHook = plugin;
-      uiHook.pluginContext = context;
+      plugin.pluginContext = context;
     }
 
     // 调用 onLoad
@@ -204,7 +252,7 @@ class PluginManager implements IPluginManager {
     try {
       await wrapper.lifecycle.transitionTo(
         PluginState.unloaded,
-        () => wrapper.plugin.onUnload(),
+        wrapper.plugin.onUnload,
       );
     } catch (e) {
       throw PluginUnloadException(pluginId, e);
@@ -232,7 +280,7 @@ class PluginManager implements IPluginManager {
     try {
       await wrapper.lifecycle.transitionTo(
         PluginState.enabled,
-        () => wrapper.plugin.onEnable(),
+        wrapper.plugin.onEnable,
       );
     } catch (e) {
       throw PluginEnableException(pluginId, e);
@@ -254,7 +302,7 @@ class PluginManager implements IPluginManager {
     try {
       await wrapper.lifecycle.transitionTo(
         PluginState.disabled,
-        () => wrapper.plugin.onDisable(),
+        wrapper.plugin.onDisable,
       );
     } catch (e) {
       throw PluginDisableException(pluginId, e);
@@ -300,10 +348,7 @@ class PluginManager implements IPluginManager {
   Future<void> _validateAPIDependencies(Plugin plugin) async {
     for (final dep in plugin.metadata.apiDependencies) {
       if (!_apiRegistry.hasAPI(dep.apiName)) {
-        throw MissingAPIDependencyException(
-          plugin.metadata.id,
-          dep.apiName,
-        );
+        throw MissingAPIDependencyException(plugin.metadata.id, dep.apiName);
       }
 
       final version = _apiRegistry.getAPIVersion(dep.apiName);

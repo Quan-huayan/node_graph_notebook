@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../../../core/commands/command.dart';
-import '../../../../core/commands/command_context.dart';
-import '../../../../core/commands/command_handler.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/repositories/graph_repository.dart';
 import '../command/graph_commands.dart';
 
 /// 更新节点位置处理器
 ///
 /// 处理更新图中节点位置的命令
-class UpdateNodePositionHandler implements CommandHandler<UpdateNodePositionCommand> {
+class UpdateNodePositionHandler
+    implements CommandHandler<UpdateNodePositionCommand> {
+  /// 构造函数
+  ///
+  /// [_repository] - 图形仓库，用于加载和保存图
   UpdateNodePositionHandler(this._repository);
 
   final GraphRepository _repository;

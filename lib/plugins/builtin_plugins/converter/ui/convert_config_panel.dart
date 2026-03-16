@@ -1,12 +1,22 @@
-import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/node_bloc.dart';
+
 import '../../../../core/models/models.dart';
+import '../../graph/bloc/node_bloc.dart';
 import '../models/models.dart';
 
 /// 转换配置面板
 class ConvertConfigPanel extends StatefulWidget {
+  /// 转换配置面板构造函数
+  /// 
+  /// [onPathSelected] - 路径选择回调函数
+  /// [onNodesSelected] - 节点选择回调函数
+  /// [onPreviewRequested] - 预览请求回调函数
+  /// [onConvertRequested] - 转换请求回调函数
+  /// [isConverting] - 是否正在转换中
+  /// [isPreviewing] - 是否正在预览中
+  /// [previewNodes] - 预览节点列表
   const ConvertConfigPanel({
     super.key,
     required this.onPathSelected,
@@ -18,12 +28,19 @@ class ConvertConfigPanel extends StatefulWidget {
     required this.previewNodes,
   });
 
+  /// 路径选择回调函数
   final Function(String?) onPathSelected;
+  /// 节点选择回调函数
   final Function(List<Node>) onNodesSelected;
+  /// 预览请求回调函数
   final Function() onPreviewRequested;
+  /// 转换请求回调函数
   final Function() onConvertRequested;
+  /// 是否正在转换中
   final bool isConverting;
+  /// 是否正在预览中
   final bool isPreviewing;
+  /// 预览节点列表
   final List<Node> previewNodes;
 
   @override
@@ -45,8 +62,7 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
   );
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
+  Widget build(BuildContext context) => Card(
       margin: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -54,10 +70,7 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 文件选择
-            Text(
-              'Source',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Source', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.folder_open),
@@ -68,10 +81,7 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
             const SizedBox(height: 24),
 
             // 转换方向
-            Text(
-              'Direction',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Direction', style: Theme.of(context).textTheme.titleMedium),
             SegmentedButton<bool>(
               segments: const [
                 ButtonSegment(
@@ -118,10 +128,7 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
 
             // 高级选项（仅 MD → Nodes 模式）
             if (!_isDirectory) ...[
-              Text(
-                'Options',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text('Options', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               SwitchListTile(
                 title: const Text('Extract connections'),
@@ -160,7 +167,8 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: widget.previewNodes.isEmpty || widget.isConverting
+                    onPressed:
+                        widget.previewNodes.isEmpty || widget.isConverting
                         ? null
                         : widget.onPreviewRequested,
                     icon: const Icon(Icons.preview),
@@ -180,7 +188,9 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.play_arrow),
-                    label: Text(widget.isConverting ? 'Converting...' : 'Convert'),
+                    label: Text(
+                      widget.isConverting ? 'Converting...' : 'Convert',
+                    ),
                   ),
                 ),
               ],
@@ -189,10 +199,8 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
         ),
       ),
     );
-  }
 
-  Widget _buildSplitRuleSelector() {
-    return RadioGroup<SplitStrategy>(
+  Widget _buildSplitRuleSelector() => RadioGroup<SplitStrategy>(
       groupValue: _rule.splitStrategy,
       onChanged: (value) {
         if (value != null) {
@@ -243,10 +251,8 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
         ],
       ),
     );
-  }
 
-  Widget _buildMergeRuleSelector() {
-    return RadioGroup<MergeStrategy>(
+  Widget _buildMergeRuleSelector() => RadioGroup<MergeStrategy>(
       groupValue: _mergeRule.strategy,
       onChanged: (value) {
         if (value != null) {
@@ -286,7 +292,6 @@ class _ConvertConfigPanelState extends State<ConvertConfigPanel> {
         ],
       ),
     );
-  }
 
   Future<void> _selectSource() async {
     if (!_isDirectory) {

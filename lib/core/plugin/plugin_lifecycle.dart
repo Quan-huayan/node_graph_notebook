@@ -5,10 +5,18 @@ import 'plugin.dart';
 ///
 /// 管理插件的状态转换和生命周期
 class PluginLifecycleManager {
+  /// 创建一个新的插件生命周期管理器实例。
+  ///
+  /// [_plugin] 要管理的插件实例
   PluginLifecycleManager(this._plugin);
 
+  /// 要管理的插件实例
   final Plugin _plugin;
+  
+  /// 当前插件状态
   PluginState _state = PluginState.unloaded;
+  
+  /// 状态监听器列表
   final List<PluginStateListener> _listeners = [];
 
   /// 当前状态
@@ -99,24 +107,27 @@ class PluginLifecycleManager {
 /// 插件状态监听器
 ///
 /// 用于监听插件状态变化
-typedef PluginStateListener = void Function(
-  Plugin plugin,
-  PluginState oldState,
-  PluginState newState,
-);
+typedef PluginStateListener =
+    void Function(Plugin plugin, PluginState oldState, PluginState newState);
 
 /// 插件包装器
 ///
 /// 包装插件及其上下文和生命周期管理器
 class PluginWrapper {
-  PluginWrapper(
-    this.plugin,
-    this.context,
-    this.lifecycle,
-  );
+  /// 创建一个新的插件包装器实例。
+  ///
+  /// [plugin] 插件实例
+  /// [context] 插件上下文
+  /// [lifecycle] 生命周期管理器
+  PluginWrapper(this.plugin, this.context, this.lifecycle);
 
+  /// 插件实例
   final Plugin plugin;
+  
+  /// 插件上下文
   final PluginContext context;
+  
+  /// 生命周期管理器
   final PluginLifecycleManager lifecycle;
 
   /// 元数据快捷访问

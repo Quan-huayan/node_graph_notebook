@@ -1,26 +1,32 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/bloc/converter_state.dart';
+
+import '../../converter/bloc/converter_bloc.dart';
+import '../../converter/bloc/converter_event.dart';
+import '../../converter/bloc/converter_state.dart';
 import '../../converter/models/models.dart';
 
 /// 批量操作预设
 class BatchPreset {
+  /// 创建批量操作预设
   const BatchPreset({
     required this.name,
     required this.description,
     required this.rule,
   });
 
+  /// 预设名称
   final String name;
+  /// 预设描述
   final String description;
+  /// 转换规则
   final ConversionRule rule;
 }
 
 /// 批量操作对话框
 class BatchOperationDialog extends StatefulWidget {
+  /// 创建批量操作对话框
   const BatchOperationDialog({super.key});
 
   @override
@@ -127,10 +133,7 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Import Preset',
-                        style: theme.textTheme.titleSmall,
-                      ),
+                      Text('Import Preset', style: theme.textTheme.titleSmall),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<BatchPreset>(
                         initialValue: _selectedPreset,
@@ -138,8 +141,7 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
                           border: OutlineInputBorder(),
                           isDense: true,
                         ),
-                        items: _presets.map((preset) {
-                          return DropdownMenuItem(
+                        items: _presets.map((preset) => DropdownMenuItem(
                             value: preset,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,8 +153,7 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
                                 ),
                               ],
                             ),
-                          );
-                        }).toList(),
+                          )).toList(),
                         onChanged: (value) {
                           setState(() {
                             _selectedPreset = value;
@@ -180,10 +181,7 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Files',
-                            style: theme.textTheme.titleSmall,
-                          ),
+                          Text('Files', style: theme.textTheme.titleSmall),
                           ElevatedButton.icon(
                             onPressed: _isProcessing ? null : _selectFiles,
                             icon: const Icon(Icons.folder_open, size: 16),
@@ -215,11 +213,21 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
                                 itemCount: _selectedFiles.length,
                                 itemBuilder: (context, index) {
                                   final file = _selectedFiles[index];
-                                  final fileName = file.split('\\').last.split('/').last;
+                                  final fileName = file
+                                      .split('\\')
+                                      .last
+                                      .split('/')
+                                      .last;
                                   return ListTile(
                                     dense: true,
-                                    leading: const Icon(Icons.description, size: 16),
-                                    title: Text(fileName, style: theme.textTheme.bodySmall),
+                                    leading: const Icon(
+                                      Icons.description,
+                                      size: 16,
+                                    ),
+                                    title: Text(
+                                      fileName,
+                                      style: theme.textTheme.bodySmall,
+                                    ),
                                     trailing: IconButton(
                                       icon: const Icon(Icons.close, size: 16),
                                       onPressed: _isProcessing
@@ -318,9 +326,7 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
     }
   }
 
-  bool _canStart() {
-    return _selectedFiles.isNotEmpty && _selectedPreset != null;
-  }
+  bool _canStart() => _selectedFiles.isNotEmpty && _selectedPreset != null;
 
   void _startBatchImport(BuildContext context) {
     if (_selectedPreset == null) return;
@@ -330,8 +336,6 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
       preserveOriginalFiles: true,
     );
 
-    context.read<ConverterBloc>().add(
-          BatchImportEvent(_selectedFiles, config),
-        );
+    context.read<ConverterBloc>().add(BatchImportEvent(_selectedFiles, config));
   }
 }

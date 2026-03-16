@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:node_graph_notebook/core/models/models.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/converter/service/export_service.dart';
+
+import '../../../../core/models/models.dart';
 import '../../../../utils/files.dart';
+import '../service/export_service.dart';
 
 /// 导出对话框
 class ExportDialog extends StatefulWidget {
-  const ExportDialog({
-    super.key,
-    required this.graph,
-    required this.nodes,
-  });
+  /// 导出对话框构造函数
+  /// 
+  /// [graph] - 要导出的图
+  /// [nodes] - 要导出的节点列表
+  const ExportDialog({super.key, required this.graph, required this.nodes});
 
+  /// 要导出的图
   final Graph graph;
+  /// 要导出的节点列表
   final List<Node> nodes;
 
   @override
@@ -25,8 +28,7 @@ class _ExportDialogState extends State<ExportDialog> {
   bool _isExporting = false;
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
+  Widget build(BuildContext context) => AlertDialog(
       title: const Text('Export Graph'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -36,12 +38,10 @@ class _ExportDialogState extends State<ExportDialog> {
           const SizedBox(height: 8),
           DropdownButtonFormField<ExportFormat>(
             initialValue: _selectedFormat,
-            items: ExportFormat.values.map((format) {
-              return DropdownMenuItem(
+            items: ExportFormat.values.map((format) => DropdownMenuItem(
                 value: format,
                 child: Text(_getFormatLabel(format)),
-              );
-            }).toList(),
+              )).toList(),
             onChanged: (format) {
               setState(() {
                 _selectedFormat = format!;
@@ -76,7 +76,6 @@ class _ExportDialogState extends State<ExportDialog> {
         ),
       ],
     );
-  }
 
   String _getFormatLabel(ExportFormat format) {
     switch (format) {
@@ -129,9 +128,9 @@ class _ExportDialogState extends State<ExportDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
       }
     } finally {
       if (mounted) {

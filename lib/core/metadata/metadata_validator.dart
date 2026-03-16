@@ -1,5 +1,5 @@
-import 'standard_metadata.dart';
 import 'metadata_schema.dart';
+import 'standard_metadata.dart';
 
 /// 元数据验证器
 ///
@@ -9,10 +9,7 @@ class MetadataValidator {
   ///
   /// [strictMode] 严格模式：未知键会导致验证失败
   /// [allowExtraKeys] 是否允许未注册的额外键
-  MetadataValidator({
-    this.strictMode = false,
-    this.allowExtraKeys = true,
-  });
+  MetadataValidator({this.strictMode = false, this.allowExtraKeys = true});
 
   /// 是否启用严格模式
   final bool strictMode;
@@ -68,9 +65,11 @@ class MetadataValidator {
       if (schema == null) {
         // 未找到 Schema
         if (!allowExtraKeys && !StandardMetadata.isPluginKey(key)) {
-          results.add(MetadataValidationResult.invalid(
-            'Unknown metadata key: $key${context != null ? ' (in $context)' : ''}',
-          ));
+          results.add(
+            MetadataValidationResult.invalid(
+              'Unknown metadata key: $key${context != null ? ' (in $context)' : ''}',
+            ),
+          );
         }
         continue;
       }
@@ -79,9 +78,11 @@ class MetadataValidator {
       final result = schema.validate(value);
       if (!result.isValid) {
         final contextStr = context != null ? ' (in $context)' : '';
-        results.add(MetadataValidationResult.invalid(
-          'Invalid value for "$key"$contextStr: ${result.errorMessage}',
-        ));
+        results.add(
+          MetadataValidationResult.invalid(
+            'Invalid value for "$key"$contextStr: ${result.errorMessage}',
+          ),
+        );
       } else {
         results.add(result);
       }
@@ -90,9 +91,11 @@ class MetadataValidator {
     // 检查必需的值
     for (final entry in allSchemas.entries) {
       if (entry.value.required && !metadata.containsKey(entry.key)) {
-        results.add(MetadataValidationResult.invalid(
-          'Missing required metadata key: ${entry.key}${context != null ? ' (in $context)' : ''}',
-        ));
+        results.add(
+          MetadataValidationResult.invalid(
+            'Missing required metadata key: ${entry.key}${context != null ? ' (in $context)' : ''}',
+          ),
+        );
       }
     }
 
@@ -103,6 +106,8 @@ class MetadataValidator {
   ///
   /// [key] 元数据键
   /// [value] 元数据值
+  ///
+  /// 返回验证结果
   MetadataValidationResult validateValue(String key, dynamic value) {
     final standardSchemas = StandardSchemas.getAll();
     final schema = _customSchemas[key] ?? standardSchemas[key];
@@ -121,6 +126,8 @@ class MetadataValidator {
   ///
   /// [properties] NodeReference 的 properties Map
   /// [context] 可选的上下文信息
+  ///
+  /// 返回验证结果列表
   List<MetadataValidationResult> validateReferenceProperties(
     Map<String, dynamic> properties, {
     String? context,
@@ -139,9 +146,11 @@ class MetadataValidator {
       if (schema != null) {
         final result = schema.validate(value);
         if (!result.isValid) {
-          results.add(MetadataValidationResult.invalid(
-            'Invalid reference property "$key"${context != null ? ' (in $context)' : ''}: ${result.errorMessage}',
-          ));
+          results.add(
+            MetadataValidationResult.invalid(
+              'Invalid reference property "$key"${context != null ? ' (in $context)' : ''}: ${result.errorMessage}',
+            ),
+          );
         }
       }
     }
@@ -152,6 +161,8 @@ class MetadataValidator {
   /// 检查元数据是否全部有效
   ///
   /// [metadata] 要验证的元数据
+  ///
+  /// 返回 true 如果所有元数据都有效
   bool isValid(Map<String, dynamic> metadata) {
     final results = validate(metadata);
     return results.every((r) => r.isValid);
@@ -160,6 +171,8 @@ class MetadataValidator {
   /// 获取验证失败的错误信息
   ///
   /// [metadata] 要验证的元数据
+  ///
+  /// 返回错误信息列表
   List<String> getErrors(Map<String, dynamic> metadata) {
     final results = validate(metadata);
     return results
@@ -173,6 +186,8 @@ class MetadataValidator {
   /// 应用默认值并移除无效值
   ///
   /// [metadata] 要清理的元数据
+  ///
+  /// 返回清理后的元数据 Map
   Map<String, dynamic> sanitize(Map<String, dynamic> metadata) {
     final result = <String, dynamic>{};
     final standardSchemas = StandardSchemas.getAll();
@@ -211,11 +226,15 @@ class MetadataValidator {
 
 /// 元数据验证异常
 class MetadataValidationException implements Exception {
+  /// 创建元数据验证异常
+  ///
+  /// [errors] 错误列表
   MetadataValidationException(this.errors);
 
   /// 错误列表
   final List<String> errors;
 
+  /// 转换为字符串表示
   @override
   String toString() {
     if (errors.isEmpty) return 'Metadata validation failed';

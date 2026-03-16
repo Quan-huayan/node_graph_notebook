@@ -1,8 +1,10 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../core/plugin/plugin.dart';
 
 /// 文件夹插件
 ///
-/// 提供文件夹管理功能
+/// 提供文件夹管理功能，包括文件夹的创建、管理和组织
 class FolderPlugin extends Plugin {
   PluginState _state = PluginState.unloaded;
 
@@ -16,12 +18,15 @@ class FolderPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-        id: 'folder_plugin',
-        name: 'Folder Plugin',
-        version: '1.0.0',
-        description: 'Provides folder management functionality',
-        author: 'Node Graph Notebook',
-      );
+    id: 'folder_plugin',
+    name: 'Folder Plugin',
+    version: '1.0.0',
+    description: 'Provides folder management functionality',
+    author: 'Node Graph Notebook',
+  );
+
+  @override
+  List<ServiceBinding> registerServices() => [];
 
   @override
   Future<void> onLoad(PluginContext context) async {
@@ -42,4 +47,10 @@ class FolderPlugin extends Plugin {
   Future<void> onUnload() async {
     // 清理资源
   }
+
+  @override
+  Map<String, dynamic> exportAPIs() => {};
+
+  @override
+  List<BlocProvider> registerBlocs() => [];
 }

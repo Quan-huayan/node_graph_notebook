@@ -32,7 +32,7 @@ enum LayoutAlgorithm {
   /// 环形
   @JsonValue('circular')
   circular,
-  
+
   /// 自由布局
   @JsonValue('free')
   free,

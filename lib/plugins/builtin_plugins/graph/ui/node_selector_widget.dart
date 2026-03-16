@@ -3,6 +3,7 @@ import '../../../../core/models/models.dart';
 
 /// 节点选择器 widget
 class NodeSelectorWidget extends StatefulWidget {
+  /// 创建节点选择器 widget
   const NodeSelectorWidget({
     super.key,
     required this.nodes,
@@ -11,9 +12,13 @@ class NodeSelectorWidget extends StatefulWidget {
     this.searchHint = 'Search nodes...',
   });
 
+  /// 节点列表
   final List<Node> nodes;
+  /// 选中的索引集合
   final Set<int> selectedIndices;
+  /// 选择变化回调
   final ValueChanged<Set<int>> onSelectionChanged;
+  /// 搜索提示文本
   final String searchHint;
 
   @override
@@ -36,10 +41,8 @@ class _NodeSelectorWidgetState extends State<NodeSelectorWidget> {
     }
 
     final query = _searchQuery.toLowerCase();
-    return widget.nodes.where((node) {
-      return node.title.toLowerCase().contains(query) ||
-          (node.content?.toLowerCase().contains(query) ?? false);
-    }).toList();
+    return widget.nodes.where((node) => node.title.toLowerCase().contains(query) ||
+          (node.content?.toLowerCase().contains(query) ?? false)).toList();
   }
 
   void _toggleAll(bool selected) {
@@ -129,7 +132,9 @@ class _NodeSelectorWidgetState extends State<NodeSelectorWidget> {
                   itemBuilder: (context, index) {
                     final node = filteredNodes[index];
                     final originalIndex = widget.nodes.indexOf(node);
-                    final isSelected = widget.selectedIndices.contains(originalIndex);
+                    final isSelected = widget.selectedIndices.contains(
+                      originalIndex,
+                    );
 
                     return CheckboxListTile(
                       value: isSelected,

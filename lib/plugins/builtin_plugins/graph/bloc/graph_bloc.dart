@@ -1,19 +1,21 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_event.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/bloc/graph_state.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/graph/service/graph_service.dart';
-import 'package:node_graph_notebook/plugins/builtin_plugins/layout/service/layout_service.dart';
-import '../../../../core/models/models.dart';
-import '../../../../core/events/app_events.dart';
+
 import '../../../../core/commands/command_bus.dart';
-import '../../../../core/commands/command.dart';
-import '../command/graph_commands.dart';
+import '../../../../core/commands/models/command.dart';
+import '../../../../core/events/app_events.dart';
+import '../../../../core/models/models.dart';
 import '../../../../core/repositories/graph_repository.dart';
 import '../../../../core/repositories/node_repository.dart';
+import '../../layout/service/layout_service.dart';
+import '../command/graph_commands.dart';
+import '../service/graph_service.dart';
+import 'graph_event.dart';
+import 'graph_state.dart';
 
 /// Graph BLoC - 图状态管理核心
 ///
@@ -29,16 +31,22 @@ import '../../../../core/repositories/node_repository.dart';
 /// - 直接订阅 NodeBloc（通过事件总线解耦）
 /// - 业务逻辑（由 CommandHandler 处理）
 class GraphBloc extends Bloc<GraphEvent, GraphState> {
+  /// 创建 Graph BLoC
+  /// 
+  /// [commandBus] - 命令总线，用于执行写操作
+  /// [graphRepository] - 图数据仓库，用于读操作
+  /// [nodeRepository] - 节点数据仓库，用于读操作
+  /// [eventBus] - 事件总线，用于订阅数据变化
   GraphBloc({
     required CommandBus commandBus,
     required GraphRepository graphRepository,
     required NodeRepository nodeRepository,
     required AppEventBus eventBus,
-  })  : _commandBus = commandBus,
-        _graphRepository = graphRepository,
-        _nodeRepository = nodeRepository,
-        _eventBus = eventBus,
-        super(GraphState.initial()) {
+  }) : _commandBus = commandBus,
+       _graphRepository = graphRepository,
+       _nodeRepository = nodeRepository,
+       _eventBus = eventBus,
+       super(GraphState.initial()) {
     // 注册事件处理器
     on<GraphInitializeEvent>(_onInitialize);
     on<GraphLoadEvent>(_onLoadGraph);
@@ -93,15 +101,20 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
         emit(state.copyWith(loadingState: LoadingState.loaded));
       }
     } on FileSystemException catch (_) {
-      emit(state.copyWith(
-        loadingState: LoadingState.error,
-        error: 'Data folder not found or inaccessible. Please restart the application to recover.',
-      ));
+      emit(
+        state.copyWith(
+          loadingState: LoadingState.error,
+          error:
+              'Data folder not found or inaccessible. Please restart the application to recover.',
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        loadingState: LoadingState.error,
-        error: 'Failed to load graph: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          loadingState: LoadingState.error,
+          error: 'Failed to load graph: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -121,10 +134,12 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
       await _loadGraphData(graph, emit);
     } catch (e) {
-      emit(state.copyWith(
-        loadingState: LoadingState.error,
-        error: 'Failed to load graph: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          loadingState: LoadingState.error,
+          error: 'Failed to load graph: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -143,16 +158,17 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       if (result.isSuccess) {
         await _loadGraphData(result.data!, emit);
       } else {
-        emit(state.copyWith(
-          loadingState: LoadingState.error,
-          error: result.error,
-        ));
+        emit(
+          state.copyWith(loadingState: LoadingState.error, error: result.error),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        loadingState: LoadingState.error,
-        error: 'Failed to create graph: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          loadingState: LoadingState.error,
+          error: 'Failed to create graph: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -172,10 +188,12 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
       await _loadGraphData(graph, emit);
     } catch (e) {
-      emit(state.copyWith(
-        loadingState: LoadingState.error,
-        error: 'Failed to switch graph: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          loadingState: LoadingState.error,
+          error: 'Failed to switch graph: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -195,7 +213,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       final result = await _commandBus.dispatch(command);
 
       if (result.isSuccess) {
-        emit(state.copyWith(graph: result.data!));
+        emit(state.copyWith(graph: result.data));
       } else {
         emit(state.copyWith(error: result.error));
       }
@@ -205,16 +223,15 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   }
 
   /// 添加节点
-  Future<void> _onNodeAdd(
-    NodeAddEvent event,
-    Emitter<GraphState> emit,
-  ) async {
+  Future<void> _onNodeAdd(NodeAddEvent event, Emitter<GraphState> emit) async {
     if (state.graph.id.isEmpty) return;
 
     try {
       // 先更新节点位置（如果提供了）
       if (event.position != null) {
-        final updatedPositions = Map<String, Offset>.from(state.graph.nodePositions);
+        final updatedPositions = Map<String, Offset>.from(
+          state.graph.nodePositions,
+        );
         updatedPositions[event.nodeId] = event.position!;
 
         final updatedGraph = state.graph.copyWith(
@@ -241,9 +258,11 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
         emit(state.copyWith(error: result.error));
       }
     } on FileSystemException catch (_) {
-      emit(state.copyWith(
-        error: 'Cannot save changes: Data folder is missing or inaccessible.',
-      ));
+      emit(
+        state.copyWith(
+          error: 'Cannot save changes: Data folder is missing or inaccessible.',
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(error: 'Failed to add node: ${e.toString()}'));
     }
@@ -257,12 +276,12 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     if (state.graph.id.isEmpty) return;
 
     // 乐观更新 - 立即更新状态
-    final updatedPositions = Map<String, Offset>.from(state.graph.nodePositions);
+    final updatedPositions = Map<String, Offset>.from(
+      state.graph.nodePositions,
+    );
     updatedPositions[event.nodeId] = event.newPosition;
 
-    final updatedGraph = state.graph.copyWith(
-      nodePositions: updatedPositions,
-    );
+    final updatedGraph = state.graph.copyWith(nodePositions: updatedPositions);
 
     emit(state.copyWith(graph: updatedGraph));
 
@@ -279,8 +298,10 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     if (currentState.graph.id.isEmpty) return;
 
     // 乐观更新 - 立即更新所有节点位置
-    final updatedPositions = Map<String, Offset>.from(currentState.graph.nodePositions);
-    updatedPositions.addAll(event.movements);
+    final updatedPositions = Map<String, Offset>.from(
+      currentState.graph.nodePositions,
+    )
+    ..addAll(event.movements);
 
     final updatedGraph = currentState.graph.copyWith(
       nodePositions: updatedPositions,
@@ -320,51 +341,53 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
         emit(state.copyWith(error: result.error));
       }
     } on FileSystemException catch (_) {
-      emit(state.copyWith(
-        error: 'Cannot save changes: Data folder is missing or inaccessible.',
-      ));
+      emit(
+        state.copyWith(
+          error: 'Cannot save changes: Data folder is missing or inaccessible.',
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to remove node from graph: ${e.toString()}'));
+      emit(
+        state.copyWith(
+          error: 'Failed to remove node from graph: ${e.toString()}',
+        ),
+      );
     }
   }
 
   /// 选择节点
-  void _onNodeSelect(
-    NodeSelectEvent event,
-    Emitter<GraphState> emit,
-  ) {
+  void _onNodeSelect(NodeSelectEvent event, Emitter<GraphState> emit) {
     if (event.addToSelection) {
       // 添加到选择
-      final newSelectedIds = Set<String>.from(state.selectedNodeIds);
-      newSelectedIds.add(event.nodeId);
+      final newSelectedIds = Set<String>.from(state.selectedNodeIds)
+      ..add(event.nodeId);
 
-      emit(state.copyWith(
-        selectionState: state.selectionState.copyWith(
-          selectedNodeIds: newSelectedIds,
-          lastSelectedId: event.nodeId,
-          selectionMode: SelectionMode.multi,
+      emit(
+        state.copyWith(
+          selectionState: state.selectionState.copyWith(
+            selectedNodeIds: newSelectedIds,
+            lastSelectedId: event.nodeId,
+            selectionMode: SelectionMode.multi,
+          ),
         ),
-      ));
+      );
     } else {
       // 单选
-      emit(state.copyWith(
-        selectionState: state.selectionState.copyWith(
-          selectedNodeIds: {event.nodeId},
-          lastSelectedId: event.nodeId,
-          selectionMode: SelectionMode.single,
+      emit(
+        state.copyWith(
+          selectionState: state.selectionState.copyWith(
+            selectedNodeIds: {event.nodeId},
+            lastSelectedId: event.nodeId,
+            selectionMode: SelectionMode.single,
+          ),
         ),
-      ));
+      );
     }
   }
 
   /// 清除选择
-  void _onSelectionClear(
-    SelectionClearEvent event,
-    Emitter<GraphState> emit,
-  ) {
-    emit(state.copyWith(
-      selectionState: const SelectionState(),
-    ));
+  void _onSelectionClear(SelectionClearEvent event, Emitter<GraphState> emit) {
+    emit(state.copyWith(selectionState: const SelectionState()));
   }
 
   /// 多选节点
@@ -372,13 +395,15 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     NodeMultiSelectEvent event,
     Emitter<GraphState> emit,
   ) {
-    emit(state.copyWith(
-      selectionState: state.selectionState.copyWith(
-        selectedNodeIds: event.nodeIds.toSet(),
-        lastSelectedId: event.nodeIds.isNotEmpty ? event.nodeIds.last : null,
-        selectionMode: SelectionMode.multi,
+    emit(
+      state.copyWith(
+        selectionState: state.selectionState.copyWith(
+          selectedNodeIds: event.nodeIds.toSet(),
+          lastSelectedId: event.nodeIds.isNotEmpty ? event.nodeIds.last : null,
+          selectionMode: SelectionMode.multi,
+        ),
       ),
-    ));
+    );
   }
 
   /// 缩放视图
@@ -388,17 +413,19 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   ) async {
     if (state.graph.id.isEmpty) {
       // 如果没有加载 graph，只更新内存状态
-      emit(state.copyWith(
-        viewState: state.viewState.copyWith(
-          zoomLevel: event.zoomLevel,
-          camera: event.position != null
-              ? state.viewState.camera.copyWith(
-                  position: event.position!,
-                  zoom: event.zoomLevel,
-                )
-              : state.viewState.camera.copyWith(zoom: event.zoomLevel),
+      emit(
+        state.copyWith(
+          viewState: state.viewState.copyWith(
+            zoomLevel: event.zoomLevel,
+            camera: event.position != null
+                ? state.viewState.camera.copyWith(
+                    position: event.position,
+                    zoom: event.zoomLevel,
+                  )
+                : state.viewState.camera.copyWith(zoom: event.zoomLevel),
+          ),
         ),
-      ));
+      );
       return;
     }
 
@@ -436,31 +463,35 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       final updatedGraph = result.data!;
 
       // 更新状态（使用更新后的 graph）
-      emit(state.copyWith(
-        graph: updatedGraph,
-        viewState: state.viewState.copyWith(
-          zoomLevel: event.zoomLevel,
-          camera: state.viewState.camera.copyWith(
-            position: newPosition,
-            zoom: event.zoomLevel,
+      emit(
+        state.copyWith(
+          graph: updatedGraph,
+          viewState: state.viewState.copyWith(
+            zoomLevel: event.zoomLevel,
+            camera: state.viewState.camera.copyWith(
+              position: newPosition,
+              zoom: event.zoomLevel,
+            ),
           ),
         ),
-      ));
+      );
     } catch (e) {
       // 持久化失败不影响内存状态的更新
       debugPrint('Failed to persist camera zoom: $e');
       // 即使持久化失败，也要更新内存状态
-      emit(state.copyWith(
-        viewState: state.viewState.copyWith(
-          zoomLevel: event.zoomLevel,
-          camera: event.position != null
-              ? state.viewState.camera.copyWith(
-                  position: event.position!,
-                  zoom: event.zoomLevel,
-                )
-              : state.viewState.camera.copyWith(zoom: event.zoomLevel),
+      emit(
+        state.copyWith(
+          viewState: state.viewState.copyWith(
+            zoomLevel: event.zoomLevel,
+            camera: event.position != null
+                ? state.viewState.camera.copyWith(
+                    position: event.position,
+                    zoom: event.zoomLevel,
+                  )
+                : state.viewState.camera.copyWith(zoom: event.zoomLevel),
+          ),
         ),
-      ));
+      );
     }
   }
 
@@ -495,21 +526,25 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       final updatedGraph = result.data!;
 
       // 更新状态（使用更新后的 graph 和新的 viewState）
-      emit(state.copyWith(
-        graph: updatedGraph,
-        viewState: state.viewState.copyWith(
-          camera: state.viewState.camera.copyWith(position: event.position),
+      emit(
+        state.copyWith(
+          graph: updatedGraph,
+          viewState: state.viewState.copyWith(
+            camera: state.viewState.camera.copyWith(position: event.position),
+          ),
         ),
-      ));
+      );
     } catch (e) {
       // 持久化失败不影响内存状态的更新
       debugPrint('Failed to persist camera position: $e');
       // 即使持久化失败，也要更新内存状态
-      emit(state.copyWith(
-        viewState: state.viewState.copyWith(
-          camera: state.viewState.camera.copyWith(position: event.position),
+      emit(
+        state.copyWith(
+          viewState: state.viewState.copyWith(
+            camera: state.viewState.camera.copyWith(position: event.position),
+          ),
         ),
-      ));
+      );
     }
   }
 
@@ -518,23 +553,24 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     ViewToggleConnectionsEvent event,
     Emitter<GraphState> emit,
   ) {
-    emit(state.copyWith(
-      viewState: state.viewState.copyWith(
-        showConnections: !state.viewState.showConnections,
+    emit(
+      state.copyWith(
+        viewState: state.viewState.copyWith(
+          showConnections: !state.viewState.showConnections,
+        ),
       ),
-    ));
+    );
   }
 
   /// 切换网格显示
-  void _onToggleGrid(
-    ViewToggleGridEvent event,
-    Emitter<GraphState> emit,
-  ) {
-    emit(state.copyWith(
-      viewState: state.viewState.copyWith(
-        gridVisible: !state.viewState.gridVisible,
+  void _onToggleGrid(ViewToggleGridEvent event, Emitter<GraphState> emit) {
+    emit(
+      state.copyWith(
+        viewState: state.viewState.copyWith(
+          gridVisible: !state.viewState.gridVisible,
+        ),
       ),
-    ));
+    );
   }
 
   /// 应用布局
@@ -579,10 +615,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   }
 
   /// 批量事件
-  Future<void> _onBatch(
-    BatchEvent event,
-    Emitter<GraphState> emit,
-  ) async {
+  Future<void> _onBatch(BatchEvent event, Emitter<GraphState> emit) async {
     if (state.graph.id.isEmpty) return;
 
     try {
@@ -608,9 +641,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       final currentNodeIds = List<String>.from(state.graph.nodeIds);
 
       // 移除节点
-      for (final nodeId in nodeIdsToMoveOut) {
-        currentNodeIds.remove(nodeId);
-      }
+      nodeIdsToMoveOut.forEach(currentNodeIds.remove);
 
       // 添加节点（去重）
       for (final nodeId in nodeIdsToAdd) {
@@ -634,18 +665,18 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
       // 重新加载图数据（包括节点和连接）
       await _loadGraphData(savedGraph, emit);
-
     } catch (e) {
       debugPrint('Error in _onBatch: $e');
-      emit(state.copyWith(error: 'Failed to process batch operations: ${e.toString()}'));
+      emit(
+        state.copyWith(
+          error: 'Failed to process batch operations: ${e.toString()}',
+        ),
+      );
     }
   }
 
   /// 撤销
-  Future<void> _onUndo(
-    UndoEvent event,
-    Emitter<GraphState> emit,
-  ) async {
+  Future<void> _onUndo(UndoEvent event, Emitter<GraphState> emit) async {
     // 撤销功能由 UndoManager 处理，不在 CommandBus 中
     // TODO: 实现撤销逻辑
     if (state.graph.id.isNotEmpty) {
@@ -657,10 +688,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   }
 
   /// 重做
-  Future<void> _onRedo(
-    RedoEvent event,
-    Emitter<GraphState> emit,
-  ) async {
+  Future<void> _onRedo(RedoEvent event, Emitter<GraphState> emit) async {
     // 重做功能由 UndoManager 处理，不在 CommandBus 中
     // TODO: 实现重做逻辑
     if (state.graph.id.isNotEmpty) {
@@ -672,18 +700,12 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   }
 
   /// 清除错误
-  void _onErrorClear(
-    ErrorClearEvent event,
-    Emitter<GraphState> emit,
-  ) {
+  void _onErrorClear(ErrorClearEvent event, Emitter<GraphState> emit) {
     emit(state.copyWith(error: null));
   }
 
   /// 重试
-  Future<void> _onRetry(
-    RetryEvent event,
-    Emitter<GraphState> emit,
-  ) async {
+  Future<void> _onRetry(RetryEvent event, Emitter<GraphState> emit) async {
     add(const GraphInitializeEvent());
   }
 
@@ -697,38 +719,41 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
       // 从 graph.viewConfig 中读取相机配置并更新 viewState
       final cameraState = CameraState(
-        position: Offset(
-          graph.viewConfig.camera.x,
-          graph.viewConfig.camera.y,
-        ),
+        position: Offset(graph.viewConfig.camera.x, graph.viewConfig.camera.y),
         zoom: graph.viewConfig.camera.zoom,
       );
 
-      emit(state.copyWith(
-        graph: graph,
-        nodes: nodes,
-        connections: connections,
-        viewState: state.viewState.copyWith(
-          camera: cameraState,
-          zoomLevel: graph.viewConfig.camera.zoom,
+      emit(
+        state.copyWith(
+          graph: graph,
+          nodes: nodes,
+          connections: connections,
+          viewState: state.viewState.copyWith(
+            camera: cameraState,
+            zoomLevel: graph.viewConfig.camera.zoom,
+          ),
+          loadingState: LoadingState.loaded,
+          error: null,
         ),
-        loadingState: LoadingState.loaded,
-        error: null,
-      ));
+      );
     } on FileSystemException catch (_) {
-      emit(state.copyWith(
-        loadingState: LoadingState.error,
-        error: 'Data files not found. Some nodes may be missing.',
-        nodes: const [],
-        connections: const [],
-      ));
+      emit(
+        state.copyWith(
+          loadingState: LoadingState.error,
+          error: 'Data files not found. Some nodes may be missing.',
+          nodes: const [],
+          connections: const [],
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        loadingState: LoadingState.error,
-        error: 'Failed to load graph data: ${e.toString()}',
-        nodes: const [],
-        connections: const [],
-      ));
+      emit(
+        state.copyWith(
+          loadingState: LoadingState.error,
+          error: 'Failed to load graph data: ${e.toString()}',
+          nodes: const [],
+          connections: const [],
+        ),
+      );
     }
   }
 
@@ -781,24 +806,20 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       final result = await _commandBus.dispatch(command);
 
       if (result.isSuccess) {
-        emit(currentState.copyWith(graph: result.data!));
+        emit(currentState.copyWith(graph: result.data));
       } else {
         emit(currentState.copyWith(error: result.error));
       }
     } catch (e) {
-      emit(currentState.copyWith(error: 'Failed to rename graph: ${e.toString()}'));
+      emit(
+        currentState.copyWith(error: 'Failed to rename graph: ${e.toString()}'),
+      );
     }
   }
 
   /// 处理 NodeBloc 同步完成事件
-  void _onNodeSynced(
-    _NodeSyncedEvent event,
-    Emitter<GraphState> emit,
-  ) {
-    emit(state.copyWith(
-      nodes: event.nodes,
-      connections: event.connections,
-    ));
+  void _onNodeSynced(_NodeSyncedEvent event, Emitter<GraphState> emit) {
+    emit(state.copyWith(nodes: event.nodes, connections: event.connections));
   }
 
   /// 聚焦节点
@@ -818,8 +839,8 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       // 计算新的相机位置（将节点居中）
       // 这里我们假设需要基于节点的位置来计算相机位置
       // 具体实现取决于 Flame 引擎的坐标系统
-      final nodePosition = state.graph.nodePositions[event.nodeId] ??
-          targetNode.position;
+      final nodePosition =
+          state.graph.nodePositions[event.nodeId] ?? targetNode.position;
 
       // 更新相机位置到节点位置
       final updatedConfig = state.graph.viewConfig.copyWith(
@@ -843,12 +864,14 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
       final updatedGraph = result.data!;
 
-      emit(state.copyWith(
-        graph: updatedGraph,
-        viewState: state.viewState.copyWith(
-          camera: state.viewState.camera.copyWith(position: nodePosition),
+      emit(
+        state.copyWith(
+          graph: updatedGraph,
+          viewState: state.viewState.copyWith(
+            camera: state.viewState.camera.copyWith(position: nodePosition),
+          ),
         ),
-      ));
+      );
     } catch (e) {
       emit(state.copyWith(error: 'Failed to focus node: ${e.toString()}'));
     }
@@ -887,13 +910,17 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
             .where((n) => !deletedNodeIds.contains(n.id))
             .toList();
 
-        final updatedConnections = Connection.calculateConnections(updatedNodes);
+        final updatedConnections = Connection.calculateConnections(
+          updatedNodes,
+        );
 
         // 使用 add 而不是 emit，因为我们在 stream 回调中
-        add(_NodeSyncedEvent(
-          nodes: updatedNodes,
-          connections: updatedConnections,
-        ));
+        add(
+          _NodeSyncedEvent(
+            nodes: updatedNodes,
+            connections: updatedConnections,
+          ),
+        );
         break;
 
       case DataChangeAction.update:
@@ -912,12 +939,16 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
           ...affectedNodes,
         ];
 
-        final updatedConnections = Connection.calculateConnections(updatedNodes);
+        final updatedConnections = Connection.calculateConnections(
+          updatedNodes,
+        );
 
-        add(_NodeSyncedEvent(
-          nodes: updatedNodes,
-          connections: updatedConnections,
-        ));
+        add(
+          _NodeSyncedEvent(
+            nodes: updatedNodes,
+            connections: updatedConnections,
+          ),
+        );
         break;
     }
   }
@@ -931,10 +962,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
 /// 内部事件：NodeBloc 同步完成
 class _NodeSyncedEvent extends GraphEvent {
-  const _NodeSyncedEvent({
-    required this.nodes,
-    required this.connections,
-  });
+  const _NodeSyncedEvent({required this.nodes, required this.connections});
 
   final List<Node> nodes;
   final List<Connection> connections;
