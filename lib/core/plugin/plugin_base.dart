@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'plugin_context.dart';
 import 'plugin_metadata.dart';
 import 'service_binding.dart';
+import 'ui_hooks/hook_base.dart';
 
 /// 插件基础接口
 ///
@@ -75,6 +76,30 @@ abstract class Plugin {
   ///
   /// 默认返回空列表，表示插件不提供任何 Service
   List<ServiceBinding> registerServices() => [];
+
+  /// 注册插件提供的 UI Hooks
+  ///
+  /// 在插件加载时调用，用于注册插件提供的 UI Hooks
+  ///
+  /// 返回 HookFactory 列表，声明插件提供的 UI Hooks
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// @override
+  /// List<HookFactory> registerHooks() => [
+  ///   () => MyToolbarHook(),
+  ///   () => MySidebarHook(),
+  /// ];
+  /// ```
+  ///
+  /// 默认返回空列表，表示插件不提供任何 UI Hooks
+  ///
+  /// 架构说明：
+  /// - Hook 的生命周期与 Plugin 自动同步
+  /// - Hook 在 Plugin 加载时注册，卸载时自动销毁
+  /// - Hook 的启用/禁用状态跟随 Plugin 的启用/禁用状态
+  /// - Hook 可以通过 HookWrapper 访问 Plugin 的上下文和服务
+  List<HookFactory> registerHooks() => [];
 
   /// 插件加载
   ///

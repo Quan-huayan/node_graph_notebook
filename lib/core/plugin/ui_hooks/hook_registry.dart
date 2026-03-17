@@ -1,96 +1,262 @@
 import 'package:flutter/widgets.dart';
 
-import 'hook_point.dart';
-import 'ui_hook.dart';
+import '../plugin_lifecycle.dart';
+import 'hook_api_registry.dart';
+import 'hook_base.dart';
+import 'hook_lifecycle.dart';
+import 'hook_point_registry.dart';
 
 /// Hook 注册表
+///
+/// 管理 Hook 的注册、注销和查询
+///
+/// 架构说明：
+/// - 仅支持新的 UIHookBase 系统
+/// - 使用 HookWrapper 统一封装 Hooks
+/// - 集成 HookPointRegistry 支持动态 Hook 点
+/// - 集成 HookAPIRegistry 支持 Hook 间 API 通信
 class HookRegistry {
-  /// 创建一个新的 Hook 注册表实例。
+  /// 创建一个新的 Hook 注册表实例
   HookRegistry();
 
   /// Hook 映射
   ///
-  /// Key: Hook 点 ID
-  /// Value: 该 Hook 点注册的所有 Hook（按优先级排序）
-  final Map<HookPointId, List<UIHook>> _hooks = {};
+  /// Key: Hook 点 ID（字符串）
+  /// Value: 该 Hook 点注册的所有 Hook 包装器（按优先级排序）
+  final Map<String, List<HookWrapper>> _hooks = {};
+
+  /// Hook 点注册表
+  ///
+  /// 管理所有 Hook 点的元数据
+  final HookPointRegistry _pointRegistry = HookPointRegistry();
+
+  /// Hook API 注册表
+  ///
+  /// 管理 Hook 导出的 API
+  final HookAPIRegistry _apiRegistry = HookAPIRegistry();
+
+  /// 获取 Hook API 注册表（用于访问 Hook 导出的 API）
+  ///
+  /// 允许外部访问 Hook API 注册表，主要用于 HookContext
+  HookAPIRegistry get apiRegistry => _apiRegistry;
+
+  /// ===== Hook 点管理 =====
+
+  /// 注册 Hook 点
+  ///
+  /// [point] Hook 点定义
+  ///
+  /// 允许插件注册自定义 Hook 点
+  void registerHookPoint(HookPointDefinition point) {
+    _pointRegistry.registerPoint(point);
+    debugPrint('[HookRegistry] Registered hook point: ${point.id}');
+  }
+
+  /// 获取 Hook 点定义
+  ///
+  /// [id] Hook 点 ID
+  /// 返回 Hook 点定义，如果不存在则返回 null
+  HookPointDefinition? getHookPoint(String id) => _pointRegistry.getPoint(id);
+
+  /// 检查 Hook 点是否存在
+  ///
+  /// [id] Hook 点 ID
+  /// 返回 true 如果 Hook 点已注册
+  bool hasHookPoint(String id) => _pointRegistry.hasPoint(id);
+
+  /// 获取所有 Hook 点
+  ///
+  /// 返回所有已注册的 Hook 点定义列表
+  List<HookPointDefinition> getAllHookPoints() => _pointRegistry.getAllPoints();
+
+  /// ===== Hook 注册 =====
 
   /// 注册 Hook
   ///
-  /// [hook] Hook 实例
-  void registerHook(UIHook hook) {
-    final hookPointId = hook.hookPoint;
-    if (!_hooks.containsKey(hookPointId)) {
-      _hooks[hookPointId] = [];
-    }
+  /// [hook] UIHookBase 实例
+  /// [parentPlugin] 可选的父 Plugin 包装器
+  void registerHook(
+    UIHookBase hook, {
+    PluginWrapper? parentPlugin,
+  }) {
+    final hookPointId = hook.hookPointId;
+    final wrapper = HookWrapperFactory.wrapNewHook(
+      hook,
+      parentPlugin: parentPlugin,
+    );
 
-    _hooks[hookPointId]!.add(hook);
-    _hooks[hookPointId]!.sort((a, b) => a.priority.compareTo(b.priority));
-    
-    debugPrint('[HookRegistry] Registered hook: ${hook.metadata.id}');
-    debugPrint('  - Hook point: $hookPointId');
-    debugPrint('  - Hook state: ${hook.state}');
-    debugPrint('  - Is enabled: ${hook.isEnabled}');
-    debugPrint('  - Priority: ${hook.priority}');
-    debugPrint('  - Total hooks at this point: ${_hooks[hookPointId]!.length}');
+    _addHookWrapper(hookPointId, wrapper);
+
+    // 注册 Hook 导出的 API
+    final apis = hook.exportAPIs();
+    if (apis.isNotEmpty) {
+      _apiRegistry.registerAPIs(hook.metadata.id, apis);
+    }
   }
+
+  /// 批量注册 Hook
+  ///
+  /// [hooks] UIHookBase 实例列表
+  /// [parentPlugin] 可选的父 Plugin 包装器
+  void registerHooks(
+    List<UIHookBase> hooks, {
+    PluginWrapper? parentPlugin,
+  }) {
+    for (final hook in hooks) {
+      registerHook(hook, parentPlugin: parentPlugin);
+    }
+  }
+
+  /// ===== Hook 注销 =====
 
   /// 注销 Hook
   ///
-  /// [hook] Hook 实例
-  void unregisterHook(UIHook hook) {
-    final hookPointId = hook.hookPoint;
+  /// [hook] UIHookBase 实例
+  void unregisterHook(UIHookBase hook) {
+    final hookPointId = hook.hookPointId;
     if (_hooks.containsKey(hookPointId)) {
-      _hooks[hookPointId]!.remove(hook);
+      _hooks[hookPointId]!
+          .removeWhere((wrapper) => wrapper.hook == hook);
+
+      // 如果没有 Hook 了，移除该 Hook 点
+      if (_hooks[hookPointId]!.isEmpty) {
+        _hooks.remove(hookPointId);
+      }
     }
+
+    // 注销 Hook 的 API
+    _apiRegistry.unregisterHookAPIs(hook.metadata.id);
   }
+
+  /// 注销 Plugin 的所有 Hook
+  ///
+  /// [pluginId] Plugin 的唯一标识符
+  ///
+  /// 当 Plugin 卸载时，自动注销其提供的所有 Hook
+  void unregisterPluginHooks(String pluginId) {
+    final hooksToRemove = <String>[];
+
+    // 收集需要移除的 Hook
+    for (final entry in _hooks.entries) {
+      final hookPointId = entry.key;
+      final wrappers = entry.value;
+
+      wrappers.removeWhere((wrapper) {
+        if (wrapper.parentPlugin?.plugin.metadata.id == pluginId) {
+          // 注销 Hook 的 API
+          _apiRegistry.unregisterHookAPIs(wrapper.hook.metadata.id);
+          return true;
+        }
+        return false;
+      });
+
+      if (wrappers.isEmpty) {
+        hooksToRemove.add(hookPointId);
+      }
+    }
+
+    // 移除空的 Hook 点
+    for (final hookPointId in hooksToRemove) {
+      _hooks.remove(hookPointId);
+    }
+
+    debugPrint('[HookRegistry] Unregistered all hooks for plugin: $pluginId');
+  }
+
+  /// ===== Hook 查询 =====
 
   /// 获取指定 Hook 点的所有 Hook
   ///
-  /// [hookPointId] Hook 点 ID
+  /// [hookPointId] Hook 点 ID（字符串）
+  /// [includeDisabled] 是否包含已禁用的 Hook（默认 false）
   ///
-  /// 返回按优先级排序的 Hook 列表
-  List<UIHook> getHooks(HookPointId hookPointId) {
+  /// 返回按优先级排序的 Hook 包装器列表
+  List<HookWrapper> getHookWrappers(
+    String hookPointId, {
+    bool includeDisabled = false,
+  }) {
     final allHooks = _hooks[hookPointId] ?? [];
-    final enabledHooks = allHooks.where((hook) => hook.isEnabled).toList();
-    
-    debugPrint('[HookRegistry] getHooks($hookPointId):');
-    debugPrint('  - Total hooks registered: ${allHooks.length}');
-    debugPrint('  - Hooks with enabled state: ${enabledHooks.length}');
-    
-    if (allHooks.isNotEmpty) {
-      for (final hook in allHooks) {
-        debugPrint('    - ${hook.metadata.id}: state=${hook.state}, isEnabled=${hook.isEnabled}, priority=${hook.priority}');
-      }
-    }
-    
-    return enabledHooks;
-  }
 
-  /// 获取指定 Hook 点的第一个 Hook
-  ///
-  /// [hookPointId] Hook 点 ID
-  ///
-  /// 返回优先级最高的 Hook
-  UIHook? getFirstHook(HookPointId hookPointId) {
-    final hooks = getHooks(hookPointId);
-    return hooks.isNotEmpty ? hooks.first : null;
+    if (includeDisabled) {
+      return allHooks;
+    } else {
+      return allHooks.where((wrapper) => wrapper.isEnabled).toList();
+    }
   }
 
   /// 检查指定 Hook 点是否有 Hook
   ///
   /// [hookPointId] Hook 点 ID
-  bool hasHooks(HookPointId hookPointId) => getHooks(hookPointId).isNotEmpty;
+  bool hasHooks(String hookPointId) => getHookWrappers(hookPointId).isNotEmpty;
 
-  /// 清空所有 Hook
-  void clear() {
-    _hooks.clear();
+  /// ===== Hook API 访问 =====
+
+  /// 获取 Hook 导出的 API
+  ///
+  /// [hookId] Hook 的唯一标识符
+  /// [apiName] API 名称
+  /// 返回指定类型的 API 实例，如果不存在则返回 null
+  T? getHookAPI<T>(String hookId, String apiName) => _apiRegistry.getAPI<T>(hookId, apiName);
+
+  /// 检查 Hook 是否导出了指定的 API
+  ///
+  /// [hookId] Hook 的唯一标识符
+  /// [apiName] API 名称
+  /// 返回 true 如果 API 存在
+  bool hasHookAPI(String hookId, String apiName) => _apiRegistry.hasAPI(hookId, apiName);
+
+  /// 获取 Hook 导出的所有 API
+  ///
+  /// [hookId] Hook 的唯一标识符
+  /// 返回该 Hook 导出的所有 API（不含前缀）
+  Map<String, dynamic> getHookAPIs(String hookId) => _apiRegistry.getHookAPIs(hookId);
+
+  /// ===== 工具方法 =====
+
+  /// 添加 Hook 包装器到映射
+  ///
+  /// [hookPointId] Hook 点 ID
+  /// [wrapper] Hook 包装器
+  void _addHookWrapper(String hookPointId, HookWrapper wrapper) {
+    if (!_hooks.containsKey(hookPointId)) {
+      _hooks[hookPointId] = [];
+    }
+
+    _hooks[hookPointId]!.add(wrapper);
+
+    // 按优先级排序
+    _hooks[hookPointId]!.sort((a, b) {
+      final aPriority = a.hook.priority.value;
+      final bPriority = b.hook.priority.value;
+      return aPriority.compareTo(bPriority);
+    });
+
+    debugPrint('[HookRegistry] Registered hook wrapper: ${wrapper.hook.runtimeType}');
+    debugPrint('  - Hook point: $hookPointId');
+    debugPrint('  - Is enabled: ${wrapper.isEnabled}');
+    debugPrint('  - Priority: ${wrapper.hook.priority}');
+    debugPrint('  - Total hooks at this point: ${_hooks[hookPointId]!.length}');
   }
 
-  /// 获取所有注册的 Hook 点
-  Set<HookPointId> get registeredHookPoints => _hooks.keys.toSet();
+  /// 清空所有 Hook
+  ///
+  /// 主要用于测试
+  void clear() {
+    _hooks.clear();
+    _pointRegistry.clear();
+    _apiRegistry.clear();
+  }
+
+  /// 获取所有注册的 Hook 点（字符串 ID）
+  Set<String> get registeredHookPointIds => _hooks.keys.toSet();
 
   /// 获取 Hook 总数
-  int get totalHooks => _hooks.values.fold(0, (sum, hooks) => sum + hooks.length);
+  int get totalHooks =>
+      _hooks.values.fold(0, (sum, hooks) => sum + hooks.length);
+
+  @override
+  String toString() =>
+      'HookRegistry(hookPoints: ${_pointRegistry.count}, hooks: $totalHooks)';
 }
 
 /// 全局 Hook 注册表实例

@@ -102,104 +102,56 @@ class GraphView extends StatelessWidget {
       );
     }
 
-    return Row(
-      children: [
-        // 侧边栏
-        if (uiState.isSidebarOpen)
-          Row(
-            children: [
-              SizedBox(
-                width: uiState.sidebarWidth,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      right: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1,
+    // 主内容区 - 占据剩余全部空间
+    return SizedBox.expand(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Flame 图渲染组件
+          Positioned.fill(
+            child: GraphFlameWidget(
+              key: ValueKey(
+                theme.backgrounds.canvas.toARGB32(),
+              ), // 使用主题背景色作为 key，主题变化时重建
+              uiState: uiState,
+              theme: theme,
+              executionEngine: executionEngine,
+              onZoomChanged: (zoomLevel) {
+                // Zoom 在 BLoC 中解决
+              },
+              onNodeDropped: (nodeId, position) async {
+                // 检查节点是否已经在图中
+                final alreadyInGraph = state.nodes.any(
+                  (n) => n.id == nodeId,
+                );
+                if (alreadyInGraph) {
+                  // 节点已经在图中，显示提示
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Node is already in the graph'),
+                        duration: Duration(seconds: 1),
                       ),
-                    ),
-                  ),
-                  child: const Center(
-                    child: Text('Sidebar content will be implemented here'),
-                  ),
-                ),
-              ),
-              // 侧边栏宽度调整把手
-              GestureDetector(
-                onPanUpdate: (details) {
-                  // 注意：UISetSidebarWidthEvent 可能需要重新定义
-                },
-                child: Container(
-                  width: 5,
-                  color: Colors.transparent,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.resizeLeftRight,
-                    child: Container(
-                      width: 1,
-                      color: Theme.of(context).dividerColor,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                    );
+                  }
+                  return;
+                }
 
-        // 主内容区 - 占据剩余全部空间
-        Expanded(
-          child: SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Flame 图渲染组件
-                Positioned.fill(
-                  child: GraphFlameWidget(
-                    key: ValueKey(
-                      theme.backgrounds.canvas.toARGB32(),
-                    ), // 使用主题背景色作为 key，主题变化时重建
-                    uiState: uiState,
-                    theme: theme,
-                    executionEngine: executionEngine,
-                    onZoomChanged: (zoomLevel) {
-                      // Zoom 在 BLoC 中解决
-                    },
-                    onNodeDropped: (nodeId, position) async {
-                      // 检查节点是否已经在图中
-                      final alreadyInGraph = state.nodes.any(
-                        (n) => n.id == nodeId,
-                      );
-                      if (alreadyInGraph) {
-                        // 节点已经在图中，显示提示
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Node is already in the graph'),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        }
-                        return;
-                      }
-
-                      try {
-                        // 添加节点到图中，并设置其位置
-                        // 注意：NodeAddEvent 和 NodeSelectEvent 可能需要重新定义
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to add node: $e')),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
-              ],
+                try {
+                  // 添加节点到图中，并设置其位置
+                  // 注意：NodeAddEvent 和 NodeSelectEvent 可能需要重新定义
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to add node: $e')),
+                    );
+                  }
+                }
+              },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

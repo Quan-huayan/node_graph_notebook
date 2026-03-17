@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/plugin/ui_hooks/hook_context.dart';
-import '../../core/plugin/ui_hooks/hook_point.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
 
 /// 应用程序的顶部导航栏
@@ -16,15 +15,18 @@ class NoteAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hooks = hookRegistry.getHooks(HookPointId.mainToolbar);
+    final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
 
     return AppBar(
       title: const Text('Node Graph Notebook'),
       actions: [
         // 动态加载所有主工具栏钩子
-        ...hooks.map((hook) {
+        ...hookWrappers.map((hookWrapper) {
+          final hook = hookWrapper.hook;
           final hookContext = MainToolbarHookContext(
             data: {'buildContext': context},
+            pluginContext: hookWrapper.parentPlugin?.context,
+            hookAPIRegistry: hookRegistry.apiRegistry,
           );
           if (hook.isVisible(hookContext)) {
             return hook.render(hookContext);

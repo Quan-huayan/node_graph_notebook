@@ -1,3 +1,6 @@
+import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
+
 /// 插件 Service 绑定系统
 ///
 /// 提供统一的 Service 依赖注入机制，让插件声明它提供的 Service
@@ -54,6 +57,20 @@ abstract class ServiceBinding<T> {
   ///
   /// 用于区分同一类型的多个 Service 实例
   String? get serviceName => null;
+
+  /// 创建 Provider
+  ///
+  /// [instance] Service 实例
+  /// 返回 Provider 实例
+  ///
+  /// 关键：这个方法使用泛型类型参数 T，确保 Provider 的类型正确
+  SingleChildWidget createProvider(T instance) 
+    // 使用 Provider.value 并保留类型信息
+    // 由于这个方法在泛型类中，T 的类型在编译时就已经确定
+    // 所以 Provider 的类型参数会被正确推断为 T
+  => Provider<T>.value(
+      value: instance,
+    );
 
   /// 释放 Service 资源
   ///

@@ -28,6 +28,7 @@ analyzer:
     unused_import: error
     # Avoid unused local variables
     unused_local_variable: error
+    avoid_dynamic_calls: error
 
     # === Warnings (not blocking) ===
     # Documentation requirements

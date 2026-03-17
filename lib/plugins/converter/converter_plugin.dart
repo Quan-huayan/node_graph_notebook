@@ -1,7 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import 'bloc/converter_bloc.dart';
+import 'converter_toolbar_hook.dart';
 import 'service/converter_service_bindings.dart';
 import 'service/import_export_service.dart';
 
@@ -30,7 +32,10 @@ class ConverterPlugin extends Plugin {
   );
 
   @override
-  List<ServiceBinding> registerServices() => [ConverterServiceBinding()];
+  List<ServiceBinding> registerServices() => [
+    ConverterServiceBinding(),
+    ImportExportServiceBinding(),
+  ];
 
   @override
   List<BlocProvider> registerBlocs() => [
@@ -38,6 +43,11 @@ class ConverterPlugin extends Plugin {
       create: (ctx) =>
           ConverterBloc(importExportService: ctx.read<ImportExportService>()),
     ),
+  ];
+
+  @override
+  List<HookFactory> registerHooks() => [
+    ConverterToolbarHook.new,
   ];
 
   @override

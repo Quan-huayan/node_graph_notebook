@@ -1,70 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import '../../../core/plugin/ui_hooks/hook_metadata.dart';
+import '../../../core/plugin/ui_hooks/hook_priority.dart';
+import 'bloc/graph_bloc.dart';
+import 'bloc/node_bloc.dart';
 import 'ui/graph_nodes_dialog.dart';
 
 /// 图节点管理工具栏钩子
-class GraphNodesToolbarHook extends MainToolbarHook {
-  PluginState _state = PluginState.loaded;
-
+class GraphNodesToolbarHook extends MainToolbarHookBase {
   @override
-  PluginState get state => _state;
-
-  @override
-  set state(PluginState newState) {
-    _state = newState;
-  }
-
-  @override
-  int get priority => 50;
-
-  @override
-  PluginMetadata get metadata => const PluginMetadata(
+  HookMetadata get metadata => const HookMetadata(
     id: 'graph_nodes_toolbar_hook',
     name: 'Graph Nodes Toolbar Hook',
     version: '1.0.0',
     description: 'Provides graph nodes management button in toolbar',
-    author: 'Node Graph Notebook',
-    enabledByDefault: true,
   );
 
   @override
+  HookPriority get priority => HookPriority.medium;
+
+  @override
   Widget renderToolbar(MainToolbarHookContext context) => IconButton(
-      icon: const Icon(Icons.playlist_add_check),
-      onPressed: () => _showGraphNodesDialog(context),
-      tooltip: 'Manage Graph Nodes',
-    );
+        icon: const Icon(Icons.playlist_add_check),
+        onPressed: () => _showGraphNodesDialog(context),
+        tooltip: 'Manage Graph Nodes',
+      );
 
   void _showGraphNodesDialog(MainToolbarHookContext context) {
     final buildContext = context.data['buildContext'] as BuildContext?;
     if (buildContext == null) return;
 
-    final bloc = context.data['graphBloc'] as dynamic;
-    final nodeBloc = context.data['nodeBloc'] as dynamic;
+    // 直接从 BuildContext 读取 BLoC，确保类型安全
+    final graphBloc = buildContext.read<GraphBloc>();
+    final nodeBloc = buildContext.read<NodeBloc>();
 
     showDialog(
       context: buildContext,
-      builder: (ctx) => GraphNodesDialog(graphBloc: bloc, nodeBloc: nodeBloc),
+      builder: (ctx) => GraphNodesDialog(graphBloc: graphBloc, nodeBloc: nodeBloc),
     );
   }
-
-  @override
-  Future<void> onInit() async {}
-
-  @override
-  Future<void> onDispose() async {}
-
-  @override
-  Future<void> onEnable() async {}
-
-  @override
-  Future<void> onDisable() async {}
-
-  @override
-  Future<void> onLoad(PluginContext context) async {}
-
-  @override
-  Future<void> onUnload() async {}
 }

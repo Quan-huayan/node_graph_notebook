@@ -39,7 +39,7 @@ class TextLayoutTask extends CPUTask<TextLayoutResult> {
       'text': text,
       'fontSize': fontSize,
       'maxWidth': maxWidth,
-      'fontWeight': fontWeight.index,
+      'fontWeight': fontWeight.value,
       'textAlign': textAlign.index,
     };
 

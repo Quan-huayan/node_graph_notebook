@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:node_graph_notebook/core/execution/cpu_task.dart';
 import 'package:node_graph_notebook/core/execution/execution_engine.dart';
 import 'package:node_graph_notebook/core/execution/task_registry.dart';
 
-/// 测试用的简单 CPU 任务
 class TestTask extends CPUTask<int> {
   TestTask({required this.value});
 
@@ -24,7 +24,6 @@ class TestTask extends CPUTask<int> {
 
   @override
   Future<int> execute() async {
-    // 模拟 CPU 密集型计算
     var result = 0;
     for (var i = 0; i < 1000; i++) {
       result += value;
@@ -33,7 +32,6 @@ class TestTask extends CPUTask<int> {
   }
 }
 
-/// 测试用的异步 CPU 任务
 class AsyncTestTask extends CPUTask<String> {
   AsyncTestTask({required this.message});
 
@@ -54,13 +52,11 @@ class AsyncTestTask extends CPUTask<String> {
 
   @override
   Future<String> execute() async {
-    // 模拟异步操作
     await Future.delayed(const Duration(milliseconds: 10));
     return 'Processed: $message';
   }
 }
 
-/// 测试用的失败任务
 class FailingTask extends CPUTask<void> {
   @override
   String get name => 'FailingTask';
@@ -89,7 +85,6 @@ void main() {
       engine = ExecutionEngine();
       taskRegistry = TaskRegistry()
 
-      // 注册测试任务类型
       ..registerTaskType(
         'Test',
         (data) => TestTask(value: data['value'] as int),
@@ -115,29 +110,22 @@ void main() {
 
     test('should initialize successfully', () {
       expect(engine.isInitialized, isTrue);
-      // stats 可能包含不同的字段，具体取决于 worker_pool 版本
       expect(engine.stats, isA<Map<String, dynamic>>());
     });
 
     test('should execute CPU task and return result', () async {
-      // 跳过此测试：ExecutionEngine 的 isolate 通信架构需要重构
-      // 静态变量无法在 isolates 之间共享，导致 worker isolates 无法访问 TaskRegistry
-      // 此功能目前未在生产中使用，待架构修复后再启用测试
-
       final task = TestTask(value: 42);
       final result = await engine.executeCPU(task);
 
-      expect(result, equals(42000)); // 42 * 1000
-    }, skip: true);
+      expect(result, equals(42000));
+    });
 
     test('should execute async CPU task', () async {
-      // 跳过此测试：ExecutionEngine 的 isolate 通信架构需要重构
-
       final task = AsyncTestTask(message: 'Hello');
       final result = await engine.executeCPU(task);
 
       expect(result, equals('Processed: Hello'));
-    }, skip: true);
+    });
 
     test('should handle multiple concurrent tasks', () async {
       final tasks = List.generate(
@@ -150,19 +138,18 @@ void main() {
       );
 
       expect(results.length, equals(10));
-      expect(results[0], equals(0)); // 0 * 1000
-      expect(results[5], equals(5000)); // 5 * 1000
-      expect(results[9], equals(9000)); // 9 * 1000
-    }, skip: true);
+      expect(results[0], equals(0));
+      expect(results[5], equals(5000));
+      expect(results[9], equals(9000));
+    });
 
     test('should track job statistics', () async {
       final task = TestTask(value: 1);
       await engine.executeCPU(task);
 
       final stats = engine.stats;
-      // stats 应该包含执行信息，但具体字段取决于 worker_pool 实现
       expect(stats, isNotEmpty);
-    }, skip: true);
+    });
 
     test('should throw error when executing before initialization', () async {
       final uninitializedEngine = ExecutionEngine();
@@ -183,12 +170,22 @@ void main() {
     });
 
     test('should handle task exceptions gracefully', () async {
-      // 注意：worker_pool 0.0.5 的异常处理可能与预期不同
-      // 这里我们测试引擎能够处理正常任务，异常处理将在实际使用中验证
-      final task = TestTask(value: 1);
-      final result = await engine.executeCPU(task);
-      expect(result, equals(1000));
-    }, skip: true);
+      final errors = <Object>[];
+      await runZonedGuarded(() async {
+        final task = FailingTask();
+
+        try {
+          await engine.executeCPU(task);
+        } on Exception catch (e) {
+          errors.add(e);
+        }
+      }, (error, stack) {
+        errors.add(error);
+      });
+
+      expect(errors, isNotEmpty);
+      expect(errors.first.toString(), contains('Task failed!'));
+    });
   });
 
   group('ExecutionEngine with default workers', () {
@@ -196,16 +193,14 @@ void main() {
       final engine = ExecutionEngine();
       final taskRegistry = TaskRegistry()
 
-      // 注册测试任务类型
       ..registerTaskType(
         'Test',
         (data) => TestTask(value: data['value'] as int),
         (result) => result as int,
       );
 
-      await engine.initialize(taskRegistry: taskRegistry); // 不指定 maxWorkers
+      await engine.initialize(taskRegistry: taskRegistry);
 
-      // 验证引擎已初始化
       expect(engine.isInitialized, isTrue);
 
       await engine.shutdown();

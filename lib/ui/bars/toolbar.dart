@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/plugin/ui_hooks/hook_context.dart';
-import '../../core/plugin/ui_hooks/hook_point.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../plugins/graph/bloc/graph_bloc.dart';
 import '../../plugins/graph/bloc/graph_event.dart';
@@ -23,10 +22,10 @@ class Toolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hooks = hookRegistry.getHooks(HookPointId.mainToolbar);
+    final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
 
     debugPrint('[Toolbar] build() called:');
-    debugPrint('  - MainToolbar hooks found: ${hooks.length}');
+    debugPrint('  - MainToolbar hooks found: ${hookWrappers.length}');
 
     return Card(
       child: Padding(
@@ -50,7 +49,8 @@ class Toolbar extends StatelessWidget {
             ),
             if (uiState.isToolbarExpanded) ...[
               // 动态加载所有主工具栏钩子（仅限工具栏相关）
-              ...hooks.map((hook) {
+              ...hookWrappers.map((hookWrapper) {
+                final hook = hookWrapper.hook;
                 debugPrint('  - Rendering toolbar hook: ${hook.metadata.id}');
                 final hookContext = MainToolbarHookContext(
                   data: {
@@ -58,6 +58,8 @@ class Toolbar extends StatelessWidget {
                     'graphBloc': context.read<GraphBloc>(),
                     'nodeBloc': context.read<NodeBloc>(),
                   },
+                  pluginContext: hookWrapper.parentPlugin?.context,
+                  hookAPIRegistry: hookRegistry.apiRegistry,
                 );
                 if (hook.isVisible(hookContext)) {
                   return hook.render(hookContext);

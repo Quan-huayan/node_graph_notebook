@@ -1,40 +1,29 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import '../../../core/plugin/ui_hooks/hook_metadata.dart';
+import '../../../core/plugin/ui_hooks/hook_priority.dart';
 
 /// AI助手工具栏钩子
-class AIToolbarHook extends MainToolbarHook {
-  PluginState _state = PluginState.loaded;
-
+class AIToolbarHook extends MainToolbarHookBase {
   @override
-  PluginState get state => _state;
-
-  @override
-  set state(PluginState newState) {
-    _state = newState;
-  }
-
-  @override
-  int get priority => 10;
-
-  @override
-  PluginMetadata get metadata => const PluginMetadata(
+  HookMetadata get metadata => const HookMetadata(
     id: 'ai_toolbar_hook',
     name: 'AI Toolbar Hook',
     version: '1.0.0',
     description: 'Provides AI assistant button in toolbar',
-    author: 'Node Graph Notebook',
-    enabledByDefault: true,
   );
 
   @override
+  HookPriority get priority => HookPriority.low;
+
+  @override
   Widget renderToolbar(MainToolbarHookContext context) => IconButton(
-      icon: const Icon(Icons.smart_toy),
-      onPressed: () => _addAIAssistant(context),
-      tooltip: 'AI Assistant',
-    );
+        icon: const Icon(Icons.smart_toy),
+        onPressed: () => _addAIAssistant(context),
+        tooltip: 'AI Assistant',
+      );
 
   void _addAIAssistant(MainToolbarHookContext context) {
     final buildContext = context.data['buildContext'] as BuildContext?;
@@ -54,22 +43,4 @@ class AIToolbarHook extends MainToolbarHook {
       ).showSnackBar(SnackBar(content: Text('Failed to add AI Assistant: $e')));
     }
   }
-
-  @override
-  Future<void> onInit() async {}
-
-  @override
-  Future<void> onDispose() async {}
-
-  @override
-  Future<void> onEnable() async {}
-
-  @override
-  Future<void> onDisable() async {}
-
-  @override
-  Future<void> onLoad(PluginContext context) async {}
-
-  @override
-  Future<void> onUnload() async {}
 }

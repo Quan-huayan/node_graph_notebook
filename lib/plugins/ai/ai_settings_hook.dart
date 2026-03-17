@@ -1,40 +1,30 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import '../../../core/plugin/ui_hooks/hook_metadata.dart';
+import '../../../core/plugin/ui_hooks/hook_priority.dart';
+import '../../../core/services/settings_service.dart';
 import 'ui/ai_config_dialog.dart';
 import 'ui/ai_test_dialog.dart';
 
 /// AI设置钩子
-class AISettingsHook extends SettingsHook {
-  PluginState _state = PluginState.loaded;
-
+class AISettingsHook extends SettingsHookBase {
   @override
-  PluginState get state => _state;
-
-  @override
-  set state(PluginState newState) {
-    _state = newState;
-  }
-
-  @override
-  int get priority => 10;
-
-  @override
-  PluginMetadata get metadata => const PluginMetadata(
+  HookMetadata get metadata => const HookMetadata(
     id: 'ai_settings_hook',
     name: 'AI Settings Hook',
     version: '1.0.0',
     description: 'Provides AI configuration in settings',
-    author: 'Node Graph Notebook',
-    enabledByDefault: true,
   );
 
   @override
+  HookPriority get priority => HookPriority.medium;
+
+  @override
   Widget renderSettings(SettingsHookContext context) {
-    final buildContext = context.data['buildContext'] as BuildContext?;
-    final settingsService = context.data['settingsService'] as dynamic;
+    final buildContext = context.get<BuildContext>('buildContext');
+    final settingsService = context.get<SettingsService>('settingsService');
 
     if (buildContext == null || settingsService == null) {
       return const SizedBox.shrink();
@@ -65,7 +55,7 @@ class AISettingsHook extends SettingsHook {
     );
   }
 
-  void _showAIConfigDialog(BuildContext context, dynamic settingsService) {
+  void _showAIConfigDialog(BuildContext context, SettingsService settingsService) {
     showDialog(
       context: context,
       builder: (ctx) => AIConfigDialog(settingsService: settingsService),
@@ -75,22 +65,4 @@ class AISettingsHook extends SettingsHook {
   void _showAITestDialog(BuildContext context) {
     showDialog(context: context, builder: (ctx) => const AITestDialog());
   }
-
-  @override
-  Future<void> onInit() async {}
-
-  @override
-  Future<void> onDispose() async {}
-
-  @override
-  Future<void> onEnable() async {}
-
-  @override
-  Future<void> onDisable() async {}
-
-  @override
-  Future<void> onLoad(PluginContext context) async {}
-
-  @override
-  Future<void> onUnload() async {}
 }

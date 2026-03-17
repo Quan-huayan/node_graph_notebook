@@ -111,6 +111,11 @@ class TaskRegistry {
   /// 获取所有已注册的任务类型
   List<String> get taskTypes => _factories.keys.toList();
 
+  /// 获取指定任务类型的工厂函数
+  ///
+  /// 用于 ExecutionEngine 将工厂函数注册到 worker pool
+  CPUTaskFactory? getFactory(String taskType) => _factories[taskType];
+
   /// 从数据反序列化任务
   ///
   /// ### 参数

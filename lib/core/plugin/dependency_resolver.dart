@@ -1,3 +1,4 @@
+import 'plugin_base.dart';
 import 'plugin_metadata.dart';
 
 /// 依赖解析结果
@@ -194,5 +195,49 @@ class DependencyResolver {
     }
 
     return dependents;
+  }
+
+  /// 解析插件加载顺序
+  ///
+  /// [plugins] 插件实例列表
+  /// 返回按照依赖关系排序的插件列表（被依赖的在前）
+  List<Plugin> resolveLoadOrder(List<Plugin> plugins) {
+    // 创建 ID 到 Plugin 的映射
+    final pluginMap = <String, Plugin>{};
+    for (final plugin in plugins) {
+      pluginMap[plugin.metadata.id] = plugin;
+    }
+
+    // 创建 ID 到 Metadata 的映射
+    final metadataMap = <String, PluginMetadata>{};
+    for (final plugin in plugins) {
+      metadataMap[plugin.metadata.id] = plugin.metadata;
+    }
+
+    // 使用现有的 resolve 方法
+    final result = resolve(metadataMap);
+
+    // 按照 loadOrder 排序插件
+    final orderedPlugins = <Plugin>[];
+    for (final pluginId in result.loadOrder) {
+      final plugin = pluginMap[pluginId];
+      if (plugin != null) {
+        orderedPlugins.add(plugin);
+      }
+    }
+
+    return orderedPlugins;
+  }
+
+  /// 解析插件卸载顺序
+  ///
+  /// [plugins] 插件实例列表
+  /// 返回按照依赖关系逆序的插件列表（依赖者在前，被依赖者在后）
+  List<Plugin> resolveUnloadOrder(List<Plugin> plugins) {
+    // 获取加载顺序
+    final loadOrder = resolveLoadOrder(plugins);
+
+    // 反转加载顺序得到卸载顺序
+    return loadOrder.reversed.toList();
   }
 }

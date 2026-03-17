@@ -1,7 +1,9 @@
 import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../graph/service/graph_service.dart';
 import 'command/layout_commands.dart';
 import 'handler/apply_layout_handler.dart';
+import 'layout_toolbar_hook.dart';
 import 'service/layout_service.dart';
 import 'service/layout_service_bindings.dart';
 
@@ -31,6 +33,11 @@ class LayoutPlugin extends Plugin {
 
   @override
   List<ServiceBinding> registerServices() => [LayoutServiceBinding()];
+
+  @override
+  List<HookFactory> registerHooks() => [
+    LayoutToolbarHook.new,
+  ];
 
   @override
   Future<void> onLoad(PluginContext context) async {

@@ -1,36 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import '../../../core/plugin/ui_hooks/hook_metadata.dart';
+import '../../../core/plugin/ui_hooks/hook_priority.dart';
 import '../../../core/services/i18n.dart';
 
-/// 国际化插件
+/// 国际化 Hook
 ///
 /// 提供多语言支持和语言切换功能
-class I18nPlugin extends MainToolbarHook {
-  PluginState _state = PluginState.loaded;
+class I18nPlugin extends MainToolbarHookBase {
+  @override
+  HookMetadata get metadata => const HookMetadata(
+    id: 'i18n',
+    name: '国际化',
+    version: '1.0.0',
+    description: '提供多语言支持和界面汉化',
+  );
 
   @override
-  PluginState get state => _state;
-
-  @override
-  set state(PluginState newState) {
-    _state = newState;
-  }
-
-  @override
-  PluginMetadata get metadata => const PluginMetadata(
-        id: 'i18n',
-        name: '国际化',
-        version: '1.0.0',
-        description: '提供多语言支持和界面汉化',
-        author: 'Node Graph Notebook',
-        enabledByDefault: true,
-      );
-
-  @override
-  int get priority => 30;
+  HookPriority get priority => HookPriority.medium;
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {
@@ -107,24 +96,4 @@ class I18nPlugin extends MainToolbarHook {
       ),
     );
   }
-
-  @override
-  Future<void> onInit() async {}
-
-  @override
-  Future<void> onDispose() async {}
-
-  @override
-  Future<void> onLoad(PluginContext context) async {
-    context.info('I18n plugin loaded');
-  }
-
-  @override
-  Future<void> onEnable() async {}
-
-  @override
-  Future<void> onDisable() async {}
-
-  @override
-  Future<void> onUnload() async {}
 }

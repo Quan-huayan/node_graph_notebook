@@ -225,6 +225,8 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     final theme = Theme.of(context);
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 搜索栏
         Padding(
@@ -410,7 +412,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
         ),
 
         // 搜索结果
-        Expanded(
+        Flexible(
           child: BlocBuilder<SearchBloc, SearchState>(
             buildWhen: (previous, current) =>
                 previous.results != current.results ||
@@ -449,7 +451,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                       ),
                     ),
                   ),
-                  Expanded(
+                  Flexible(
                     child: ListView.builder(
                       itemCount: state.results.length,
                       itemBuilder: (context, index) {

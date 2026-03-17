@@ -106,7 +106,16 @@ class NodeMetadata {
   final DateTime updatedAt;
 
   /// 转换为JSON
-  Map<String, dynamic> toJson() => _$NodeMetadataToJson(this);
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'position': position.toJson(),
+    'size': size.toJson(),
+    'filePath': filePath,
+    'referencedNodeIds': referencedNodeIds,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -141,5 +150,8 @@ class MetadataIndex {
   final DateTime lastUpdated;
 
   /// 转换为JSON
-  Map<String, dynamic> toJson() => _$MetadataIndexToJson(this);
+  Map<String, dynamic> toJson() => {
+    'nodes': nodes.map((n) => n.toJson()).toList(),
+    'lastUpdated': lastUpdated.toIso8601String(),
+  };
 }

@@ -12,7 +12,10 @@ import 'core/middleware/transaction_middleware.dart';
 import 'core/middleware/undo_middleware.dart';
 import 'core/middleware/validation_middleware.dart';
 import 'core/plugin/builtin_plugin_loader.dart';
+import 'core/plugin/dynamic_provider_widget.dart';
 import 'core/plugin/plugin.dart';
+import 'core/plugin/ui_hooks/hook_context.dart';
+import 'core/plugin/ui_hooks/hook_point_registry.dart';
 import 'core/plugin/ui_hooks/hook_registry.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/i18n.dart';
@@ -201,11 +204,119 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     return commandBus;
   }
 
+  /// 初始化标准 Hook 点
+  ///
+  /// 在插件加载前注册所有标准 Hook 点，确保 Hook 系统可以正常工作
+  ///
+  /// 架构说明：
+  /// - 将原有的 HookPointId 枚举转换为动态 Hook 点注册
+  /// - 保持与现有 Hook 代码的向后兼容
+  /// - 使用点分隔的层级结构命名（如 'main.toolbar'）
+  /// - 提供完整的元数据和上下文类型信息
+  void _initializeStandardHookPoints() {
+    debugPrint('[App] Initializing standard hook points...');
+
+    // 主工具栏 Hook 点
+    hookRegistry..registerHookPoint(const HookPointDefinition(
+      id: 'main.toolbar',
+      name: 'Main Toolbar',
+      description: 'Main toolbar at the top of the application',
+      category: 'toolbar',
+      contextType: MainToolbarHookContext,
+    ))
+
+    // 节点上下文菜单 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'context_menu.node',
+      name: 'Node Context Menu',
+      description: 'Context menu when right-clicking on a node',
+      category: 'context_menu',
+      contextType: NodeContextMenuHookContext,
+    ))
+
+    // 图上下文菜单 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'context_menu.graph',
+      name: 'Graph Context Menu',
+      description: 'Context menu when right-clicking on the graph background',
+      category: 'context_menu',
+      contextType: GraphContextMenuHookContext,
+    ))
+
+    // 侧边栏顶部 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'sidebar.top',
+      name: 'Sidebar Top',
+      description: 'Top section of the sidebar',
+      category: 'sidebar',
+      contextType: SidebarHookContext,
+    ))
+
+    // 侧边栏底部 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'sidebar.bottom',
+      name: 'Sidebar Bottom',
+      description: 'Bottom section of the sidebar',
+      category: 'sidebar',
+      contextType: SidebarHookContext,
+    ))
+
+    // 状态栏 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'status.bar',
+      name: 'Status Bar',
+      description: 'Status bar at the bottom of the application',
+      category: 'status_bar',
+      contextType: StatusBarHookContext,
+    ))
+
+    // 节点编辑器 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'editor.node',
+      name: 'Node Editor',
+      description: 'Node content editor',
+      category: 'editor',
+      contextType: NodeEditorHookContext,
+    ))
+
+    // 导入导出 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'import_export',
+      name: 'Import/Export',
+      description: 'Import/export functionality',
+      category: 'import_export',
+      contextType: ImportExportHookContext,
+    ))
+
+    // 设置 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'settings',
+      name: 'Settings',
+      description: 'Application settings',
+      category: 'settings',
+      contextType: SettingsHookContext,
+    ))
+
+    // 帮助 Hook 点
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'help',
+      name: 'Help',
+      description: 'Help and documentation',
+      category: 'help',
+      contextType: HelpHookContext,
+    ));
+
+    debugPrint('[App] ✓ Registered ${hookRegistry.getAllHookPoints().length} standard hook points');
+  }
+
   /// 加载所有内置插件
   ///
   /// 这个方法会在 FutureBuilder 中被调用，确保插件加载完成后再显示应用界面
   Future<void> _loadPlugins(PluginManager pluginManager) async {
     try {
+      // 在加载插件前初始化标准 Hook 点，确保插件可以正确注册到这些 Hook 点
+      _initializeStandardHookPoints();
+
       final loader = BuiltinPluginLoader(
         pluginManager: pluginManager,
         hookRegistry: hookRegistry,
@@ -259,6 +370,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       themeRegistry: _themeRegistry,
       sharedPreferencesAsync: _sharedPreferencesAsync,
       storagePathService: _storagePathService,
+      hookRegistry: hookRegistry,
     );
 
     // 使用 FutureBuilder 等待插件加载完成
@@ -287,9 +399,20 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         }
 
         // 插件加载完成，显示应用界面
-        // 使用 DynamicProviderWidget 支持动态插件加载
-        return DynamicProviderWidget(
+        // 使用 HybridDynamicProviderWidget 支持动态插件加载
+        //
+        // 架构说明：
+        // - 核心 Providers：在 LayoutBuilder 外层，不因插件加载而重建
+        // - 动态 Providers：在 LayoutBuilder 内层，延迟到约束确定后构建
+        // - 布局约束：通过 LayoutBuilder 确保 Provider 重建时约束已确定
+        //
+        // Provider 顺序：
+        // 1. coreProviders: 核心依赖（Settings, Repository, CommandBus 等）- 不重建
+        // 2. serviceProviders: 插件服务（由 ServiceRegistry 生成）- 可重建
+        // 3. blocProviders: 插件 BLoC（由 PluginManager 生成，依赖服务）- 可重建
+        return HybridDynamicProviderWidget(
           serviceRegistry: _serviceRegistry,
+          pluginManager: pluginManager,
           coreProviders: [
             // === 核心系统 Provider ===
             // 0. 设置服务（必须在插件 Service 之前，因为 AIService 依赖 SettingsService）
@@ -351,10 +474,9 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
             // Plugin Manager（已经在 FutureBuilder 中初始化）
             Provider<PluginManager>.value(value: pluginManager),
 
-            // === 插件 BLoC 层 ===
-            // 插件提供的 Bloc（由 PluginManager 自动生成）
-            // 注意：这些 BLoC 不会动态变化，所以放在 coreProviders 中
-            ...pluginManager.generateBlocProviders(),
+            // 注意：插件 BLoC 由 HybridDynamicProviderWidget 自动添加
+            // 顺序：Service Providers -> BLoC Providers
+            // 这确保 BLoC 可以访问到它们依赖的 Service
           ],
           child: Consumer2<SettingsService, ThemeService>(
             builder: (context, settings, themeService, child) {

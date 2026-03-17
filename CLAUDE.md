@@ -376,7 +376,11 @@ DynamicProviderWidget(
 
 6. **UI Extension** (after DynamicProviderWidget)
    - UI Hook plugins render widgets at hook points via HookRegistry
-   - Hook points: toolbar, sidebar, context menus, dialogs, etc.
+   - Hook points are now string-based IDs (e.g., 'main.toolbar', 'sidebar.bottom')
+   - Hooks use UIHookBase (not Plugin), with simplified lifecycle
+   - Hook priority uses semantic enums (critical, high, medium, low, decorative)
+   - Hooks can export APIs for inter-hook communication via HookAPIRegistry
+   - Dynamic hook point registration supported via HookPointRegistry
 
 **Key Points:**
 - Plugins are loaded **before** UI renders, ensuring all services available
@@ -666,12 +670,43 @@ The application features a comprehensive plugin system for extensibility:
 - **Plugin Discoverer** - Discovers and instantiates plugins via factory functions
 - **Dependency Resolver** - Resolves plugin dependencies using topological sorting
 - **Plugin Registry** - Maintains registry of all loaded plugins
-- **Hook Registry** - Manages UI hooks for extending application UI
+- **Hook Registry** - Manages UI hooks for extending application UI (NEW: UIHookBase system)
+
+**UI Hook System (Refactored 2026-03-17):**
+
+The UI Hook system has been refactored to separate concerns:
+
+**Key Components:**
+- `UIHookBase` - Base class for UI hooks (no longer extends Plugin)
+- `HookRegistry` - Manages hook registration and lifecycle
+- `HookPointRegistry` - Manages hook point definitions (supports dynamic registration)
+- `HookAPIRegistry` - Manages inter-hook API communication
+- `HookLifecycle` - Manages individual hook lifecycle states
+- `HookMetadata` - Hook metadata (ID, name, version, description)
+- `HookPriority` - Semantic priority levels (critical, high, medium, low, decorative)
+
+**Hook Lifecycle:**
+1. `onInit(context)` - Initialize hook (called once)
+2. `onEnable()` - Activate hook functionality (may call multiple times)
+3. `onDisable()` - Deactivate hook functionality (may call multiple times)
+4. `onDispose()` - Clean up resources (called once)
+
+**Hook Points:**
+- `main.toolbar` - Main toolbar
+- `context_menu.node` - Node context menu
+- `context_menu.graph` - Graph context menu
+- `sidebar.top` - Sidebar top
+- `sidebar.bottom` - Sidebar bottom
+- `status.bar` - Status bar
+- `settings` - Settings page
+- Custom hook points can be registered dynamically
 
 **Plugin Types:**
-- **UI Hook Plugins** - Extend UI at specific hook points (toolbar, sidebar, context menus, etc.)
-- **Service Plugins** - Provide additional services and functionality
+- **Service Plugins** - Provide business logic services and command handlers
+- **UI Hook Plugins** - Extend UI at specific hook points via UIHookBase
 - **Middleware Plugins** - Intercept and process commands in the Command Bus pipeline
+
+**Important:** UI Hooks no longer extend Plugin. Use UIHookBase for UI extensions.
 
 **Plugin Lifecycle:**
 1. **Registration** - Plugin factory registered to PluginDiscoverer
@@ -694,7 +729,14 @@ The application features a comprehensive plugin system for extensibility:
 - `lib/core/plugin/plugin_discoverer.dart` - Plugin discovery and instantiation
 - `lib/core/plugin/dependency_resolver.dart` - Dependency resolution
 - `lib/core/plugin/builtin_plugin_loader.dart` - Built-in plugin loader
-- `lib/core/plugin/ui_hooks/` - UI Hook system
+- `lib/core/plugin/ui_hooks/hook_base.dart` - UIHookBase interface (NEW)
+- `lib/core/plugin/ui_hooks/hook_registry.dart` - Hook registry and lifecycle management
+- `lib/core/plugin/ui_hooks/hook_point_registry.dart` - Hook point definitions (NEW)
+- `lib/core/plugin/ui_hooks/hook_api_registry.dart` - Inter-hook API communication (NEW)
+- `lib/core/plugin/ui_hooks/hook_metadata.dart` - Hook metadata (NEW)
+- `lib/core/plugin/ui_hooks/hook_priority.dart` - Semantic priority levels (NEW)
+- `lib/core/plugin/ui_hooks/hook_context.dart` - Hook context classes
+- `lib/core/plugin/ui_hooks/hook_lifecycle.dart` - Hook lifecycle management (NEW)
 - `lib/plugins/` - Built-in plugin implementations
 
 **Unified Dependency Injection (DI) System**
@@ -794,62 +836,140 @@ class AIServiceBinding extends ServiceBinding<AIService> {
 
 **Creating Plugins:**
 
+**Important Architecture Change (2026-03-17):**
+
+The UI Hook system has been significantly refactored:
+- **Old system**: `UIHook` extended `Plugin` (caused inheritance confusion)
+- **New system**: `UIHookBase` is independent (simpler lifecycle, better separation)
+
+**Migration Details**: See `docs/ui_hook_migration_deprecations.md` for complete migration documentation.
+
+**New Hook System (UIHookBase):**
+
 ```dart
-// 1. Create plugin class
-class MyPlugin extends UIHook {
+// 1. Create Hook class (extends UIHookBase, NOT Plugin)
+class MyToolbarHook extends MainToolbarHookBase {
   @override
-  PluginMetadata get metadata => PluginMetadata(
-    id: 'com.example.myPlugin',
-    name: 'My Plugin',
+  HookMetadata get metadata => const HookMetadata(
+    id: 'com.example.my_toolbar_hook',
+    name: 'My Toolbar Hook',
     version: '1.0.0',
-    dependencies: [], // List of plugin IDs this plugin depends on
+    description: 'My custom toolbar hook',
   );
 
   @override
-  HookPointId get hookPoint => HookPointId.mainToolbar;
+  String get hookPointId => 'main.toolbar'; // String ID, not enum
 
   @override
-  int get priority => 100; // Lower = higher priority
+  HookPriority get priority => HookPriority.high; // Semantic priority
 
   @override
-  Widget render(HookContext context) {
+  Widget renderToolbar(MainToolbarHookContext context) {
     // Return UI widget
+    return IconButton(
+      icon: Icon(Icons.my_icon),
+      onPressed: () => _handleAction(context),
+      tooltip: 'My Action',
+    );
   }
+
+  // Optional: Initialize hook (called once)
+  @override
+  Future<void> onInit(HookContext context) async {
+    // Cache services for performance
+    _commandBus = context.pluginContext?.read<CommandBus>();
+  }
+
+  // Optional: Enable hook (can be called multiple times)
+  @override
+  Future<void> onEnable() async {
+    // Activate hook functionality
+  }
+
+  // Optional: Disable hook (can be called multiple times)
+  @override
+  Future<void> onDisable() async {
+    // Deactivate hook functionality
+  }
+
+  // Optional: Export APIs for other hooks
+  @override
+  Map<String, dynamic> exportAPIs() => {
+    'my_api': MyAPI(),
+  };
+
+  CommandBus? _commandBus;
+}
+
+// 2. Create Plugin class that provides the Hook
+class MyPlugin extends Plugin {
+  @override
+  PluginMetadata get metadata => const PluginMetadata(
+    id: 'com.example.myPlugin',
+    name: 'My Plugin',
+    version: '1.0.0',
+    dependencies: [],
+  );
+
+  @override
+  List<HookFactory> registerHooks() => [
+    () => MyToolbarHook(), // Register hooks here
+  ];
+
+  @override
+  List<ServiceBinding> registerServices() => [
+    MyServiceBinding(), // Register services here
+  ];
 
   @override
   Future<void> onLoad(PluginContext context) async {
     // Initialize plugin
   }
-
-  @override
-  Future<void> onEnable() async {
-    // Activate plugin functionality
-  }
-
-  @override
-  Future<void> onDisable() async {
-    // Deactivate plugin functionality
-  }
-
-  @override
-  Future<void> onUnload() async {
-    // Clean up resources
-  }
 }
-
-// 2. Register plugin factory in BuiltinPluginLoader
-final List<UIHookFactory> _builtinUIHookFactories = [
-  // ... other plugins
-  () => MyPlugin(), // Add your plugin here
-];
 ```
+
+**Hook Lifecycle (New System):**
+
+1. `onInit(context)` - Called once when hook is registered
+2. `onEnable()` - Called when hook is activated (may call multiple times)
+3. `onDisable()` - Called when hook is deactivated (may call multiple times)
+4. `onDispose()` - Called once when hook is destroyed
+
+**Key Differences from Old System:**
+
+- ✅ No longer extends `Plugin` (simpler inheritance)
+- ✅ Hook points use string IDs (supports dynamic registration)
+- ✅ Semantic priorities (HookPriority enum instead of magic numbers)
+- ✅ Can export APIs for inter-hook communication
+- ✅ Lifecycle automatically synced with parent Plugin
+
+**Available Hook Base Classes:**
+
+- `MainToolbarHookBase` - Main toolbar
+- `NodeContextMenuHookBase` - Node context menu
+- `GraphContextMenuHookBase` - Graph context menu
+- `SidebarHookBase` - Sidebar (all positions)
+- `SidebarBottomHookBase` - Sidebar bottom only
+- `StatusBarHookBase` - Status bar
+- `SettingsHookBase` - Settings page
+- `UIHookBase` - Generic hook (extend for custom hook points)
 
 **Plugin Best Practices:**
 - Always define dependencies in metadata if your plugin relies on other plugins
 - Use `PluginContext` for accessing system APIs (CommandBus, EventBus, Repositories)
 - Implement proper cleanup in `onUnload()` to avoid memory leaks
-- Use priority to control UI element order when multiple plugins hook to same point
 - Export APIs via `exportAPIs()` for inter-plugin communication
+- **For UI extensions**: Create UIHookBase subclasses, register via `registerHooks()`
+- **For services**: Register via `registerServices()`, not in hooks
+- **For business logic**: Use command handlers, not hooks
+
+**Hook Development Guidelines:**
+- Use `UIHookBase` for UI extensions (not Plugin)
+- Cache services in `onInit()` for performance
+- Use semantic priorities (`HookPriority.high`, etc.) instead of magic numbers
+- Export APIs for other hooks to use via `exportAPIs()`
+- Access other hooks' APIs via `context.getHookAPI<T>(hookId, apiName)`
+- Keep business logic out of hooks - use CommandBus instead
 
 ### Data Persistence
 
@@ -1018,6 +1138,419 @@ flutter test --coverage
 - Test widget interactions with `WidgetTester`
 - Performance tests measure UI update efficiency
 
+### ⚠️ Testing Best Practices (Avoid Fake Tests)
+
+Based on comprehensive test analysis, the project has identified critical testing anti-patterns to avoid:
+
+#### What Are Fake Tests?
+
+Fake tests are tests that avoid testing core software issues, instead extensively testing trivial edge cases that don't provide real value. They create a false sense of security with high coverage but low quality.
+
+#### Common Anti-Patterns
+
+**1. Over-testing Simple Data Models** ❌
+
+```dart
+// ❌ FAKE TEST: Testing simple property access
+test('should return correct id', () {
+  expect(user.id, '123');
+});
+
+test('should return correct name', () {
+  expect(user.name, 'John');
+});
+
+// ✅ GOOD TEST: Testing business logic
+test('should validate user age', () {
+  expect(() => User(age: -1), throwsException);
+});
+```
+
+**Examples to Avoid:**
+- Testing simple getter/setter methods
+- Testing code-generated methods (copyWith, toJson, fromJson)
+- Testing trivial data structures
+- Testing basic property assignment
+
+**2. Over-testing UI Edge Cases** ❌
+
+```dart
+// ❌ FAKE TEST: Testing extreme edge cases
+test('should handle null text', () { ... });
+test('should handle empty text', () { ... });
+test('should handle whitespace text', () { ... });
+test('should handle very long text', () { ... });
+test('should handle special characters', () { ... });
+
+// ✅ GOOD TEST: Testing core user interactions
+test('should submit form successfully', () { ... });
+test('should show validation error', () { ... });
+test('should navigate after successful submission', () { ... });
+```
+
+**Examples to Avoid:**
+- Testing null/empty/whitespace values extensively
+- Testing framework-provided functionality
+- Testing extreme edge cases that rarely occur
+- Testing widget rendering details
+
+**3. Testing Framework Features** ❌
+
+```dart
+// ❌ FAKE TEST: Testing framework functionality
+test('should call setState', () {
+  widget.setState(() {});
+  verify(() {}).called(1);
+});
+
+// ✅ GOOD TEST: Testing business behavior
+test('should update state when user clicks button', () {
+  widget.find(button).tap();
+  expect(widget.state, expectedState);
+});
+```
+
+#### Test Value Assessment
+
+**High-Value Tests:**
+- ✅ Test core business logic
+- ✅ Test complex scenarios
+- ✅ Test error handling and recovery
+- ✅ Test performance and security
+- ✅ Test actual user workflows
+
+**Low-Value Tests (Fake Tests):**
+- ❌ Test simple getter/setter methods
+- ❌ Test code-generated methods
+- ❌ Test trivial data structures
+- ❌ Test extreme edge cases
+- ❌ Test framework-provided functionality
+
+#### Fake Test Detection Checklist
+
+Before writing a test, ask yourself:
+- [ ] Does this test verify core business logic?
+- [ ] Does this test verify complex scenarios?
+- [ ] Does this test verify error handling?
+- [ ] Does this test verify actual user workflows?
+- [ ] Will this test failure provide useful debugging information?
+- [ ] Is this test easy to maintain?
+- [ ] Does this test run in reasonable time?
+- [ ] Does this test help prevent regressions?
+
+If most answers are "NO", it's likely a fake test - don't write it.
+
+#### Core Testing Priorities
+
+**Priority 1: Core Functionality (Must Have)**
+- Command Handlers (business logic)
+- Repository operations (data persistence)
+- ExecutionEngine (task execution)
+- Plugin Manager (plugin lifecycle)
+
+**Priority 2: Integration Scenarios (Should Have)**
+- Command Bus + Middleware pipeline
+- Plugin dependencies and communication
+- Event-driven updates
+- Error recovery flows
+
+**Priority 3: UI Workflows (Nice to Have)**
+- User interaction paths
+- State transitions
+- Navigation flows
+- Form validation
+
+**Priority 4: Edge Cases (Optional)**
+- Null/empty handling (only if realistic)
+- Error boundary cases (only if critical)
+- Performance edge cases (only if measured)
+
+#### Examples of Good Tests
+
+**Command Handler Test:**
+```dart
+test('should create node and publish event', () async {
+  // Arrange
+  final command = CreateNodeCommand(title: 'Test', content: 'Content');
+  
+  // Act
+  final result = await handler.execute(command, context);
+  
+  // Assert
+  expect(result.isSuccess, true);
+  expect(result.data.title, 'Test');
+  verify(eventBus.publish(any)).called(1);
+});
+```
+
+**Repository Integration Test:**
+```dart
+test('should save and load node with metadata', () async {
+  // Arrange
+  final node = Node(id: '1', title: 'Test', metadata: {'key': 'value'});
+  
+  // Act
+  await repository.save(node);
+  final loaded = await repository.load('1');
+  
+  // Assert
+  expect(loaded, isNotNull);
+  expect(loaded!.metadata['key'], 'value');
+});
+```
+
+**Plugin Lifecycle Test:**
+```dart
+test('should load plugin with dependencies', () async {
+  // Arrange
+  final plugin = TestPlugin(dependencies: ['other_plugin']);
+  
+  // Act
+  await pluginManager.loadPlugin('test_plugin');
+  
+  // Assert
+  expect(pluginManager.getPlugin('test_plugin'), isNotNull);
+  expect(pluginManager.getPlugin('other_plugin'), isNotNull);
+});
+```
+
+#### Known Issues from Test Analysis
+
+**ExecutionEngine Tests:**
+- 5/10 core tests are skipped due to architecture issues
+- Critical functionality (task execution, error handling) not tested
+- **Action Required**: Fix isolate communication architecture and enable tests
+
+**Handler Layer Tests:**
+- CreateNodeHandler has no tests
+- ConnectNodesHandler has no tests
+- Most other handlers lack test coverage
+- **Action Required**: Write tests for all command handlers
+
+**Plugin Manager Tests:**
+- Missing integration tests for plugin dependencies
+- Missing tests for inter-plugin communication
+- Missing tests for API export/import
+- **Action Required**: Add integration tests for plugin system
+
+#### Testing Anti-Patterns to Avoid
+
+1. **Don't test trivial data models** - Focus on business logic
+2. **Don't test UI edge cases extensively** - Focus on user workflows
+3. **Don't test framework features** - Trust the framework
+4. **Don't skip core functionality tests** - Prioritize critical paths
+5. **Don't write tests for code-generated methods** - They're already tested
+
+**Remember:** High test coverage ≠ high test quality. Focus on testing what matters, not what's easy to test.
+
+## UI Hook System Architecture (Refactored 2026-03-17)
+
+### Overview
+
+The UI Hook system has undergone a major refactoring to improve separation of concerns and simplify development. The old system where `UIHook` extended `Plugin` has been replaced with a new `UIHookBase` system.
+
+### Key Changes
+
+**Old System (Deprecated):**
+```dart
+// ❌ Old system - no longer recommended
+class MyHook extends UIHook {  // UIHook extended Plugin
+  @override
+  PluginMetadata get metadata => ...;
+
+  @override
+  HookPointId get hookPoint => HookPointId.mainToolbar;  // Enum
+
+  @override
+  int get priority => 100;  // Magic number
+
+  @override
+  Widget render(HookContext context) => ...;
+
+  // Had to implement all Plugin lifecycle methods
+  @override
+  Future<void> onLoad(PluginContext context) async {}
+
+  @override
+  Future<void> onEnable() async {}
+
+  @override
+  Future<void> onDisable() async {}
+
+  @override
+  Future<void> onUnload() async {}
+}
+```
+
+**New System (Current):**
+```dart
+// ✅ New system - recommended
+class MyHook extends MainToolbarHookBase {  // UIHookBase is independent
+  @override
+  HookMetadata get metadata => const HookMetadata(
+    id: 'com.example.my_hook',
+    name: 'My Hook',
+    version: '1.0.0',
+    description: 'My custom hook',
+  );
+
+  // No need to specify hookPointId - it's built into the base class
+
+  @override
+  HookPriority get priority => HookPriority.high;  // Semantic enum
+
+  @override
+  Widget renderToolbar(MainToolbarHookContext context) => IconButton(...);
+
+  // Optional lifecycle methods
+  @override
+  Future<void> onInit(HookContext context) async {
+    // Cache services here
+  }
+
+  @override
+  Map<String, dynamic> exportAPIs() => {
+    'my_api': MyAPI(),
+  };
+}
+```
+
+### Architecture Benefits
+
+**Separation of Concerns:**
+- **Plugins** handle business logic, services, and command handlers
+- **Hooks** handle UI rendering and user interaction only
+- No more inheritance confusion
+
+**Simplified Lifecycle:**
+- Old: 6 Plugin lifecycle methods to implement
+- New: 4 Hook lifecycle methods, all optional
+
+**Dynamic Hook Points:**
+- Old: Enum-based hook points (required code changes to add new points)
+- New: String-based hook points (plugins can register custom hook points)
+
+**Semantic Priorities:**
+- Old: Magic numbers (0-1000), easy to cause conflicts
+- New: Semantic enum (critical, high, medium, low, decorative)
+
+**Inter-Hook Communication:**
+- Old: UIHook couldn't export APIs
+- New: Hooks can export APIs via `exportAPIs()` and access via `context.getHookAPI<T>()`
+
+### Hook Lifecycle Comparison
+
+| Old System (Plugin) | New System (UIHookBase) | Purpose |
+|---------------------|------------------------|---------|
+| `onLoad(context)` | `onInit(context)` | Initialize (called once) |
+| `onEnable()` | `onEnable()` | Activate (may call multiple times) |
+| `onDisable()` | `onDisable()` | Deactivate (may call multiple times) |
+| `onUnload()` | `onDispose()` | Clean up (called once) |
+| ~~(5 more methods)~~ | N/A | Removed - hooks don't need them |
+
+### New Hook Point IDs
+
+Hook points are now string-based instead of enum-based:
+
+```dart
+// Old enum-based (removed)
+HookPointId.mainToolbar
+HookPointId.sidebarTop
+
+// New string-based
+'main.toolbar'
+'sidebar.top'
+'context_menu.node'
+'context_menu.graph'
+'sidebar.bottom'
+'status.bar'
+'settings'
+```
+
+**Dynamic Registration:**
+```dart
+// Plugins can register custom hook points
+hookRegistry.registerHookPoint(HookPointDefinition(
+  id: 'my_custom.point',
+  name: 'My Custom Hook Point',
+  description: 'Custom extension point',
+));
+```
+
+### Semantic Priorities
+
+```dart
+// Old: Magic numbers
+@override
+int get priority => 100;  // What does 100 mean?
+
+// New: Semantic enum
+@override
+HookPriority get priority => HookPriority.high;  // Clear intent
+```
+
+**Priority Levels:**
+- `critical (0)` - System critical features (save, undo/redo)
+- `high (100)` - Important features (search, create)
+- `medium (500)` - Standard features (default)
+- `low (800)` - Optional features
+- `decorative (1000)` - Decorative elements
+
+### Inter-Hook API Communication
+
+**Exporting APIs:**
+```dart
+class FormattingHook extends UIHookBase {
+  @override
+  Map<String, dynamic> exportAPIs() => {
+    'formatting_api': TextFormattingAPI(),
+    'validation_api': InputValidationAPI(),
+  };
+}
+```
+
+**Using Other Hooks' APIs:**
+```dart
+class MyHook extends UIHookBase {
+  @override
+  Widget render(HookContext context) {
+    // Get another hook's API
+    final formattingAPI = context.getHookAPI<TextFormattingAPI>(
+      'com.example.formatting_hook',
+      'formatting_api',
+    );
+
+    return TextButton(
+      onPressed: () => formattingAPI?.formatText(selectedText),
+      child: Text('Format'),
+    );
+  }
+}
+```
+
+### Migration Guide
+
+For detailed migration information, see:
+- `docs/ui_hook_migration_deprecations.md` - Complete migration documentation
+- `lib/core/plugin/ui_hooks/hook_base.dart` - UIHookBase interface
+- `lib/plugins/*/` - Example implementations
+
+### Quick Migration Checklist
+
+To migrate from old UIHook to new UIHookBase:
+
+1. Change parent class from `UIHook` to `UIHookBase` (or specific base class)
+2. Update `metadata` to use `HookMetadata` instead of `PluginMetadata`
+3. Replace `HookPointId` enum with string ID (or remove if using base class)
+4. Replace `int priority` with `HookPriority` enum
+5. Move service/command registration from Hook to Plugin
+6. Update lifecycle methods:
+   - `onLoad()` → `onInit()`
+   - `onUnload()` → `onDispose()`
+7. Add `exportAPIs()` if hook provides APIs for other hooks
+
+---
+
 ## Important Notes
 
 ### Architecture Patterns
@@ -1065,7 +1598,10 @@ flutter test --coverage
 
 ### Testing Considerations
 
-28. **Test isolation** → Mock CommandBus, Repository, and EventBus
-29. **Test Command Handlers** → Test business logic in isolation
-30. **Test BLoCs** → Test state management, not business logic
-31. **Integration tests** → Test full command flow from UI to Repository
+32. **Test isolation** → Mock CommandBus, Repository, and EventBus
+33. **Test Command Handlers** → Test business logic in isolation
+34. **Test BLoCs** → Test state management, not business logic
+35. **Integration tests** → Test full command flow from UI to Repository
+36. **Avoid fake tests** → Focus on core business logic, not trivial edge cases
+37. **Test priority** → Core functionality > Integration > UI workflows > Edge cases
+38. **Test value assessment** → Use fake test detection checklist before writing tests

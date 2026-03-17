@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/models/models.dart';
 import '../../core/plugin/ui_hooks/hook_context.dart';
-import '../../core/plugin/ui_hooks/hook_point.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../core/services/i18n.dart';
 import '../../core/services/services.dart';
@@ -514,15 +513,18 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   List<Widget> _buildPluginSettings(BuildContext context, SettingsService settingsService) {
-    final hooks = hookRegistry.getHooks(HookPointId.settings);
+    final hookWrappers = hookRegistry.getHookWrappers('settings');
     final hookContext = SettingsHookContext(
       data: {
         'buildContext': context,
         'settingsService': settingsService,
       },
+      pluginContext: null,
+      hookAPIRegistry: hookRegistry.apiRegistry,
     );
 
-    return hooks.map((hook) {
+    return hookWrappers.map<Widget>((hookWrapper) {
+      final hook = hookWrapper.hook;
       if (hook.isVisible(hookContext)) {
         return hook.render(hookContext);
       }

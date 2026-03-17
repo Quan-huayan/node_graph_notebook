@@ -4,6 +4,7 @@ import '../../../core/commands/command_bus.dart';
 import '../../../core/events/app_events.dart';
 import '../../../core/models/models.dart';
 import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/repositories/graph_repository.dart';
 import '../../../core/repositories/node_repository.dart';
 import 'bloc/graph_bloc.dart';
@@ -12,6 +13,8 @@ import 'bloc/node_bloc.dart';
 import 'bloc/node_event.dart';
 import 'command/graph_commands.dart';
 import 'command/node_commands.dart';
+import 'create_node_toolbar_hook.dart';
+import 'graph_nodes_toolbar_hook.dart';
 import 'handler/add_node_to_graph_handler.dart';
 import 'handler/connect_nodes_handler.dart';
 import 'handler/create_graph_handler.dart';
@@ -82,6 +85,12 @@ class GraphPlugin extends Plugin {
   ];
 
   @override
+  List<HookFactory> registerHooks() => [
+    CreateNodeToolbarHook.new,
+    GraphNodesToolbarHook.new,
+  ];
+
+  @override
   Future<void> onLoad(PluginContext context) async {
     // 注册任务类型
     _registerTaskTypes(context);
@@ -102,29 +111,35 @@ class GraphPlugin extends Plugin {
     taskRegistry..registerTaskType(
       'TextLayout',
       TextLayoutTaskSerialized.new,
-      (result) => TextLayoutResult(
-        width: result['width'] as double,
-        height: result['height'] as double,
-        didExceedMaxWidth: result['didExceedMaxWidth'] as bool? ?? false,
-        lineCount: const [],
-      ),
+      (result) {
+        final data = result as Map<String, dynamic>;
+        return TextLayoutResult(
+          width: data['width']! as double,
+          height: data['height']! as double,
+          didExceedMaxWidth: data['didExceedMaxWidth'] as bool? ?? false,
+          lineCount: const [],
+        );
+      },
     )
 
     // 注册 NodeSizing 任务
     ..registerTaskType(
       'NodeSizing',
       NodeSizingTaskSerialized.new,
-      (result) => NodeSizeResult(
-        width: result['width'] as double,
-        height: result['height'] as double,
-        isFolder: result['isFolder'] as bool? ?? false,
-        viewMode: result['viewMode'] != null
-            ? NodeViewMode.values.firstWhere(
-                (e) => e.name == result['viewMode'],
-                orElse: () => NodeViewMode.titleOnly,
-              )
-            : null,
-      ),
+      (result) {
+        final data = result as Map<String, dynamic>;
+        return NodeSizeResult(
+          width: data['width']! as double,
+          height: data['height']! as double,
+          isFolder: data['isFolder'] as bool? ?? false,
+          viewMode: data['viewMode'] != null
+              ? NodeViewMode.values.firstWhere(
+                  (e) => e.name == data['viewMode'],
+                  orElse: () => NodeViewMode.titleOnly,
+                )
+              : null,
+        );
+      },
     )
 
     // 注册 ConnectionPath 任务
@@ -132,21 +147,25 @@ class GraphPlugin extends Plugin {
       'ConnectionPath',
       ConnectionPathTaskSerialized.new,
       (result) {
-        final pathData = result['path'] as List;
+        final data = result as Map<String, dynamic>;
+        final pathData = data['path']! as List;
         final points = pathData
-            .map((p) => Vector2(
-                  (p as Map)['x'] as double,
-                  p['y'] as double,
-                ))
+            .map((p) {
+              final point = p as Map<String, dynamic>;
+              return Vector2(
+                point['x']! as double,
+                point['y']! as double,
+              );
+            })
             .toList();
-        final controlPointData = result['controlPoint'] as Map<String, dynamic>?;
+        final controlPointData = data['controlPoint'] as Map<String, dynamic>?;
         return ConnectionPathResult(
           path: points,
-          length: result['length'] as double,
+          length: data['length']! as double,
           controlPoint: controlPointData != null
               ? Vector2(
-                  controlPointData['x'] as double,
-                  controlPointData['y'] as double,
+                  controlPointData['x']! as double,
+                  controlPointData['y']! as double,
                 )
               : null,
         );

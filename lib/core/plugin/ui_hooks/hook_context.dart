@@ -1,5 +1,8 @@
+import 'dart:ui' as ui;
+
 import '../../models/node.dart';
 import '../plugin_context.dart';
+import 'hook_api_registry.dart';
 
 /// Hook 上下文基础类
 abstract class HookContext {
@@ -7,13 +10,28 @@ abstract class HookContext {
   ///
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
-  HookContext(this.data, {this.pluginContext});
+  /// [hookAPIRegistry] Hook API 注册表（用于访问其他 Hook 导出的 API）
+  HookContext(
+    this.data, {
+    this.pluginContext,
+    this.hookAPIRegistry,
+  });
 
   /// 上下文数据
   final Map<String, dynamic> data;
-  
+
   /// 插件上下文
   final PluginContext? pluginContext;
+
+  /// Hook API 注册表
+  ///
+  /// 用于访问其他 Hook 导出的 API
+  ///
+  /// 架构说明：
+  /// - 允许 Hook 之间的 API 通信
+  /// - 解决旧系统中 UIHook 无法访问其他 Hook API 的问题
+  /// - 提供类型安全的 API 访问方法
+  final HookAPIRegistry? hookAPIRegistry;
 
   /// 获取数据
   T? get<T>(String key) {
@@ -28,6 +46,59 @@ abstract class HookContext {
 
   /// 检查是否有数据
   bool contains(String key) => data.containsKey(key);
+
+  /// 获取其他 Hook 导出的 API
+  ///
+  /// [hookId] Hook 的唯一标识符
+  /// [apiName] API 名称
+  /// 返回指定类型的 API 实例，如果不存在则返回 null
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// @override
+  /// Widget render(HookContext context) {
+  ///   // 获取另一个 Hook 导出的 API
+  ///   final formattingAPI = context.getHookAPI<TextFormattingAPI>(
+  ///     'com.example.formatting_hook',
+  ///     'formatting_api',
+  ///   );
+  ///
+  ///   return TextButton(
+  ///     onPressed: () {
+  ///       formattingAPI?.formatText(selectedText);
+  ///     },
+  ///     child: Text('Format'),
+  ///   );
+  /// }
+  /// ```
+  T? getHookAPI<T>(String hookId, String apiName) => hookAPIRegistry?.getAPI<T>(hookId, apiName);
+
+  /// 检查其他 Hook 是否导出了指定的 API
+  ///
+  /// [hookId] Hook 的唯一标识符
+  /// [apiName] API 名称
+  /// 返回 true 如果 API 存在
+  bool hasHookAPI(String hookId, String apiName) => hookAPIRegistry?.hasAPI(hookId, apiName) ?? false;
+}
+
+/// 基础 Hook 上下文实现
+///
+/// 提供一个简单的 HookContext 实现，用于不需要特定上下文类型的场景
+class BasicHookContext extends HookContext {
+  /// 创建一个新的基础 Hook 上下文实例。
+  ///
+  /// [data] 上下文数据
+  /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
+  BasicHookContext({
+    Map<String, dynamic>? data,
+    PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
+  }) : super(
+         data ?? {},
+         pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
+       );
 }
 
 /// 主工具栏 Hook 上下文
@@ -36,10 +107,16 @@ class MainToolbarHookContext extends HookContext {
   ///
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   MainToolbarHookContext({
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
-  }) : super(data ?? {}, pluginContext: pluginContext);
+    HookAPIRegistry? hookAPIRegistry,
+  }) : super(
+         data ?? {},
+         pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
+       );
 
   /// 是否显示标题
   bool get showTitle => get<bool>('showTitle') ?? true;
@@ -55,14 +132,17 @@ class NodeContextMenuHookContext extends HookContext {
   /// [node] 当前节点
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   NodeContextMenuHookContext({
     Node? node,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['node'] = node,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 当前节点
@@ -80,20 +160,23 @@ class GraphContextMenuHookContext extends HookContext {
   /// [selectedNodeCount] 选中的节点数量
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   GraphContextMenuHookContext({
-    Offset? mousePosition,
+    ui.Offset? mousePosition,
     int? selectedNodeCount,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['mousePosition'] = mousePosition
            ..['selectedNodeCount'] = selectedNodeCount,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 鼠标位置
-  Offset? get mousePosition => get<Offset>('mousePosition');
+  ui.Offset? get mousePosition => get<ui.Offset>('mousePosition');
 
   /// 选中的节点数量
   int get selectedNodeCount => get<int>('selectedNodeCount') ?? 0;
@@ -107,16 +190,19 @@ class SidebarHookContext extends HookContext {
   /// [width] 侧边栏宽度
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   SidebarHookContext({
     bool? isExpanded,
     double? width,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['isExpanded'] = isExpanded
            ..['width'] = width,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 是否展开
@@ -135,18 +221,21 @@ class StatusBarHookContext extends HookContext {
   /// [currentMode] 当前模式
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   StatusBarHookContext({
     int? nodeCount,
     int? connectionCount,
     String? currentMode,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['nodeCount'] = nodeCount
            ..['connectionCount'] = connectionCount
            ..['currentMode'] = currentMode,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 节点数量
@@ -167,16 +256,19 @@ class NodeEditorHookContext extends HookContext {
   /// [isReadOnly] 是否为只读模式
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   NodeEditorHookContext({
     Node? node,
     bool? isReadOnly,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['node'] = node
            ..['isReadOnly'] = isReadOnly,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 当前节点
@@ -194,16 +286,19 @@ class ImportExportHookContext extends HookContext {
   /// [exportFormats] 支持的导出格式
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   ImportExportHookContext({
     List<String>? importFormats,
     List<String>? exportFormats,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['importFormats'] = importFormats
            ..['exportFormats'] = exportFormats,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 支持的导入格式
@@ -220,14 +315,17 @@ class SettingsHookContext extends HookContext {
   /// [currentSettings] 当前设置
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   SettingsHookContext({
     Map<String, dynamic>? currentSettings,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['currentSettings'] = currentSettings,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 当前设置
@@ -242,14 +340,17 @@ class HelpHookContext extends HookContext {
   /// [helpItems] 帮助文档列表
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
+  /// [hookAPIRegistry] Hook API 注册表
   HelpHookContext({
     List<HelpItem>? helpItems,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
+    HookAPIRegistry? hookAPIRegistry,
   }) : super(
          data ?? {}
            ..['helpItems'] = helpItems,
          pluginContext: pluginContext,
+         hookAPIRegistry: hookAPIRegistry,
        );
 
   /// 帮助文档列表
@@ -267,25 +368,10 @@ class HelpItem {
 
   /// 帮助项标题
   final String title;
-  
+
   /// 帮助项内容
   final String content;
-  
+
   /// 帮助项图标
   final String? icon;
-}
-
-/// 偏移量
-class Offset {
-  /// 创建一个新的偏移量实例。
-  ///
-  /// [dx] x 方向的偏移
-  /// [dy] y 方向的偏移
-  Offset(this.dx, this.dy);
-
-  /// x 方向的偏移
-  final double dx;
-  
-  /// y 方向的偏移
-  final double dy;
 }

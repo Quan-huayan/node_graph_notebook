@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/models/models.dart';
 import '../../core/plugin/ui_hooks/hook_context.dart';
-import '../../core/plugin/ui_hooks/hook_point.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../core/services/i18n.dart';
 import '../../plugins/graph/bloc/graph_bloc.dart';
@@ -19,7 +18,7 @@ class Sidebar extends StatefulWidget {
 
   /// 图模型
   final Graph graph;
-  
+
   /// 节点列表
   final List<Node> nodes;
 
@@ -120,6 +119,7 @@ class _SidebarState extends State<Sidebar> {
           ),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 标题栏
             DecoratedBox(
@@ -266,6 +266,16 @@ class _SidebarState extends State<Sidebar> {
     debugPrint('[Sidebar] _buildPluginContent() called:');
     debugPrint('  - Nodes: ${nodes.length}, Folders: ${folders.length}');
 
+    // 获取侧边栏底部的所有Hook
+    final hookWrappers = hookRegistry.getHookWrappers('sidebar.bottom');
+    debugPrint('  - SidebarBottom hooks found: ${hookWrappers.length}');
+
+    if (hookWrappers.isEmpty) {
+      // 如果没有插件注册，显示默认界面
+      debugPrint('  - No hooks found, showing default content');
+      return _buildDefaultContent(context, nodes, folders);
+    }
+
     // 创建 SidebarHookContext
     final hookContext = SidebarHookContext(
       data: {
@@ -280,22 +290,16 @@ class _SidebarState extends State<Sidebar> {
         'graphBloc': context.read<GraphBloc>(),
         'buildContext': context,
       },
+      pluginContext: null,
+      hookAPIRegistry: hookRegistry.apiRegistry,
     );
 
-    // 获取侧边栏底部的所有Hook
-    final hooks = hookRegistry.getHooks(HookPointId.sidebarBottom);
-    debugPrint('  - SidebarBottom hooks found: ${hooks.length}');
-
-    if (hooks.isEmpty) {
-      // 如果没有插件注册，显示默认界面
-      debugPrint('  - No hooks found, showing default content');
-      return _buildDefaultContent(context, nodes, folders);
-    }
-
     // 渲染所有插件内容
-    debugPrint('  - Rendering ${hooks.length} hooks');
+    debugPrint('  - Rendering ${hookWrappers.length} hooks');
     return Column(
-      children: hooks.map((hook) {
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: hookWrappers.map<Widget>((hookWrapper) {
+        final hook = hookWrapper.hook;
         debugPrint('    - Rendering sidebar hook: ${hook.metadata.id}');
         if (hook.isVisible(hookContext)) {
           return hook.render(hookContext);
@@ -328,20 +332,24 @@ class _SidebarState extends State<Sidebar> {
 
   /// 构建搜索内容（通过Hook加载）
   Widget _buildSearchContent(BuildContext context) {
-    final hooks = hookRegistry.getHooks(HookPointId.sidebarBottom);
+    final hookWrappers = hookRegistry.getHookWrappers('sidebar.bottom');
     final hookContext = SidebarHookContext(
       data: {
         'buildContext': context,
         'isSearch': true,
       },
+      pluginContext: null,
+      hookAPIRegistry: hookRegistry.apiRegistry,
     );
 
-    if (hooks.isEmpty) {
+    if (hookWrappers.isEmpty) {
       return const Center(child: Text('No search plugin loaded'));
     }
 
     return Column(
-      children: hooks.map((hook) {
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: hookWrappers.map<Widget>((hookWrapper) {
+        final hook = hookWrapper.hook;
         if (hook.isVisible(hookContext)) {
           return hook.render(hookContext);
         }

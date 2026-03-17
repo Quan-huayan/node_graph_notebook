@@ -1,9 +1,15 @@
-import 'dart:async';
 import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
+import 'ai_integration_plugin.dart';
+import 'ai_settings_hook.dart';
+import 'ai_toolbar_hook.dart';
 
-/// AI 集成插件
-/// 提供自动节点分析、连接建议等功能
-class AIIntegrationPlugin extends Plugin {
+/// AI 插件
+///
+/// 提供 AI 相关的服务和 Hooks
+/// 这个 Plugin 类负责注册服务和 UI Hooks
+class AIPlugin extends Plugin {
+  /// 插件状态
   PluginState _state = PluginState.unloaded;
 
   @override
@@ -16,16 +22,25 @@ class AIIntegrationPlugin extends Plugin {
 
   @override
   PluginMetadata get metadata => const PluginMetadata(
-    id: 'ai_integration',
-    name: 'AI Integration',
+    id: 'ai_plugin',
+    name: 'AI Plugin',
     version: '1.0.0',
-    description: 'Provides AI-powered node analysis and connection suggestions',
+    description: 'Provides AI-powered features for node analysis and connection suggestions',
     author: 'Node Graph Notebook',
+    dependencies: [],
   );
 
   @override
+  List<HookFactory> registerHooks() => [
+        AIIntegrationPlugin.new,
+        AISettingsHook.new,
+        AIToolbarHook.new,
+      ];
+
+  @override
   Future<void> onLoad(PluginContext context) async {
-    // 注册命令处理器
+    // 初始化插件
+    context.info('AI Plugin loaded');
   }
 
   @override

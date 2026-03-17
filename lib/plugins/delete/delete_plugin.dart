@@ -1,36 +1,26 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/plugin/plugin_context.dart';
-import '../../../core/plugin/plugin_metadata.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
-import '../../../core/plugin/ui_hooks/ui_hook.dart';
+import '../../../core/plugin/ui_hooks/hook_metadata.dart';
+import '../../../core/plugin/ui_hooks/hook_priority.dart';
 import '../graph/command/node_commands.dart';
 
 /// 删除功能插件
 ///
 /// 提供节点删除功能，通过 UI Hook 集成到上下文菜单
-class DeletePlugin extends NodeContextMenuHook {
-  PluginState _state = PluginState.loaded;
-
+class DeletePlugin extends NodeContextMenuHookBase {
   @override
-  PluginState get state => _state;
-
-  @override
-  set state(PluginState newState) {
-    _state = newState;
-  }
-
-  @override
-  int get priority => 50;
-
-  @override
-  PluginMetadata get metadata => const PluginMetadata(
+  HookMetadata get metadata => const HookMetadata(
     id: 'delete_plugin',
     name: 'Delete Plugin',
     version: '1.0.0',
     description: 'Provides node deletion functionality',
     author: 'Node Graph Notebook',
   );
+
+  @override
+  HookPriority get priority => HookPriority.high;
 
   @override
   Widget renderMenu(NodeContextMenuHookContext context) {
@@ -127,22 +117,4 @@ class DeletePlugin extends NodeContextMenuHook {
       }
     }
   }
-
-  @override
-  Future<void> onInit() async {}
-
-  @override
-  Future<void> onDispose() async {}
-
-  @override
-  Future<void> onEnable() async {}
-
-  @override
-  Future<void> onDisable() async {}
-
-  @override
-  Future<void> onLoad(PluginContext context) async {}
-
-  @override
-  Future<void> onUnload() async {}
 }
