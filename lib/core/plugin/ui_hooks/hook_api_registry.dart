@@ -65,13 +65,23 @@ class HookAPIRegistry {
     }
   }
 
+  /// 获取 API（内部方法）
+  ///
+  /// [hookId] Hook 的唯一标识符
+  /// [apiName] API 名称
+  /// 返回 API 实例，如果不存在则返回 null
+  dynamic _getAPI(String hookId, String apiName) {
+    final qualifiedName = '$hookId.$apiName';
+    return _apis[qualifiedName];
+  }
+
   /// 获取指定类型的 API
   ///
   /// [hookId] Hook 的唯一标识符
   /// [apiName] API 名称
   /// 返回指定类型的 API 实例，如果不存在或类型不匹配则返回 null
   T? getAPI<T>(String hookId, String apiName) {
-    final api = getAPI(hookId, apiName);
+    final api = _getAPI(hookId, apiName);
     return api is T ? api : null;
   }
 

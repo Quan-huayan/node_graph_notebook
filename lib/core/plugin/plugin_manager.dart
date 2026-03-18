@@ -236,6 +236,11 @@ class PluginManager implements IPluginManager {
     // 创建包装器
     final wrapper = PluginWrapper(plugin, context, lifecycle);
 
+    // 在注册之前验证 API 依赖
+    debugPrint('[PluginManager] 验证 API 依赖');
+    await _validateAPIDependencies(plugin);
+    debugPrint('[PluginManager] ✓ API 依赖验证通过');
+
     // 注册到注册表
     _registry.register(wrapper);
     debugPrint('[PluginManager] ✓ 插件已注册到注册表');
@@ -291,11 +296,6 @@ class PluginManager implements IPluginManager {
       } else {
         debugPrint('[PluginManager]   步骤 4: HookRegistry 为空，跳过');
       }
-
-      // 5. 验证 API 依赖
-      debugPrint('[PluginManager]   步骤 5: 验证 API 依赖');
-      await _validateAPIDependencies(plugin);
-      debugPrint('[PluginManager]   ✓ API 依赖验证通过');
 
       debugPrint('[PluginManager] -----------------------------------------');
       debugPrint('[PluginManager] ✓ 插件加载成功');

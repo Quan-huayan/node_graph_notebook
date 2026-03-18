@@ -95,7 +95,15 @@ void main() {
       when(mockNodeBloc.state).thenReturn(NodeState.initial());
       when(mockNodeBloc.stream).thenAnswer((_) => const Stream.empty());
       when(mockGraphBloc.stream).thenAnswer((_) => const Stream.empty());
-      when(mockNodeService.calculateNodeDepths(any)).thenAnswer((_) async => {});
+      when(mockGraphBloc.add(any)).thenReturn(null);
+      when(mockNodeService.calculateNodeDepths(any)).thenAnswer((invocation) async {
+        final nodes = invocation.positionalArguments[0] as List<Node>;
+        final depths = <String, int>{};
+        for (final node in nodes) {
+          depths[node.id] = 0; // 所有节点的深度都设置为0
+        }
+        return depths;
+      });
     });
 
     testWidgets('should display empty state when no nodes or folders', (WidgetTester tester) async {
@@ -142,10 +150,10 @@ void main() {
             child: Builder(
               builder: (context) => Theme(
                 data: ThemeData.light(),
-                child: const Scaffold(
+                child: Scaffold(
                   body: FolderTreeView(
-                    nodes: [],
-                    folders: [],
+                    nodes: nodes,
+                    folders: const [],
                   ),
                 ),
               ),
@@ -174,10 +182,10 @@ void main() {
             child: Builder(
               builder: (context) => Theme(
                 data: ThemeData.light(),
-                child: const Scaffold(
+                child: Scaffold(
                   body: FolderTreeView(
-                    nodes: [],
-                    folders: [],
+                    nodes: const [],
+                    folders: folders,
                   ),
                 ),
               ),
@@ -185,6 +193,8 @@ void main() {
           ),
         ),
       );
+
+      await tester.pumpAndSettle();
 
       expect(find.text('Folder 1'), findsOneWidget);
       expect(find.text('Folder 2'), findsOneWidget);
@@ -206,10 +216,10 @@ void main() {
             child: Builder(
               builder: (context) => Theme(
                 data: ThemeData.light(),
-                child: const Scaffold(
+                child: Scaffold(
                   body: FolderTreeView(
-                    nodes: [],
-                    folders: [],
+                    nodes: nodes,
+                    folders: folders,
                   ),
                 ),
               ),
@@ -217,6 +227,8 @@ void main() {
           ),
         ),
       );
+
+      await tester.pumpAndSettle();
 
       expect(find.text('Folder 1'), findsOneWidget);
       expect(find.text('Folder 2'), findsOneWidget);
@@ -291,9 +303,10 @@ void main() {
                 data: ThemeData.light(),
                 child: Scaffold(
                   body: FolderTreeView(
-                    nodes: const [],
+                    nodes: nodes,
                     folders: const [],
                     onNodeSelected: (id) {
+                      debugPrint('onNodeSelected called with id: $id');
                       selectedNodeId = id;
                     },
                   ),
@@ -304,9 +317,17 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Node 1'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
+      final nodeFinder = find.text('Node 1');
+      expect(nodeFinder, findsOneWidget);
+      
+      await tester.tap(nodeFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      debugPrint('selectedNodeId: $selectedNodeId');
       expect(selectedNodeId, 'node_1');
     });
 

@@ -185,9 +185,10 @@ class HookRegistry {
   }
 
   /// 检查指定 Hook 点是否有 Hook
+  /// 这包括禁用的 Hook，因为它们仍然注册在该 Hook 点上
   ///
   /// [hookPointId] Hook 点 ID
-  bool hasHooks(String hookPointId) => getHookWrappers(hookPointId).isNotEmpty;
+  bool hasHooks(String hookPointId) => getHookWrappers(hookPointId, includeDisabled: true).isNotEmpty;
 
   /// ===== Hook API 访问 =====
 

@@ -40,6 +40,8 @@ void main() {
       mockNodeRepository = MockNodeRepository();
       mockEventBus = MockAppEventBus();
 
+      when(mockEventBus.stream).thenAnswer((_) => const Stream.empty());
+
       graphBloc = GraphBloc(
         commandBus: mockCommandBus,
         graphRepository: mockGraphRepository,

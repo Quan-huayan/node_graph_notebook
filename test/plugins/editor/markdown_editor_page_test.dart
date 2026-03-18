@@ -7,6 +7,7 @@ import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/plugins/editor/ui/markdown_editor_page.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/node_bloc.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/node_event.dart';
+import 'package:node_graph_notebook/plugins/graph/bloc/node_state.dart';
 
 import 'markdown_editor_page_test.mocks.dart';
 
@@ -17,6 +18,9 @@ void main() {
 
     setUp(() {
       mockNodeBloc = MockNodeBloc();
+      when(mockNodeBloc.stream).thenAnswer((_) => const Stream.empty());
+      when(mockNodeBloc.state).thenReturn(NodeState.initial());
+      when(mockNodeBloc.add(any)).thenAnswer((_) async {});
     });
 
     tearDown(() {
@@ -302,8 +306,9 @@ void main() {
       final contentField = find.widgetWithText(TextField, 'Write your content in Markdown...');
       await tester.enterText(contentField, 'New Content');
 
-      await tester.tap(find.byTooltip('Save'));
-      await tester.pumpAndSettle();
+      final saveButtonFinder = find.byType(IconButton).last;
+      await tester.tap(saveButtonFinder);
+      await tester.pumpAndSettle(const Duration(milliseconds: 200));
 
       verify(mockNodeBloc.add(argThat(isA<NodeCreateContentEvent>()))).called(1);
     });
@@ -337,8 +342,9 @@ void main() {
       final contentField = find.widgetWithText(TextField, 'Old Content');
       await tester.enterText(contentField, 'Updated Content');
 
-      await tester.tap(find.byTooltip('Save'));
-      await tester.pumpAndSettle();
+      final saveButtonFinder = find.byType(IconButton).last;
+      await tester.tap(saveButtonFinder);
+      await tester.pumpAndSettle(const Duration(milliseconds: 200));
 
       verify(mockNodeBloc.add(argThat(isA<NodeUpdateEvent>()))).called(1);
     });
@@ -356,11 +362,14 @@ void main() {
       final titleField = find.widgetWithText(TextField, 'Title');
       await tester.enterText(titleField, 'Test Title');
 
-      await tester.tap(find.byTooltip('Save'));
+      final saveButtonFinder = find.byType(IconButton).last;
+      await tester.tap(saveButtonFinder);
       await tester.pump();
 
-      final saveButton = find.byTooltip('Save');
-      expect(tester.widget<IconButton>(saveButton).onPressed, isNull);
+      final iconButton = tester.widget<IconButton>(saveButtonFinder);
+      expect(iconButton.onPressed, isNull);
+
+      await tester.pumpAndSettle(const Duration(milliseconds: 200));
     });
 
     testWidgets('should show preview mode content', (WidgetTester tester) async {

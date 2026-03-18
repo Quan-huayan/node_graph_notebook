@@ -256,8 +256,9 @@ void main() {
     setUp(() {
       mockAIService = MockAIService();
       handler = GenerateGraphSummaryHandler(mockAIService);
-      mockContext = MockCommandContext()
-      ..nodes = [
+      mockContext = MockCommandContext();
+
+      final testNodes = [
         Node(
           id: 'node-1',
           title: 'Node 1',
@@ -270,6 +271,7 @@ void main() {
           metadata: {},
         ),
       ];
+      mockContext._nodeRepository.nodes = testNodes;
     });
 
     test('should generate graph summary successfully', () async {
@@ -321,7 +323,7 @@ void main() {
 
     test('should handle empty graph', () async {
       final command = GenerateGraphSummaryCommand();
-      mockContext.nodes = [];
+      mockContext._nodeRepository.nodes = [];
       mockAIService.graphSummary = const GraphSummary(
         title: 'Empty Graph',
         description: 'No nodes',
@@ -642,8 +644,6 @@ class MockNodeService implements NodeService {
 }
 
 class MockCommandContext implements CommandContext {
-  final List<AppEvent> publishedEvents = [];
-  List<Node> nodes = [];
   AppEventBus _eventBus = MockEventBus();
 
   @override
@@ -654,8 +654,14 @@ class MockCommandContext implements CommandContext {
     _eventBus = value;
   }
 
+  List<AppEvent> get publishedEvents => (_eventBus as MockEventBus).publishedEvents;
+
+  List<Node> nodes = [];
+
+  final MockNodeRepository _nodeRepository = MockNodeRepository();
+
   @override
-  NodeRepository get nodeRepository => throw UnimplementedError();
+  NodeRepository get nodeRepository => _nodeRepository;
 
   @override
   void publishNodeEvent(List<Node> nodes, DataChangeAction action) {}
@@ -729,6 +735,8 @@ class MockEventBus implements AppEventBus {
 }
 
 class MockNodeRepository implements NodeRepository {
+  List<Node> nodes = [];
+
   @override
   Future<void> save(Node node) async {}
 
@@ -745,7 +753,7 @@ class MockNodeRepository implements NodeRepository {
   Future<void> saveAll(List<Node> nodes) async {}
 
   @override
-  Future<List<Node>> queryAll() async => [];
+  Future<List<Node>> queryAll() async => nodes;
 
   @override
   Future<List<Node>> search({

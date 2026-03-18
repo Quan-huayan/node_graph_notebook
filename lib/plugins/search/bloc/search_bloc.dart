@@ -239,7 +239,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   /// 清除搜索
   void _onClear(SearchClearEvent event, Emitter<SearchState> emit) {
-    emit(state.copyWith(results: [], currentQuery: null, error: null));
+    emit(SearchState(
+      results: const [],
+      presets: state.presets,
+      isLoading: false,
+      isSavingPreset: state.isSavingPreset,
+      currentQuery: null,
+      error: null,
+    ));
   }
 
   /// 从节点内容中提取标签

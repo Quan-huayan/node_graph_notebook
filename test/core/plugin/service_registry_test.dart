@@ -102,17 +102,17 @@ void main() {
 
     group('unregisterPluginServices - 服务注销', () {
       test('should unregister all plugin services', () {
-        registry..registerService('test_plugin', TestServiceBinding('test'))
-
-        ..unregisterPluginServices('test_plugin');
+        registry
+          ..registerService('test_plugin', TestServiceBinding('test'))
+          ..unregisterPluginServices('test_plugin');
 
         expect(registry.isRegistered<TestService>(), false);
       });
 
       test('should dispose services when unregistering', () {
-        registry..registerService('test_plugin', TestDisposableServiceBinding())
-
-        ..unregisterPluginServices('test_plugin');
+        registry
+          ..registerService('test_plugin', TestDisposableServiceBinding())
+          ..unregisterPluginServices('test_plugin');
 
         expect(registry.isRegistered<TestDisposableService>(), false);
       });
@@ -226,11 +226,11 @@ void main() {
     group('change notification - 变更通知', () {
       test('should notify listeners on service registration', () {
         var notified = false;
-        registry..addListener(() {
-          notified = true;
-        })
-
-        ..registerService('test_plugin', TestServiceBinding('test'));
+        registry
+          ..addListener(() {
+            notified = true;
+          })
+          ..registerService('test_plugin', TestServiceBinding('test'));
 
         expect(notified, true);
       });
@@ -238,11 +238,11 @@ void main() {
       test('should notify listeners on service unregistration', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
         var notified = false;
-        registry..addListener(() {
-          notified = true;
-        })
-
-        ..unregisterPluginServices('test_plugin');
+        registry
+          ..addListener(() {
+            notified = true;
+          })
+          ..unregisterPluginServices('test_plugin');
 
         expect(notified, true);
       });
@@ -250,9 +250,9 @@ void main() {
 
     group('clear - 清空', () {
       test('should clear all services', () {
-        registry..registerService('test_plugin', TestServiceBinding('test'))
-
-        ..clear();
+        registry
+          ..registerService('test_plugin', TestServiceBinding('test'))
+          ..clear();
 
         expect(registry.isRegistered<TestService>(), false);
         expect(registry.registeredTypes, isEmpty);
