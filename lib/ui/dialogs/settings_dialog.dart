@@ -70,7 +70,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 return ListTile(
                   leading: const Icon(Icons.storage_outlined),
                   title: Text(i18n.t('Storage Usage')),
-                  subtitle: const Text('Calculating...'),
+                  subtitle: Text(i18n.t('calculating')),
                 );
               },
             ),
@@ -82,7 +82,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             ListTile(
               leading: const Icon(Icons.palette_outlined),
               title: Text(i18n.t('Color Theme')),
-              subtitle: Text(_getThemeModeLabel(settingsService.themeMode)),
+              subtitle: Text(_getThemeModeLabel(settingsService.themeMode, i18n)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showThemeSelector(context, settingsService),
             ),
@@ -114,7 +114,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             _buildSectionHeader(i18n.t('Node Settings')),
             ListTile(
               title: Text(i18n.t('Default View Mode')),
-              subtitle: Text(_getViewModeLabel(uiState.defaultViewMode)),
+              subtitle: Text(_getViewModeLabel(uiState.defaultViewMode, i18n)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showViewModeSelector(context),
             ),
@@ -131,7 +131,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             _buildSectionHeader(i18n.t('About')),
             ListTile(
               leading: const Icon(Icons.info_outline),
-              title: const Text('Node Graph Notebook'),
+              title: Text(i18n.t('Node Graph Notebook')),
               subtitle: Text(i18n.t('Version 0.1.0')),
               onTap: () {
                 _showAboutDialog(context);
@@ -168,16 +168,16 @@ class _SettingsDialogState extends State<SettingsDialog> {
       ),
     );
 
-  String _getViewModeLabel(NodeViewMode mode) {
+  String _getViewModeLabel(NodeViewMode mode, I18n i18n) {
     switch (mode) {
       case NodeViewMode.titleOnly:
-        return 'Title Only';
+        return i18n.t('Title Only');
       case NodeViewMode.titleWithPreview:
-        return 'Title with Preview';
+        return i18n.t('Title with Preview');
       case NodeViewMode.fullContent:
-        return 'Full Content';
+        return i18n.t('Full Content');
       case NodeViewMode.compact:
-        return 'Compact';
+        return i18n.t('Compact');
     }
   }
 
@@ -204,7 +204,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: NodeViewMode.values.map((mode) => RadioListTile<NodeViewMode>(
-                  title: Text(_getViewModeLabel(mode)),
+                  title: Text(_getViewModeLabel(mode, i18n)),
                   value: mode,
                 )).toList(),
             ),
@@ -230,33 +230,33 @@ class _SettingsDialogState extends State<SettingsDialog> {
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
           title: Text(i18n.t('About Node Graph Notebook')),
-          content: const SingleChildScrollView(
+          content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Node Graph Notebook',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  i18n.t('Node Graph Notebook'),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
-                Text('Version 0.1.0'),
-                SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Text(i18n.t('Version 0.1.0')),
+                const SizedBox(height: 16),
                 Text(
-                  'A concept map-based note-taking application built with Flutter and Flame engine.',
+                  i18n.t('A concept map-based note-taking application built with Flutter and Flame engine.'),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
-                  'Features:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  i18n.t('Features:'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
-                Text('• Visual node graph with Flame engine'),
-                Text('• Markdown editing support'),
-                Text('• Multiple node types (Content & Concept)'),
-                Text('• 8 reference types for relationships'),
-                Text('• Auto-layout algorithms'),
-                Text('• Search and filter functionality'),
+                const SizedBox(height: 8),
+                Text('• ${i18n.t('Visual node graph with Flame engine')}'),
+                Text('• ${i18n.t('Markdown editing support')}'),
+                Text('• ${i18n.t('Multiple node types (Content & Concept)')}'),
+                Text('• ${i18n.t('8 reference types for relationships')}'),
+                Text('• ${i18n.t('Auto-layout algorithms')}'),
+                Text('• ${i18n.t('Search and filter functionality')}'),
               ],
             ),
           ),
@@ -281,53 +281,53 @@ class _SettingsDialogState extends State<SettingsDialog> {
         return AlertDialog(
           backgroundColor: theme.backgrounds.primary,
           title: Text(i18n.t('Documentation')),
-          content: const SingleChildScrollView(
+          content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Quick Start Guide',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  i18n.t('Quick Start Guide'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
-                  '1. Creating Nodes',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  i18n.t('1. Creating Nodes'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
-                Text('• Click the + button to create a new node'),
-                Text('• Choose between Content or Concept node type'),
-                Text('• Enter title and content'),
-                SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Text('• ${i18n.t('Click the + button to create a new node')}'),
+                Text('• ${i18n.t('Choose between Content or Concept node type')}'),
+                Text('• ${i18n.t('Enter title and content')}'),
+                const SizedBox(height: 16),
                 Text(
-                  '2. Connecting Nodes',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  i18n.t('2. Connecting Nodes'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
-                Text('• Long press a node to open its menu'),
-                Text('• Select "Connect to..." to link nodes'),
-                Text('• Choose a reference type for the connection'),
-                SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Text('• ${i18n.t('Long press a node to open its menu')}'),
+                Text('• ${i18n.t('Select "Connect to..." to link nodes')}'),
+                Text('• ${i18n.t('Choose a reference type for the connection')}'),
+                const SizedBox(height: 16),
                 Text(
-                  '3. Layout Options',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  i18n.t('3. Layout Options'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
-                Text('• Force Directed: Physics-based layout'),
-                Text('• Hierarchical: Tree-based layout'),
-                Text('• Circular: Circle arrangement'),
-                Text('• Concept Map: Concept-focused layout'),
-                SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Text('• ${i18n.t('Force Directed: Physics-based layout')}'),
+                Text('• ${i18n.t('Hierarchical: Tree-based layout')}'),
+                Text('• ${i18n.t('Circular: Circle arrangement')}'),
+                Text('• ${i18n.t('Concept Map: Concept-focused layout')}'),
+                const SizedBox(height: 16),
                 Text(
-                  '4. Keyboard Shortcuts',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  i18n.t('4. Keyboard Shortcuts'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
-                Text('• Ctrl+N: Create new node'),
-                Text('• Ctrl+S: Save current node'),
-                Text('• Ctrl+F: Quick search'),
-                Text('• Delete: Delete selected node'),
+                const SizedBox(height: 8),
+                Text('• ${i18n.t('Ctrl+N: Create new node')}'),
+                Text('• ${i18n.t('Ctrl+S: Save current node')}'),
+                Text('• ${i18n.t('Ctrl+F: Quick search')}'),
+                Text('• ${i18n.t('Delete: Delete selected node')}'),
               ],
             ),
           ),
@@ -361,7 +361,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Current Location:',
+                i18n.t('Current Location:'),
                 style: Theme.of(ctx).textTheme.labelLarge,
               ),
               const SizedBox(height: 8),
@@ -372,13 +372,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Choose a new storage location. All data will be stored in this location.',
-                style: TextStyle(fontSize: 12),
+              Text(
+                i18n.t('Choose a new storage location. All data will be stored in this location.'),
+                style: const TextStyle(fontSize: 12),
               ),
               const SizedBox(height: 8),
               Text(
-                'Warning: Changing the storage location will require restarting the app.',
+                i18n.t('Warning: Changing the storage location will require restarting the app.'),
                 style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                   color: context.read<ThemeService>().themeData.status.warning,
                 ),
@@ -388,7 +388,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(i18n.t('Cancel')),
             ),
             if (!settingsService.isUsingDefaultPath)
               TextButton(
@@ -421,11 +421,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
                     await settingsService.setCustomStoragePath(null);
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          'Storage location reset. Please restart the app.',
+                          i18n.t('Storage location reset. Please restart the app.'),
                         ),
-                        duration: Duration(seconds: 3),
+                        duration: const Duration(seconds: 3),
                       ),
                     );
                   }
@@ -439,10 +439,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 if (newPath != null && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Storage location changed to: $newPath'),
+                      content: Text('${i18n.t('Storage location changed to:')} $newPath'),
                       duration: const Duration(seconds: 3),
                       action: SnackBarAction(
-                        label: 'Restart',
+                        label: i18n.t('Restart'),
                         onPressed: () {
                           // 提示用户需要重启应用
                         },
@@ -480,22 +480,22 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 Navigator.pop(ctx);
               }
             },
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 RadioListTile<ThemeMode>(
-                  title: Text('Light'),
-                  subtitle: Text('Always use light theme'),
+                  title: Text(i18n.t('Light')),
+                  subtitle: Text(i18n.t('Always use light theme')),
                   value: ThemeMode.light,
                 ),
                 RadioListTile<ThemeMode>(
-                  title: Text('Dark'),
-                  subtitle: Text('Always use dark theme'),
+                  title: Text(i18n.t('Dark')),
+                  subtitle: Text(i18n.t('Always use dark theme')),
                   value: ThemeMode.dark,
                 ),
                 RadioListTile<ThemeMode>(
-                  title: Text('System'),
-                  subtitle: Text('Follow system settings'),
+                  title: Text(i18n.t('System')),
+                  subtitle: Text(i18n.t('Follow system settings')),
                   value: ThemeMode.system,
                 ),
               ],
@@ -532,14 +532,14 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }).toList();
   }
 
-  String _getThemeModeLabel(ThemeMode mode) {
+  String _getThemeModeLabel(ThemeMode mode, I18n i18n) {
     switch (mode) {
       case ThemeMode.light:
-        return 'Light';
+        return i18n.t('Light');
       case ThemeMode.dark:
-        return 'Dark';
+        return i18n.t('Dark');
       case ThemeMode.system:
-        return 'System';
+        return i18n.t('System');
     }
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../../../core/services/i18n.dart';
+
 /// Markdown 预览 widget
 class MarkdownPreviewWidget extends StatefulWidget {
   /// 创建 Markdown 预览 widget
-  /// 
+  ///
   /// [markdown] - 要预览的 Markdown 内容
   /// [isRenderMode] - 是否以渲染模式显示，默认为 false
   const MarkdownPreviewWidget({
@@ -15,7 +17,7 @@ class MarkdownPreviewWidget extends StatefulWidget {
 
   /// 要预览的 Markdown 内容
   final String markdown;
-  
+
   /// 是否以渲染模式显示
   final bool isRenderMode;
 
@@ -47,7 +49,10 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+
+    return Column(
       children: [
         // 工具栏
         DecoratedBox(
@@ -64,7 +69,7 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Preview',
+                    i18n.t('Preview'),
                     style: Theme.of(context).textTheme.titleSmall,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -77,7 +82,7 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
                     _ModeButton(
                       icon: Icons.code,
                       isSelected: !_isRenderMode,
-                      tooltip: 'View as text',
+                      tooltip: i18n.t('View as text'),
                       onTap: () {
                         if (_isRenderMode) _toggleMode();
                       },
@@ -86,7 +91,7 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
                     _ModeButton(
                       icon: Icons.visibility,
                       isSelected: _isRenderMode,
-                      tooltip: 'View as rendered',
+                      tooltip: i18n.t('View as rendered'),
                       onTap: () {
                         if (!_isRenderMode) _toggleMode();
                       },
@@ -101,7 +106,7 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
         // 内容区域
         Expanded(
           child: widget.markdown.isEmpty
-              ? const Center(child: Text('No preview available'))
+              ? Center(child: Text(i18n.t('No preview available')))
               : _isRenderMode
               ? Padding(
                   padding: const EdgeInsets.all(16),
@@ -129,6 +134,7 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
         ),
       ],
     );
+  }
 }
 
 /// 模式切换按钮（紧凑型）

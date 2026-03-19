@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/models/models.dart';
+import '../../../../core/services/i18n.dart';
 import '../../graph/bloc/graph_bloc.dart';
 import '../../graph/bloc/graph_event.dart';
 
@@ -11,6 +12,8 @@ class LayoutMenu {
   ///
   /// [context] - 构建上下文
   static void show(BuildContext context) {
+    final i18n = I18n.of(context);
+
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -18,13 +21,13 @@ class LayoutMenu {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Layout Algorithm'),
+              title: Text(i18n.t('Layout Algorithm')),
               tileColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
             ),
             ListTile(
               leading: const Icon(Icons.hub_outlined),
-              title: const Text('Force Directed'),
-              subtitle: const Text('Physics-based layout'),
+              title: Text(i18n.t('Force Directed')),
+              subtitle: Text(i18n.t('Physics-based layout')),
               onTap: () {
                 Navigator.pop(ctx);
                 _applyLayout(context, LayoutAlgorithm.forceDirected);
@@ -32,8 +35,8 @@ class LayoutMenu {
             ),
             ListTile(
               leading: const Icon(Icons.stacked_line_chart),
-              title: const Text('Hierarchical'),
-              subtitle: const Text('Tree-based layout'),
+              title: Text(i18n.t('Hierarchical')),
+              subtitle: Text(i18n.t('Tree-based layout')),
               onTap: () {
                 Navigator.pop(ctx);
                 _applyLayout(context, LayoutAlgorithm.hierarchical);
@@ -41,8 +44,8 @@ class LayoutMenu {
             ),
             ListTile(
               leading: const Icon(Icons.circle_outlined),
-              title: const Text('Circular'),
-              subtitle: const Text('Circle arrangement'),
+              title: Text(i18n.t('Circular')),
+              subtitle: Text(i18n.t('Circle arrangement')),
               onTap: () {
                 Navigator.pop(ctx);
                 _applyLayout(context, LayoutAlgorithm.circular);
@@ -58,15 +61,16 @@ class LayoutMenu {
     BuildContext context,
     LayoutAlgorithm algorithm,
   ) async {
+    final i18n = I18n.of(context);
     final bloc = context.read<GraphBloc>();
 
     // 检查是否有节点
     if (bloc.state.nodes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No nodes to layout. Create some nodes first.'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(i18n.t('No nodes to layout. Create some nodes first.')),
+            duration: const Duration(seconds: 2),
           ),
         );
       }

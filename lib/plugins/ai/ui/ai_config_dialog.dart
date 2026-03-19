@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../core/services/i18n.dart';
 import '../../../../core/services/services.dart';
 
 /// AI 配置对话框
@@ -50,194 +53,200 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
   Widget build(BuildContext context) {
     final theme = context.read<ThemeService>().themeData;
 
-    return AlertDialog(
-      backgroundColor: theme.backgrounds.primary,
-      title: const Row(
-        children: [
-          Icon(Icons.smart_toy_outlined),
-          SizedBox(width: 8),
-          Text('AI Configuration'),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: SizedBox(
-          width: 450,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<I18n>(
+      builder: (context, i18n, child) {
+        return AlertDialog(
+          backgroundColor: theme.backgrounds.primary,
+          title: Row(
             children: [
-              // AI 服务提供商选择
-              const Text(
-                'AI Provider',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(
-                    value: 'openai',
-                    label: Text('OpenAI'),
-                    icon: Icon(Icons.cloud),
+              const Icon(Icons.smart_toy_outlined),
+              const SizedBox(width: 8),
+              Text(i18n.t('AI Configuration')),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 450,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // AI 服务提供商选择
+                  Text(
+                    i18n.t('AI Provider'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
-                  ButtonSegment(
-                    value: 'anthropic',
-                    label: Text('Anthropic'),
-                    icon: Icon(Icons.cloud),
-                  ),
-                ],
-                selected: {_selectedProvider},
-                onSelectionChanged: (Set<String> newSelection) {
-                  setState(() {
-                    _selectedProvider = newSelection.first;
-                    // 根据提供商更新默认值
-                    if (_selectedProvider == 'openai') {
-                      _baseUrlController.text = 'https://api.openai.com/v1';
-                      _modelController.text = 'gpt-4';
-                    } else {
-                      _baseUrlController.text = 'https://api.anthropic.com';
-                      _modelController.text = 'claude-3-sonnet-20240229';
-                    }
-                  });
-                },
-              ),
-              const SizedBox(height: 24),
-
-              // Base URL
-              const Text(
-                'Base URL',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _baseUrlController,
-                decoration: InputDecoration(
-                  hintText: _selectedProvider == 'openai'
-                      ? 'https://api.openai.com/v1'
-                      : 'https://api.anthropic.com',
-                  border: const OutlineInputBorder(),
-                  iconColor: theme.ui.icon,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Model
-              const Text(
-                'Model Name',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _modelController,
-                decoration: InputDecoration(
-                  hintText: _selectedProvider == 'openai'
-                      ? 'gpt-4'
-                      : 'claude-3-sonnet-20240229',
-                  border: const OutlineInputBorder(),
-                  iconColor: theme.ui.icon,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // API Key
-              const Text(
-                'API Key',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _apiKeyController,
-                obscureText: !_showApiKey,
-                decoration: InputDecoration(
-                  hintText: 'Enter your API key',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _showApiKey ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () {
+                  const SizedBox(height: 8),
+                  SegmentedButton<String>(
+                    segments: [
+                      ButtonSegment(
+                        value: 'openai',
+                        label: Text(i18n.t('OpenAI')),
+                        icon: const Icon(Icons.cloud),
+                      ),
+                      ButtonSegment(
+                        value: 'anthropic',
+                        label: Text(i18n.t('Anthropic')),
+                        icon: const Icon(Icons.cloud),
+                      ),
+                    ],
+                    selected: {_selectedProvider},
+                    onSelectionChanged: (Set<String> newSelection) {
                       setState(() {
-                        _showApiKey = !_showApiKey;
+                        _selectedProvider = newSelection.first;
+                        // 根据提供商更新默认值
+                        if (_selectedProvider == 'openai') {
+                          _baseUrlController.text = 'https://api.openai.com/v1';
+                          _modelController.text = 'gpt-4';
+                        } else {
+                          _baseUrlController.text = 'https://api.anthropic.com';
+                          _modelController.text = 'claude-3-sonnet-20240229';
+                        }
                       });
                     },
                   ),
-                  iconColor: theme.ui.icon,
-                ),
-              ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-              // 信息提示
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.status.info.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: theme.status.info.withValues(alpha: 0.5),
+                  // Base URL
+                  Text(
+                    i18n.t('Base URL'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: theme.status.info,
-                          size: 20,
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _baseUrlController,
+                    decoration: InputDecoration(
+                      hintText: _selectedProvider == 'openai'
+                          ? 'https://api.openai.com/v1'
+                          : 'https://api.anthropic.com',
+                      border: const OutlineInputBorder(),
+                      iconColor: theme.ui.icon,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Model
+                  Text(
+                    i18n.t('Model Name'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _modelController,
+                    decoration: InputDecoration(
+                      hintText: _selectedProvider == 'openai'
+                          ? 'gpt-4'
+                          : 'claude-3-sonnet-20240229',
+                      border: const OutlineInputBorder(),
+                      iconColor: theme.ui.icon,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // API Key
+                  Text(
+                    i18n.t('API Key'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _apiKeyController,
+                    obscureText: !_showApiKey,
+                    decoration: InputDecoration(
+                      hintText: i18n.t('Enter your API key'),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showApiKey ? Icons.visibility : Icons.visibility_off,
                         ),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'API Configuration',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                        onPressed: () {
+                          setState(() {
+                            _showApiKey = !_showApiKey;
+                          });
+                        },
+                      ),
+                      iconColor: theme.ui.icon,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 信息提示
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.status.info.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: theme.status.info.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: theme.status.info,
+                              size: 20,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                i18n.t('API Configuration'),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '• ${i18n.t('Get your API key from OpenAI or Anthropic')}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '• ${i18n.t('Custom base URLs are supported')}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '• ${i18n.t('After configuration, use "Test AI Connection" to verify')}',
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '• Get your API key from OpenAI or Anthropic',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      '• Custom base URLs are supported',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      '• After configuration, use "Test AI Connection" to verify',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _saveConfiguration,
-          child: const Text('Save'),
-        ),
-      ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(i18n.t('Cancel')),
+            ),
+            ElevatedButton(
+              onPressed: _saveConfiguration,
+              child: Text(i18n.t('Save')),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Future<void> _saveConfiguration() async {
+    final i18n = I18n.of(context);
+
     if (_apiKeyController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('API Key is required'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(i18n.t('API Key is required')),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -251,9 +260,9 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI configuration saved successfully'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(i18n.t('AI configuration saved successfully')),
+            duration: const Duration(seconds: 2),
           ),
         );
         Navigator.pop(context);
@@ -262,7 +271,7 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving configuration: $e'),
+            content: Text('${i18n.t('Error saving configuration')}: $e'),
             duration: const Duration(seconds: 3),
           ),
         );

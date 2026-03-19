@@ -66,7 +66,7 @@ class _SidebarState extends State<Sidebar> {
       context: context,
       builder: (dialogCtx) => AlertDialog(
           title: Text(i18n.t('Delete')),
-          content: Text('Are you sure you want to delete "${node.title}"?'),
+          content: Text('${i18n.t('Are you sure you want to delete')} "${node.title}"${i18n.t('?')}'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
@@ -90,6 +90,7 @@ class _SidebarState extends State<Sidebar> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
     // 使用 context.select 进行细粒度状态订阅，避免不必要的重建
     // 只有当节点列表发生变化时才重建此组件
     final nodeState = context.select((NodeBloc bloc) => bloc.state);
@@ -135,7 +136,7 @@ class _SidebarState extends State<Sidebar> {
                     // 切换按钮
                     IconButton(
                       icon: Icon(_showSearch ? Icons.list : Icons.search),
-                      tooltip: _showSearch ? 'Show Nodes' : 'Show Search',
+                      tooltip: i18n.t(_showSearch ? 'Show Nodes' : 'Show Search'),
                       onPressed: () {
                         setState(() {
                           _showSearch = !_showSearch;
@@ -145,9 +146,9 @@ class _SidebarState extends State<Sidebar> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _showSearch
-                          ? const Text(
-                              'Search',
-                              style: TextStyle(
+                          ? Text(
+                              i18n.t('Search'),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -198,7 +199,7 @@ class _SidebarState extends State<Sidebar> {
                     if (!_showSearch)
                       IconButton(
                         icon: const Icon(Icons.create_new_folder),
-                        tooltip: 'Create New Folder',
+                        tooltip: i18n.t('Create New Folder'),
                         onPressed: () => _createFolder(context),
                       ),
                   ],
@@ -223,9 +224,10 @@ class _SidebarState extends State<Sidebar> {
 
     try {
       // 发送创建节点事件，设置isFolder元数据
+      final i18n = I18n.of(context);
       nodeBloc.add(
-        const NodeCreateEvent(
-          title: 'New Folder',
+        NodeCreateEvent(
+          title: i18n.t('New Folder'),
           content: 'A folder to organize your notes',
           metadata: {'isFolder': true},
         ),
@@ -236,13 +238,14 @@ class _SidebarState extends State<Sidebar> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('New folder created')));
+        ).showSnackBar(SnackBar(content: Text(i18n.t('New folder created'))));
       }
     } catch (e) {
       if (context.mounted) {
+        final i18n = I18n.of(context);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to create folder: $e')));
+        ).showSnackBar(SnackBar(content: Text('${i18n.t('Failed to create folder:')} $e')));
       }
     }
   }
@@ -332,6 +335,7 @@ class _SidebarState extends State<Sidebar> {
 
   /// 构建搜索内容（通过Hook加载）
   Widget _buildSearchContent(BuildContext context) {
+    final i18n = I18n.of(context);
     final hookWrappers = hookRegistry.getHookWrappers('sidebar.bottom');
     final hookContext = SidebarHookContext(
       data: {
@@ -343,7 +347,7 @@ class _SidebarState extends State<Sidebar> {
     );
 
     if (hookWrappers.isEmpty) {
-      return const Center(child: Text('No search plugin loaded'));
+      return Center(child: Text(i18n.t('No search plugin loaded')));
     }
 
     return Column(

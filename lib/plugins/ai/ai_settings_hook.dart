@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
 import '../../../core/plugin/ui_hooks/hook_metadata.dart';
 import '../../../core/plugin/ui_hooks/hook_priority.dart';
+import '../../../core/services/i18n.dart';
 import '../../../core/services/settings_service.dart';
 import 'ui/ai_config_dialog.dart';
 import 'ui/ai_test_dialog.dart';
@@ -30,28 +32,32 @@ class AISettingsHook extends SettingsHookBase {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      children: [
-        ListTile(
-          leading: const Icon(Icons.smart_toy_outlined),
-          title: const Text('AI Settings'),
-          subtitle: Text(
-            settingsService.isAIConfigured
-                ? '${settingsService.aiProvider} - ${settingsService.aiModel}'
-                : 'Not configured',
-          ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showAIConfigDialog(buildContext, settingsService),
-        ),
-        if (settingsService.isAIConfigured)
-          ListTile(
-            leading: const Icon(Icons.chat_bubble_outline),
-            title: const Text('Test AI Connection'),
-            subtitle: const Text('Chat with AI to test the configuration'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showAITestDialog(buildContext),
-          ),
-      ],
+    return Consumer<I18n>(
+      builder: (ctx, i18n, child) {
+        return Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.smart_toy_outlined),
+              title: Text(i18n.t('AI Settings')),
+              subtitle: Text(
+                settingsService.isAIConfigured
+                    ? '${settingsService.aiProvider} - ${settingsService.aiModel}'
+                    : i18n.t('Not configured'),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showAIConfigDialog(buildContext, settingsService),
+            ),
+            if (settingsService.isAIConfigured)
+              ListTile(
+                leading: const Icon(Icons.chat_bubble_outline),
+                title: Text(i18n.t('Test AI Connection')),
+                subtitle: Text(i18n.t('Chat with AI to test the configuration')),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showAITestDialog(buildContext),
+              ),
+          ],
+        );
+      },
     );
   }
 

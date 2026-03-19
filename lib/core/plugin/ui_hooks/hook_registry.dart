@@ -225,17 +225,42 @@ class HookRegistry {
 
     _hooks[hookPointId]!.add(wrapper);
 
-    // 按优先级排序
+    // 使用稳定排序算法：优先级 + 注册顺序
+    //
+    // 排序规则：
+    // 1. 主排序键：Hook 优先级（数值越小优先级越高）
+    // 2. 次要排序键：注册顺序（数值越小表示注册越早）
+    //
+    // 为什么需要稳定排序：
+    // - 当多个 Hook 具有相同优先级时，排序算法应保持它们的注册顺序
+    // - 确保插件开发者可以预测 Hook 的显示顺序
+    // - 避免因排序不稳定导致的 UI 显示不一致问题
+    //
+    // 示例：
+    // - Hook A (priority: 100, order: 0)
+    // - Hook B (priority: 500, order: 1)
+    // - Hook C (priority: 100, order: 2)
+    // 排序结果：A (100,0) → C (100,2) → B (500,1)
     _hooks[hookPointId]!.sort((a, b) {
-      final aPriority = a.hook.priority.value;
-      final bPriority = b.hook.priority.value;
-      return aPriority.compareTo(bPriority);
+      // 主排序键：按优先级排序
+      final priorityComparison = a.hook.priority.value
+          .compareTo(b.hook.priority.value);
+
+      // 如果优先级不同，直接返回优先级比较结果
+      if (priorityComparison != 0) {
+        return priorityComparison;
+      }
+
+      // 次要排序键：优先级相同时，按注册顺序排序
+      // 这确保了相同优先级的 Hook 保持其注册顺序
+      return a.registrationOrder.compareTo(b.registrationOrder);
     });
 
     debugPrint('[HookRegistry] Registered hook wrapper: ${wrapper.hook.runtimeType}');
     debugPrint('  - Hook point: $hookPointId');
     debugPrint('  - Is enabled: ${wrapper.isEnabled}');
     debugPrint('  - Priority: ${wrapper.hook.priority}');
+    debugPrint('  - Registration order: ${wrapper.registrationOrder}');
     debugPrint('  - Total hooks at this point: ${_hooks[hookPointId]!.length}');
   }
 

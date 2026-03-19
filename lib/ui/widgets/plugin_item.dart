@@ -33,7 +33,10 @@ class PluginItem extends StatelessWidget {
   final VoidCallback onInstall;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+
+    return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
@@ -57,14 +60,14 @@ class PluginItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Version: $version',
+                        '${i18n.t('Version:')} $version',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
                         ),
                       ),
                       Text(
-                        'By: $author',
+                        '${i18n.t('Author:')} $author',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -75,7 +78,7 @@ class PluginItem extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: onInstall,
-                  child: Text(I18n.of(context).t('Install')),
+                  child: Text(i18n.t('Install')),
                 ),
               ],
             ),
@@ -85,4 +88,5 @@ class PluginItem extends StatelessWidget {
         ),
       ),
     );
+  }
 }

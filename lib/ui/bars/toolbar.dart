@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/plugin/ui_hooks/hook_context.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
+import '../../core/services/i18n.dart';
 import '../../plugins/graph/bloc/graph_bloc.dart';
 import '../../plugins/graph/bloc/graph_event.dart';
 import '../../plugins/graph/bloc/node_bloc.dart';
@@ -22,6 +23,7 @@ class Toolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
     final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
 
     debugPrint('[Toolbar] build() called:');
@@ -40,9 +42,9 @@ class Toolbar extends StatelessWidget {
                     ? Icons.expand_less
                     : Icons.expand_more,
               ),
-              tooltip: uiState.isToolbarExpanded
+              tooltip: i18n.t(uiState.isToolbarExpanded
                   ? 'Collapse Toolbar'
-                  : 'Expand Toolbar',
+                  : 'Expand Toolbar'),
               onPressed: () {
                 context.read<UIBloc>().add(const UIToggleToolbarEvent());
               },
@@ -72,7 +74,7 @@ class Toolbar extends StatelessWidget {
                       ? Icons.share
                       : Icons.share_outlined,
                 ),
-                tooltip: 'Toggle Connections',
+                tooltip: i18n.t('Toggle Connections'),
                 onPressed: () {
                   context.read<GraphBloc>().add(
                     const ViewToggleConnectionsEvent(),
@@ -83,20 +85,20 @@ class Toolbar extends StatelessWidget {
                 icon: Icon(
                   uiState.isSidebarOpen ? Icons.menu_open : Icons.menu,
                 ),
-                tooltip: 'Toggle Sidebar',
+                tooltip: i18n.t('Toggle Sidebar'),
                 onPressed: () {
                   context.read<UIBloc>().add(const UIToggleSidebarEvent());
                 },
               ),
               IconButton(
                 icon: const Icon(Icons.refresh),
-                tooltip: 'Refresh',
+                tooltip: i18n.t('Refresh'),
                 onPressed: () => _refreshData(context),
               ),
               const Divider(),
               IconButton(
                 icon: const Icon(Icons.delete),
-                tooltip: 'Delete Selected Node',
+                tooltip: i18n.t('Delete Selected Node'),
                 onPressed: () => _deleteSelectedNode(context),
               ),
             ],
@@ -112,7 +114,11 @@ class Toolbar extends StatelessWidget {
 
   void _refreshData(BuildContext context) {
     // 刷新节点和图数据
-    context.read<NodeBloc>().add(const NodeLoadEvent());
-    context.read<GraphBloc>().add(const GraphInitializeEvent());
+    final graphBloc = context.read<GraphBloc>();
+    final nodeBloc = context.read<NodeBloc>();
+
+    // 重新初始化图和节点数据
+    graphBloc.add(const GraphInitializeEvent());
+    nodeBloc.add(const NodeLoadEvent());
   }
 }

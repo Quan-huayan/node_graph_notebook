@@ -4,6 +4,7 @@ import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
 import '../../../core/plugin/ui_hooks/hook_metadata.dart';
 import '../../../core/plugin/ui_hooks/hook_priority.dart';
+import '../../../core/services/i18n.dart';
 import '../graph/command/node_commands.dart';
 
 /// 删除功能插件
@@ -24,11 +25,15 @@ class DeletePlugin extends NodeContextMenuHookBase {
 
   @override
   Widget renderMenu(NodeContextMenuHookContext context) {
+    final buildContext = context.data['buildContext'] as BuildContext?;
+    if (buildContext == null) return const SizedBox.shrink();
+
+    final i18n = I18n.of(buildContext);
     final node = context.node;
     if (node == null) return const SizedBox.shrink();
 
     return ListTile(
-      title: const Text('Delete'),
+      title: Text(i18n.t('Delete')),
       leading: const Icon(Icons.delete, color: Colors.red),
       onTap: () => _deleteNode(context),
     );
@@ -54,20 +59,22 @@ class DeletePlugin extends NodeContextMenuHookBase {
       return;
     }
 
+    final i18n = I18n.of(buildContext);
+
     // 显示确认对话框
     final confirmed = await showDialog<bool>(
       context: buildContext,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Node'),
-        content: Text('Are you sure you want to delete "${node.title}"?'),
+        title: Text(i18n.t('Delete Node')),
+        content: Text('${i18n.t('Are you sure you want to delete')} "${node.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(i18n.t('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(i18n.t('Delete'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -86,7 +93,7 @@ class DeletePlugin extends NodeContextMenuHookBase {
           if (buildContext.mounted) {
             ScaffoldMessenger.of(buildContext).showSnackBar(
               SnackBar(
-                content: Text('Failed to delete node: ${result.error}'),
+                content: Text('${i18n.t('Failed to delete node:')} ${result.error}'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -97,7 +104,7 @@ class DeletePlugin extends NodeContextMenuHookBase {
           if (buildContext.mounted) {
             ScaffoldMessenger.of(buildContext).showSnackBar(
               SnackBar(
-                content: Text('Node "${node.title}" deleted'),
+                content: Text('${i18n.t('Node')} "${node.title}" ${i18n.t('deleted')}'),
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -109,7 +116,7 @@ class DeletePlugin extends NodeContextMenuHookBase {
         if (buildContext.mounted) {
           ScaffoldMessenger.of(buildContext).showSnackBar(
             SnackBar(
-              content: Text('Error deleting node: $e'),
+              content: Text('${i18n.t('Error deleting node:')} $e'),
               backgroundColor: Colors.red,
             ),
           );

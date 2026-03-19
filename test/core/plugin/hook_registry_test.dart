@@ -145,7 +145,8 @@ void main() {
         registry..registerHook(TestHook(id: 'hook1', name: 'Hook 1'))
         ..registerHook(TestHook(id: 'hook2', name: 'Hook 2'));
 
-        final wrappers = registry.getHookWrappers('test.hook');
+        // 获取所有hooks，包括未启用的
+        final wrappers = registry.getHookWrappers('test.hook', includeDisabled: true);
         expect(wrappers.length, 2);
       });
 
@@ -186,7 +187,7 @@ void main() {
         ..unregisterHook(hook1);
 
         expect(registry.hasHooks('test.hook'), true);
-        expect(registry.getHookWrappers('test.hook').length, 1);
+        expect(registry.getHookWrappers('test.hook', includeDisabled: true).length, 1);
       });
     });
 
@@ -221,7 +222,7 @@ void main() {
         ..registerHook(HighPriorityHook())
         ..registerHook(CriticalPriorityHook());
 
-        final wrappers = registry.getHookWrappers('test.priority');
+        final wrappers = registry.getHookWrappers('test.priority', includeDisabled: true);
 
         expect(wrappers[0].hook.metadata.id, 'critical_priority_hook');
         expect(wrappers[1].hook.metadata.id, 'high_priority_hook');
@@ -239,7 +240,7 @@ void main() {
           priorityLevel: HookPriority.medium,
         ));
 
-        final wrappers = registry.getHookWrappers('test.priority');
+        final wrappers = registry.getHookWrappers('test.priority', includeDisabled: true);
 
         expect(wrappers[0].hook.priority, HookPriority.critical);
         expect(wrappers[1].hook.priority, HookPriority.high);
@@ -294,15 +295,19 @@ void main() {
         final hook = TestHook(id: 'test_hook', name: 'Test Hook');
         registry.registerHook(hook);
 
-        final wrapper = registry.getHookWrappers('test.hook').first;
+        // 获取未启用的hook来初始化它
+        final wrapper = registry.getHookWrappers('test.hook', includeDisabled: true).first;
         await wrapper.lifecycle.transitionTo(HookState.initialized, () async {});
 
-        expect(registry.getHookWrappers('test.hook').length, 1);
+        // uninitialized状态不是enabled，所以返回0
+        expect(registry.getHookWrappers('test.hook').length, 0);
 
         await wrapper.lifecycle.transitionTo(HookState.enabled, () async {});
+        // 现在hook启用了，应该返回1
         expect(registry.getHookWrappers('test.hook').length, 1);
 
         await wrapper.lifecycle.transitionTo(HookState.disabled, () async {});
+        // 禁用后应该返回0
         expect(registry.getHookWrappers('test.hook').length, 0);
       });
 
@@ -310,7 +315,8 @@ void main() {
         final hook = TestHook(id: 'test_hook', name: 'Test Hook');
         registry.registerHook(hook);
 
-        final wrapper = registry.getHookWrappers('test.hook').first;
+        // 获取未启用的hook来初始化它
+        final wrapper = registry.getHookWrappers('test.hook', includeDisabled: true).first;
         await wrapper.lifecycle.transitionTo(HookState.initialized, () async {});
         await wrapper.lifecycle.transitionTo(HookState.enabled, () async {});
         await wrapper.lifecycle.transitionTo(HookState.disabled, () async {});

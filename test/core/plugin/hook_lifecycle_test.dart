@@ -197,7 +197,7 @@ void main() {
     setUp(() {
       hook = TestHook();
       lifecycle = HookLifecycleManager('test_hook');
-      wrapper = HookWrapper(hook, lifecycle);
+      wrapper = HookWrapper(hook, lifecycle, 0); // 添加注册顺序参数
     });
 
     test('should report isInitialized correctly', () async {
@@ -228,7 +228,7 @@ void main() {
     group('with parent plugin', () {
       test('should check parent plugin enabled state', () async {
         final parentPlugin = _createMockPluginWrapper('parent_plugin');
-        wrapper = HookWrapper(hook, lifecycle, parentPlugin: parentPlugin);
+        wrapper = HookWrapper(hook, lifecycle, 0, parentPlugin: parentPlugin); // 添加注册顺序参数
 
         await lifecycle.transitionTo(HookState.initialized, () async {});
         await lifecycle.transitionTo(HookState.enabled, () async {});
@@ -238,7 +238,7 @@ void main() {
 
       test('should be enabled when both hook and parent are enabled', () async {
         final parentPlugin = await _createMockEnabledPluginWrapper('parent_plugin');
-        wrapper = HookWrapper(hook, lifecycle, parentPlugin: parentPlugin);
+        wrapper = HookWrapper(hook, lifecycle, 0, parentPlugin: parentPlugin); // 添加注册顺序参数
 
         await lifecycle.transitionTo(HookState.initialized, () async {});
         await lifecycle.transitionTo(HookState.enabled, () async {});

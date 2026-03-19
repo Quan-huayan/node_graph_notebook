@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/plugin/ui_hooks/hook_context.dart';
 import '../../../core/plugin/ui_hooks/hook_metadata.dart';
 import '../../../core/plugin/ui_hooks/hook_priority.dart';
+import '../../../core/services/i18n.dart';
 
 /// AI 集成 Hook
 ///
@@ -21,11 +23,21 @@ class AIIntegrationPlugin extends MainToolbarHookBase {
   HookPriority get priority => HookPriority.medium;
 
   @override
-  Widget renderToolbar(MainToolbarHookContext context) => IconButton(
-        icon: const Icon(Icons.psychology, color: Colors.purple),
-        tooltip: 'AI Tools',
-        onPressed: () => _showAIMenu(context),
-      );
+  Widget renderToolbar(MainToolbarHookContext context) {
+    final buildContext = context.data['buildContext'] as BuildContext?;
+    if (buildContext == null) return const SizedBox.shrink();
+
+    // 使用Consumer监听语言变化
+    return Consumer<I18n>(
+      builder: (ctx, i18n, child) {
+        return IconButton(
+          icon: const Icon(Icons.psychology, color: Colors.purple),
+          tooltip: i18n.t('AI Tools'),
+          onPressed: () => _showAIMenu(context),
+        );
+      },
+    );
+  }
 
   /// 显示 AI 菜单
   void _showAIMenu(MainToolbarHookContext context) {
@@ -36,6 +48,8 @@ class AIIntegrationPlugin extends MainToolbarHookBase {
       return;
     }
 
+    final i18n = I18n.of(buildContext);
+
     showModalBottomSheet(
       context: buildContext,
       builder: (ctx) => SafeArea(
@@ -44,38 +58,38 @@ class AIIntegrationPlugin extends MainToolbarHookBase {
           children: [
             ListTile(
               leading: const Icon(Icons.analytics),
-              title: const Text('分析选中节点'),
-              subtitle: const Text('使用 AI 分析节点内容'),
+              title: Text(i18n.t('Analyze selected nodes')),
+              subtitle: Text(i18n.t('Use AI to analyze node content')),
               onTap: () {
                 Navigator.pop(ctx);
-                _showNotImplemented(buildContext, '节点分析功能');
+                _showNotImplemented(buildContext, i18n.t('AI analysis feature'));
               },
             ),
             ListTile(
               leading: const Icon(Icons.hub),
-              title: const Text('推荐连接'),
-              subtitle: const Text('AI 分析并推荐节点连接'),
+              title: Text(i18n.t('Suggest connections')),
+              subtitle: Text(i18n.t('AI analysis and suggest node connections')),
               onTap: () {
                 Navigator.pop(ctx);
-                _showNotImplemented(buildContext, '连接推荐功能');
+                _showNotImplemented(buildContext, i18n.t('Connection suggestion feature'));
               },
             ),
             ListTile(
               leading: const Icon(Icons.summarize),
-              title: const Text('生成图摘要'),
-              subtitle: const Text('AI 生成整张图的摘要'),
+              title: Text(i18n.t('Generate graph summary')),
+              subtitle: Text(i18n.t('AI generates summary of the graph')),
               onTap: () {
                 Navigator.pop(ctx);
-                _showNotImplemented(buildContext, '图摘要生成功能');
+                _showNotImplemented(buildContext, i18n.t('Graph summary feature'));
               },
             ),
             ListTile(
               leading: const Icon(Icons.add_circle),
-              title: const Text('生成节点'),
-              subtitle: const Text('使用 AI 生成新节点内容'),
+              title: Text(i18n.t('Generate node')),
+              subtitle: Text(i18n.t('Use AI to generate new node content')),
               onTap: () {
                 Navigator.pop(ctx);
-                _showNotImplemented(buildContext, '节点生成功能');
+                _showNotImplemented(buildContext, i18n.t('Node generation feature'));
               },
             ),
           ],
@@ -86,9 +100,10 @@ class AIIntegrationPlugin extends MainToolbarHookBase {
 
   /// 显示未实现提示
   void _showNotImplemented(BuildContext context, String feature) {
+    final i18n = I18n.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature 功能需要配置 AI 服务后才能使用'),
+        content: Text(i18n.t('This feature requires AI service configuration')),
         duration: const Duration(seconds: 3),
       ),
     );

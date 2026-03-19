@@ -150,15 +150,18 @@ class HookLifecycleManager {
 /// - 类似 PluginWrapper，但专门用于 Hook
 /// - 支持可选的父 Plugin 关联（用于状态同步）
 /// - 提供 isEnabled 的复合判断（考虑父 Plugin 状态）
+/// - 跟踪注册顺序以支持稳定的排序算法
 class HookWrapper {
   /// 创建一个新的 Hook 包装器实例
   ///
-  /// [hook] Hook 实例（注意：这里使用 dynamic 因为支持新旧两种 Hook 类型）
+  /// [hook] Hook 实例
   /// [lifecycle] Hook 生命周期管理器
+  /// [registrationOrder] Hook 注册顺序计数器（用于稳定排序）
   /// [parentPlugin] 可选的父 Plugin 包装器
   HookWrapper(
     this.hook,
-    this.lifecycle, {
+    this.lifecycle,
+    this.registrationOrder, {
     this.parentPlugin,
   });
 
@@ -169,6 +172,12 @@ class HookWrapper {
 
   /// Hook 生命周期管理器
   final HookLifecycleManager lifecycle;
+
+  /// Hook 注册顺序
+  ///
+  /// 用于在优先级相同时保持稳定的排序顺序
+  /// 数值越小表示注册越早，应该排在前面
+  final int registrationOrder;
 
   /// 可选的父 Plugin 包装器
   ///
@@ -210,9 +219,16 @@ class HookWrapper {
 /// - 封装 HookWrapper 的创建逻辑
 /// - 支持新系统的 UIHookBase
 /// - 统一的 Hook 包装器创建入口
+/// - 维护全局注册顺序计数器以支持稳定排序
 class HookWrapperFactory {
   /// 私有构造函数，防止实例化
   HookWrapperFactory._();
+
+  /// 全局 Hook 注册顺序计数器
+  ///
+  /// 每次创建 HookWrapper 时递增，用于在优先级相同时保持稳定排序
+  /// 确保先注册的 Hook 总是在相同优先级的其他 Hook 前面
+  static int _registrationCounter = 0;
 
   /// 包装新的 Hook
   ///
@@ -224,11 +240,20 @@ class HookWrapperFactory {
     PluginWrapper? parentPlugin,
   }) {
     final lifecycle = HookLifecycleManager(hook.metadata.id);
+    final order = _registrationCounter++;
 
     return HookWrapper(
       hook,
       lifecycle,
+      order,
       parentPlugin: parentPlugin,
     );
+  }
+
+  /// 重置注册计数器
+  ///
+  /// 主要用于测试，确保测试之间的隔离性
+  static void resetCounter() {
+    _registrationCounter = 0;
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../core/services/i18n.dart';
 import '../../../../core/services/services.dart';
 import '../service/ai_service.dart';
 
@@ -22,9 +24,13 @@ class _AITestDialogState extends State<AITestDialog> {
   void initState() {
     super.initState();
     _messageController = TextEditingController();
-    _addSystemMessage(
-      'AI connection test initialized. Type a message to test.',
-    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final i18n = I18n.of(context);
+    _addSystemMessage(i18n.t('AI connection test initialized. Type a message to test.'));
   }
 
   @override
@@ -46,6 +52,8 @@ class _AITestDialogState extends State<AITestDialog> {
   }
 
   Future<void> _sendMessage(String text) async {
+    final i18n = I18n.of(context);
+
     if (text.isEmpty) return;
 
     _addMessage(text, true);
@@ -62,7 +70,7 @@ class _AITestDialogState extends State<AITestDialog> {
       // 验证配置
       if (!settingsService.isAIConfigured) {
         _addSystemMessage(
-          '❌ AI not configured. Please configure AI settings first.',
+          '❌ ${i18n.t('AI not configured. Please configure AI settings first.')}',
         );
         setState(() {
           _isLoading = false;
@@ -92,9 +100,9 @@ class _AITestDialogState extends State<AITestDialog> {
       // 调用 AI
       final response = await provider.generate(text);
       _addMessage(response, false);
-      _addSystemMessage('✓ Message sent and response received successfully');
+      _addSystemMessage('✓ ${i18n.t('Message sent and response received successfully')}');
     } catch (e) {
-      _addSystemMessage('❌ Error: ${e.toString()}');
+      _addSystemMessage('❌ ${i18n.t('Error')}: ${e.toString()}');
       debugPrint('AI Error: $e');
     } finally {
       setState(() {
@@ -107,117 +115,121 @@ class _AITestDialogState extends State<AITestDialog> {
   Widget build(BuildContext context) {
     final theme = context.read<ThemeService>().themeData;
 
-    return Dialog(
-      child: Container(
-        width: 600,
-        height: 500,
-        color: theme.backgrounds.primary,
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.ui.divider.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.chat_bubble_outline, color: theme.ui.icon),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Test AI Connection',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-
-            // Chat Area
-            Expanded(
-              child: ColoredBox(
-                color: theme.backgrounds.secondary,
-                child: _messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Type a message below to start',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message = _messages[index];
-                          return _buildMessageWidget(message, theme);
-                        },
+    return Consumer<I18n>(
+      builder: (context, i18n, child) {
+        return Dialog(
+          child: Container(
+            width: 600,
+            height: 500,
+            color: theme.backgrounds.primary,
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: theme.ui.divider.withValues(alpha: 0.5),
                       ),
-              ),
-            ),
-
-            // Input Area
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: theme.ui.divider.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      enabled: !_isLoading,
-                      decoration: InputDecoration(
-                        hintText: 'Type your message...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                      ),
-                      onSubmitted: (value) {
-                        if (!_isLoading) {
-                          _sendMessage(value);
-                        }
-                      },
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () => _sendMessage(_messageController.text),
-                    icon: _isLoading
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(theme.ui.icon),
+                  child: Row(
+                    children: [
+                      Icon(Icons.chat_bubble_outline, color: theme.ui.icon),
+                      const SizedBox(width: 12),
+                      Text(
+                        i18n.t('Test AI Connection'),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Chat Area
+                Expanded(
+                  child: ColoredBox(
+                    color: theme.backgrounds.secondary,
+                    child: _messages.isEmpty
+                        ? Center(
+                            child: Text(
+                              i18n.t('Type a message below to start'),
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           )
-                        : const Icon(Icons.send),
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              final message = _messages[index];
+                              return _buildMessageWidget(message, theme);
+                            },
+                          ),
                   ),
-                ],
-              ),
+                ),
+
+                // Input Area
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: theme.ui.divider.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          enabled: !_isLoading,
+                          decoration: InputDecoration(
+                            hintText: i18n.t('Type your message...'),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                          onSubmitted: (value) {
+                            if (!_isLoading) {
+                              _sendMessage(value);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => _sendMessage(_messageController.text),
+                        icon: _isLoading
+                            ? SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(theme.ui.icon),
+                                ),
+                              )
+                            : const Icon(Icons.send),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

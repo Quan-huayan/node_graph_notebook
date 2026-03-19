@@ -18,7 +18,6 @@ import 'core/plugin/ui_hooks/hook_context.dart';
 import 'core/plugin/ui_hooks/hook_point_registry.dart';
 import 'core/plugin/ui_hooks/hook_registry.dart';
 import 'core/repositories/repositories.dart';
-import 'core/services/i18n.dart';
 import 'core/services/services.dart';
 import 'plugins/graph/service/graph_service.dart';
 import 'ui/bloc/ui_bloc.dart';
@@ -455,10 +454,9 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
             Provider<CommandBus>.value(value: _commandBus),
 
             // === 国际化 Provider ===
-            // 4. I18n 服务（支持多语言）
-            ChangeNotifierProvider<I18n>(
-              create: (_) => I18n(),
-            ),
+            // 注意：I18n 服务现在由 I18nPlugin 提供
+            // I18nPlugin 的 I18nServiceBinding 会自动将 I18n 服务注册到 ServiceRegistry
+            // DynamicProviderWidget 会自动将其添加到 Provider 树中
 
             // === BLoC 层 ===
             // UI Bloc（核心 UI 状态管理）

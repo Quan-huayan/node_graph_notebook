@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../../core/models/models.dart';
+import '../../../../core/services/i18n.dart';
 import '../../graph/bloc/node_bloc.dart';
 import '../../graph/bloc/node_event.dart';
 
@@ -47,9 +48,12 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+
+    return Scaffold(
       appBar: AppBar(
-        title: const Text('Markdown Editor'),
+        title: Text(i18n.t('Markdown Editor')),
         actions: [
           // 切换预览/编辑模式
           IconButton(
@@ -59,20 +63,24 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
                 _isPreviewMode = !_isPreviewMode;
               });
             },
-            tooltip: _isPreviewMode ? 'Edit' : 'Preview',
+            tooltip: i18n.t(_isPreviewMode ? 'Edit' : 'Preview'),
           ),
           // 保存
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _isSaving ? null : _saveNode,
-            tooltip: 'Save',
+            tooltip: i18n.t('Save'),
           ),
         ],
       ),
       body: _isPreviewMode ? _buildPreview() : _buildEditor(),
     );
+  }
 
-  Widget _buildEditor() => Column(
+  Widget _buildEditor() {
+    final i18n = I18n.of(context);
+
+    return Column(
       children: [
         // 标题编辑
         Padding(
@@ -80,9 +88,9 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
           child: TextField(
             controller: _titleController,
             style: Theme.of(context).textTheme.headlineSmall,
-            decoration: const InputDecoration(
-              hintText: 'Title',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: i18n.t('Title'),
+              border: const OutlineInputBorder(),
             ),
           ),
         ),
@@ -98,8 +106,8 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
               maxLines: null,
               expands: true,
               style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
-              decoration: const InputDecoration(
-                hintText: 'Write your content in Markdown...',
+              decoration: InputDecoration(
+                hintText: i18n.t('Write your content in Markdown...'),
                 border: InputBorder.none,
               ),
             ),
@@ -110,8 +118,10 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
         _buildMarkdownToolbar(),
       ],
     );
+  }
 
   Widget _buildPreview() {
+    final i18n = I18n.of(context);
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
@@ -130,7 +140,7 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
             MarkdownBody(data: content, selectable: true)
           else
             Text(
-              'Nothing to preview',
+              i18n.t('Nothing to preview'),
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
@@ -140,7 +150,10 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
     );
   }
 
-  Widget _buildMarkdownToolbar() => Container(
+  Widget _buildMarkdownToolbar() {
+    final i18n = I18n.of(context);
+
+    return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         border: Border(
@@ -153,47 +166,48 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
         children: [
           _ToolbarButton(
             icon: Icons.format_bold,
-            label: 'Bold',
+            label: i18n.t('Bold'),
             onPressed: () => _insertMarkdown('**', '**'),
           ),
           _ToolbarButton(
             icon: Icons.format_italic,
-            label: 'Italic',
+            label: i18n.t('Italic'),
             onPressed: () => _insertMarkdown('*', '*'),
           ),
           _ToolbarButton(
             icon: Icons.title,
-            label: 'H1',
+            label: i18n.t('H1'),
             onPressed: () => _insertMarkdown('# ', ''),
           ),
           _ToolbarButton(
             icon: Icons.title,
-            label: 'H2',
+            label: i18n.t('H2'),
             onPressed: () => _insertMarkdown('## ', ''),
           ),
           _ToolbarButton(
             icon: Icons.format_list_bulleted,
-            label: 'List',
+            label: i18n.t('List'),
             onPressed: () => _insertMarkdown('- ', ''),
           ),
           _ToolbarButton(
             icon: Icons.code,
-            label: 'Code',
+            label: i18n.t('Code'),
             onPressed: () => _insertMarkdown('`', '`'),
           ),
           _ToolbarButton(
             icon: Icons.link,
-            label: 'Link',
+            label: i18n.t('Link'),
             onPressed: () => _insertMarkdown('[', '](url)'),
           ),
           _ToolbarButton(
             icon: Icons.image,
-            label: 'Image',
+            label: i18n.t('Image'),
             onPressed: () => _insertMarkdown('![alt](', ')'),
           ),
         ],
       ),
     );
+  }
 
   void _insertMarkdown(String prefix, String suffix) {
     final controller = _contentController;
@@ -234,10 +248,12 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
   }
 
   Future<void> _saveNode() async {
+    final i18n = I18n.of(context);
+
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Title cannot be empty')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(i18n.t('Title cannot be empty'))),
+      );
       return;
     }
 
@@ -274,15 +290,17 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.node == null ? 'Node created' : 'Node saved'),
+            content: Text(
+              i18n.t(widget.node == null ? 'Node created' : 'Node saved'),
+            ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${i18n.t('Failed to save:')} $e')),
+        );
       }
     } finally {
       if (mounted) {
@@ -344,14 +362,16 @@ class MarkdownViewer extends StatelessWidget {
     if (url.startsWith('[[') && url.endsWith(']]')) {
       final nodeName = url.substring(2, url.length - 2);
       // TODO: 导航到对应的节点
+      final i18n = I18n.of(context);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('跳转到节点: $nodeName')));
+      ).showSnackBar(SnackBar(content: Text('${i18n.t('Jump to node:')}: $nodeName')));
       return;
     }
 
     // 处理外部链接
     final uri = Uri.tryParse(url);
+    final i18n = I18n.of(context);
     if (uri != null && uri.hasScheme) {
       // HTTP/HTTPS 链接
       if (uri.scheme == 'http' || uri.scheme == 'https') {
@@ -366,27 +386,27 @@ class MarkdownViewer extends StatelessWidget {
         } catch (e) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('无法打开链接: $e')));
+          ).showSnackBar(SnackBar(content: Text('${i18n.t('Cannot open link:')}: $e')));
         }
       }
       // 文件链接
       else if (uri.scheme == 'file') {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('文件链接: $uri')));
+        ).showSnackBar(SnackBar(content: Text('${i18n.t('File link:')}: $uri')));
       }
       // 其他协议
       else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('不支持的协议: ${uri.scheme}')));
+        ).showSnackBar(SnackBar(content: Text('${i18n.t('Unsupported protocol:')}: ${uri.scheme}')));
       }
     }
     // 可能是相对路径或内部链接
     else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('内部链接: $url')));
+      ).showSnackBar(SnackBar(content: Text('${i18n.t('Internal link:')}: $url')));
     }
   }
 }

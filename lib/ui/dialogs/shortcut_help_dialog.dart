@@ -16,36 +16,36 @@ class ShortcutsDialog extends StatelessWidget {
         width: 500,
         child: ListView(
           shrinkWrap: true,
-          children: const [
+          children: [
             _ShortcutItem(
               shortcutKey: 'Ctrl + N',
-              description: 'Create New Node',
+              description: i18n.t('Create New Node'),
             ),
-            _ShortcutItem(shortcutKey: 'Ctrl + S', description: 'Save'),
-            _ShortcutItem(shortcutKey: 'Ctrl + Z', description: 'Undo'),
-            _ShortcutItem(shortcutKey: 'Ctrl + Shift + Z', description: 'Redo'),
+            _ShortcutItem(shortcutKey: 'Ctrl + S', description: i18n.t('Save')),
+            _ShortcutItem(shortcutKey: 'Ctrl + Z', description: i18n.t('Undo')),
+            _ShortcutItem(shortcutKey: 'Ctrl + Shift + Z', description: i18n.t('Redo')),
             _ShortcutItem(
               shortcutKey: 'Delete',
-              description: 'Delete Selected Node',
+              description: i18n.t('Delete Selected Node'),
             ),
-            _ShortcutItem(shortcutKey: 'Ctrl + F', description: 'Search'),
-            _ShortcutItem(shortcutKey: 'Ctrl + E', description: 'Export'),
-            Divider(),
+            _ShortcutItem(shortcutKey: 'Ctrl + F', description: i18n.t('Search')),
+            _ShortcutItem(shortcutKey: 'Ctrl + E', description: i18n.t('Export')),
+            const Divider(),
             _ShortcutItem(
               shortcutKey: 'Ctrl + 1',
-              description: 'Force Directed Layout',
+              description: i18n.t('Force Directed Layout'),
             ),
             _ShortcutItem(
               shortcutKey: 'Ctrl + 2',
-              description: 'Hierarchical Layout',
+              description: i18n.t('Hierarchical Layout'),
             ),
             _ShortcutItem(
               shortcutKey: 'Ctrl + 3',
-              description: 'Circular Layout',
+              description: i18n.t('Circular Layout'),
             ),
             _ShortcutItem(
               shortcutKey: 'Ctrl + 4',
-              description: 'Concept Map Layout',
+              description: i18n.t('Concept Map Layout'),
             ),
           ],
         ),

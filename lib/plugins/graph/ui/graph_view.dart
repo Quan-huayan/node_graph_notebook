@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/execution/execution_engine.dart';
+import '../../../../core/services/i18n.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../ui/bloc/ui_bloc.dart';
 import '../bloc/graph_bloc.dart';
+import '../bloc/graph_event.dart';
 import '../bloc/node_bloc.dart';
 import '../flame/flame.dart';
 
@@ -16,6 +18,7 @@ class GraphView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
     final bloc = context.watch<GraphBloc>();
     final state = bloc.state;
     final nodeBloc = context.watch<NodeBloc>();
@@ -36,7 +39,7 @@ class GraphView extends StatelessWidget {
 
     if (state.hasError || nodeState.hasError) {
       final error =
-          state.error ?? nodeState.error ?? 'An unknown error occurred';
+          state.error ?? nodeState.error ?? i18n.t('An unknown error occurred');
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -50,7 +53,7 @@ class GraphView extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Something went wrong',
+                i18n.t('Something went wrong'),
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 16),
@@ -61,12 +64,12 @@ class GraphView extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               ElevatedButton.icon(
-                onPressed: () async {
-                  // 尝试重新初始化
-                  // 注意：事件类可能需要重新定义
+                onPressed: () {
+                  // 重新初始化图
+                  context.read<GraphBloc>().add(const GraphInitializeEvent());
                 },
                 icon: const Icon(Icons.refresh),
-                label: const Text('Try Again'),
+                label: Text(i18n.t('Try Again')),
               ),
             ],
           ),
@@ -86,16 +89,16 @@ class GraphView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No Graph Yet',
+              i18n.t('No Graph Yet'),
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            const Text('Create your first graph to get started'),
+            Text(i18n.t('Create your first graph to get started')),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => _createGraph(context),
               icon: const Icon(Icons.add),
-              label: const Text('Create Graph'),
+              label: Text(i18n.t('Create Graph')),
             ),
           ],
         ),
@@ -128,9 +131,9 @@ class GraphView extends StatelessWidget {
                   // 节点已经在图中，显示提示
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Node is already in the graph'),
-                        duration: Duration(seconds: 1),
+                      SnackBar(
+                        content: Text(i18n.t('Node is already in the graph')),
+                        duration: const Duration(seconds: 1),
                       ),
                     );
                   }
@@ -138,12 +141,20 @@ class GraphView extends StatelessWidget {
                 }
 
                 try {
-                  // 添加节点到图中，并设置其位置
-                  // 注意：NodeAddEvent 和 NodeSelectEvent 可能需要重新定义
+                  // 添加节点到图中并设置其位置
+                  // 使用默认位置（屏幕中心）
+                  final defaultPosition = Offset(
+                    context.size?.width ?? 800 / 2,
+                    context.size?.height ?? 600 / 2,
+                  );
+
+                  context.read<GraphBloc>().add(
+                    NodeAddEvent(nodeId, position: defaultPosition),
+                  );
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to add node: $e')),
+                      SnackBar(content: Text('${i18n.t('Failed to add node:')} $e')),
                     );
                   }
                 }
@@ -156,14 +167,18 @@ class GraphView extends StatelessWidget {
   }
 
   void _createGraph(BuildContext context) async {
+    final i18n = I18n.of(context);
+    final graphBloc = context.read<GraphBloc>();
+
     try {
-      // 注意：GraphCreateEvent 可能需要重新定义
+      // 发送创建图事件，使用默认名称
+      graphBloc.add(const GraphCreateEvent('My Graph'));
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Graph creation functionality coming soon!'),
-            duration: Duration(seconds: 5),
+          SnackBar(
+            content: Text('${i18n.t('Failed to create graph:')} $e'),
+            duration: const Duration(seconds: 3),
           ),
         );
       }

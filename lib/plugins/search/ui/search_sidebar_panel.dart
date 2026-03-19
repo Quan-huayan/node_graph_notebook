@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/i18n.dart';
 import '../../graph/bloc/graph_bloc.dart';
 import '../../graph/bloc/graph_event.dart';
 import '../bloc/search_bloc.dart';
@@ -95,9 +97,11 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
   }
 
   void _saveAsPreset() {
+    final i18n = I18n.of(context);
+
     if (_searchController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a search query first')),
+        SnackBar(content: Text(i18n.t('Please enter a search query first'))),
       );
       return;
     }
@@ -119,6 +123,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     showDialog<String>(
       context: context,
       builder: (dialogCtx) {
+        final i18n = I18n.of(dialogCtx);
         final nameController = TextEditingController(
           text: _searchController.text.trim().substring(
             0,
@@ -128,19 +133,19 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
           ),
         );
         return AlertDialog(
-          title: const Text('Save Search'),
+          title: Text(i18n.t('Save Search')),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(
-              labelText: 'Preset Name',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: i18n.t('Preset Name'),
+              border: const OutlineInputBorder(),
             ),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel'),
+              child: Text(i18n.t('Cancel')),
             ),
             TextButton(
               onPressed: () {
@@ -149,7 +154,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                   Navigator.pop(dialogCtx, name);
                 }
               },
-              child: const Text('Save'),
+              child: Text(i18n.t('Save')),
             ),
           ],
         );
@@ -174,22 +179,25 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
   void _deletePreset(String id) {
     showDialog<bool>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-          title: const Text('Delete Preset'),
-          content: const Text(
-            'Are you sure you want to delete this search preset?',
+      builder: (dialogCtx) {
+        final i18n = I18n.of(dialogCtx);
+        return AlertDialog(
+          title: Text(i18n.t('Delete Preset')),
+          content: Text(
+            i18n.t('Are you sure you want to delete this search preset?'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Cancel'),
+              child: Text(i18n.t('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Delete'),
+              child: Text(i18n.t('Delete')),
             ),
           ],
-        ),
+        );
+      },
     ).then((confirmed) {
       if (confirmed ?? false) {
         context.read<SearchBloc>().add(SearchDeletePresetEvent(id));
@@ -224,10 +232,12 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return Consumer<I18n>(
+      builder: (context, i18n, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
         // 搜索栏
         Padding(
           padding: const EdgeInsets.all(16),
@@ -235,21 +245,21 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
             controller: _searchController,
             focusNode: _searchFocusNode,
             decoration: InputDecoration(
-              labelText: 'Search',
-              hintText: 'Enter search query...',
+              labelText: i18n.t('Search'),
+              hintText: i18n.t('Enter search query...'),
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _selectedPreset != null
                   ? const Icon(Icons.star, color: Colors.amber)
                   : PopupMenuButton<String>(
                       icon: const Icon(Icons.star_border),
-                      tooltip: 'Saved searches',
+                      tooltip: i18n.t('Saved searches'),
                       onSelected: (presetId) {
                         // 这个会在下面的 BlocBuilder 中处理
                       },
                       itemBuilder: (context) => [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             enabled: false,
-                            child: Text('Saved Searches'),
+                            child: Text(i18n.t('Saved searches')),
                           ),
                           const PopupMenuDivider(),
                         ],
@@ -276,13 +286,13 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                   icon: Icon(
                     _showAdvanced ? Icons.expand_less : Icons.expand_more,
                   ),
-                  label: const Text('Advanced Filters'),
+                  label: Text(i18n.t('Advanced Filters')),
                 ),
               ),
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.star),
-                tooltip: 'Save as preset',
+                tooltip: i18n.t('Save as preset'),
                 onPressed: _saveAsPreset,
               ),
             ],
@@ -303,13 +313,13 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Advanced Filters', style: theme.textTheme.titleSmall),
+                    Text(i18n.t('Advanced Filters'), style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Title contains',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: i18n.t('Title contains'),
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                       onChanged: (_) => _performSearch(), // 添加防抖搜索
@@ -317,9 +327,9 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: _contentController,
-                      decoration: const InputDecoration(
-                        labelText: 'Content contains',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: i18n.t('Content contains'),
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                       onChanged: (_) => _performSearch(), // 添加防抖搜索
@@ -338,9 +348,9 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                         Expanded(
                           child: TextField(
                             controller: _tagController,
-                            decoration: const InputDecoration(
-                              labelText: 'Add tag',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: i18n.t('Add tag'),
+                              border: const OutlineInputBorder(),
                               isDense: true,
                             ),
                             onSubmitted: (_) => _addTag(),
@@ -350,7 +360,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                         IconButton(
                           icon: const Icon(Icons.add),
                           onPressed: _addTag,
-                          tooltip: 'Add tag',
+                          tooltip: i18n.t('Add tag'),
                         ),
                       ],
                     ),
@@ -364,7 +374,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
                           _selectedTags.clear();
                         });
                       },
-                      child: const Text('Clear Filters'),
+                      child: Text(i18n.t('Clear Filters')),
                     ),
                   ],
                 ),
@@ -435,7 +445,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
               }
 
               if (!state.hasResults) {
-                return const Center(child: Text('No results found'));
+                return Center(child: Text(i18n.t('No results found')));
               }
 
               return Column(
@@ -493,6 +503,8 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
           ),
         ),
       ],
+    );
+      },
     );
   }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/models/models.dart';
+import '../../../../core/services/i18n.dart';
 import '../../../../core/services/theme_service.dart';
 import '../bloc/node_bloc.dart';
 import '../bloc/node_event.dart';
@@ -55,85 +57,90 @@ class _NodeIconDialogState extends State<NodeIconDialog> {
     final currentIcon = widget.node.metadata['icon'] as String?;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AlertDialog(
-      backgroundColor: theme.backgrounds.primary,
-      title: const Text('Select Icon'),
-      content: SizedBox(
-        width: 350,
-        height: 350,
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 5,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-          ),
-          itemCount: _iconOptions.length,
-          itemBuilder: (context, index) {
-            final option = _iconOptions[index];
-            final icon = option['icon'] as String?;
-            final name = option['name'] as String;
-            final isSelected = icon == currentIcon;
+    return Consumer<I18n>(
+      builder: (context, i18n, child) {
+        return AlertDialog(
+          backgroundColor: theme.backgrounds.primary,
+          title: Text(i18n.t('Select Icon')),
+          content: SizedBox(
+            width: 350,
+            height: 350,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: _iconOptions.length,
+              itemBuilder: (context, index) {
+                final option = _iconOptions[index];
+                final icon = option['icon'] as String?;
+                final name = option['name'] as String;
+                final isSelected = icon == currentIcon;
 
-            return InkWell(
-              onTap: () => _selectIcon(icon),
-              borderRadius: BorderRadius.circular(12),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? colorScheme.primary.withValues(alpha: 0.2)
-                      : theme.backgrounds.secondary,
+                return InkWell(
+                  onTap: () => _selectIcon(icon),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? colorScheme.primary
-                        : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-                child: Tooltip(
-                  message: name,
-                  child: Center(
-                    child: isSelected
-                        ? Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Text(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? colorScheme.primary.withValues(alpha: 0.2)
+                          : theme.backgrounds.secondary,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Tooltip(
+                      message: name,
+                      child: Center(
+                        child: isSelected
+                            ? Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Text(
+                                    icon ?? '',
+                                    style: const TextStyle(fontSize: 24),
+                                  ),
+                                  Positioned(
+                                    top: 2,
+                                    right: 2,
+                                    child: Icon(
+                                      Icons.check_circle,
+                                      size: 14,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
                                 icon ?? '',
                                 style: const TextStyle(fontSize: 24),
                               ),
-                              Positioned(
-                                top: 2,
-                                right: 2,
-                                child: Icon(
-                                  Icons.check_circle,
-                                  size: 14,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            icon ?? '',
-                            style: const TextStyle(fontSize: 24),
-                          ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-      ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(i18n.t('Cancel')),
+            ),
+          ],
+        );
+      },
     );
   }
 
   /// 选择图标
   void _selectIcon(String? icon) {
+    final i18n = I18n.of(context);
     final nodeBloc = context.read<NodeBloc>();
 
     // 更新节点元数据
@@ -149,7 +156,7 @@ class _NodeIconDialogState extends State<NodeIconDialog> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(icon != null ? 'Icon added: $icon' : 'Icon removed'),
+        content: Text(icon != null ? '${i18n.t('Icon added:')} $icon' : i18n.t('Icon removed')),
       ),
     );
   }

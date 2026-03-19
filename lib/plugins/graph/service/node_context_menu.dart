@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/models/models.dart';
+import '../../../../core/services/i18n.dart';
 import '../bloc/graph_bloc.dart';
 import '../bloc/graph_event.dart';
 import '../bloc/node_bloc.dart';
@@ -33,6 +34,7 @@ Future<void> showNodeContextMenu(
   required Node node,
   required Offset position,
 }) async {
+  final i18n = I18n.of(context);
   final nodeBloc = context.read<NodeBloc>();
   final graphBloc = context.read<GraphBloc>();
 
@@ -51,7 +53,7 @@ Future<void> showNodeContextMenu(
         value: _MenuAction.titleOnly,
         child: _buildMenuItem(
           icon: Icons.title,
-          label: 'Title Only',
+          label: i18n.t('Title Only'),
           isSelected: node.viewMode == NodeViewMode.titleOnly,
         ),
       ),
@@ -59,7 +61,7 @@ Future<void> showNodeContextMenu(
         value: _MenuAction.compact,
         child: _buildMenuItem(
           icon: Icons.circle,
-          label: 'Compact',
+          label: i18n.t('Compact'),
           isSelected: node.viewMode == NodeViewMode.compact,
         ),
       ),
@@ -67,7 +69,7 @@ Future<void> showNodeContextMenu(
         value: _MenuAction.titleWithPreview,
         child: _buildMenuItem(
           icon: Icons.short_text,
-          label: 'Title with Preview',
+          label: i18n.t('Title with Preview'),
           isSelected: node.viewMode == NodeViewMode.titleWithPreview,
         ),
       ),
@@ -75,86 +77,86 @@ Future<void> showNodeContextMenu(
         value: _MenuAction.fullContent,
         child: _buildMenuItem(
           icon: Icons.article,
-          label: 'Full Content',
+          label: i18n.t('Full Content'),
           isSelected: node.viewMode == NodeViewMode.fullContent,
         ),
       ),
       const PopupMenuDivider(),
 
       // === 编辑功能 ===
-      const PopupMenuItem<_MenuAction>(
+      PopupMenuItem<_MenuAction>(
         value: _MenuAction.editMetadata,
         child: Row(
           children: [
-            Icon(Icons.info_outline, size: 18),
-            SizedBox(width: 12),
-            Text('Edit Metadata'),
+            const Icon(Icons.info_outline, size: 18),
+            const SizedBox(width: 12),
+            Text(i18n.t('Edit Metadata')),
           ],
         ),
       ),
-      const PopupMenuItem<_MenuAction>(
+      PopupMenuItem<_MenuAction>(
         value: _MenuAction.manageConnections,
         child: Row(
           children: [
-            Icon(Icons.link, size: 18),
-            SizedBox(width: 12),
-            Text('Manage Connections'),
+            const Icon(Icons.link, size: 18),
+            const SizedBox(width: 12),
+            Text(i18n.t('Manage Connections')),
           ],
         ),
       ),
-      const PopupMenuItem<_MenuAction>(
+      PopupMenuItem<_MenuAction>(
         value: _MenuAction.addIcon,
         child: Row(
           children: [
-            Icon(Icons.emoji_emotions_outlined, size: 18),
-            SizedBox(width: 12),
-            Text('Add Icon'),
+            const Icon(Icons.emoji_emotions_outlined, size: 18),
+            const SizedBox(width: 12),
+            Text(i18n.t('Add Icon')),
           ],
         ),
       ),
-      const PopupMenuItem<_MenuAction>(
+      PopupMenuItem<_MenuAction>(
         value: _MenuAction.changeColor,
         child: Row(
           children: [
-            Icon(Icons.palette, size: 18),
-            SizedBox(width: 12),
-            Text('Change Color'),
+            const Icon(Icons.palette, size: 18),
+            const SizedBox(width: 12),
+            Text(i18n.t('Change Color')),
           ],
         ),
       ),
-      const PopupMenuItem<_MenuAction>(
+      PopupMenuItem<_MenuAction>(
         value: _MenuAction.duplicate,
         child: Row(
           children: [
-            Icon(Icons.copy, size: 18),
-            SizedBox(width: 12),
-            Text('Duplicate'),
+            const Icon(Icons.copy, size: 18),
+            const SizedBox(width: 12),
+            Text(i18n.t('Duplicate')),
           ],
         ),
       ),
       const PopupMenuDivider(),
 
       // === 节点操作 ===
-      const PopupMenuItem<_MenuAction>(
+      PopupMenuItem<_MenuAction>(
         value: _MenuAction.focus,
         child: Row(
           children: [
-            Icon(Icons.center_focus_strong, size: 18),
-            SizedBox(width: 12),
-            Text('Focus Node'),
+            const Icon(Icons.center_focus_strong, size: 18),
+            const SizedBox(width: 12),
+            Text(i18n.t('Focus Node')),
           ],
         ),
       ),
       const PopupMenuDivider(),
 
       // === 危险操作 ===
-      const PopupMenuItem<_MenuAction>(
+      PopupMenuItem<_MenuAction>(
         value: _MenuAction.delete,
         child: Row(
           children: [
-            Icon(Icons.delete, color: Colors.red, size: 18),
-            SizedBox(width: 12),
-            Text('Delete'),
+            const Icon(Icons.delete, color: Colors.red, size: 18),
+            const SizedBox(width: 12),
+            Text(i18n.t('Delete')),
           ],
         ),
       ),
@@ -167,7 +169,7 @@ Future<void> showNodeContextMenu(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Text(
-            'Current: ${_getModeLabel(node.viewMode)}',
+            '${i18n.t('Current:')} ${_getModeLabel(node.viewMode, i18n)}',
             style: TextStyle(
               fontSize: 12,
               fontStyle: FontStyle.italic,
@@ -248,16 +250,16 @@ Widget _buildMenuItem({
   );
 
 /// 获取显示模式的标签
-String _getModeLabel(NodeViewMode mode) {
+String _getModeLabel(NodeViewMode mode, I18n i18n) {
   switch (mode) {
     case NodeViewMode.titleOnly:
-      return 'Title Only';
+      return i18n.t('Title Only');
     case NodeViewMode.compact:
-      return 'Compact';
+      return i18n.t('Compact');
     case NodeViewMode.titleWithPreview:
-      return 'Title with Preview';
+      return i18n.t('Title with Preview');
     case NodeViewMode.fullContent:
-      return 'Full Content';
+      return i18n.t('Full Content');
   }
 }
 
@@ -268,23 +270,28 @@ Future<void> _handleDelete(
   GraphBloc graphBloc,
   NodeBloc nodeBloc,
 ) async {
+  final i18n = I18n.of(context);
+
   // 确认删除
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
-        title: const Text('Delete Node'),
-        content: Text('Are you sure you want to delete "${node.title}"?'),
+    builder: (ctx) {
+      final i18n = I18n.of(ctx);
+      return AlertDialog(
+        title: Text(i18n.t('Delete Node')),
+        content: Text('${i18n.t('Are you sure you want to delete')} "${node.title}"${i18n.t('?')}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(i18n.t('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(i18n.t('Delete')),
           ),
         ],
-      ),
+      );
+    },
   );
 
   if ((confirmed ?? false) && context.mounted) {
@@ -295,7 +302,7 @@ Future<void> _handleDelete(
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Deleted: ${node.title}'),
+            content: Text('${i18n.t('Deleted:')} ${node.title}'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -304,7 +311,7 @@ Future<void> _handleDelete(
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to delete node: $e'),
+            content: Text('${i18n.t('Failed to delete node:')} $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -349,8 +356,10 @@ Future<void> _handleChangeColor(
 
   final selectedColor = await showDialog<String?>(
     context: context,
-    builder: (context) => AlertDialog(
-        title: const Text('Select Color'),
+    builder: (context) {
+      final i18n = I18n.of(context);
+      return AlertDialog(
+        title: Text(i18n.t('Select Color')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -392,10 +401,11 @@ Future<void> _handleChangeColor(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(i18n.t('Cancel')),
           ),
         ],
-      ),
+      );
+    },
   );
 
   if (selectedColor != null && context.mounted) {
@@ -409,22 +419,27 @@ Future<void> _handleDuplicate(
   Node node,
   NodeBloc nodeBloc,
 ) async {
+  final i18n = I18n.of(context);
+
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
-        title: const Text('Duplicate Node'),
-        content: Text('Create a copy of "${node.title}"?'),
+    builder: (context) {
+      final i18n = I18n.of(context);
+      return AlertDialog(
+        title: Text(i18n.t('Duplicate Node')),
+        content: Text('${i18n.t('Create a copy of')} "${node.title}"${i18n.t('?')}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(i18n.t('Cancel')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Duplicate'),
+            child: Text(i18n.t('Duplicate')),
           ),
         ],
-      ),
+      );
+    },
   );
 
   if ((confirmed ?? false) && context.mounted) {
@@ -456,13 +471,15 @@ Future<void> _handleDuplicate(
     if (context.mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Duplicated: $newTitle')));
+      ).showSnackBar(SnackBar(content: Text('${i18n.t('Duplicated:')} $newTitle')));
     }
   }
 }
 
 /// 处理聚焦节点
 void _handleFocus(BuildContext context, Node node) {
+  final i18n = I18n.of(context);
+
   // 发送聚焦事件到 GraphBloc
   // 这需要在 GraphBloc 中实现相应的处理逻辑
   context.read<GraphBloc>().add(FocusNodeEvent(node.id));
@@ -470,7 +487,7 @@ void _handleFocus(BuildContext context, Node node) {
   if (context.mounted) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Focusing on ${node.title}')));
+    ).showSnackBar(SnackBar(content: Text('${i18n.t('Focusing on')} ${node.title}')));
   }
 }
 

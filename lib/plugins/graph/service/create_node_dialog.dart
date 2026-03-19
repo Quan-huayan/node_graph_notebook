@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../core/services/i18n.dart';
 import '../../../../core/services/theme_service.dart';
 import '../bloc/graph_bloc.dart';
 import '../bloc/graph_event.dart';
@@ -35,78 +37,83 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
   Widget build(BuildContext context) {
     final theme = context.read<ThemeService>().themeData;
 
-    return AlertDialog(
-      backgroundColor: theme.backgrounds.primary,
-      title: const Row(
-        children: [
-          Icon(Icons.category),
-          SizedBox(width: 8),
-          Text('Create Node'),
-        ],
-      ),
-      content: SizedBox(
-        width: 450,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<I18n>(
+      builder: (context, i18n, child) {
+        return AlertDialog(
+          backgroundColor: theme.backgrounds.primary,
+          title: Row(
             children: [
-              // 标题输入
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title *',
-                  hintText: 'Enter note title',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.title),
-                ),
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: 16),
-
-              // 内容输入 - 统一显示，但根据类型有不同的标签和提示
-              TextField(
-                controller: _contentController,
-                maxLines: 6,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Write your note in Markdown...',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.edit_note),
-                  helperText: 'Supports Markdown formatting',
-                ),
-                textCapitalization: TextCapitalization.sentences,
-              ),
+              const Icon(Icons.category),
+              const SizedBox(width: 8),
+              Text(i18n.t('Create Node')),
             ],
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isCreating ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isCreating ? null : _createNode,
-          child: _isCreating
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Create Node'),
-        ),
-      ],
+          content: SizedBox(
+            width: 450,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 标题输入
+                  TextField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      labelText: '${i18n.t('Title')} *',
+                      hintText: i18n.t('Enter note title'),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.title),
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 内容输入 - 统一显示，但根据类型有不同的标签和提示
+                  TextField(
+                    controller: _contentController,
+                    maxLines: 6,
+                    decoration: InputDecoration(
+                      labelText: i18n.t('Description'),
+                      hintText: i18n.t('Write your note in Markdown...'),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.edit_note),
+                      helperText: i18n.t('Supports Markdown formatting'),
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: _isCreating ? null : () => Navigator.pop(context),
+              child: Text(i18n.t('Cancel')),
+            ),
+            ElevatedButton(
+              onPressed: _isCreating ? null : _createNode,
+              child: _isCreating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(i18n.t('Create Node')),
+            ),
+          ],
+        );
+      },
     );
   }
 
   void _createNode() async {
+    final i18n = I18n.of(context);
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
     // 验证标题
     if (title.isEmpty) {
-      _showErrorSnackBar('Title cannot be empty');
+      _showErrorSnackBar(i18n.t('Title cannot be empty'));
       _focusTitleField();
       return;
     }
@@ -140,11 +147,11 @@ class _CreateNodeDialogState extends State<CreateNodeDialog> {
 
       if (mounted) {
         Navigator.pop(context);
-        _showSuccessSnackBar('Created: ${newNode.title}');
+        _showSuccessSnackBar('${i18n.t('Created:')} ${newNode.title}');
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Failed to create node: $e');
+        _showErrorSnackBar('${i18n.t('Failed to create node:')} $e');
       }
     } finally {
       if (mounted) {

@@ -47,36 +47,36 @@ class PluginMarketPage extends StatelessWidget {
     // 示例插件数据
     final plugins = [
       {
-        'name': 'Markdown Enhancer',
-        'description': 'Enhanced markdown editing with advanced features',
+        'nameKey': 'Markdown Enhancer',
+        'descriptionKey': 'Enhanced markdown editing with advanced features',
         'version': '1.0.0',
         'author': 'Plugin Developer',
         'icon': Icons.text_format,
       },
       {
-        'name': 'Mind Map',
-        'description': 'Create mind maps from your nodes',
+        'nameKey': 'Mind Map',
+        'descriptionKey': 'Create mind maps from your nodes',
         'version': '1.2.0',
         'author': 'Mind Map Team',
         'icon': Icons.account_tree,
       },
       {
-        'name': 'Export Tools',
-        'description': 'Additional export formats for your graphs',
+        'nameKey': 'Export Tools',
+        'descriptionKey': 'Additional export formats for your graphs',
         'version': '0.9.0',
         'author': 'Export Plugin Dev',
         'icon': Icons.file_download,
       },
       {
-        'name': 'AI Assistant',
-        'description': 'Integrate AI capabilities into your workflow',
+        'nameKey': 'AI Assistant',
+        'descriptionKey': 'Integrate AI capabilities into your workflow',
         'version': '1.1.0',
         'author': 'AI Team',
         'icon': Icons.smart_toy,
       },
       {
-        'name': 'Theme Manager',
-        'description': 'Customize the appearance of your notebook',
+        'nameKey': 'Theme Manager',
+        'descriptionKey': 'Customize the appearance of your notebook',
         'version': '1.3.0',
         'author': 'Theme Dev',
         'icon': Icons.color_lens,
@@ -84,6 +84,8 @@ class PluginMarketPage extends StatelessWidget {
     ];
 
     final plugin = plugins[index];
+    final pluginName = i18n.t(plugin['nameKey'] as String);
+    final pluginDescription = i18n.t(plugin['descriptionKey'] as String);
 
     return Card(
       elevation: 2,
@@ -106,21 +108,21 @@ class PluginMarketPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        plugin['name'] as String,
+                        pluginName,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        '${i18n.t('Version')}: ${plugin['version']}',
+                        '${i18n.t('Version:')} ${plugin['version']}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
                         ),
                       ),
                       Text(
-                        '${i18n.t('By:')} ${plugin['author']}',
+                        '${i18n.t('Author:')} ${plugin['author']}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -134,7 +136,7 @@ class PluginMarketPage extends StatelessWidget {
                     // TODO: 实现插件安装功能
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('${i18n.t('Installing...')} ${plugin['name']}'),
+                        content: Text('${i18n.t('Installing...')} $pluginName'),
                       ),
                     );
                   },
@@ -144,7 +146,7 @@ class PluginMarketPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              plugin['description'] as String,
+              pluginDescription,
               style: const TextStyle(fontSize: 14),
             ),
           ],

@@ -17,7 +17,9 @@
       "Bash(start:*)",
       "Bash(pgrep:*)",
       "Bash(rm:*)",
-      "Bash(timeout 5 cmd:*)"
+      "Bash(timeout 5 cmd:*)",
+      "Bash(dart format:*)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

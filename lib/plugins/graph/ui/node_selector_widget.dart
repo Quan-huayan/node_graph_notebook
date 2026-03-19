@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/models.dart';
+import '../../../../core/services/i18n.dart';
 
 /// 节点选择器 widget
 class NodeSelectorWidget extends StatefulWidget {
@@ -9,7 +10,7 @@ class NodeSelectorWidget extends StatefulWidget {
     required this.nodes,
     required this.selectedIndices,
     required this.onSelectionChanged,
-    this.searchHint = 'Search nodes...',
+    this.searchHint,
   });
 
   /// 节点列表
@@ -19,7 +20,7 @@ class NodeSelectorWidget extends StatefulWidget {
   /// 选择变化回调
   final ValueChanged<Set<int>> onSelectionChanged;
   /// 搜索提示文本
-  final String searchHint;
+  final String? searchHint;
 
   @override
   State<NodeSelectorWidget> createState() => _NodeSelectorWidgetState();
@@ -67,6 +68,7 @@ class _NodeSelectorWidgetState extends State<NodeSelectorWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
     final filteredNodes = _filteredNodes;
     final allSelected = widget.selectedIndices.length == widget.nodes.length;
 
@@ -78,8 +80,8 @@ class _NodeSelectorWidgetState extends State<NodeSelectorWidget> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              labelText: 'Search',
-              hintText: widget.searchHint,
+              labelText: i18n.t('Search'),
+              hintText: widget.searchHint ?? i18n.t('Search nodes...'),
               prefixIcon: const Icon(Icons.search),
               border: const OutlineInputBorder(),
               isDense: true,
@@ -106,15 +108,15 @@ class _NodeSelectorWidgetState extends State<NodeSelectorWidget> {
               ),
               TextButton(
                 onPressed: () => _toggleAll(true),
-                child: const Text('Select All'),
+                child: Text(i18n.t('Select All')),
               ),
               TextButton(
                 onPressed: () => widget.onSelectionChanged({}),
-                child: const Text('Clear'),
+                child: Text(i18n.t('Clear')),
               ),
               const Spacer(),
               Text(
-                '${widget.selectedIndices.length} selected',
+                '${widget.selectedIndices.length} ${i18n.t('selected')}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -126,7 +128,7 @@ class _NodeSelectorWidgetState extends State<NodeSelectorWidget> {
         // 节点列表
         Expanded(
           child: filteredNodes.isEmpty
-              ? const Center(child: Text('No nodes found'))
+              ? Center(child: Text(i18n.t('No nodes found')))
               : ListView.builder(
                   itemCount: filteredNodes.length,
                   itemBuilder: (context, index) {

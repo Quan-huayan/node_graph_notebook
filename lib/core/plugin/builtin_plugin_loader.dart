@@ -5,6 +5,7 @@ import '../../plugins/converter/converter_plugin.dart';
 import '../../plugins/data_recovery/data_recovery.dart';
 import '../../plugins/folder/folder_plugin.dart';
 import '../../plugins/graph/graph_plugin.dart';
+import '../../plugins/i18n/i18n_plugin.dart';
 import '../../plugins/layout/layout_plugin.dart';
 import '../../plugins/market/market_plugin.dart';
 import '../../plugins/search/search_plugin.dart';
@@ -46,6 +47,7 @@ class BuiltinPluginLoader {
   /// 所有内置插件工厂
   final List<PluginFactory> _builtinPluginFactories = [
     // 核心插件
+    I18nPlugin.new, // 国际化插件（优先加载，其他插件可能依赖）
     GraphPlugin.new,
     ConverterPlugin.new,
     LayoutPlugin.new,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/models/models.dart';
+import '../../../../core/services/i18n.dart';
 import '../../../../core/services/theme_service.dart';
 import '../bloc/node_bloc.dart';
 import '../bloc/node_event.dart';
@@ -56,106 +58,110 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
   Widget build(BuildContext context) {
     final theme = context.read<ThemeService>().themeData;
 
-    return AlertDialog(
-      backgroundColor: theme.backgrounds.primary,
-      title: const Text('Edit Node Metadata'),
-      content: SizedBox(
-        width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题编辑
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
+    return Consumer<I18n>(
+      builder: (context, i18n, child) {
+        return AlertDialog(
+          backgroundColor: theme.backgrounds.primary,
+          title: Text(i18n.t('Edit Node Metadata')),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 标题编辑
+                TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    labelText: i18n.t('Title'),
+                    border: const OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+                const SizedBox(height: 16),
 
-            // 文件夹属性
-            CheckboxListTile(
-              title: const Text('Is Folder'),
-              subtitle: const Text('Folder nodes can contain other nodes'),
-              value: _isFolder,
-              onChanged: (value) {
-                setState(() {
-                  _isFolder = value ?? false;
-                });
-              },
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            const SizedBox(height: 8),
-
-            // 颜色选择
-            const Text('Color', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _colorOptions.map((colorOption) {
-                final colorHex = colorOption['color'] as String?;
-                final color = colorOption['value'] as Color;
-                final isSelected = _selectedColor == colorHex;
-
-                return InkWell(
-                  onTap: () {
+                // 文件夹属性
+                CheckboxListTile(
+                  title: Text(i18n.t('Is Folder')),
+                  subtitle: Text(i18n.t('Folder nodes can contain other nodes')),
+                  value: _isFolder,
+                  onChanged: (value) {
                     setState(() {
-                      _selectedColor = colorHex;
+                      _isFolder = value ?? false;
                     });
                   },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.grey.withValues(alpha: 0.3),
-                        width: isSelected ? 3 : 1,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+                const SizedBox(height: 8),
+
+                // 颜色选择
+                Text(i18n.t('Color'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _colorOptions.map((colorOption) {
+                    final colorHex = colorOption['color'] as String?;
+                    final color = colorOption['value'] as Color;
+                    final isSelected = _selectedColor == colorHex;
+
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedColor = colorHex;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.grey.withValues(alpha: 0.3),
+                            width: isSelected ? 3 : 1,
+                          ),
+                        ),
+                        child: isSelected
+                            ? Icon(
+                                Icons.check,
+                                color: _getContrastColor(color),
+                                size: 20,
+                              )
+                            : null,
                       ),
-                    ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            color: _getContrastColor(color),
-                            size: 20,
-                          )
-                        : null,
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _colorOptions.firstWhere(
+                        (opt) => opt['color'] == _selectedColor,
+                        orElse: () => _colorOptions[0],
+                      )['name']
+                      as String,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
                   ),
-                );
-              }).toList(),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              _colorOptions.firstWhere(
-                    (opt) => opt['color'] == _selectedColor,
-                    orElse: () => _colorOptions[0],
-                  )['name']
-                  as String,
-              style: const TextStyle(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: Colors.grey,
-              ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(i18n.t('Cancel')),
             ),
+            ElevatedButton(onPressed: _saveMetadata, child: Text(i18n.t('Save'))),
           ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(onPressed: _saveMetadata, child: const Text('Save')),
-      ],
+        );
+      },
     );
   }
 
@@ -172,11 +178,12 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
 
   /// 保存元数据
   void _saveMetadata() {
+    final i18n = I18n.of(context);
     final newTitle = _titleController.text.trim();
     if (newTitle.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Title cannot be empty')));
+      ).showSnackBar(SnackBar(content: Text(i18n.t('Title cannot be empty'))));
       return;
     }
 
@@ -198,6 +205,6 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
     Navigator.pop(context);
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Metadata updated')));
+    ).showSnackBar(SnackBar(content: Text(i18n.t('Metadata updated'))));
   }
 }
