@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:flutter_markdown_plus_latex/flutter_markdown_plus_latex.dart';
+import 'package:markdown/markdown.dart' as md;
 
 import '../../../../core/models/models.dart';
 import '../../../../core/services/i18n.dart';
@@ -137,7 +139,17 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
 
           // 内容
           if (content.isNotEmpty)
-            MarkdownBody(data: content, selectable: true)
+            MarkdownBody(
+              data: content,
+              selectable: true,
+              builders: {
+                'latex': LatexElementBuilder(),
+              },
+              extensionSet: md.ExtensionSet(
+                [LatexBlockSyntax()],
+                [LatexInlineSyntax()],
+              ),
+            )
           else
             Text(
               i18n.t('Nothing to preview'),
@@ -204,6 +216,16 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
             label: i18n.t('Image'),
             onPressed: () => _insertMarkdown('![alt](', ')'),
           ),
+          _ToolbarButton(
+            icon: Icons.functions,
+            label: i18n.t('Inline Formula'),
+            onPressed: () => _insertMarkdown(r'$', r'$'),
+          ),
+          _ToolbarButton(
+            icon: Icons.calculate,
+            label: i18n.t('Block Formula'),
+            onPressed: _insertBlockFormula,
+          ),
         ],
       ),
     );
@@ -242,6 +264,51 @@ class _MarkdownEditorPageState extends State<MarkdownEditorPage> {
         text: newText,
         selection: TextSelection.collapsed(
           offset: cursorPosition + prefix.length,
+        ),
+      );
+    }
+  }
+
+  /// 插入块级公式
+  void _insertBlockFormula() {
+    final controller = _contentController;
+    final text = controller.text;
+    final selection = controller.selection;
+
+    const formulaTemplate = r'''
+$$
+\sum_{i=1}^{n} x_i
+$$
+''';
+
+    if (selection.isValid) {
+      final start = selection.start;
+      final end = selection.end;
+
+      final newText = text.replaceRange(
+        start,
+        end,
+        formulaTemplate,
+      );
+
+      controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: start + formulaTemplate.indexOf('\\sum'),
+        ),
+      );
+    } else {
+      final cursorPosition = selection.baseOffset;
+      final newText = text.replaceRange(
+        cursorPosition,
+        cursorPosition,
+        formulaTemplate,
+      );
+
+      controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: cursorPosition + formulaTemplate.indexOf('\\sum'),
         ),
       );
     }
@@ -361,11 +428,32 @@ class MarkdownViewer extends StatelessWidget {
     // 处理内部链接（wiki-links [[node]]）
     if (url.startsWith('[[') && url.endsWith(']]')) {
       final nodeName = url.substring(2, url.length - 2);
-      // TODO: 导航到对应的节点
-      final i18n = I18n.of(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${i18n.t('Jump to node:')}: $nodeName')));
+
+      // 查找匹配的节点
+      final nodeBloc = context.read<NodeBloc>();
+      final matchingNodes = nodeBloc.state.nodes.where(
+        (node) => node.title == nodeName || node.id == nodeName,
+      );
+
+      if (matchingNodes.isNotEmpty) {
+        final targetNode = matchingNodes.first;
+
+        // 显示节点信息
+        final i18n = I18n.of(context);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${i18n.t('Focus Node:')} ${targetNode.title}')),
+          );
+        }
+      } else {
+        // 未找到节点，显示提示
+        final i18n = I18n.of(context);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${i18n.t('No results found')}: $nodeName')),
+          );
+        }
+      }
       return;
     }
 

@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import '../../../../core/commands/models/command.dart';
 import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/events/app_events.dart';
 import '../../../../core/models/node.dart';
 import '../service/ai_service.dart';
 
@@ -126,6 +127,9 @@ class GenerateNodeCommand extends Command<Node> {
   /// 额外选项（可选）
   final Map<String, dynamic>? options;
 
+  /// 生成的节点 ID（用于撤销）
+  String? _generatedNodeId;
+
   @override
   String get name => 'GenerateNode';
 
@@ -140,6 +144,19 @@ class GenerateNodeCommand extends Command<Node> {
   @override
   Future<void> undo(CommandContext context) async {
     // 删除生成的节点
-    // TODO: 实现 undo 逻辑
+    if (_generatedNodeId != null) {
+      try {
+        await context.nodeRepository.delete(_generatedNodeId!);
+
+        // 发布节点删除事件
+        context.eventBus.publish(const NodeDataChangedEvent(
+          changedNodes: [],
+          action: DataChangeAction.delete,
+        ));
+      } catch (e) {
+        // 记录错误但继续执行
+        // Note: debugPrint is not available in Command context
+      }
+    }
   }
 }

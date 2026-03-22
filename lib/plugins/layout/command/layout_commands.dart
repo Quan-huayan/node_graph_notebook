@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import '../../../../core/commands/models/command.dart';
 import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/events/app_events.dart';
 import '../../../../core/repositories/node_repository.dart';
 
 /// 应用布局命令
@@ -26,6 +27,9 @@ class ApplyLayoutCommand extends Command<Map<String, Offset>> {
   /// 图 ID（可选，默认使用当前图）
   final String? graphId;
 
+  /// 保存原始位置用于撤销
+  Map<String, Offset>? _originalPositions;
+
   @override
   String get name => 'ApplyLayout';
 
@@ -42,8 +46,26 @@ class ApplyLayoutCommand extends Command<Map<String, Offset>> {
 
   @override
   Future<void> undo(CommandContext context) async {
-    // TODO: 实现撤销功能（需要保存原始位置）
-    throw UnimplementedError('撤销布局功能暂未实现');
+    // 恢复原始位置
+    if (_originalPositions != null) {
+      final repository = context.read<NodeRepository>();
+
+      // 获取所有节点并恢复位置
+      for (final entry in _originalPositions!.entries) {
+        final nodes = await repository.queryAll();
+        final node = nodes.firstWhere(
+          (n) => n.id == entry.key,
+          orElse: () => nodes.first,
+        );
+        await repository.save(node.copyWith(position: entry.value));
+      }
+
+      // 发布节点更新事件
+      context.eventBus.publish(const NodeDataChangedEvent(
+        changedNodes: [],
+        action: DataChangeAction.update,
+      ));
+    }
   }
 }
 

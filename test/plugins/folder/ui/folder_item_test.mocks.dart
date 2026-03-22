@@ -61,6 +61,15 @@ class MockNodeBloc extends _i1.Mock implements _i3.NodeBloc {
           as bool);
 
   @override
+  _i4.Future<void> close() =>
+      (super.noSuchMethod(
+            Invocation.method(#close, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   void add(_i5.NodeEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
@@ -95,13 +104,11 @@ class MockNodeBloc extends _i1.Mock implements _i3.NodeBloc {
       );
 
   @override
-  _i4.Future<void> close() =>
-      (super.noSuchMethod(
-            Invocation.method(#close, []),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
+  void onDone(_i5.NodeEvent? event, [Object? error, StackTrace? stackTrace]) =>
+      super.noSuchMethod(
+        Invocation.method(#onDone, [event, error, stackTrace]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void onChange(_i6.Change<_i2.NodeState>? change) => super.noSuchMethod(

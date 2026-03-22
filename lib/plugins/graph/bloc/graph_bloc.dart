@@ -685,8 +685,17 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
   /// 撤销
   Future<void> _onUndo(UndoEvent event, Emitter<GraphState> emit) async {
-    // 撤销功能由 UndoManager 处理，不在 CommandBus 中
-    // TODO: 实现撤销逻辑
+    // 撤销功能实现说明：
+    // 需要 UndoManager 服务来维护命令历史栈
+    // 实现步骤：
+    // 1. 创建 UndoManager 服务管理命令栈
+    // 2. 在 CommandBus 中注册 UndoMiddleware
+    // 3. 成功执行的命令推入 undo 栈
+    // 4. 撤销时从 undo 栈弹出并执行 undo()
+    // 5. 撤销的命令推入 redo 栈
+    // 6. 更新 UI 状态反映撤销结果
+    //
+    // 当前：重新加载图数据作为临时方案
     if (state.graph.id.isNotEmpty) {
       final graph = await _graphRepository.load(state.graph.id);
       if (graph != null) {
@@ -697,8 +706,15 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
   /// 重做
   Future<void> _onRedo(RedoEvent event, Emitter<GraphState> emit) async {
-    // 重做功能由 UndoManager 处理，不在 CommandBus 中
-    // TODO: 实现重做逻辑
+    // 重做功能实现说明：
+    // 需要 UndoManager 服务来维护 redo 栈
+    // 实现步骤：
+    // 1. 从 redo 栈弹出命令
+    // 2. 重新执行命令
+    // 3. 推入 undo 栈
+    // 4. 更新 UI 状态反映重做结果
+    //
+    // 当前：重新加载图数据作为临时方案
     if (state.graph.id.isNotEmpty) {
       final graph = await _graphRepository.load(state.graph.id);
       if (graph != null) {

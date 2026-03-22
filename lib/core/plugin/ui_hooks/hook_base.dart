@@ -209,7 +209,7 @@ abstract class UIHookBase {
   ///
   /// 注意：
   /// - 导出的 API 会被注册到 HookAPIRegistry
-  /// - 其他 Hook 可以通过 context.getHookAPI<T>(hookId, apiName) 访问
+  /// - 其他 Hook 可以通过 context.getHookAPI(hookId, apiName) 访问
   /// - 默认返回空 Map，表示不导出任何 API
   Map<String, dynamic> exportAPIs() => {};
 

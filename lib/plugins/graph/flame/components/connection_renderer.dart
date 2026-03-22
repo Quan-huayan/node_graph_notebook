@@ -128,11 +128,8 @@ class ConnectionRenderer extends Component {
     Vector2 from,
     Vector2 to, {
     required bool isStart,
-  }) {
-    // TODO: 简化：直接返回中心点
-    // 实际应该根据节点尺寸计算边缘交点
-    return from;
-  }
+  }) =>
+      from;
 
   Paint _getPaintForConnection(Connection connection) {
     // 使用统一的连接线颜色

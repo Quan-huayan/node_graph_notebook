@@ -344,6 +344,13 @@ class MockAppEventBus extends _i1.Mock implements _i12.AppEventBus {
           as _i5.Stream<_i12.AppEvent>);
 
   @override
+  set onError(void Function(_i12.AppEvent?, Object, StackTrace)? value) =>
+      super.noSuchMethod(
+        Invocation.setter(#onError, value),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void publish(_i12.AppEvent? event) => super.noSuchMethod(
     Invocation.method(#publish, [event]),
     returnValueForMissingStub: null,

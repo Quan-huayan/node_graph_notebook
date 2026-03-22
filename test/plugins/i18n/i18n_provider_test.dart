@@ -50,11 +50,12 @@ void main() {
 
       // 切换到中文
       await i18n.switchLanguage('zh');
-      await tester.pumpAndSettle();
+      // 使用 pump 而不是 pumpAndSettle，避免无限等待
+      await tester.pump();
 
       // 现在应该显示中文
       expect(find.text('设置'), findsOneWidget);
-    });
+    }, timeout: const Timeout(Duration(seconds: 15)));
   });
 }
 

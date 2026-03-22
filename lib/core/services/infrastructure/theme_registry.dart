@@ -262,7 +262,12 @@ class ThemeRegistry with ChangeNotifier {
 
     // 注意：当前的自定义 ThemeExtension 类与 Flutter 的 ThemeExtension<T> 系统不兼容
     // 这里暂时不合并扩展到 ThemeData.extensions 中
-    // TODO: 重构 ThemeExtension 以继承 Flutter 的 ThemeExtension<T> 基类
+    //
+    // 未来改进：重构 ThemeExtension 以继承 Flutter 的 ThemeExtension<T> 基类
+    // 这需要：
+    // 1. 为每个插件创建具体的 ThemeExtension 子类
+    // 2. 实现 lerp、copyWith 和 == 方法
+    // 3. 更新 ThemeRegistry 以支持泛型扩展
     //
     // 如果需要使用注册的扩展颜色，请使用：
     // - registry.getColor(key, isDark: true/false) - 获取单个颜色

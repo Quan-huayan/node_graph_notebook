@@ -375,7 +375,7 @@ class _GraphFlameWidgetState extends State<GraphFlameWidget> {
                           width: 2,
                         ),
                       )
-                    : const BoxDecoration(), // TODO: 这可能是异常的。
+                    : const BoxDecoration(), // 非拖拽状态：无装饰
                 child: Listener(
                   onPointerSignal: (pointerSignal) {
                     if (pointerSignal is PointerScrollEvent) {

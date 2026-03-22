@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/commands/models/command.dart';
 import '../../../../core/commands/models/command_context.dart';
+import '../../../../core/events/app_events.dart';
 import '../../../../core/models/node.dart';
 import '../../../../core/models/node_reference.dart';
 import '../../../../core/repositories/node_repository.dart';
@@ -102,6 +104,9 @@ class DeleteNodeCommand extends Command<void> {
   /// 是否级联删除相关连接
   final bool cascadeConnections;
 
+  /// 保存相关连接信息用于撤销
+  Map<String, NodeReference>? _incomingConnections;
+
   @override
   String get name => 'DeleteNode';
 
@@ -120,7 +125,29 @@ class DeleteNodeCommand extends Command<void> {
     final repository = context.read<NodeRepository>();
     await repository.save(node);
 
-    // TODO: 恢复相关连接
+    // 恢复相关连接
+    // 重新建立其他节点到此节点的连接
+    if (_incomingConnections != null) {
+      for (final entry in _incomingConnections!.entries) {
+        final nodes = await repository.queryAll();
+        final sourceNode = nodes.firstWhere(
+          (n) => n.id == entry.key,
+          orElse: () => node,
+        );
+        if (sourceNode.id != node.id) {
+          final updatedReferences = Map<String, NodeReference>.from(sourceNode.references);
+          updatedReferences[node.id] = entry.value;
+
+          await repository.save(sourceNode.copyWith(references: updatedReferences));
+        }
+      }
+
+      // 发布连接恢复事件
+      context.eventBus.publish(NodeDataChangedEvent(
+        changedNodes: [node],
+        action: DataChangeAction.update,
+      ));
+    }
   }
 }
 

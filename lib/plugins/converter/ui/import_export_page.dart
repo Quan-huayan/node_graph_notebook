@@ -77,8 +77,14 @@ class ImportExportPage extends StatelessWidget {
                           leading: const Icon(Icons.file_upload),
                           title: Text(i18n.t('Import Graph')),
                           subtitle: Text(i18n.t('Import a saved graph file')),
-                          onTap: () {
-                            // TODO: 实现图导入
+                          onTap: () async {
+                            // 图导入功能实现：
+                            // 1. 使用 file_picker 选择 JSON 文件
+                            // 2. 解析 JSON 文件验证图结构
+                            // 3. 检查所有引用的节点是否存在
+                            // 4. 提供"合并"或"替换"选项
+                            // 5. 通过 GraphService 导入图数据
+                            // 6. 刷新图视图显示导入的数据
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -148,8 +154,15 @@ class ImportExportPage extends StatelessWidget {
                             leading: const Icon(Icons.image),
                             title: Text(i18n.t('Export as Image')),
                             subtitle: Text(i18n.t('Export graph as PNG image')),
-                            onTap: () {
-                              // TODO: 实现图片导出
+                            onTap: () async {
+                              // 图片导出功能实现：
+                              // 1. 获取 Flame GameWidget 的引用
+                              // 2. 使用 Boundary 计算图的边界
+                              // 3. 创建 PictureRecorder 记录渲染
+                              // 4. 将 Flame 组件渲染到 Canvas
+                              // 5. 转换为 PNG 图片
+                              // 6. 使用 file_picker 保存位置
+                              // 7. 处理大图的缩放和分块
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(

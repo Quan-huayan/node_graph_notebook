@@ -55,6 +55,12 @@ class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
         return CommandResult.success({});
       }
 
+      // 保存原始位置用于撤销（注释掉，因为无法访问命令的私有字段）
+      // final originalPositions = <String, Offset>{};
+      // for (final node in graphNodes) {
+      //   originalPositions[node.id] = node.position;
+      // }
+
       // 将布局类型转换为 LayoutAlgorithm 枚举
       final algorithm = _mapLayoutType(command.layoutType);
       if (algorithm == null) {

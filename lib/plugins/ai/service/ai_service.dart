@@ -797,12 +797,10 @@ class ZhipuAIProvider implements AIProvider {
   ///
   /// 智谱AI要求使用JWT token进行认证
   /// Token格式: Header.Payload.Signature
-  String _generateJWTToken() {
-    // 简化实现：直接使用API Key作为token
-    // 生产环境应该实现完整的JWT签名逻辑
-    // TODO: 实现正确的JWT token生成
-    return apiKey;
-  }
+  ///
+  /// 注意：简化实现，直接使用API Key作为token
+  /// 生产环境应该实现完整的JWT签名逻辑
+  String _generateJWTToken() => apiKey;
 }
 
 /// AI 服务异常

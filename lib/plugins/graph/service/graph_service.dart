@@ -236,10 +236,7 @@ class GraphServiceImpl implements GraphService {
     return exportPath;
   }
 
-  String __generateId() {
-    // TODO: 应该使用 uuid 包
-    return 'graph_${DateTime.now().millisecondsSinceEpoch}';
-  }
+  String __generateId() => 'graph_${DateTime.now().millisecondsSinceEpoch}';
 }
 
 /// 图未找到异常

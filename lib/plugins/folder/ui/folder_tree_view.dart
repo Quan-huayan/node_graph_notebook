@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/commands/command_bus.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/services/i18n.dart';
 import '../../../../core/services/services.dart';
@@ -11,6 +12,7 @@ import '../../graph/bloc/graph_event.dart';
 import '../../graph/bloc/node_bloc.dart';
 import '../../graph/bloc/node_event.dart';
 import '../../graph/bloc/node_state.dart';
+import '../../graph/command/node_commands.dart';
 import '../../graph/service/node_service.dart';
 
 /// 文件夹树形视图
@@ -44,10 +46,12 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   final Set<String> _expandedFolders = {};
   String? _draggedNodeId;
   Map<String, int>? _nodeDepths;
+  late CommandBus _commandBus;
 
   @override
   void initState() {
     super.initState();
+    _commandBus = context.read<CommandBus>();
     _calculateDepths();
   }
 
@@ -599,12 +603,8 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                     ),
                     onTap: () {
                       Navigator.pop(ctx);
-                      // TODO: Implement disconnect functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Disconnect feature coming soon'),
-                        ),
-                      );
+                      // 显示断开连接的对话框
+                      _showDisconnectDialog(context, node, connectedNodes);
                     },
                   ),
                 ListTile(
@@ -725,6 +725,65 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     }
 
     return null;
+  }
+
+  void _showDisconnectDialog(
+    BuildContext context,
+    Node node,
+    List<Node> connectedNodes,
+  ) {
+    if (connectedNodes.isEmpty) return;
+
+    final theme = context.read<ThemeService>().themeData;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.backgrounds.primary,
+        title: Text('Disconnect from: ${node.title}'),
+        content: SizedBox(
+          width: 400,
+          height: 300,
+          child: ListView.builder(
+            itemCount: connectedNodes.length,
+            itemBuilder: (context, index) {
+              final connectedNode = connectedNodes[index];
+              return ListTile(
+                title: Text(connectedNode.title),
+                trailing: IconButton(
+                  icon: const Icon(Icons.link_off),
+                  onPressed: () async {
+                    // 执行断开连接命令
+                    await _commandBus.dispatch(DisconnectNodesCommand(
+                      sourceId: connectedNode.id,
+                      targetId: node.id,
+                    ));
+
+                    // 刷新界面
+                    _calculateDepths();
+                    Navigator.pop(ctx);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Disconnected ${connectedNode.title} from ${node.title}',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showReferencesInfo(BuildContext context, Node node) {

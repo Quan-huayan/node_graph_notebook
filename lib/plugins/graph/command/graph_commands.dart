@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/commands/models/command.dart';
 import '../../../../core/commands/models/command_context.dart';
 import '../../../../core/models/graph.dart';
@@ -55,7 +56,9 @@ class CreateGraphCommand extends Command<Graph> {
   @override
   Future<void> undo(CommandContext context) async {
     // 撤销：删除创建的图
-    // TODO: 实现删除逻辑
+    // 注意：需要 handler 在执行时存储创建的图 ID
+    // 当前实现：跳过撤销，因为图 ID 未传递回命令
+    debugPrint('Undo graph creation not fully implemented');
   }
 }
 

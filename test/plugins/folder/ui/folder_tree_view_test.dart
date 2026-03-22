@@ -92,7 +92,6 @@ void main() {
       mockNodeService = MockNodeService();
       themeService = ThemeService();
 
-      when(mockNodeBloc.state).thenReturn(NodeState.initial());
       when(mockNodeBloc.stream).thenAnswer((_) => const Stream.empty());
       when(mockGraphBloc.stream).thenAnswer((_) => const Stream.empty());
       when(mockGraphBloc.add(any)).thenReturn(null);
@@ -305,10 +304,7 @@ void main() {
                   body: FolderTreeView(
                     nodes: nodes,
                     folders: const [],
-                    onNodeSelected: (id) {
-                      debugPrint('onNodeSelected called with id: $id');
-                      selectedNodeId = id;
-                    },
+                    onNodeSelected: (id) => selectedNodeId = id,
                   ),
                 ),
               ),
@@ -321,7 +317,7 @@ void main() {
 
       final nodeFinder = find.text('Node 1');
       expect(nodeFinder, findsOneWidget);
-      
+
       await tester.tap(nodeFinder);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));

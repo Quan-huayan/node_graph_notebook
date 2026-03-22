@@ -79,6 +79,15 @@ class MockNodeBloc extends _i1.Mock implements _i5.NodeBloc {
           as bool);
 
   @override
+  _i6.Future<void> close() =>
+      (super.noSuchMethod(
+            Invocation.method(#close, []),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
   void add(_i7.NodeEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
@@ -113,13 +122,11 @@ class MockNodeBloc extends _i1.Mock implements _i5.NodeBloc {
       );
 
   @override
-  _i6.Future<void> close() =>
-      (super.noSuchMethod(
-            Invocation.method(#close, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
-          )
-          as _i6.Future<void>);
+  void onDone(_i7.NodeEvent? event, [Object? error, StackTrace? stackTrace]) =>
+      super.noSuchMethod(
+        Invocation.method(#onDone, [event, error, stackTrace]),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void onChange(_i8.Change<_i2.NodeState>? change) => super.noSuchMethod(
@@ -210,6 +217,16 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
     _i8.Transition<_i10.GraphEvent, _i3.GraphState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void onDone(
+    _i10.GraphEvent? event, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => super.noSuchMethod(
+    Invocation.method(#onDone, [event, error, stackTrace]),
     returnValueForMissingStub: null,
   );
 

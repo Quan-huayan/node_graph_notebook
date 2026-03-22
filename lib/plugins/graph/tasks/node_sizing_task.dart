@@ -153,7 +153,7 @@ class NodeSizingTaskSerialized extends CPUTask<Map<String, dynamic>> {
     final isFolder = _data['isFolder'] as bool? ?? false;
     final viewMode = _data['viewMode'] as String?;
     final title = _data['title'] as String;
-    //final content = _data['content'] as String; // TODO: 处理依照 content 长度调整尺寸的情况
+    final content = _data['content'] as String? ?? '';
     final fontSize = _data['fontSize'] as double;
 
     // 简化的节点尺寸计算
@@ -181,8 +181,11 @@ class NodeSizingTaskSerialized extends CPUTask<Map<String, dynamic>> {
           break;
         case 'fullContent':
         default:
-          width = 300;
-          height = 200;
+          // 根据内容长度计算尺寸
+          final contentLines = content.split('\n').length;
+          final contentWidth = content.length > 100 ? 300 : 200;
+          width = contentWidth.toDouble();
+          height = (200 + contentLines * 20).toDouble();
           break;
       }
     }

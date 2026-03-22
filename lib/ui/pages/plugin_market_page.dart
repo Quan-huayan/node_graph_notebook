@@ -133,10 +133,20 @@ class PluginMarketPage extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // TODO: 实现插件安装功能
+                    // 插件安装功能说明：
+                    // 需要实现以下功能：
+                    // 1. 从远程仓库下载插件包（ZIP 或 Git clone）
+                    // 2. 验证插件元数据和依赖
+                    // 3. 将插件文件解压到 plugins/ 目录
+                    // 4. 通过 PluginManager 动态加载新插件
+                    // 5. 处理版本冲突和更新
+                    // 6. 错误处理和回滚机制
+                    //
+                    // 当前：仅显示安装提示
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${i18n.t('Installing...')} $pluginName'),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   },

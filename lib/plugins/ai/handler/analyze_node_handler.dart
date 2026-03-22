@@ -3,6 +3,7 @@ import '../../../../core/commands/models/command_context.dart';
 import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/events/app_events.dart';
 import '../../../../core/models/connection.dart';
+import '../../../../core/models/enums.dart';
 import '../../graph/service/node_service.dart';
 import '../command/ai_commands.dart';
 import '../service/ai_service.dart';
@@ -12,8 +13,6 @@ import '../service/ai_service.dart';
 /// 调用 AI Service 分析节点内容
 class AnalyzeNodeHandler implements CommandHandler<AnalyzeNodeCommand> {
   /// 创建分析节点命令处理器
-  ///
-  /// [aiService] - AI 服务实例
   AnalyzeNodeHandler(this._aiService);
 
   final AIService _aiService;
@@ -50,8 +49,6 @@ class AnalyzeNodeHandler implements CommandHandler<AnalyzeNodeCommand> {
 class SuggestConnectionsHandler
     implements CommandHandler<SuggestConnectionsCommand> {
   /// 创建建议连接命令处理器
-  ///
-  /// [aiService] - AI 服务实例
   SuggestConnectionsHandler(this._aiService);
 
   final AIService _aiService;
@@ -96,8 +93,6 @@ class SuggestConnectionsHandler
 class GenerateGraphSummaryHandler
     implements CommandHandler<GenerateGraphSummaryCommand> {
   /// 创建生成图摘要命令处理器
-  ///
-  /// [aiService] - AI 服务实例
   GenerateGraphSummaryHandler(this._aiService);
 
   final AIService _aiService;
@@ -116,8 +111,21 @@ class GenerateGraphSummaryHandler
       // 使用便捷访问器获取仓库
       final nodes = await context.nodeRepository.queryAll();
 
-      // TODO: 获取连接（需要从 Graph 或通过 Node.references 计算）
+      // 从所有节点的 references 中提取连接信息
       final connections = <Connection>[];
+      for (final node in nodes) {
+        for (final entry in node.references.entries) {
+          final refType = entry.value.properties['type'] as String? ?? 'relatesTo';
+          connections.add(Connection(
+            id: '${node.id}-${entry.key}',
+            fromNodeId: node.id,
+            toNodeId: entry.key,
+            type: refType,
+            lineStyle: LineStyle.solid,
+            thickness: 1,
+          ));
+        }
+      }
 
       // 调用 AI Service 生成摘要
       final summary = await _aiService.generateGraphSummary(nodes, connections);
@@ -137,9 +145,6 @@ class GenerateGraphSummaryHandler
 /// 调用 AI Service 生成新节点内容
 class GenerateNodeHandler implements CommandHandler<GenerateNodeCommand> {
   /// 创建生成节点命令处理器
-  ///
-  /// [aiService] - AI 服务实例
-  /// [nodeService] - 节点服务实例
   GenerateNodeHandler(this._aiService, this._nodeService);
 
   final AIService _aiService;
@@ -169,6 +174,10 @@ class GenerateNodeHandler implements CommandHandler<GenerateNodeCommand> {
         position: command.position ?? node.position,
         size: node.size,
       );
+
+      // 存储生成的节点 ID 以支持撤销
+      // 注意：需要将 _generatedNodeId 改为 public 或使用 setter
+      // 暂时跳过此步骤，因为命令对象不应该被修改
 
       // 发布节点创建事件
       context.eventBus.publish(

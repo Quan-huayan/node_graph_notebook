@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:flutter_markdown_plus_latex/flutter_markdown_plus_latex.dart';
+import 'package:markdown/markdown.dart' as md;
 
 import '../../../../core/services/i18n.dart';
 
@@ -9,10 +11,12 @@ class MarkdownPreviewWidget extends StatefulWidget {
   ///
   /// [markdown] - 要预览的 Markdown 内容
   /// [isRenderMode] - 是否以渲染模式显示，默认为 false
+  /// [enableLatex] - 是否启用 LaTeX 公式渲染，默认为 true
   const MarkdownPreviewWidget({
     super.key,
     required this.markdown,
     this.isRenderMode = false,
+    this.enableLatex = true,
   });
 
   /// 要预览的 Markdown 内容
@@ -20,6 +24,9 @@ class MarkdownPreviewWidget extends StatefulWidget {
 
   /// 是否以渲染模式显示
   final bool isRenderMode;
+
+  /// 是否启用 LaTeX 公式渲染
+  final bool enableLatex;
 
   @override
   State<MarkdownPreviewWidget> createState() => _MarkdownPreviewWidgetState();
@@ -110,11 +117,22 @@ class _MarkdownPreviewWidgetState extends State<MarkdownPreviewWidget> {
               : _isRenderMode
               ? Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Markdown(
-                    data: widget.markdown,
-                    selectable: true,
-                    padding: EdgeInsets.zero,
-                  ),
+                  child: widget.enableLatex
+                      ? MarkdownBody(
+                          data: widget.markdown,
+                          selectable: true,
+                          builders: {
+                            'latex': LatexElementBuilder(),
+                          },
+                          extensionSet: md.ExtensionSet(
+                            [LatexBlockSyntax()],
+                            [LatexInlineSyntax()],
+                          ),
+                        )
+                      : MarkdownBody(
+                          data: widget.markdown,
+                          selectable: true,
+                        ),
                 )
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16),

@@ -151,7 +151,6 @@ class I18n extends ChangeNotifier {
       'Your AI assistant. Click to start a conversation!': '您的 AI 助手。点击开始对话！',
       'AI Assistant added to the graph!': 'AI 助手已添加到图中！',
       'Failed to add AI Assistant:': '添加 AI 助手失败：',
-      'Import & Export': '导入和导出',
       'Not configured': '未配置',
       'Node Settings': '节点设置',
       'AI Assistant functionality coming soon!': 'AI 助手功能即将推出！',
@@ -303,7 +302,6 @@ class I18n extends ChangeNotifier {
       'Icon added:': '图标已添加：',
       'Icon removed': '图标已移除',
       'Select Icon': '选择图标',
-      'Delete Node': '删除节点',
       'Deleted:': '已删除：',
       'Current:': '当前：',
       'Duplicate Node': '复制节点',
@@ -423,7 +421,6 @@ class I18n extends ChangeNotifier {
       'Restart': '重启',
 
       // === 关于对话框 ===
-      'Node Graph Notebook': 'Node Graph Notebook',
       'A concept map-based note-taking application built with Flutter and Flame engine.': '基于概念地图的笔记应用，使用 Flutter 和 Flame 引擎构建。',
       'Features:': '特性：',
       'Visual node graph with Flame engine': '基于 Flame 引擎的可视化节点图',

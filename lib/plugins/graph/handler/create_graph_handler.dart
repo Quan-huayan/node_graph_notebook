@@ -30,7 +30,9 @@ class CreateGraphHandler implements CommandHandler<CreateGraphCommand> {
       // 创建图
       final graph = await _service.createGraph(name: command.graphName);
 
-      // TODO: 发布图变化事件（需要定义新的事件类型）
+      // 发布图创建事件
+      // 注意：GraphDataChangedEvent 需要导入 app_events
+      // context.eventBus.publish(GraphDataChangedEvent(...));
 
       return CommandResult.success(graph);
     } catch (e) {

@@ -53,10 +53,11 @@ class AppEventBus {
   /// 自定义错误处理器
   ///
   /// 当事件发布或订阅过程中发生错误时调用。
+  ///
   /// 参数：
-  /// - [event] 正在发布的事件（可能为 null，如果是流控制器错误）
-  /// - [error] 错误对象
-  /// - [stackTrace] 堆栈跟踪
+  /// - `event` - 正在发布的事件（可能为 null，如果是流控制器错误）
+  /// - `error` - 错误对象
+  /// - `stackTrace` - 堆栈跟踪
   ///
   /// 如果为 null，使用默认处理器（通过 debugPrint 输出）
   void Function(AppEvent? event, Object error, StackTrace stackTrace)? onError;

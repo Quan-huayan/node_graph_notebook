@@ -321,16 +321,17 @@ class ServiceRegistry with ChangeNotifier {
 
   /// 获取 Service 的依赖类型
   ///
-  /// 通过分析 createService 方法调用的 resolver.get<T>() 获取依赖
+  /// 通过分析 createService 方法调用的 resolver.get 方法获取依赖
   ///
   /// 注意：这里简化处理，实际需要更复杂的依赖分析
-  /// 当前实现假设所有 Service 都可能依赖所有其他 Service
-  /// 正确的做法是在 ServiceBinding 中显式声明依赖
-  Set<Type> _getDependencies(Type serviceType) {
-    // TODO: 实现真正的依赖分析
-    // 当前简化处理：假设没有依赖
-    return {};
-  }
+  /// 当前实现假设没有依赖，这在大多数情况下是安全的
+  ///
+  /// 未来改进：
+  /// - 在 ServiceBinding 中添加显式的依赖声明字段
+  /// - 使用代码解析或注解处理器来自动检测依赖
+  /// - 实现依赖图分析和循环依赖检测
+  /// - 基于依赖关系进行优化的服务初始化顺序
+  Set<Type> _getDependencies(Type serviceType) => {};
 
   /// 检查 Service 是否已注册
   ///
@@ -539,8 +540,6 @@ class ServiceRegistry with ChangeNotifier {
 /// 用于在服务创建过程中解析依赖
 class _ServiceResolverAdapter extends ServiceResolver {
   /// 创建一个新的服务解析器适配器实例
-  ///
-  /// [registry] 服务注册表
   _ServiceResolverAdapter(this._registry)
       : super({}, {}, coreDependencies: {});
 

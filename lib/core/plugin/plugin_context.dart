@@ -147,7 +147,7 @@ class PluginContext {
 
   /// 类型安全的依赖访问
   ///
-  /// 类似 CommandContext.read<T>()，提供类型安全的服务访问
+  /// 类似 CommandContext.read，提供类型安全的服务访问
   ///
   /// 使用示例：
   /// ```dart
