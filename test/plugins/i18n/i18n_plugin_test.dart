@@ -1,14 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/plugin/plugin.dart';
-import 'package:node_graph_notebook/core/plugin/plugin_manager.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_registry.dart';
-import 'package:node_graph_notebook/core/plugin/service_registry.dart';
 import 'package:node_graph_notebook/core/services/i18n.dart';
 import 'package:node_graph_notebook/plugins/i18n/i18n_plugin.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 
 @GenerateMocks([
   CommandBus,
@@ -37,7 +34,7 @@ void main() {
       // 注册 I18nPlugin 工厂
       pluginManager.discoverer.registerFactory(
         'i18n',
-        () => I18nPlugin(),
+        I18nPlugin.new,
       );
     });
 

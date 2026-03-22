@@ -29,13 +29,11 @@ class AIIntegrationPlugin extends MainToolbarHookBase {
 
     // 使用Consumer监听语言变化
     return Consumer<I18n>(
-      builder: (ctx, i18n, child) {
-        return IconButton(
+      builder: (ctx, i18n, child) => IconButton(
           icon: const Icon(Icons.psychology, color: Colors.purple),
           tooltip: i18n.t('AI Tools'),
           onPressed: () => _showAIMenu(context),
-        );
-      },
+        ),
     );
   }
 

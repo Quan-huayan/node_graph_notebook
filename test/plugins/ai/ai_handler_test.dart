@@ -732,6 +732,9 @@ class MockEventBus implements AppEventBus {
 
   @override
   void dispose() {}
+
+  @override
+  void Function(AppEvent? event, Object error, StackTrace stackTrace)? onError;
 }
 
 class MockNodeRepository implements NodeRepository {

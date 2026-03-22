@@ -33,8 +33,7 @@ class AISettingsHook extends SettingsHookBase {
     }
 
     return Consumer<I18n>(
-      builder: (ctx, i18n, child) {
-        return Column(
+      builder: (ctx, i18n, child) => Column(
           children: [
             ListTile(
               leading: const Icon(Icons.smart_toy_outlined),
@@ -56,8 +55,7 @@ class AISettingsHook extends SettingsHookBase {
                 onTap: () => _showAITestDialog(buildContext),
               ),
           ],
-        );
-      },
+        ),
     );
   }
 

@@ -242,6 +242,9 @@ class HookWrapperFactory {
     final lifecycle = HookLifecycleManager(hook.metadata.id);
     final order = _registrationCounter++;
 
+    // 自动转换到 initialized 状态，使 Hook 可用
+    lifecycle.transitionTo(HookState.initialized, () async {});
+
     return HookWrapper(
       hook,
       lifecycle,

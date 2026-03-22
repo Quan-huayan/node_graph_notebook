@@ -310,8 +310,7 @@ void main() {
         metadata: {},
       );
 
-      final suggestions = aiService.suggestConnections(nodes: [node1, node2]);
-      suggestions.then((value) {
+      aiService.suggestConnections(nodes: [node1, node2]).then((value) {
         expect(value[0].confidence, 1.0);
       });
     });

@@ -28,13 +28,11 @@ class LayoutToolbarHook extends MainToolbarHookBase {
 
     // 使用Consumer监听语言变化
     return Consumer<I18n>(
-      builder: (ctx, i18n, child) {
-        return IconButton(
+      builder: (ctx, i18n, child) => IconButton(
           icon: const Icon(Icons.account_tree),
           onPressed: () => _showLayoutMenu(context),
           tooltip: i18n.t('Layout'),
-        );
-      },
+        ),
     );
   }
 

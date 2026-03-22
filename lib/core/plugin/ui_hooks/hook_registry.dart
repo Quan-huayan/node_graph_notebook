@@ -139,9 +139,8 @@ class HookRegistry {
     // 收集需要移除的 Hook
     for (final entry in _hooks.entries) {
       final hookPointId = entry.key;
-      final wrappers = entry.value;
-
-      wrappers.removeWhere((wrapper) {
+      final wrappers = entry.value
+      ..removeWhere((wrapper) {
         if (wrapper.parentPlugin?.plugin.metadata.id == pluginId) {
           // 注销 Hook 的 API
           _apiRegistry.unregisterHookAPIs(wrapper.hook.metadata.id);
@@ -156,9 +155,7 @@ class HookRegistry {
     }
 
     // 移除空的 Hook 点
-    for (final hookPointId in hooksToRemove) {
-      _hooks.remove(hookPointId);
-    }
+    hooksToRemove.forEach(_hooks.remove);
 
     debugPrint('[HookRegistry] Unregistered all hooks for plugin: $pluginId');
   }
@@ -168,19 +165,19 @@ class HookRegistry {
   /// 获取指定 Hook 点的所有 Hook
   ///
   /// [hookPointId] Hook 点 ID（字符串）
-  /// [includeDisabled] 是否包含已禁用的 Hook（默认 false）
+  /// [includeDisabled] 是否包含已禁用的 Hook（默认 true）
   ///
   /// 返回按优先级排序的 Hook 包装器列表
   List<HookWrapper> getHookWrappers(
     String hookPointId, {
-    bool includeDisabled = false,
+    bool includeDisabled = true,
   }) {
     final allHooks = _hooks[hookPointId] ?? [];
 
-    if (includeDisabled) {
-      return allHooks;
-    } else {
+    if (!includeDisabled) {
       return allHooks.where((wrapper) => wrapper.isEnabled).toList();
+    } else {
+      return allHooks;
     }
   }
 

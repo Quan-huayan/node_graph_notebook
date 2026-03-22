@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/commands/command_bus.dart';
 import '../../../../core/commands/models/command.dart';
 import '../../../../core/events/app_events.dart';
+import '../../../../core/events/event_subscription_manager.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/repositories/graph_repository.dart';
 import '../../../../core/repositories/node_repository.dart';
@@ -32,7 +33,7 @@ import 'graph_state.dart';
 /// - 业务逻辑（由 CommandHandler 处理）
 class GraphBloc extends Bloc<GraphEvent, GraphState> {
   /// 创建 Graph BLoC
-  /// 
+  ///
   /// [commandBus] - 命令总线，用于执行写操作
   /// [graphRepository] - 图数据仓库，用于读操作
   /// [nodeRepository] - 节点数据仓库，用于读操作
@@ -47,6 +48,9 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
        _nodeRepository = nodeRepository,
        _eventBus = eventBus,
        super(GraphState.initial()) {
+    // 初始化事件订阅管理器
+    _subscriptionManager = EventSubscriptionManager('GraphBloc');
+
     // 注册事件处理器
     on<GraphInitializeEvent>(_onInitialize);
     on<GraphLoadEvent>(_onLoadGraph);
@@ -83,7 +87,11 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   final NodeRepository _nodeRepository;
   final AppEventBus _eventBus;
 
-  StreamSubscription<AppEvent>? _eventBusSubscription;
+  /// 事件订阅管理器
+  ///
+  /// 自动管理所有事件订阅的生命周期，防止内存泄漏。
+  /// 在 close() 时自动取消所有订阅。
+  late final EventSubscriptionManager _subscriptionManager;
 
   /// 初始化
   Future<void> _onInitialize(
@@ -881,12 +889,18 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   ///
   /// 通过事件总线监听 NodeBloc 发布的节点变化事件，
   /// 实现图视图与节点数据的同步。
+  ///
+  /// 使用 EventSubscriptionManager 自动管理订阅生命周期，
+  /// 防止内存泄漏。
   void _subscribeToEvents() {
-    _eventBusSubscription = _eventBus.stream.listen((event) {
-      if (event is NodeDataChangedEvent) {
-        _handleNodeDataChanged(event);
-      }
-    });
+    _subscriptionManager.track(
+      'NodeDataChanged',
+      _eventBus.stream.listen((event) {
+        if (event is NodeDataChangedEvent) {
+          _handleNodeDataChanged(event);
+        }
+      }),
+    );
   }
 
   /// 处理节点数据变化事件
@@ -955,7 +969,8 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
   @override
   Future<void> close() {
-    _eventBusSubscription?.cancel();
+    // 事件订阅管理器会自动取消所有订阅
+    _subscriptionManager.dispose();
     return super.close();
   }
 }

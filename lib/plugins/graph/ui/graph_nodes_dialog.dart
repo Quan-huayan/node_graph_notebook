@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/services/i18n.dart';
@@ -63,8 +62,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
     }).toList();
 
     return Consumer<I18n>(
-      builder: (context, i18n, child) {
-        return AlertDialog(
+      builder: (context, i18n, child) => AlertDialog(
           backgroundColor: theme.backgrounds.primary,
           title: Row(
             children: [
@@ -176,8 +174,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
             ),
             ElevatedButton(onPressed: _applyChanges, child: Text(i18n.t('Apply'))),
           ],
-        );
-      },
+        ),
     );
   }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/plugin/ui_hooks/hook_base.dart';
@@ -31,13 +30,11 @@ class GraphNodesToolbarHook extends MainToolbarHookBase {
 
     // 使用Consumer监听语言变化
     return Consumer<I18n>(
-      builder: (ctx, i18n, child) {
-        return IconButton(
+      builder: (ctx, i18n, child) => IconButton(
           icon: const Icon(Icons.playlist_add_check),
           onPressed: () => _showGraphNodesDialog(context),
           tooltip: i18n.t('Manage Graph Nodes'),
-        );
-      },
+        ),
     );
   }
 

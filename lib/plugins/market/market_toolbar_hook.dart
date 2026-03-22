@@ -28,13 +28,11 @@ class MarketToolbarHook extends MainToolbarHookBase {
 
     // 使用Consumer监听语言变化
     return Consumer<I18n>(
-      builder: (ctx, i18n, child) {
-        return IconButton(
+      builder: (ctx, i18n, child) => IconButton(
           icon: const Icon(Icons.extension),
           onPressed: () => _openPluginMarket(context),
           tooltip: i18n.t('Plugin Market'),
-        );
-      },
+        ),
     );
   }
 

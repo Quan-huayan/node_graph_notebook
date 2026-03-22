@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/services/i18n.dart';
@@ -116,8 +115,7 @@ class _AITestDialogState extends State<AITestDialog> {
     final theme = context.read<ThemeService>().themeData;
 
     return Consumer<I18n>(
-      builder: (context, i18n, child) {
-        return Dialog(
+      builder: (context, i18n, child) => Dialog(
           child: Container(
             width: 600,
             height: 500,
@@ -228,8 +226,7 @@ class _AITestDialogState extends State<AITestDialog> {
               ],
             ),
           ),
-        );
-      },
+        ),
     );
   }
 

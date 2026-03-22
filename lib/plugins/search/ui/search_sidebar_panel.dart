@@ -233,8 +233,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
     final theme = Theme.of(context);
 
     return Consumer<I18n>(
-      builder: (context, i18n, child) {
-        return Column(
+      builder: (context, i18n, child) => Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -503,8 +502,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
           ),
         ),
       ],
-    );
-      },
+    ),
     );
   }
 

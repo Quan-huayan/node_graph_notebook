@@ -522,15 +522,13 @@ class _FolderTreeViewState extends State<FolderTreeView> {
                 ),
                 if (parentFolder != null)
                   Consumer<I18n>(
-                    builder: (ctx, i18n, child) {
-                      return IconButton(
+                    builder: (ctx, i18n, child) => IconButton(
                         icon: const Icon(Icons.remove_circle_outline, size: 16),
                         tooltip: i18n.t('Remove from folder'),
                         onPressed: () async {
                           await _removeFromFolder(node, parentFolder);
                         },
-                      );
-                    },
+                      ),
                   ),
                 IconButton(
                   icon: const Icon(Icons.more_vert, size: 16),

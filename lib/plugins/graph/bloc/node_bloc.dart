@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/commands/command_bus.dart';
 import '../../../../core/events/app_events.dart';
+import '../../../../core/events/event_subscription_manager.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../command/node_commands.dart';
 import 'node_event.dart';
@@ -21,7 +22,7 @@ import 'node_state.dart';
 /// - BLoC只负责状态管理，不包含业务逻辑
 class NodeBloc extends Bloc<NodeEvent, NodeState> {
   /// 创建 Node BLoC
-  /// 
+  ///
   /// [commandBus] - 命令总线，用于执行写操作
   /// [nodeRepository] - 节点数据仓库，用于读操作
   /// [eventBus] - 事件总线，用于订阅数据变化
@@ -32,6 +33,9 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
   }) : _commandBus = commandBus,
        _nodeRepository = nodeRepository,
        super(NodeState.initial()) {
+    // 初始化事件订阅管理器
+    _subscriptionManager = EventSubscriptionManager('NodeBloc');
+
     // 注册事件处理器
     on<NodeLoadEvent>(_onLoadNodes);
     on<NodeSearchEvent>(_onSearchNodes);
@@ -46,20 +50,30 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     on<NodeDataChangedInternalEvent>(_onDataChangedInternal);
 
     // 订阅EventBus以响应其他BLoC的更改
-    eventBus.stream.listen((event) {
-      if (event is NodeDataChangedEvent) {
-        add(
-          NodeDataChangedInternalEvent(
-            changedNodes: event.changedNodes,
-            action: event.action,
-          ),
-        );
-      }
-    });
+    // 使用 EventSubscriptionManager 自动管理订阅生命周期
+    _subscriptionManager.track(
+      'NodeDataChanged',
+      eventBus.stream.listen((event) {
+        if (event is NodeDataChangedEvent) {
+          add(
+            NodeDataChangedInternalEvent(
+              changedNodes: event.changedNodes,
+              action: event.action,
+            ),
+          );
+        }
+      }),
+    );
   }
 
   final CommandBus _commandBus;
   final NodeRepository _nodeRepository;
+
+  /// 事件订阅管理器
+  ///
+  /// 自动管理所有事件订阅的生命周期，防止内存泄漏。
+  /// 在 close() 时自动取消所有订阅。
+  late final EventSubscriptionManager _subscriptionManager;
 
   /// 加载节点列表
   Future<void> _onLoadNodes(
@@ -411,5 +425,12 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
         emit(state.copyWith(nodes: remainingNodes));
         break;
     }
+  }
+
+  @override
+  Future<void> close() {
+    // 事件订阅管理器会自动取消所有订阅
+    _subscriptionManager.dispose();
+    return super.close();
   }
 }

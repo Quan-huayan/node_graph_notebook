@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/services/i18n.dart';
@@ -23,8 +22,7 @@ class ImportExportPage extends StatelessWidget {
     final nodeState = nodeBloc.state;
 
     return Consumer<I18n>(
-      builder: (context, i18n, child) {
-        return Scaffold(
+      builder: (context, i18n, child) => Scaffold(
           appBar: AppBar(
             title: Text(i18n.t('Import & Export')),
             leading: IconButton(
@@ -169,8 +167,7 @@ class ImportExportPage extends StatelessWidget {
               ],
             ),
           ),
-        );
-      },
+        ),
     );
   }
 }

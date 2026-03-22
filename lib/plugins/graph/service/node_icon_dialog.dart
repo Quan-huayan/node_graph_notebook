@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/models/models.dart';
@@ -58,8 +57,7 @@ class _NodeIconDialogState extends State<NodeIconDialog> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Consumer<I18n>(
-      builder: (context, i18n, child) {
-        return AlertDialog(
+      builder: (context, i18n, child) => AlertDialog(
           backgroundColor: theme.backgrounds.primary,
           title: Text(i18n.t('Select Icon')),
           content: SizedBox(
@@ -133,8 +131,7 @@ class _NodeIconDialogState extends State<NodeIconDialog> {
               child: Text(i18n.t('Cancel')),
             ),
           ],
-        );
-      },
+        ),
     );
   }
 

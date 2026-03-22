@@ -28,13 +28,11 @@ class ConverterToolbarHook extends MainToolbarHookBase {
 
     // 使用Consumer监听语言变化
     return Consumer<I18n>(
-      builder: (ctx, i18n, child) {
-        return IconButton(
+      builder: (ctx, i18n, child) => IconButton(
           icon: const Icon(Icons.import_export),
           onPressed: () => _openImportExportPage(context),
           tooltip: i18n.t('Import & Export'),
-        );
-      },
+        ),
     );
   }
 

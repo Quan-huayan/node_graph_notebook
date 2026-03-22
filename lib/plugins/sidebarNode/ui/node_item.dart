@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/models/models.dart';
@@ -139,13 +138,11 @@ class NodeItem extends StatelessWidget {
                 ),
                 if (parentFolder != null && onRemoveFromFolder != null)
                   Consumer<I18n>(
-                    builder: (ctx, i18n, child) {
-                      return IconButton(
+                    builder: (ctx, i18n, child) => IconButton(
                         icon: const Icon(Icons.remove_circle_outline, size: 16),
                         tooltip: i18n.t('Remove from folder'),
                         onPressed: onRemoveFromFolder,
-                      );
-                    },
+                      ),
                   ),
                 IconButton(
                   icon: const Icon(Icons.more_vert, size: 16),

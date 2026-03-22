@@ -1,11 +1,33 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 
 /// 应用事件总线 - 用于跨 BLoC 通信
 ///
 /// 采用单例模式，提供广播流机制实现发布-订阅模式。
 /// 用于 NodeBloc 和 GraphBloc 之间的解耦通信。
+///
+/// ## 错误处理
+///
+/// 通过 [onError] 回调可以自定义错误处理逻辑。默认情况下，
+/// 错误会通过 debugPrint 输出到控制台。
+///
+/// ## 使用示例
+/// ```dart
+/// // 发布事件
+/// AppEventBus().publish(NodeDataChangedEvent(...));
+///
+/// // 订阅事件
+/// AppEventBus().stream.listen((event) {
+///   if (event is NodeDataChangedEvent) { ... }
+/// });
+///
+/// // 自定义错误处理
+/// AppEventBus().onError = (event, error, stackTrace) {
+///   Sentry.captureException(error, stackTrace: stackTrace);
+/// };
+/// ```
 class AppEventBus {
 
   /// 获取事件总线实例（单例）
@@ -28,12 +50,48 @@ class AppEventBus {
   /// 事件流，供 BLoC 订阅
   Stream<AppEvent> get stream => _controller.stream;
 
+  /// 自定义错误处理器
+  ///
+  /// 当事件发布或订阅过程中发生错误时调用。
+  /// 参数：
+  /// - [event] 正在发布的事件（可能为 null，如果是流控制器错误）
+  /// - [error] 错误对象
+  /// - [stackTrace] 堆栈跟踪
+  ///
+  /// 如果为 null，使用默认处理器（通过 debugPrint 输出）
+  void Function(AppEvent? event, Object error, StackTrace stackTrace)? onError;
+
   /// 发布事件到总线
   ///
-  /// 所有订阅者都会收到此事件。如果事件发布失败，会静默处理。
+  /// 所有订阅者都会收到此事件。
+  ///
+  /// 如果事件总线已关闭或发布失败，会调用 [onError] 回调（如果设置了）。
+  /// 如果 [onError] 未设置，会通过 debugPrint 输出错误信息。
+  ///
+  /// [event] 要发布的事件
   void publish(AppEvent event) {
-    if (!_controller.isClosed) {
+    try {
+      if (_controller.isClosed) {
+        final error = StateError('Cannot publish event: EventBus is closed');
+        _handleError(event, error, StackTrace.current);
+        return;
+      }
       _controller.add(event);
+    } catch (e, stackTrace) {
+      _handleError(event, e, stackTrace);
+    }
+  }
+
+  /// 处理错误
+  void _handleError(AppEvent? event, Object error, StackTrace stackTrace) {
+    if (onError != null) {
+      onError!.call(event, error, stackTrace);
+    } else {
+      // 默认错误处理：输出到控制台
+      debugPrint(
+        '[AppEventBus] Error publishing ${event?.runtimeType ?? "event"}: $error\n'
+        'Stack trace:\n$stackTrace',
+      );
     }
   }
 

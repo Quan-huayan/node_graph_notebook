@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/models/models.dart';
@@ -59,8 +58,7 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
     final theme = context.read<ThemeService>().themeData;
 
     return Consumer<I18n>(
-      builder: (context, i18n, child) {
-        return AlertDialog(
+      builder: (context, i18n, child) => AlertDialog(
           backgroundColor: theme.backgrounds.primary,
           title: Text(i18n.t('Edit Node Metadata')),
           content: SizedBox(
@@ -160,8 +158,7 @@ class _NodeMetadataDialogState extends State<NodeMetadataDialog> {
             ),
             ElevatedButton(onPressed: _saveMetadata, child: Text(i18n.t('Save'))),
           ],
-        );
-      },
+        ),
     );
   }
 

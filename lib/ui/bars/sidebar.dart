@@ -229,7 +229,7 @@ class _SidebarState extends State<Sidebar> {
         NodeCreateEvent(
           title: i18n.t('New Folder'),
           content: 'A folder to organize your notes',
-          metadata: {'isFolder': true},
+          metadata: const {'isFolder': true},
         ),
       );
 
