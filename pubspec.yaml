@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
 
   # Markdown Support
-  flutter_markdown: ^0.6.14
+  flutter_markdown: ^0.7.7+1
   markdown: ^7.1.1
   charcode: ^1.3.1
 
@@ -22,14 +22,14 @@ dependencies:
 
   # State Management
   provider: ^6.1.1
-  flutter_hooks: ^0.20.0
-  flutter_bloc: ^8.1.3
+  flutter_hooks: ^0.21.3+1
+  flutter_bloc: ^9.1.1
   equatable: ^2.0.5
 
   # File System
   path_provider: ^2.1.1
   path: ^1.8.3
-  file_picker: ^8.1.2
+  file_picker: ^10.3.10
 
   # Data & Serialization
   uuid: ^4.2.1
@@ -37,7 +37,7 @@ dependencies:
   shared_preferences: ^2.2.2
 
   # Internationalization
-  intl: ^0.18.0
+  intl: ^0.20.2
 
   # AI Clients (Optional - requires API keys)
   # openai: ^6.0.0
@@ -58,7 +58,7 @@ dependencies:
   worker_pool: ^0.0.5
 
   # Development Tools
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -70,7 +70,7 @@ dev_dependencies:
 
   # Testing
   mockito: ^5.4.2
-  bloc_test: ^9.1.5
+  bloc_test: ^10.0.0
   integration_test:
     sdk: flutter
   test: ^1.29.0
