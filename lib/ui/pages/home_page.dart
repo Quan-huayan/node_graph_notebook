@@ -6,6 +6,7 @@ import '../../plugins/graph/bloc/graph_state.dart';
 import '../../plugins/graph/bloc/node_bloc.dart';
 import '../../plugins/graph/bloc/node_state.dart';
 import '../../plugins/graph/ui/graph_view.dart';
+import '../../plugins/lua/service/global_message_service.dart';
 import '../bars/core_toolbar.dart';
 import '../bars/sidebar.dart';
 import '../bloc/ui_bloc.dart';
@@ -25,10 +26,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: const CoreToolbar(),
-    body: _buildBody(),
-  );
+  Widget build(BuildContext context) {
+    // ✅ 设置全局消息服务的context
+    GlobalMessageService.setContext(context);
+
+    return Scaffold(
+      appBar: const CoreToolbar(),
+      body: _buildBody(),
+    );
+  }
 
   Widget _buildBody() => BlocBuilder<GraphBloc, GraphState>(
     builder: (context, graphState) => BlocBuilder<NodeBloc, NodeState>(

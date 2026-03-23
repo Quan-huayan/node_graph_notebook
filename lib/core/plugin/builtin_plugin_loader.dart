@@ -7,6 +7,7 @@ import '../../plugins/folder/folder_plugin.dart';
 import '../../plugins/graph/graph_plugin.dart';
 import '../../plugins/i18n/i18n_plugin.dart';
 import '../../plugins/layout/layout_plugin.dart';
+import '../../plugins/lua/lua_plugin.dart';
 import '../../plugins/market/market_plugin.dart';
 import '../../plugins/search/search_plugin.dart';
 import '../../plugins/settings/settings_plugin.dart';
@@ -57,6 +58,7 @@ class BuiltinPluginLoader {
     FolderPlugin.new,
     SettingsPlugin.new,
     MarketPlugin.new,
+    LuaPlugin.new, // Lua脚本插件
   ];
 
   /// 加载所有内置插件

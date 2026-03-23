@@ -24,12 +24,17 @@ class Toolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final i18n = I18n.of(context);
-    final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
 
-    debugPrint('[Toolbar] build() called:');
-    debugPrint('  - MainToolbar hooks found: ${hookWrappers.length}');
+    // ✅ 监听 HookRegistry 变化，自动重新构建
+    return AnimatedBuilder(
+      animation: hookRegistry,
+      builder: (context, child) {
+        final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
 
-    return Card(
+        debugPrint('[Toolbar] build() called:');
+        debugPrint('  - MainToolbar hooks found: ${hookWrappers.length}');
+
+        return Card(
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
@@ -105,6 +110,8 @@ class Toolbar extends StatelessWidget {
           ],
         ),
       ),
+    );
+      },
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../plugin_lifecycle.dart';
@@ -15,7 +16,8 @@ import 'hook_point_registry.dart';
 /// - 使用 HookWrapper 统一封装 Hooks
 /// - 集成 HookPointRegistry 支持动态 Hook 点
 /// - 集成 HookAPIRegistry 支持 Hook 间 API 通信
-class HookRegistry {
+/// - 扩展 ChangeNotifier 支持 UI 自动更新
+class HookRegistry extends ChangeNotifier {
   /// 创建一个新的 Hook 注册表实例
   HookRegistry();
 
@@ -92,6 +94,9 @@ class HookRegistry {
     if (apis.isNotEmpty) {
       _apiRegistry.registerAPIs(hook.metadata.id, apis);
     }
+
+    // ✅ 通知 UI 更新
+    notifyListeners();
   }
 
   /// 批量注册 Hook
