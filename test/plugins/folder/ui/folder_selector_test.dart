@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
+import 'package:node_graph_notebook/core/services/i18n.dart';
 import 'package:node_graph_notebook/core/services/theme_service.dart';
 import 'package:node_graph_notebook/plugins/folder/ui/folder_selector.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/node_bloc.dart';
@@ -21,6 +22,7 @@ void main() {
     late List<Node> folders;
     late MockNodeBloc mockNodeBloc;
     late ThemeService themeService;
+    late I18n i18n;
 
     setUp(() {
       node = Node(
@@ -68,6 +70,7 @@ void main() {
       folders = [folder1, folder2];
       mockNodeBloc = MockNodeBloc();
       themeService = ThemeService();
+      i18n = I18n();
 
       when(mockNodeBloc.state).thenReturn(NodeState.initial());
       when(mockNodeBloc.stream).thenAnswer((_) => const Stream.empty());
@@ -80,6 +83,7 @@ void main() {
             providers: [
               BlocProvider<NodeBloc>.value(value: mockNodeBloc),
               ChangeNotifierProvider<ThemeService>.value(value: themeService),
+              ChangeNotifierProvider<I18n>.value(value: i18n),
             ],
             child: Builder(
               builder: (context) => Theme(
@@ -111,6 +115,7 @@ void main() {
             providers: [
               BlocProvider<NodeBloc>.value(value: mockNodeBloc),
               ChangeNotifierProvider<ThemeService>.value(value: themeService),
+              ChangeNotifierProvider<I18n>.value(value: i18n),
             ],
             child: Builder(
               builder: (context) => Theme(
@@ -141,6 +146,7 @@ void main() {
             providers: [
               BlocProvider<NodeBloc>.value(value: mockNodeBloc),
               ChangeNotifierProvider<ThemeService>.value(value: themeService),
+              ChangeNotifierProvider<I18n>.value(value: i18n),
             ],
             child: Builder(
               builder: (context) => Theme(
@@ -173,6 +179,7 @@ void main() {
             providers: [
               BlocProvider<NodeBloc>.value(value: mockNodeBloc),
               ChangeNotifierProvider<ThemeService>.value(value: themeService),
+              ChangeNotifierProvider<I18n>.value(value: i18n),
             ],
             child: Builder(
               builder: (context) => Theme(
@@ -205,6 +212,7 @@ void main() {
             providers: [
               BlocProvider<NodeBloc>.value(value: mockNodeBloc),
               ChangeNotifierProvider<ThemeService>.value(value: themeService),
+              ChangeNotifierProvider<I18n>.value(value: i18n),
             ],
             child: Builder(
               builder: (context) => Theme(

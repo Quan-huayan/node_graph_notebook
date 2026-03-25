@@ -4,10 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
+import 'package:node_graph_notebook/core/services/i18n.dart';
 import 'package:node_graph_notebook/plugins/editor/ui/markdown_editor_page.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/node_bloc.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/node_event.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/node_state.dart';
+import 'package:provider/provider.dart';
 
 import 'markdown_editor_page_test.mocks.dart';
 
@@ -15,9 +17,11 @@ import 'markdown_editor_page_test.mocks.dart';
 void main() {
   group('MarkdownEditorPage', () {
     late MockNodeBloc mockNodeBloc;
+    late I18n i18n;
 
     setUp(() {
       mockNodeBloc = MockNodeBloc();
+      i18n = I18n();
       when(mockNodeBloc.stream).thenAnswer((_) => const Stream.empty());
       when(mockNodeBloc.state).thenReturn(NodeState.initial());
       when(mockNodeBloc.add(any)).thenAnswer((_) async {});
@@ -30,9 +34,12 @@ void main() {
     testWidgets('should display editor page with empty fields', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -58,9 +65,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: MarkdownEditorPage(node: testNode),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: MarkdownEditorPage(node: testNode),
+            ),
           ),
         ),
       );
@@ -73,9 +83,12 @@ void main() {
     testWidgets('should toggle between edit and preview mode', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -97,9 +110,12 @@ void main() {
     testWidgets('should display markdown toolbar in edit mode', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -117,9 +133,12 @@ void main() {
     testWidgets('should insert bold markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -137,9 +156,12 @@ void main() {
     testWidgets('should insert italic markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -157,9 +179,12 @@ void main() {
     testWidgets('should insert H1 markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -177,9 +202,12 @@ void main() {
     testWidgets('should insert H2 markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -197,9 +225,12 @@ void main() {
     testWidgets('should insert list markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -217,9 +248,12 @@ void main() {
     testWidgets('should insert code markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -237,9 +271,12 @@ void main() {
     testWidgets('should insert link markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -257,9 +294,12 @@ void main() {
     testWidgets('should insert image markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -277,9 +317,12 @@ void main() {
     testWidgets('should show error when saving with empty title', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -293,9 +336,12 @@ void main() {
     testWidgets('should create new node when saving without existing node', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -329,9 +375,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: MarkdownEditorPage(node: testNode),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: MarkdownEditorPage(node: testNode),
+            ),
           ),
         ),
       );
@@ -352,9 +401,12 @@ void main() {
     testWidgets('should disable save button while saving', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -375,9 +427,12 @@ void main() {
     testWidgets('should show preview mode content', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -398,9 +453,12 @@ void main() {
     testWidgets('should show nothing to preview when content is empty', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -414,9 +472,12 @@ void main() {
     testWidgets('should dispose controllers when widget is disposed', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -429,9 +490,12 @@ void main() {
     testWidgets('should handle markdown with selected text', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -456,9 +520,12 @@ void main() {
     testWidgets('should handle markdown insertion at cursor position', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -481,9 +548,12 @@ void main() {
     testWidgets('should display toolbar buttons with correct icons', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -500,9 +570,12 @@ void main() {
     testWidgets('should handle title field changes', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -517,9 +590,12 @@ void main() {
     testWidgets('should handle content field changes', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -534,9 +610,12 @@ void main() {
     testWidgets('should display app bar with correct title', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -547,9 +626,12 @@ void main() {
     testWidgets('should have save and preview buttons in app bar', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -561,9 +643,12 @@ void main() {
     testWidgets('should handle long content in editor', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -579,9 +664,12 @@ void main() {
     testWidgets('should handle special characters in content', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -597,9 +685,12 @@ void main() {
     testWidgets('should handle unicode characters in content', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -615,9 +706,12 @@ void main() {
     testWidgets('should handle multiline content', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: const MarkdownEditorPage(),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: const MarkdownEditorPage(),
+            ),
           ),
         ),
       );
@@ -646,9 +740,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: MarkdownEditorPage(node: testNode),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: MarkdownEditorPage(node: testNode),
+            ),
           ),
         ),
       );
@@ -674,9 +771,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<NodeBloc>(
-            create: (_) => mockNodeBloc,
-            child: MarkdownEditorPage(node: testNode),
+          home: ChangeNotifierProvider<I18n>.value(
+            value: i18n,
+            child: BlocProvider<NodeBloc>(
+              create: (_) => mockNodeBloc,
+              child: MarkdownEditorPage(node: testNode),
+            ),
           ),
         ),
       );

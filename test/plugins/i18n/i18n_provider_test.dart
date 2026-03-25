@@ -20,7 +20,7 @@ void main() {
       );
 
       // 等待 Widget 构建完成
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       // 验证 I18n 可以通过 Provider 访问
       expect(find.byType(_TestWidget), findsOneWidget);
@@ -43,15 +43,21 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // 初始 pump
+      await tester.pump();
 
       // 初始语言应该是英文
       expect(find.text('Settings'), findsOneWidget);
 
-      // 切换到中文
-      await i18n.switchLanguage('zh');
-      // 使用 pump 而不是 pumpAndSettle，避免无限等待
+      // 切换到中文（不等待完成）
+      i18n.switchLanguage('zh');
+
+      // 多次 pump 以等待异步操作和 UI 更新
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
 
       // 现在应该显示中文
       expect(find.text('设置'), findsOneWidget);

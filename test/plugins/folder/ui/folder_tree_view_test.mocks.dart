@@ -3,21 +3,29 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
-import 'dart:ui' as _i12;
+import 'dart:async' as _i7;
+import 'dart:ui' as _i13;
 
-import 'package:flutter_bloc/flutter_bloc.dart' as _i8;
+import 'package:flutter_bloc/flutter_bloc.dart' as _i9;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i14;
+import 'package:node_graph_notebook/core/commands/models/command.dart' as _i5;
+import 'package:node_graph_notebook/core/commands/models/command_handler.dart'
+    as _i15;
+import 'package:node_graph_notebook/core/commands/models/middleware.dart'
+    as _i16;
 import 'package:node_graph_notebook/core/models/models.dart' as _i4;
-import 'package:node_graph_notebook/plugins/graph/bloc/graph_bloc.dart' as _i9;
+import 'package:node_graph_notebook/core/plugin/middleware/middleware_plugin.dart'
+    as _i17;
+import 'package:node_graph_notebook/plugins/graph/bloc/graph_bloc.dart' as _i10;
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_event.dart'
-    as _i10;
+    as _i11;
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_state.dart' as _i3;
-import 'package:node_graph_notebook/plugins/graph/bloc/node_bloc.dart' as _i5;
-import 'package:node_graph_notebook/plugins/graph/bloc/node_event.dart' as _i7;
+import 'package:node_graph_notebook/plugins/graph/bloc/node_bloc.dart' as _i6;
+import 'package:node_graph_notebook/plugins/graph/bloc/node_event.dart' as _i8;
 import 'package:node_graph_notebook/plugins/graph/bloc/node_state.dart' as _i2;
 import 'package:node_graph_notebook/plugins/graph/service/node_service.dart'
-    as _i11;
+    as _i12;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -49,10 +57,16 @@ class _FakeNode_2 extends _i1.SmartFake implements _i4.Node {
     : super(parent, parentInvocation);
 }
 
+class _FakeCommandResult_3<T1> extends _i1.SmartFake
+    implements _i5.CommandResult<T1> {
+  _FakeCommandResult_3(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [NodeBloc].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNodeBloc extends _i1.Mock implements _i5.NodeBloc {
+class MockNodeBloc extends _i1.Mock implements _i6.NodeBloc {
   MockNodeBloc() {
     _i1.throwOnMissingStub(this);
   }
@@ -66,12 +80,12 @@ class MockNodeBloc extends _i1.Mock implements _i5.NodeBloc {
           as _i2.NodeState);
 
   @override
-  _i6.Stream<_i2.NodeState> get stream =>
+  _i7.Stream<_i2.NodeState> get stream =>
       (super.noSuchMethod(
             Invocation.getter(#stream),
-            returnValue: _i6.Stream<_i2.NodeState>.empty(),
+            returnValue: _i7.Stream<_i2.NodeState>.empty(),
           )
-          as _i6.Stream<_i2.NodeState>);
+          as _i7.Stream<_i2.NodeState>);
 
   @override
   bool get isClosed =>
@@ -79,22 +93,22 @@ class MockNodeBloc extends _i1.Mock implements _i5.NodeBloc {
           as bool);
 
   @override
-  _i6.Future<void> close() =>
+  _i7.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  void add(_i7.NodeEvent? event) => super.noSuchMethod(
+  void add(_i8.NodeEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void onEvent(_i7.NodeEvent? event) => super.noSuchMethod(
+  void onEvent(_i8.NodeEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
   );
@@ -106,30 +120,30 @@ class MockNodeBloc extends _i1.Mock implements _i5.NodeBloc {
   );
 
   @override
-  void on<E extends _i7.NodeEvent>(
-    _i8.EventHandler<E, _i2.NodeState>? handler, {
-    _i8.EventTransformer<E>? transformer,
+  void on<E extends _i8.NodeEvent>(
+    _i9.EventHandler<E, _i2.NodeState>? handler, {
+    _i9.EventTransformer<E>? transformer,
   }) => super.noSuchMethod(
     Invocation.method(#on, [handler], {#transformer: transformer}),
     returnValueForMissingStub: null,
   );
 
   @override
-  void onTransition(_i8.Transition<_i7.NodeEvent, _i2.NodeState>? transition) =>
+  void onTransition(_i9.Transition<_i8.NodeEvent, _i2.NodeState>? transition) =>
       super.noSuchMethod(
         Invocation.method(#onTransition, [transition]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void onDone(_i7.NodeEvent? event, [Object? error, StackTrace? stackTrace]) =>
+  void onDone(_i8.NodeEvent? event, [Object? error, StackTrace? stackTrace]) =>
       super.noSuchMethod(
         Invocation.method(#onDone, [event, error, stackTrace]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void onChange(_i8.Change<_i2.NodeState>? change) => super.noSuchMethod(
+  void onChange(_i9.Change<_i2.NodeState>? change) => super.noSuchMethod(
     Invocation.method(#onChange, [change]),
     returnValueForMissingStub: null,
   );
@@ -150,7 +164,7 @@ class MockNodeBloc extends _i1.Mock implements _i5.NodeBloc {
 /// A class which mocks [GraphBloc].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
+class MockGraphBloc extends _i1.Mock implements _i10.GraphBloc {
   MockGraphBloc() {
     _i1.throwOnMissingStub(this);
   }
@@ -164,12 +178,12 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
           as _i3.GraphState);
 
   @override
-  _i6.Stream<_i3.GraphState> get stream =>
+  _i7.Stream<_i3.GraphState> get stream =>
       (super.noSuchMethod(
             Invocation.getter(#stream),
-            returnValue: _i6.Stream<_i3.GraphState>.empty(),
+            returnValue: _i7.Stream<_i3.GraphState>.empty(),
           )
-          as _i6.Stream<_i3.GraphState>);
+          as _i7.Stream<_i3.GraphState>);
 
   @override
   bool get isClosed =>
@@ -177,22 +191,22 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
           as bool);
 
   @override
-  _i6.Future<void> close() =>
+  _i7.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  void add(_i10.GraphEvent? event) => super.noSuchMethod(
+  void add(_i11.GraphEvent? event) => super.noSuchMethod(
     Invocation.method(#add, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void onEvent(_i10.GraphEvent? event) => super.noSuchMethod(
+  void onEvent(_i11.GraphEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
   );
@@ -204,9 +218,9 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
   );
 
   @override
-  void on<E extends _i10.GraphEvent>(
-    _i8.EventHandler<E, _i3.GraphState>? handler, {
-    _i8.EventTransformer<E>? transformer,
+  void on<E extends _i11.GraphEvent>(
+    _i9.EventHandler<E, _i3.GraphState>? handler, {
+    _i9.EventTransformer<E>? transformer,
   }) => super.noSuchMethod(
     Invocation.method(#on, [handler], {#transformer: transformer}),
     returnValueForMissingStub: null,
@@ -214,7 +228,7 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
 
   @override
   void onTransition(
-    _i8.Transition<_i10.GraphEvent, _i3.GraphState>? transition,
+    _i9.Transition<_i11.GraphEvent, _i3.GraphState>? transition,
   ) => super.noSuchMethod(
     Invocation.method(#onTransition, [transition]),
     returnValueForMissingStub: null,
@@ -222,7 +236,7 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
 
   @override
   void onDone(
-    _i10.GraphEvent? event, [
+    _i11.GraphEvent? event, [
     Object? error,
     StackTrace? stackTrace,
   ]) => super.noSuchMethod(
@@ -231,7 +245,7 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
   );
 
   @override
-  void onChange(_i8.Change<_i3.GraphState>? change) => super.noSuchMethod(
+  void onChange(_i9.Change<_i3.GraphState>? change) => super.noSuchMethod(
     Invocation.method(#onChange, [change]),
     returnValueForMissingStub: null,
   );
@@ -252,17 +266,17 @@ class MockGraphBloc extends _i1.Mock implements _i9.GraphBloc {
 /// A class which mocks [NodeService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNodeService extends _i1.Mock implements _i11.NodeService {
+class MockNodeService extends _i1.Mock implements _i12.NodeService {
   MockNodeService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i6.Future<_i4.Node> createNode({
+  _i7.Future<_i4.Node> createNode({
     required String? title,
     String? content,
-    _i12.Offset? position,
-    _i12.Size? size,
+    _i13.Offset? position,
+    _i13.Size? size,
     String? color,
     Map<String, _i4.NodeReference>? references,
     Map<String, dynamic>? metadata,
@@ -277,7 +291,7 @@ class MockNodeService extends _i1.Mock implements _i11.NodeService {
               #references: references,
               #metadata: metadata,
             }),
-            returnValue: _i6.Future<_i4.Node>.value(
+            returnValue: _i7.Future<_i4.Node>.value(
               _FakeNode_2(
                 this,
                 Invocation.method(#createNode, [], {
@@ -292,15 +306,15 @@ class MockNodeService extends _i1.Mock implements _i11.NodeService {
               ),
             ),
           )
-          as _i6.Future<_i4.Node>);
+          as _i7.Future<_i4.Node>);
 
   @override
-  _i6.Future<_i4.Node> updateNode(
+  _i7.Future<_i4.Node> updateNode(
     String? nodeId, {
     String? title,
     String? content,
-    _i12.Offset? position,
-    _i12.Size? size,
+    _i13.Offset? position,
+    _i13.Size? size,
     _i4.NodeViewMode? viewMode,
     String? color,
     Map<String, _i4.NodeReference>? references,
@@ -321,7 +335,7 @@ class MockNodeService extends _i1.Mock implements _i11.NodeService {
                 #metadata: metadata,
               },
             ),
-            returnValue: _i6.Future<_i4.Node>.value(
+            returnValue: _i7.Future<_i4.Node>.value(
               _FakeNode_2(
                 this,
                 Invocation.method(
@@ -341,43 +355,43 @@ class MockNodeService extends _i1.Mock implements _i11.NodeService {
               ),
             ),
           )
-          as _i6.Future<_i4.Node>);
+          as _i7.Future<_i4.Node>);
 
   @override
-  _i6.Future<void> deleteNode(String? nodeId) =>
+  _i7.Future<void> deleteNode(String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#deleteNode, [nodeId]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<_i4.Node?> getNode(String? nodeId) =>
+  _i7.Future<_i4.Node?> getNode(String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#getNode, [nodeId]),
-            returnValue: _i6.Future<_i4.Node?>.value(),
+            returnValue: _i7.Future<_i4.Node?>.value(),
           )
-          as _i6.Future<_i4.Node?>);
+          as _i7.Future<_i4.Node?>);
 
   @override
-  _i6.Future<List<_i4.Node>> getAllNodes() =>
+  _i7.Future<List<_i4.Node>> getAllNodes() =>
       (super.noSuchMethod(
             Invocation.method(#getAllNodes, []),
-            returnValue: _i6.Future<List<_i4.Node>>.value(<_i4.Node>[]),
+            returnValue: _i7.Future<List<_i4.Node>>.value(<_i4.Node>[]),
           )
-          as _i6.Future<List<_i4.Node>>);
+          as _i7.Future<List<_i4.Node>>);
 
   @override
-  _i6.Future<List<_i4.Node>> searchNodes(String? query) =>
+  _i7.Future<List<_i4.Node>> searchNodes(String? query) =>
       (super.noSuchMethod(
             Invocation.method(#searchNodes, [query]),
-            returnValue: _i6.Future<List<_i4.Node>>.value(<_i4.Node>[]),
+            returnValue: _i7.Future<List<_i4.Node>>.value(<_i4.Node>[]),
           )
-          as _i6.Future<List<_i4.Node>>);
+          as _i7.Future<List<_i4.Node>>);
 
   @override
-  _i6.Future<void> connectNodes({
+  _i7.Future<void> connectNodes({
     required String? fromNodeId,
     required String? toNodeId,
     Map<String, dynamic>? properties,
@@ -388,13 +402,13 @@ class MockNodeService extends _i1.Mock implements _i11.NodeService {
               #toNodeId: toNodeId,
               #properties: properties,
             }),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> disconnectNodes({
+  _i7.Future<void> disconnectNodes({
     required String? fromNodeId,
     required String? toNodeId,
   }) =>
@@ -403,34 +417,116 @@ class MockNodeService extends _i1.Mock implements _i11.NodeService {
               #fromNodeId: fromNodeId,
               #toNodeId: toNodeId,
             }),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> batchUpdate(List<_i11.NodeUpdate>? updates) =>
+  _i7.Future<void> batchUpdate(List<_i12.NodeUpdate>? updates) =>
       (super.noSuchMethod(
             Invocation.method(#batchUpdate, [updates]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> batchDelete(List<String>? nodeIds) =>
+  _i7.Future<void> batchDelete(List<String>? nodeIds) =>
       (super.noSuchMethod(
             Invocation.method(#batchDelete, [nodeIds]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<Map<String, int>> calculateNodeDepths(List<_i4.Node>? nodes) =>
+  _i7.Future<Map<String, int>> calculateNodeDepths(List<_i4.Node>? nodes) =>
       (super.noSuchMethod(
             Invocation.method(#calculateNodeDepths, [nodes]),
-            returnValue: _i6.Future<Map<String, int>>.value(<String, int>{}),
+            returnValue: _i7.Future<Map<String, int>>.value(<String, int>{}),
           )
-          as _i6.Future<Map<String, int>>);
+          as _i7.Future<Map<String, int>>);
+}
+
+/// A class which mocks [CommandBus].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockCommandBus extends _i1.Mock implements _i14.CommandBus {
+  MockCommandBus() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i7.Stream<_i14.CommandEvent> get commandStream =>
+      (super.noSuchMethod(
+            Invocation.getter(#commandStream),
+            returnValue: _i7.Stream<_i14.CommandEvent>.empty(),
+          )
+          as _i7.Stream<_i14.CommandEvent>);
+
+  @override
+  void registerHandler<T extends _i5.Command<dynamic>>(
+    _i15.CommandHandler<T>? handler,
+    Type? commandType,
+  ) => super.noSuchMethod(
+    Invocation.method(#registerHandler, [handler, commandType]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void registerHandlers(
+    Map<Type, _i15.CommandHandler<_i5.Command<dynamic>>>? handlers,
+  ) => super.noSuchMethod(
+    Invocation.method(#registerHandlers, [handlers]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void addMiddleware(_i16.CommandMiddleware? middleware) => super.noSuchMethod(
+    Invocation.method(#addMiddleware, [middleware]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void addMiddlewarePlugin(_i17.CommandMiddlewarePlugin? middleware) =>
+      super.noSuchMethod(
+        Invocation.method(#addMiddlewarePlugin, [middleware]),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void removeMiddlewarePlugin(_i17.CommandMiddlewarePlugin? middleware) =>
+      super.noSuchMethod(
+        Invocation.method(#removeMiddlewarePlugin, [middleware]),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i7.Future<_i5.CommandResult<T>> dispatch<T>(_i5.Command<T>? command) =>
+      (super.noSuchMethod(
+            Invocation.method(#dispatch, [command]),
+            returnValue: _i7.Future<_i5.CommandResult<T>>.value(
+              _FakeCommandResult_3<T>(
+                this,
+                Invocation.method(#dispatch, [command]),
+              ),
+            ),
+          )
+          as _i7.Future<_i5.CommandResult<T>>);
+
+  @override
+  _i7.Future<void> undo(_i5.Command<dynamic>? command) =>
+      (super.noSuchMethod(
+            Invocation.method(#undo, [command]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
 }
