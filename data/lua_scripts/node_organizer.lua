@@ -10,11 +10,11 @@
 -- 节点整理器示例
 -- 演示如何使用Lua API操作节点
 
-debugPrint("=== 节点整理器启动 ===")
+print("=== 节点整理器启动 ===")
 
 -- 获取所有节点
 local nodes = getAllNodes()
-debugPrint("找到 " .. #nodes .. " 个节点")
+print("找到 " .. #nodes .. " 个节点")
 
 -- 统计节点信息
 local totalNodes = 0
@@ -27,20 +27,20 @@ for i, node in pairs(nodes) do
         nodesWithContent = nodesWithContent + 1
     end
 
-    debugPrint(string.format("节点 %d: %s", i, node.title))
+    print(string.format("节点 %d: %s", i, node.title))
 end
 
 -- 输出统计信息
-debugPrint("")
-debugPrint("=== 统计信息 ===")
-debugPrint("总节点数: " .. totalNodes)
-debugPrint("有内容的节点: " .. nodesWithContent)
-debugPrint("空节点: " .. (totalNodes - nodesWithContent))
+print("")
+print("=== 统计信息 ===")
+print("总节点数: " .. totalNodes)
+print("有内容的节点: " .. nodesWithContent)
+print("空节点: " .. (totalNodes - nodesWithContent))
 
 -- 演示创建新节点（如果API可用）
 if createNode then
-    debugPrint("")
-    debugPrint("创建整理报告节点...")
+    print("")
+    print("创建整理报告节点...")
 
     local reportContent = string.format([[
 # 节点整理报告
@@ -60,9 +60,9 @@ if createNode then
     end
 
     -- 注意：实际创建节点需要完整的API实现
-    debugPrint("报告内容已生成")
-    debugPrint(reportContent)
+    print("报告内容已生成")
+    print(reportContent)
 end
 
-debugPrint("")
-debugPrint("=== 节点整理完成 ===")
+print("")
+print("=== 节点整理完成 ===")

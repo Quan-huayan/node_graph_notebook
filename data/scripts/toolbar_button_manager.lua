@@ -7,26 +7,26 @@
 -- createdAt: 2026-03-23T00:00:00.000Z
 -- updatedAt: 2026-03-23T00:00:00.000Z
 
-debugPrint("========================================")
-debugPrint("工具栏按钮管理器")
-debugPrint("========================================")
+print("========================================")
+print("工具栏按钮管理器")
+print("========================================")
 
 -- 创建节点按钮回调
 onCreateNodeClick = function()
-    debugPrint("创建节点按钮被点击")
+    print("创建节点按钮被点击")
     createNode("从Lua创建的节点", "这是通过动态工具栏按钮创建的节点", nil)
     showMessage("节点已创建！")
 end
 
 -- 列出节点按钮回调
 onListNodesClick = function()
-    debugPrint("列出节点按钮被点击")
+    print("列出节点按钮被点击")
     getAllNodes("onListNodesComplete")
 end
 
 onListNodesComplete = function(success, result)
     if success then
-        debugPrint("找到 " .. result.count .. " 个节点")
+        print("找到 " .. result.count .. " 个节点")
         showMessage("共有 " .. result.count .. " 个节点")
     end
 end
@@ -34,12 +34,12 @@ end
 -- 显示时间按钮回调
 onShowTimeClick = function()
     local time = getCurrentTime()
-    debugPrint("当前时间: " .. time)
+    print("当前时间: " .. time)
     showMessage("当前时间: " .. time)
 end
 
 -- 注册多个按钮
-debugPrint("正在注册工具栏按钮...")
+print("正在注册工具栏按钮...")
 
 -- 按钮1: 创建节点
 registerToolbarButton("create_node_btn", "创建节点", "onCreateNodeClick", "add")
@@ -50,18 +50,18 @@ registerToolbarButton("list_nodes_btn", "列出节点", "onListNodesClick", "lis
 -- 按钮3: 显示时间
 registerToolbarButton("show_time_btn", "显示时间", "onShowTimeClick", "access_time")
 
-debugPrint("✓ 所有按钮注册成功！")
-debugPrint("")
+print("✓ 所有按钮注册成功！")
+print("")
 
 -- 列出所有动态按钮
-debugPrint("已注册的动态按钮:")
+print("已注册的动态按钮:")
 local buttons = listDynamicButtons()
 for i, btn in pairs(buttons) do
-    debugPrint("  " .. (i+1) .. ". " .. btn.label .. " (ID: " .. btn.id .. ")")
+    print("  " .. (i+1) .. ". " .. btn.label .. " (ID: " .. btn.id .. ")")
 end
 
-debugPrint("========================================")
-debugPrint("提示：")
-debugPrint("  - 使用 unregisterToolbarButton('create_node_btn') 删除按钮")
-debugPrint("  - 使用 listDynamicButtons() 查看所有按钮")
-debugPrint("========================================")
+print("========================================")
+print("提示：")
+print("  - 使用 unregisterToolbarButton('create_node_btn') 删除按钮")
+print("  - 使用 listDynamicButtons() 查看所有按钮")
+print("========================================")
