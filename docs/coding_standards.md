@@ -135,7 +135,7 @@ class NodeNotFoundError implements Exception {
 try {
   final node = await service.getNode(id);
 } on NodeNotFoundError catch (e) {
-  print(e);
+  debugPrint(e);
 }
 ```
 
@@ -146,7 +146,7 @@ try {
 try {
   // ...
 } catch (e) {
-  print(e);
+  debugPrint(e);
 }
 
 // ✅ 更好
@@ -880,9 +880,9 @@ class Result<T> {
 // 使用
 final result = await createNode(title: 'Test');
 if (result.isSuccess) {
-  print(result.data);
+  debugPrint(result.data);
 } else {
-  print(result.error);
+  debugPrint(result.error);
 }
 ```
 
@@ -1109,7 +1109,7 @@ Future<String> getTitle() async {
 **错误示例**：
 ```dart
 // ❌ 错误：使用异步 exists()
-if (await file.exists()) {
+if (file.existsSync()) {
   // ...
 }
 ```
@@ -1225,8 +1225,8 @@ const SizedBox(height: 10);
 **错误示例**：
 ```dart
 // ❌ 错误：使用 print
-print('Debug info');
-print('Error: $e');
+debugPrint('Debug info');
+debugPrint('Error: $e');
 ```
 
 **正确示例**：
@@ -1235,7 +1235,7 @@ print('Error: $e');
 import 'package:flutter/foundation.dart';
 
 debugPrint('Debug info'); // 仅调试模式
-kDebugMode ? print('Info') : null; // 条件输出
+kDebugMode ? debugPrint('Info') : null; // 条件输出
 
 // 对于生产环境，使用统一的日志服务
 Logger.info('Debug info');

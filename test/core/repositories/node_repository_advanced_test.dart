@@ -353,7 +353,7 @@ No YAML headers at all.
 
 ```dart
 void main() {
-  print('Hello, World!');
+  debugPrint('Hello, World!');
 }
 ```
 

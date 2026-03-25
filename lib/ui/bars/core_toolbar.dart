@@ -15,25 +15,35 @@ class CoreToolbar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
+    // ✅ 监听 HookRegistry 变化，自动重新构建
+    return AnimatedBuilder(
+      animation: hookRegistry,
+      builder: (context, child) {
+        final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
 
-    return AppBar(
-      title: const Text('Node Graph Notebook'),
-      actions: [
-        // 动态加载所有主工具栏钩子
-        ...hookWrappers.map((hookWrapper) {
-          final hook = hookWrapper.hook;
-          final hookContext = MainToolbarHookContext(
-            data: {'buildContext': context},
-            pluginContext: hookWrapper.parentPlugin?.context,
-            hookAPIRegistry: hookRegistry.apiRegistry,
-          );
-          if (hook.isVisible(hookContext)) {
-            return hook.render(hookContext);
-          }
-          return null;
-        }).whereType<Widget>(),
-      ],
+        debugPrint('[CoreToolbar] build() called:');
+        debugPrint('  - MainToolbar hooks found: ${hookWrappers.length}');
+
+        return AppBar(
+          title: const Text('Node Graph Notebook'),
+          actions: [
+            // 动态加载所有主工具栏钩子
+            ...hookWrappers.map((hookWrapper) {
+              final hook = hookWrapper.hook;
+              debugPrint('  - Rendering toolbar hook: ${hook.metadata.id}');
+              final hookContext = MainToolbarHookContext(
+                data: {'buildContext': context},
+                pluginContext: hookWrapper.parentPlugin?.context,
+                hookAPIRegistry: hookRegistry.apiRegistry,
+              );
+              if (hook.isVisible(hookContext)) {
+                return hook.render(hookContext);
+              }
+              return null;
+            }).whereType<Widget>(),
+          ],
+        );
+      },
     );
   }
 }

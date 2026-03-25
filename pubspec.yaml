@@ -58,6 +58,10 @@ dependencies:
   crypto: ^3.0.3
   worker_pool: ^0.0.5
 
+  # Scripting
+  flutter_embed_lua: ^0.0.1
+  ffi: ^2.1.0
+
   # Development Tools
   flutter_lints: ^6.0.0
 

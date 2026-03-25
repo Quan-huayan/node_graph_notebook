@@ -19,7 +19,27 @@
       "Bash(rm:*)",
       "Bash(timeout 5 cmd:*)",
       "Bash(dart format:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(flutter test:*)",
+      "Bash(grep:*)",
+      "Bash(echo \"C:\\\\Users$USER\\\\Documents\\\\node_graph_notebook\\\\data\")",
+      "Read(//c/Users/$USER/**)",
+      "Bash(dart:*)",
+      "Bash(\"D:\\\\noteproject\\\\node_graph_notebook\\\\.gitignore\":*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(git checkout:*)",
+      "Bash(chmod +x:*)",
+      "Bash(git reset:*)",
+      "Bash(tool\\\\lua.bat print\\('Hello from command line!'\\):*)",
+      "Bash(./tool/lua.bat print\\('Hello from command line!'\\):*)",
+      "Bash(./tool/lua.bat print\\('Test encoding fix'\\):*)",
+      "Bash(./tool/lua.bat print\\('Debug test'\\):*)",
+      "Bash(./tool/lua.bat print\\('Test 1'\\); print\\('Test 2'\\); print\\('Test 3'\\):*)",
+      "Bash(./tool/lua.bat print\\('Debug output test'\\):*)",
+      "Bash(./tool/lua.bat print\\('Test print function'\\):*)",
+      "Bash(./tool/lua.bat print\\('Final test'\\):*)",
+      "Bash(./tool/lua.bat print\\('Direct execution test'\\):*)"
     ]
   }
 }

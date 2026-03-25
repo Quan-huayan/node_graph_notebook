@@ -20,6 +20,11 @@ echo ""
 echo "📦 Installing dependencies..."
 flutter pub get
 
+# 生成 i18n 翻译代码
+echo ""
+echo "🌐 Generating i18n translation code..."
+dart tool/generate_i18n.dart
+
 # 生成代码
 echo ""
 echo "🔧 Generating JSON serialization code..."

@@ -381,7 +381,7 @@ bash scripts/analyze.sh    # Filters third-party warnings
 ### Development Guidelines
 1. **Always regenerate code** after modifying models with `@JsonSerializable` annotation
 2. **Provider dependency order is critical** - see dependency injection order above
-3. **Don't use `print()`** - use `debugPrint()` or LoggingMiddleware
+3. **Don't use `debugPrint()`** - use `debugPrint()` or LoggingMiddleware
 4. **File I/O should be async** - avoid blocking the UI thread
 5. **Flame performance** - cache resources, don't allocate in render()
 6. **Error recovery** - app has built-in data recovery on initialization failures
