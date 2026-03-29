@@ -211,6 +211,32 @@ class Graph {
   final List<String> nodeIds;
 
   /// 节点位置映射（节点ID -> 位置）
+  ///
+  /// **DEPRECATED**: This field is deprecated and will be removed in Phase 6.
+  /// Node positions are now managed by UILayoutService via NodeAttachment.
+  ///
+  /// Migration Guide:
+  /// ```dart
+  /// // OLD (deprecated):
+  /// final graph = Graph(
+  ///   nodeIds: ['node1', 'node2'],
+  ///   nodePositions: {'node1': Offset(100, 200)},
+  ///   ...
+  /// );
+  ///
+  /// // NEW (correct):
+  /// // Positions managed by UILayoutService:
+  /// await layoutService.attachNode(
+  ///   nodeId: 'node1',
+  ///   hookId: 'graph',
+  ///   position: LocalPosition.absolute(100, 200),
+  /// );
+  /// ```
+  @Deprecated(
+    'Node positions are now managed by UILayoutService via NodeAttachment. '
+    'This field will be removed in Phase 6. '
+    'Use layoutService.attachNode() to position Nodes in the graph.',
+  )
   @OffsetConverter()
   final Map<String, Offset> nodePositions;
 

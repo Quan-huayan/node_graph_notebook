@@ -2,7 +2,10 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/logger.dart';
 import 'i18n/translations.dart'; // 导入生成的翻译数据
+
+const _log = AppLogger('Internationalization');
 
 /// 国际化服务
 ///
@@ -54,15 +57,15 @@ class I18n extends ChangeNotifier {
 
       if (savedLanguage != null && supportsLanguage(savedLanguage)) {
         _currentLanguage = savedLanguage;
-        debugPrint('[I18n] Loaded saved language: $_currentLanguage');
+        _log.info('Loaded saved language: $_currentLanguage');
       } else {
-        debugPrint('[I18n] Using default language: $_currentLanguage');
+        _log.info('Using default language: $_currentLanguage');
       }
 
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
-      debugPrint('[I18n] Failed to load saved language: $e');
+      _log.info('Failed to load saved language: $e');
       _isInitialized = true;
     }
   }
@@ -101,21 +104,21 @@ class I18n extends ChangeNotifier {
     if (_currentLanguage == language) return;
 
     if (!supportsLanguage(language)) {
-      debugPrint('[I18n] Unsupported language: $language');
+      _log.info('Unsupported language: $language');
       return;
     }
 
     _currentLanguage = language;
     notifyListeners();
-    debugPrint('[I18n] Language switched to: $language');
+    _log.info('Language switched to: $language');
 
     // 持久化语言选择
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefsKey, language);
-      debugPrint('[I18n] Language saved to preferences');
+      _log.info('Language saved to preferences');
     } catch (e) {
-      debugPrint('[I18n] Failed to save language: $e');
+      _log.info('Failed to save language: $e');
     }
   }
 

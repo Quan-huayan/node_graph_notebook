@@ -19,7 +19,7 @@ class MarketToolbarHook extends MainToolbarHookBase {
   );
 
   @override
-  HookPriority get priority => HookPriority.custom600;
+  HookPriority get priority => HookPriority.custom60; // 主工具栏右二位置
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {

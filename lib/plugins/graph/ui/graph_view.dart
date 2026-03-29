@@ -10,6 +10,8 @@ import '../bloc/graph_bloc.dart';
 import '../bloc/graph_event.dart';
 import '../bloc/node_bloc.dart';
 import '../flame/flame.dart';
+import 'create_node_dialog.dart';
+import 'draggable_toolbar.dart';
 
 /// 图视图
 class GraphView extends StatelessWidget {
@@ -161,6 +163,16 @@ class GraphView extends StatelessWidget {
               },
             ),
           ),
+
+          // 可拖动工具栏（新增，graph插件自包含）
+          const DraggableToolbar(),
+
+          // 固定在右下角的创建节点按钮
+          const Positioned(
+            right: 16,
+            bottom: 16,
+            child: _CreateNodeButton(),
+          ),
         ],
       ),
     );
@@ -183,5 +195,36 @@ class GraphView extends StatelessWidget {
         );
       }
     }
+  }
+}
+
+/// 创建节点按钮
+///
+/// 固定在图视图右下角的大按钮，用于快速创建节点
+class _CreateNodeButton extends StatelessWidget {
+  /// 构造函数
+  const _CreateNodeButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+
+    return FloatingActionButton.extended(
+      icon: const Icon(Icons.add, size: 28),
+      label: Text(i18n.t('Create Node')),
+      tooltip: i18n.t('Create Node'),
+      onPressed: () => _showCreateNodeDialog(context),
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      elevation: 6,
+    );
+  }
+
+  /// 显示创建节点对话框
+  void _showCreateNodeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const CreateNodeDialog(),
+    );
   }
 }

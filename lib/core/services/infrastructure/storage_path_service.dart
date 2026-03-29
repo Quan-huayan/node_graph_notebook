@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../utils/logger.dart';
+
+/// Logger for StoragePathService
+const _log = AppLogger('StoragePathService');
+
 /// 存储路径服务
 ///
 /// 仅负责应用数据存储路径的配置和管理
@@ -113,7 +118,7 @@ class StoragePathService with ChangeNotifier {
       try {
         await dir.create(recursive: true);
       } catch (e) {
-        debugPrint('Failed to create directory: $e');
+        _log.warning('Failed to create directory: $e');
         return false;
       }
     }
@@ -168,7 +173,7 @@ class StoragePathService with ChangeNotifier {
 
       return true;
     } catch (e) {
-      debugPrint('Path validation failed: $e');
+      _log.warning('Path validation failed: $e');
       return false;
     }
   }
@@ -189,7 +194,7 @@ class StoragePathService with ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('Failed to calculate directory size: $e');
+      _log.warning('Failed to calculate directory size: $e');
     }
     return size;
   }
@@ -223,7 +228,7 @@ class StoragePathService with ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('Failed to count files: $e');
+      _log.warning('Failed to count files: $e');
     }
 
     return StorageUsage(

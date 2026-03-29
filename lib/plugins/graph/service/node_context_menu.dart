@@ -7,8 +7,8 @@ import '../bloc/graph_bloc.dart';
 import '../bloc/graph_event.dart';
 import '../bloc/node_bloc.dart';
 import '../bloc/node_event.dart';
-import 'node_icon_dialog.dart';
-import 'node_metadata_dialog.dart';
+import '../ui/node_icon_dialog.dart';
+import '../ui/node_metadata_dialog.dart';
 
 /// 菜单操作类型
 enum _MenuAction {

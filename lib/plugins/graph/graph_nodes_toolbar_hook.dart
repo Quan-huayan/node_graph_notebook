@@ -11,13 +11,15 @@ import 'bloc/node_bloc.dart';
 import 'ui/graph_nodes_dialog.dart';
 
 /// 图节点管理工具栏钩子
-class GraphNodesToolbarHook extends MainToolbarHookBase {
+///
+/// 注册到 graph.toolbar hook point，用于可拖动工具栏
+class GraphNodesToolbarHook extends GraphToolbarHookBase {
   @override
   HookMetadata get metadata => const HookMetadata(
     id: 'graph_nodes_toolbar_hook',
     name: 'Graph Nodes Toolbar Hook',
     version: '1.0.0',
-    description: 'Provides graph nodes management button in toolbar',
+    description: 'Provides graph nodes management button in graph toolbar',
   );
 
   @override

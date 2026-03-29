@@ -257,14 +257,6 @@ class MockLuaEngineService extends _i1.Mock implements _i9.LuaEngineService {
   }
 
   @override
-  _i9.LuaEngineType get engineType =>
-      (super.noSuchMethod(
-            Invocation.getter(#engineType),
-            returnValue: _i9.LuaEngineType.simple,
-          )
-          as _i9.LuaEngineType);
-
-  @override
   bool get enableSandbox =>
       (super.noSuchMethod(Invocation.getter(#enableSandbox), returnValue: false)
           as bool);

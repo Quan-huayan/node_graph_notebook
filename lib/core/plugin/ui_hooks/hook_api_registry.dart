@@ -1,4 +1,7 @@
-import 'package:flutter/foundation.dart';
+import '../../utils/logger.dart';
+
+/// Logger for HookAPIRegistry
+const _log = AppLogger('HookAPIRegistry');
 
 /// Hook API 注册表
 ///
@@ -30,12 +33,12 @@ class HookAPIRegistry {
     final qualifiedName = '$hookId.$apiName';
 
     if (_apis.containsKey(qualifiedName)) {
-      debugPrint('[HookAPIRegistry] Warning: API already registered, '
+      _log.warning('[HookAPIRegistry] Warning: API already registered, '
           'overwriting: $qualifiedName');
     }
 
     _apis[qualifiedName] = api;
-    debugPrint('[HookAPIRegistry] Registered API: $qualifiedName '
+    _log.info('[HookAPIRegistry] Registered API: $qualifiedName '
         '(type: ${api.runtimeType})');
   }
 
@@ -61,7 +64,7 @@ class HookAPIRegistry {
 
     for (final key in keysToRemove) {
       _apis.remove(key);
-      debugPrint('[HookAPIRegistry] Unregistered API: $key');
+      _log.info('Unregistered API: $key');
     }
   }
 

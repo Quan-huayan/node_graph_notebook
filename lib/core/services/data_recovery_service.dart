@@ -1,11 +1,14 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
 import '../repositories/exceptions.dart';
 import '../repositories/repositories.dart';
 import '../services/services.dart';
+import '../utils/logger.dart';
+
+/// 数据恢复服务日志记录器
+const _log = AppLogger('DataRecoveryService');
 
 /// 数据恢复结果
 class DataRecoveryResult {
@@ -69,7 +72,7 @@ class DataRecoveryService {
       final storageDir = Directory(storagePath);
       if (!storageDir.existsSync()) {
         issuesFound++;
-        debugPrint('Storage directory does not exist: $storagePath');
+        _log.warning('Storage directory does not exist: $storagePath');
       }
 
       // 2. 验证节点目录
@@ -77,7 +80,7 @@ class DataRecoveryService {
       final nodesDir = Directory(nodesPath);
       if (!nodesDir.existsSync()) {
         issuesFound++;
-        debugPrint('Nodes directory does not exist: $nodesPath');
+        _log.warning('Nodes directory does not exist: $nodesPath');
       }
 
       // 3. 验证图目录
@@ -85,7 +88,7 @@ class DataRecoveryService {
       final graphsDir = Directory(graphsPath);
       if (!graphsDir.existsSync()) {
         issuesFound++;
-        debugPrint('Graphs directory does not exist: $graphsPath');
+        _log.warning('Graphs directory does not exist: $graphsPath');
       }
 
       // 4. 验证节点文件
@@ -95,13 +98,13 @@ class DataRecoveryService {
         final index = await nodeRepository.getMetadataIndex();
         if (index.nodes.length != nodes.length) {
           issuesFound++;
-          debugPrint(
+          _log.warning(
             'Index mismatch: ${index.nodes.length} in index, ${nodes.length} actual files',
           );
         }
       } catch (e) {
         issuesFound++;
-        debugPrint('Failed to validate nodes: $e');
+        _log.error('Failed to validate nodes', error: e);
       }
 
       // 5. 验证图文件
@@ -110,11 +113,11 @@ class DataRecoveryService {
         final currentGraph = await graphRepository.getCurrent();
         if (graphs.isNotEmpty && currentGraph == null) {
           issuesFound++;
-          debugPrint('Current graph setting is invalid');
+          _log.warning('Current graph setting is invalid');
         }
       } catch (e) {
         issuesFound++;
-        debugPrint('Failed to validate graphs: $e');
+        _log.error('Failed to validate graphs', error: e);
       }
 
       return DataRecoveryResult(
@@ -147,9 +150,9 @@ class DataRecoveryService {
         try {
           await storageDir.create(recursive: true);
           repairedIssues++;
-          debugPrint('Created storage directory: $storagePath');
+          _log.info('Created storage directory: $storagePath');
         } catch (e) {
-          debugPrint('Failed to create storage directory: $e');
+          _log.error('Failed to create storage directory', error: e);
         }
       }
 
@@ -161,9 +164,9 @@ class DataRecoveryService {
         try {
           await nodesDir.create(recursive: true);
           repairedIssues++;
-          debugPrint('Created nodes directory: $nodesPath');
+          _log.info('Created nodes directory: $nodesPath');
         } catch (e) {
-          debugPrint('Failed to create nodes directory: $e');
+          _log.error('Failed to create nodes directory', error: e);
         }
       }
 
@@ -175,9 +178,9 @@ class DataRecoveryService {
         try {
           await graphsDir.create(recursive: true);
           repairedIssues++;
-          debugPrint('Created graphs directory: $graphsPath');
+          _log.info('Created graphs directory: $graphsPath');
         } catch (e) {
-          debugPrint('Failed to create graphs directory: $e');
+          _log.error('Failed to create graphs directory', error: e);
         }
       }
 
@@ -188,7 +191,7 @@ class DataRecoveryService {
           await (nodeRepository as FileSystemNodeRepository).init();
           repairedIssues++;
         } catch (e) {
-          debugPrint('Failed to reinitialize node repository: $e');
+          _log.error('Failed to reinitialize node repository', error: e);
         }
       }
 
@@ -198,7 +201,7 @@ class DataRecoveryService {
           await (graphRepository as FileSystemGraphRepository).init();
           repairedIssues++;
         } catch (e) {
-          debugPrint('Failed to reinitialize graph repository: $e');
+          _log.error('Failed to reinitialize graph repository', error: e);
         }
       }
 
@@ -208,7 +211,7 @@ class DataRecoveryService {
         repairedIssues++;
       } catch (e) {
         issuesFound++;
-        debugPrint('Failed to rebuild index: $e');
+        _log.error('Failed to rebuild index', error: e);
       }
 
       // 6. 修复当前图设置
@@ -217,7 +220,7 @@ class DataRecoveryService {
         repairedIssues++;
       } catch (e) {
         issuesFound++;
-        debugPrint('Failed to repair current graph: $e');
+        _log.error('Failed to repair current graph', error: e);
       }
 
       return DataRecoveryResult(
@@ -244,10 +247,10 @@ class DataRecoveryService {
       try {
         await nodeRepository.updateIndex(node);
       } catch (e) {
-        debugPrint('Failed to update index for node ${node.id}: $e');
+        _log.warning('Failed to update index for node ${node.id}', error: e);
       }
     }
-    debugPrint('Rebuilt index with ${nodes.length} nodes');
+    _log.info('Rebuilt index with ${nodes.length} nodes');
   }
 
   /// 修复当前图设置
@@ -258,13 +261,13 @@ class DataRecoveryService {
       final graphs = await graphRepository.getAll();
       if (graphs.isNotEmpty) {
         await graphRepository.setCurrent(graphs.first.id);
-        debugPrint('Set current graph to: ${graphs.first.name}');
+        _log.info('Set current graph to: ${graphs.first.name}');
       } else {
         // 创建默认图
         if (graphRepository is FileSystemGraphRepository) {
           await (graphRepository as FileSystemGraphRepository)
               .createDefaultGraph();
-          debugPrint('Created default graph');
+          _log.info('Created default graph');
         }
       }
     }
@@ -294,7 +297,7 @@ class DataRecoveryService {
 
       return backupPath;
     } catch (e) {
-      debugPrint('Failed to backup data: $e');
+      _log.error('Failed to backup data', error: e);
       return null;
     }
   }

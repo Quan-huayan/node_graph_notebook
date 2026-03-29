@@ -25,7 +25,6 @@ void main() {
 
       // Mock engine service properties
       when(mockEngineService.isInitialized).thenReturn(true);
-      when(mockEngineService.engineType).thenReturn(LuaEngineType.realLua);
 
       // Mock script service loadAllScripts (called in constructor)
       when(mockScriptService.loadAllScripts()).thenAnswer((_) async => []);

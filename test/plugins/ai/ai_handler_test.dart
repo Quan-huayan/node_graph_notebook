@@ -709,13 +709,11 @@ class MockCommandContext implements CommandContext {
   @override
   AppEventBus getAppEventBus() => eventBus;
 
-  @override
   NodeService? get nodeService => null;
 
   @override
   GraphRepository get graphRepository => throw UnimplementedError();
 
-  @override
   GraphService? get graphService => null;
 }
 

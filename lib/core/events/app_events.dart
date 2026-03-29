@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart';
+
 import '../models/models.dart';
+import '../utils/logger.dart';
+
+/// Logger for AppEventBus
+const _log = AppLogger('AppEventBus');
 
 /// 应用事件总线 - 用于跨 BLoC 通信
 ///
@@ -11,7 +15,7 @@ import '../models/models.dart';
 /// ## 错误处理
 ///
 /// 通过 [onError] 回调可以自定义错误处理逻辑。默认情况下，
-/// 错误会通过 debugPrint 输出到控制台。
+/// 错误会通过 AppLogger 输出到控制台。
 ///
 /// ## 使用示例
 /// ```dart
@@ -59,7 +63,7 @@ class AppEventBus {
   /// - `error` - 错误对象
   /// - `stackTrace` - 堆栈跟踪
   ///
-  /// 如果为 null，使用默认处理器（通过 debugPrint 输出）
+  /// 如果为 null，使用默认处理器（通过 AppLogger 输出）
   void Function(AppEvent? event, Object error, StackTrace stackTrace)? onError;
 
   /// 发布事件到总线
@@ -67,7 +71,7 @@ class AppEventBus {
   /// 所有订阅者都会收到此事件。
   ///
   /// 如果事件总线已关闭或发布失败，会调用 [onError] 回调（如果设置了）。
-  /// 如果 [onError] 未设置，会通过 debugPrint 输出错误信息。
+  /// 如果 [onError] 未设置，会通过 AppLogger 输出错误信息。
   ///
   /// [event] 要发布的事件
   void publish(AppEvent event) {
@@ -89,7 +93,7 @@ class AppEventBus {
       onError!.call(event, error, stackTrace);
     } else {
       // 默认错误处理：输出到控制台
-      debugPrint(
+      _log.error(
         '[AppEventBus] Error publishing ${event?.runtimeType ?? "event"}: $error\n'
         'Stack trace:\n$stackTrace',
       );

@@ -4,6 +4,19 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/commands/command_bus.dart';
+import 'core/cqrs/handlers/graph_query_handler.dart';
+import 'core/cqrs/handlers/list_nodes_handler.dart';
+import 'core/cqrs/handlers/load_node_handler.dart';
+import 'core/cqrs/handlers/search_index_handler.dart';
+import 'core/cqrs/handlers/search_nodes_handler.dart';
+import 'core/cqrs/materialized_views/search_index_view.dart';
+import 'core/cqrs/queries/graph_query.dart';
+import 'core/cqrs/queries/list_nodes_query.dart';
+import 'core/cqrs/queries/load_node_query.dart';
+import 'core/cqrs/queries/search_index_query.dart';
+import 'core/cqrs/queries/search_nodes_query.dart';
+import 'core/cqrs/query/query_bus.dart';
+import 'core/cqrs/read_models/node_read_model.dart';
 import 'core/events/app_events.dart';
 import 'core/execution/execution_engine.dart';
 import 'core/execution/task_registry.dart';
@@ -11,6 +24,7 @@ import 'core/middleware/logging_middleware.dart';
 import 'core/middleware/transaction_middleware.dart';
 import 'core/middleware/undo_middleware.dart';
 import 'core/middleware/validation_middleware.dart';
+import 'core/models/node.dart';
 import 'core/plugin/builtin_plugin_loader.dart';
 import 'core/plugin/dynamic_provider_widget.dart';
 import 'core/plugin/plugin.dart';
@@ -19,9 +33,12 @@ import 'core/plugin/ui_hooks/hook_point_registry.dart';
 import 'core/plugin/ui_hooks/hook_registry.dart';
 import 'core/repositories/repositories.dart';
 import 'core/services/services.dart';
-import 'plugins/graph/service/graph_service.dart';
+import 'core/ui_layout/ui_layout_service.dart';
+import 'core/utils/logger.dart';
 import 'ui/bloc/ui_bloc.dart';
 import 'ui/pages/home_page.dart';
+
+const _log = AppLogger('App');
 
 /// 应用程序的主类
 ///
@@ -51,6 +68,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   late NodeRepository _nodeRepository;
   late GraphRepository _graphRepository;
   late CommandBus _commandBus;
+  late QueryBus _queryBus;
   late AppEventBus _eventBus;
   late TaskRegistry _taskRegistry;
   late SettingsRegistry _settingsRegistry;
@@ -59,6 +77,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   late StoragePathService _storagePathService;
   late SharedPreferencesAsync _sharedPreferencesAsync;
   late ServiceRegistry _serviceRegistry;
+  late UILayoutService _layoutService;
   bool _isInitialized = false;
   Object? _initError;
 
@@ -70,50 +89,78 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
   Future<void> _initializeCore() async {
     try {
+      _log..info('Initializing core components...')
+      
       // 1. 初始化 SharedPreferences
+      ..info('Step 1: Initializing SharedPreferences...');
       final prefs = await SharedPreferences.getInstance();
+      _log.info('[App] ✓ SharedPreferences initialized');
 
       // 2. 初始化 SharedPreferencesAsync
       _sharedPreferencesAsync = SharedPreferencesAsync();
 
       // 3. 创建存储路径服务
+      _log.info('Step 2: Creating StoragePathService...');
       _storagePathService = StoragePathService(prefs);
 
       // 4. 获取存储路径
+      _log.info('Step 3: Getting storage paths...');
       final nodesPath = await _storagePathService.getNodesPath();
       final graphsPath = await _storagePathService.getGraphsPath();
+      _log.info('[App] ✓ Nodes path: $nodesPath');
+      _log.info('[App] ✓ Graphs path: $graphsPath');
 
       // 5. 初始化 Repositories
+      _log.info('Step 4: Initializing repositories...');
       _nodeRepository = FileSystemNodeRepository(nodesDir: nodesPath);
       _graphRepository = FileSystemGraphRepository(graphsDir: graphsPath);
 
       // FileSystemNodeRepository 和 FileSystemGraphRepository 的 init() 方法
       if (_nodeRepository is FileSystemNodeRepository) {
+        _log.info('Initializing NodeRepository...');
         await (_nodeRepository as FileSystemNodeRepository).init();
+        _log.info('[App] ✓ NodeRepository initialized');
       }
       if (_graphRepository is FileSystemGraphRepository) {
+        _log.info('Initializing GraphRepository...');
         await (_graphRepository as FileSystemGraphRepository).init();
+        _log.info('[App] ✓ GraphRepository initialized');
       }
 
       // 6. 初始化 CommandBus 和 EventBus
+      _log.info('Step 5: Creating CommandBus and EventBus...');
       _commandBus = _createCommandBus();
       _eventBus = AppEventBus();
+      _log.info('[App] ✓ CommandBus and EventBus created');
 
       // 7. 创建三个注册表
+      _log.info('Step 6: Creating registries...');
       _taskRegistry = TaskRegistry();
       _settingsRegistry = SettingsRegistry(prefs);
       _themeRegistry = ThemeRegistry();
+      _log.info('[App] ✓ Registries created');
 
       // 8. 初始化 ExecutionEngine（使用 TaskRegistry）
+      _log.info('Step 7: Initializing ExecutionEngine...');
       _executionEngine = ExecutionEngine();
       await _executionEngine.initialize(
         taskRegistry: _taskRegistry,
       );
+      _log.info('[App] ✓ ExecutionEngine initialized');
 
       // 9. 注册核心设置到 SettingsRegistry
+      _log.info('Step 8: Registering core settings...');
       _registerCoreSettings();
+      _log.info('[App] ✓ Core settings registered');
 
-      // 10. 创建动态服务注册表（新增）
+      // 10. 初始化 UILayoutService（在创建 ServiceRegistry 之前）
+      _log.info('Step 9: Initializing UILayoutService...');
+      _layoutService = UILayoutService(eventBus: _eventBus);
+      await _layoutService.initialize();
+      _log.info('[App] ✓ UILayoutService initialized');
+
+      // 11. 创建动态服务注册表（在 QueryBus 之前创建）
+      _log.info('Step 10: Creating ServiceRegistry...');
       _serviceRegistry = ServiceRegistry(
         coreDependencies: {
           NodeRepository: _nodeRepository,
@@ -124,17 +171,25 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           ThemeService: widget.themeService,
           SharedPreferencesAsync: _sharedPreferencesAsync,
           StoragePathService: _storagePathService,
+          UILayoutService: _layoutService,
         },
       );
+      _log.info('[App] ✓ ServiceRegistry created');
 
-      // 11. 在插件加载前注册核心服务
-      _registerCoreServices();
+      // 12. 创建 QueryBus（依赖 ServiceRegistry）
+      _log.info('Step 11: Creating QueryBus...');
+      _queryBus = _createQueryBus();
+      _log.info('[App] ✓ QueryBus created');
+
+      _log.info('[App] ✓ Core initialization completed successfully');
 
       setState(() {
         _isInitialized = true;
         _initError = null;
       });
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('App ✗ Initialization failed: $e');
+      _log.info('Stack trace: $st');
       setState(() {
         _isInitialized = false;
         _initError = e;
@@ -164,22 +219,6 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     ));
   }
 
-  /// 注册核心服务（在插件加载前注册）
-  ///
-  /// 这些服务需要在插件加载前注册，因为插件可能依赖它们。
-  /// 例如：GraphPlugin 依赖 GraphService。
-  void _registerCoreServices() {
-    // 注册 GraphService
-    // GraphService 依赖 GraphRepository 和 NodeRepository，这两个已经在 coreDependencies 中
-    _serviceRegistry.registerService(
-      'core',
-      _GraphServiceBinding(
-        graphRepository: _graphRepository,
-        nodeRepository: _nodeRepository,
-      ),
-    );
-  }
-
   /// 创建 CommandBus 并注册所有命令处理器
   CommandBus _createCommandBus() {
     // 创建中间件
@@ -203,6 +242,113 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     return commandBus;
   }
 
+  /// 创建 QueryBus 并注册查询处理器
+  ///
+  /// 性能优化说明：
+  /// QueryBus 提供 CQRS 读操作层，支持：
+  /// - 查询缓存（1000条目，LRU策略）
+  /// - 查询中间件（日志、监控等）
+  /// - 类型安全的查询/结果
+  ///
+  /// 架构说明：
+  /// QueryHandler 在此方法中注册，此时 ServiceRegistry 已可用
+  /// 所有 QueryHandler 从 ServiceRegistry 获取依赖的 Repository 和 Service
+  QueryBus _createQueryBus() {
+    final queryBus = QueryBus(
+      serviceRegistry: _serviceRegistry,
+      maxCacheSize: 1000,
+      defaultCacheTtl: const Duration(minutes: 5),
+    );
+
+    // 从 ServiceRegistry 获取依赖
+    final nodeRepository = _serviceRegistry.getServiceDirect<NodeRepository>();
+
+    // 创建搜索索引物化视图
+    final searchIndexView = SearchIndexMaterializedView();
+
+    // 注册节点查询处理器
+    queryBus..registerHandler<Node?, LoadNodeQuery>(
+      LoadNodeQuery,
+      () => LoadNodeQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, LoadNodesQuery>(
+      LoadNodesQuery,
+      () => LoadNodesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, LoadAllNodesQuery>(
+      LoadAllNodesQuery,
+      () => LoadAllNodesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<NodeReadModel>, ListNodesQuery>(
+      ListNodesQuery,
+      () => ListNodesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<NodeReadModel>, GetNodeReadModelsQuery>(
+      GetNodeReadModelsQuery,
+      () => GetNodeReadModelsQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, SearchNodesQuery>(
+      SearchNodesQuery,
+      () => SearchNodesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, FilterNodesQuery>(
+      FilterNodesQuery,
+      () => FilterNodesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, GetRecentNodesQuery>(
+      GetRecentNodesQuery,
+      () => GetRecentNodesQueryHandler(nodeRepository),
+    )
+
+    // 注册图查询处理器
+    ..registerHandler<List<Node>, GetNeighborNodesQuery>(
+      GetNeighborNodesQuery,
+      () => GetNeighborNodesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, GetOutgoingReferencesQuery>(
+      GetOutgoingReferencesQuery,
+      () => GetOutgoingReferencesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, GetIncomingReferencesQuery>(
+      GetIncomingReferencesQuery,
+      () => GetIncomingReferencesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>?, GetNodePathQuery>(
+      GetNodePathQuery,
+      () => GetNodePathQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<NodeDegree, GetNodeDegreeQuery>(
+      GetNodeDegreeQuery,
+      () => GetNodeDegreeQueryHandler(nodeRepository),
+    )
+
+    // 注册搜索索引查询处理器
+    ..registerHandler<List<NodeReadModel>, FastSearchQuery>(
+      FastSearchQuery,
+      () => FastSearchQueryHandler(searchIndexView, nodeRepository),
+    )
+
+    ..registerHandler<List<String>, GetPopularTokensQuery>(
+      GetPopularTokensQuery,
+      () => GetPopularTokensQueryHandler(searchIndexView),
+    );
+
+    _log.info('[App] ✓ Query handlers registered');
+
+    return queryBus;
+  }
+
   /// 初始化标准 Hook 点
   ///
   /// 在插件加载前注册所有标准 Hook 点，确保 Hook 系统可以正常工作
@@ -212,14 +358,24 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   /// - 保持与现有 Hook 代码的向后兼容
   /// - 使用点分隔的层级结构命名（如 'main.toolbar'）
   /// - 提供完整的元数据和上下文类型信息
+  /// - 插件可以动态注册自己的 Hook 点
   void _initializeStandardHookPoints() {
-    debugPrint('[App] Initializing standard hook points...');
+    _log.info('Initializing standard hook points...');
 
     // 主工具栏 Hook 点
     hookRegistry..registerHookPoint(const HookPointDefinition(
       id: 'main.toolbar',
       name: 'Main Toolbar',
       description: 'Main toolbar at the top of the application',
+      category: 'toolbar',
+      contextType: MainToolbarHookContext,
+    ))
+
+    // 图工具栏 Hook 点（用于可拖动工具栏）
+    ..registerHookPoint(const HookPointDefinition(
+      id: 'graph.toolbar',
+      name: 'Graph Toolbar',
+      description: 'Draggable toolbar in the graph view',
       category: 'toolbar',
       contextType: MainToolbarHookContext,
     ))
@@ -237,15 +393,6 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     ..registerHookPoint(const HookPointDefinition(
       id: 'context_menu.graph',
       name: 'Graph Context Menu',
-      description: 'Context menu when right-clicking on the graph background',
-      category: 'context_menu',
-      contextType: GraphContextMenuHookContext,
-    ))
-
-    // 侧边栏顶部 Hook 点
-    ..registerHookPoint(const HookPointDefinition(
-      id: 'sidebar.top',
-      name: 'Sidebar Top',
       description: 'Top section of the sidebar',
       category: 'sidebar',
       contextType: SidebarHookContext,
@@ -305,7 +452,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       contextType: HelpHookContext,
     ));
 
-    debugPrint('[App] ✓ Registered ${hookRegistry.getAllHookPoints().length} standard hook points');
+    _log.info('[App] ✓ Registered ${hookRegistry.getAllHookPoints().length} standard hook points');
   }
 
   /// 加载所有内置插件
@@ -313,17 +460,21 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   /// 这个方法会在 FutureBuilder 中被调用，确保插件加载完成后再显示应用界面
   Future<void> _loadPlugins(PluginManager pluginManager) async {
     try {
+      _log.info('Initializing plugin system...');
+
       // 在加载插件前初始化标准 Hook 点，确保插件可以正确注册到这些 Hook 点
       _initializeStandardHookPoints();
 
+      _log.info('Loading builtin plugins...');
       final loader = BuiltinPluginLoader(
         pluginManager: pluginManager,
         hookRegistry: hookRegistry,
       );
       final count = await loader.loadAllBuiltinPlugins();
-      debugPrint('[App] ✓ Loaded $count builtin plugins');
-    } catch (e) {
-      debugPrint('[App] ✗ Error loading builtin plugins: $e');
+      _log.info('[App] ✓ Loaded $count builtin plugins');
+    } catch (e, st) {
+      _log.warning('App ✗ Error loading builtin plugins: $e');
+      _log.info('Stack trace: $st');
       rethrow; // 让 FutureBuilder 捕获错误
     }
   }
@@ -528,23 +679,3 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     );
 }
 
-/// GraphService 绑定（核心版本）
-///
-/// 在插件加载前注册 GraphService，确保插件可以访问它
-class _GraphServiceBinding extends ServiceBinding<GraphService> {
-  /// 创建 GraphService 绑定
-  ///
-  /// [graphRepository] - 图仓库
-  /// [nodeRepository] - 节点仓库
-  _GraphServiceBinding({
-    required this.graphRepository,
-    required this.nodeRepository,
-  });
-
-  final GraphRepository graphRepository;
-  final NodeRepository nodeRepository;
-
-  @override
-  GraphService createService(ServiceResolver resolver) =>
-      GraphServiceImpl(graphRepository, nodeRepository);
-}

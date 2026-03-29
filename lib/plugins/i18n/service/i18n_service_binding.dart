@@ -1,8 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import '../../../../core/plugin/service_binding.dart';
 import '../../../../core/services/i18n.dart';
+import '../../../core/utils/logger.dart';
+
+const _log = AppLogger('I18nServiceBinding');
 
 /// I18nService 绑定
 ///
@@ -24,7 +26,7 @@ class I18nServiceBinding extends ServiceBinding<I18n> {
     // 不阻塞服务创建，初始化在后台进行
     i18n.initialize().catchError((error) {
       // 初始化失败不影响服务创建，使用默认语言
-      debugPrint('[I18nServiceBinding] Failed to initialize: $error');
+      _log.info('Failed to initialize: $error');
     });
 
     return i18n;

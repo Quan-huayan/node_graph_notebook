@@ -14,17 +14,17 @@ class NodeState extends Equatable {
     this.selectedNodeIds = const {},
   }) : nodesMap = {for (var node in nodes) node.id: node};
 
+  factory NodeState.initial() => _initialState;
+
   /// 初始状态 - 缓存以提高性能
   static final _emptyMap = <String, Node>{};
   static final _initialState = NodeState(
-      nodes: [],
+      nodes: const [],
       isLoading: false,
       error: null,
       selectedNode: null,
-      selectedNodeIds: {},
+      selectedNodeIds: const {},
     );
-
-  factory NodeState.initial() => _initialState;
 
   // 核心数据
   /// 节点列表

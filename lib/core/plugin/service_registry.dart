@@ -1,6 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:provider/single_child_widget.dart';
+
+import '../utils/logger.dart';
 import 'service_binding.dart';
+
+/// Service 注册表日志记录器
+const _log = AppLogger('ServiceRegistry');
 
 /// Service 注册表
 ///
@@ -18,12 +23,12 @@ class ServiceRegistry with ChangeNotifier {
   ServiceRegistry({Map<Type, dynamic>? coreDependencies})
       : _coreDependencies = coreDependencies ?? {},
         _instantiatedServices = {} {
-    debugPrint('[ServiceRegistry] =========================================');
-    debugPrint('[ServiceRegistry] ServiceRegistry 初始化');
-    debugPrint('[ServiceRegistry] =========================================');
-    debugPrint('[ServiceRegistry] 核心依赖数量: ${_coreDependencies.length}');
-    debugPrint('[ServiceRegistry] 核心依赖类型: ${_coreDependencies.keys.join(", ")}');
-    debugPrint('[ServiceRegistry] =========================================');
+
+    _log.info('ServiceRegistry 初始化');
+
+    _log.info('核心依赖数量: ${_coreDependencies.length}');
+    _log.info('核心依赖类型: ${_coreDependencies.keys.join(", ")}');
+
   }
 
   /// Service 绑定注册表
@@ -73,16 +78,16 @@ class ServiceRegistry with ChangeNotifier {
   void registerService<T>(String pluginId, ServiceBinding<T> binding) {
     final serviceType = binding.serviceType;
 
-    debugPrint('[ServiceRegistry] -----------------------------------------');
-    debugPrint('[ServiceRegistry] 开始注册服务');
-    debugPrint('[ServiceRegistry]   插件 ID: $pluginId');
-    debugPrint('[ServiceRegistry]   服务类型: $serviceType');
-    debugPrint('[ServiceRegistry]   是否懒加载: ${binding.isLazy}');
-    debugPrint('[ServiceRegistry]   是否单例: ${binding.isSingleton}');
+
+    _log.info('开始注册服务');
+
+
+
+
 
     // 检查是否已被注册
     if (_bindings.containsKey(serviceType)) {
-      debugPrint('[ServiceRegistry] ✗ 注册失败: 服务已存在');
+      _log.warning('ServiceRegistry ✗ 注册失败: 服务已存在');
       throw ServiceRegistrationException(
         'Service $serviceType is already registered',
       );
@@ -94,25 +99,19 @@ class ServiceRegistry with ChangeNotifier {
     // 记录插件提供的 Service
     _pluginServices.putIfAbsent(pluginId, () => {}).add(serviceType);
 
-    debugPrint('[ServiceRegistry] ✓ 绑定已注册到注册表');
+    _log.info('[ServiceRegistry] ✓ 绑定已注册到注册表');
 
     // === 立即实例化服务（除非标记为懒加载）===
     // 懒加载的服务只在第一次被请求时创建
     if (!binding.isLazy) {
-      debugPrint('[ServiceRegistry] 正在立即实例化服务...');
+      _log.info('正在立即实例化服务...');
       try {
         final instance = _createServiceInstance(binding);
         _instantiatedServices[serviceType] = instance;
 
-        debugPrint('[ServiceRegistry] ✓ 服务实例化成功');
-        debugPrint('[ServiceRegistry]   实例类型: ${instance.runtimeType}');
-        debugPrint('[ServiceRegistry]   实例哈希: ${instance.hashCode}');
-
-        debugPrint(
-          '[ServiceRegistry] Instantiated $serviceType from $pluginId',
-        );
+        _log.info('[ServiceRegistry] ✓ 服务实例化成功');
       } catch (e) {
-        debugPrint('[ServiceRegistry] ✗ 实例化失败: $e');
+        _log.warning('ServiceRegistry ✗ 实例化失败: $e');
         // 实例化失败，回滚注册
         _bindings.remove(serviceType);
         _pluginServices[pluginId]?.remove(serviceType);
@@ -121,19 +120,16 @@ class ServiceRegistry with ChangeNotifier {
         );
       }
     } else {
-      debugPrint('[ServiceRegistry] 服务标记为懒加载，延迟实例化');
-      debugPrint(
-        '[ServiceRegistry] Registered lazy service $serviceType from $pluginId',
-      );
+      _log.info('服务标记为懒加载，延迟实例化');
     }
 
-    debugPrint('[ServiceRegistry] 当前已注册服务总数: ${_bindings.length}');
-    debugPrint('[ServiceRegistry] 当前已实例化服务总数: ${_instantiatedServices.length}');
-    debugPrint('[ServiceRegistry] -----------------------------------------');
+    _log.info('当前已注册服务总数: ${_bindings.length}');
+    _log.info('当前已实例化服务总数: ${_instantiatedServices.length}');
+
 
     // 通知监听器（触发 Provider 树重建）
     notifyListeners();
-    debugPrint('[ServiceRegistry] 已通知监听器，Provider 树将重建');
+    _log.info('已通知监听器，Provider 树将重建');
   }
 
   /// 批量注册 Service 绑定
@@ -152,21 +148,21 @@ class ServiceRegistry with ChangeNotifier {
   ///
   /// 在插件卸载时调用，释放相关 Service 资源
   void unregisterPluginServices(String pluginId) {
-    debugPrint('[ServiceRegistry] -----------------------------------------');
-    debugPrint('[ServiceRegistry] 开始注销插件服务');
-    debugPrint('[ServiceRegistry]   插件 ID: $pluginId');
+
+    _log.info('开始注销插件服务');
+
 
     final serviceTypes = _pluginServices[pluginId];
     if (serviceTypes == null) {
-      debugPrint('[ServiceRegistry] ✗ 插件没有注册的服务');
+      _log.warning('ServiceRegistry ✗ 插件没有注册的服务');
       return;
     }
 
-    debugPrint('[ServiceRegistry]   服务数量: ${serviceTypes.length}');
-    debugPrint('[ServiceRegistry]   服务类型: ${serviceTypes.join(", ")}');
+
+
 
     for (final serviceType in serviceTypes) {
-      debugPrint('[ServiceRegistry] 正在注销服务: $serviceType');
+      _log.info('正在注销服务: $serviceType');
       
       final binding = _bindings[serviceType];
       final instance = _instances[serviceType];
@@ -175,19 +171,19 @@ class ServiceRegistry with ChangeNotifier {
       // 释放资源（优先释放立即实例化的服务）
       if (binding != null && instantiatedInstance != null) {
         try {
-          debugPrint('[ServiceRegistry] 正在释放立即实例化的服务...');
+          _log.info('正在释放立即实例化的服务...');
           binding.dispose(instantiatedInstance);
-          debugPrint('[ServiceRegistry] ✓ 服务资源释放成功');
+          _log.info('[ServiceRegistry] ✓ 服务资源释放成功');
         } catch (e) {
-          debugPrint('[ServiceRegistry] ✗ 释放服务资源失败: $e');
+          _log.warning('ServiceRegistry ✗ 释放服务资源失败: $e');
         }
       } else if (binding != null && instance != null) {
         try {
-          debugPrint('[ServiceRegistry] 正在释放延迟实例化的服务...');
+          _log.info('正在释放延迟实例化的服务...');
           binding.dispose(instance);
-          debugPrint('[ServiceRegistry] ✓ 服务资源释放成功');
+          _log.info('[ServiceRegistry] ✓ 服务资源释放成功');
         } catch (e) {
-          debugPrint('[ServiceRegistry] ✗ 释放服务资源失败: $e');
+          _log.warning('ServiceRegistry ✗ 释放服务资源失败: $e');
         }
       }
 
@@ -196,25 +192,19 @@ class ServiceRegistry with ChangeNotifier {
       _instances.remove(serviceType);
       _instantiatedServices.remove(serviceType);
       
-      debugPrint('[ServiceRegistry] ✓ 服务已从注册表移除');
+      _log.info('[ServiceRegistry] ✓ 服务已从注册表移除');
     }
 
     // 移除插件记录
     _pluginServices.remove(pluginId);
 
-    debugPrint('[ServiceRegistry] ✓ 插件服务注销完成');
-    debugPrint('[ServiceRegistry]   剩余已注册服务: ${_bindings.length}');
-    debugPrint('[ServiceRegistry]   剩余已实例化服务: ${_instantiatedServices.length}');
+    _log.info('[ServiceRegistry] ✓ 插件服务注销完成');
 
-    debugPrint(
-      '[ServiceRegistry] Unregistered ${serviceTypes.length} services from $pluginId',
-    );
 
-    debugPrint('[ServiceRegistry] -----------------------------------------');
 
     // 通知监听器（触发 Provider 树重建）
     notifyListeners();
-    debugPrint('[ServiceRegistry] 已通知监听器，Provider 树将重建');
+    _log.info('已通知监听器，Provider 树将重建');
   }
 
   /// 生成 Provider 列表
@@ -232,15 +222,15 @@ class ServiceRegistry with ChangeNotifier {
   /// )
   /// ```
   List<SingleChildWidget> generateProviders() {
-    debugPrint('[ServiceRegistry] =========================================');
-    debugPrint('[ServiceRegistry] 开始生成 Provider 列表');
-    debugPrint('[ServiceRegistry] 当前已注册服务数量: ${_bindings.length}');
+
+    _log.info('开始生成 Provider 列表');
+    _log.info('当前已注册服务数量: ${_bindings.length}');
     
     // 使用拓扑排序确定 Provider 顺序
     final sortedTypes = _topologicalSort();
-    debugPrint('[ServiceRegistry] 拓扑排序完成，Provider 顺序:');
+    _log.info('拓扑排序完成，Provider 顺序:');
     for (var i = 0; i < sortedTypes.length; i++) {
-      debugPrint('[ServiceRegistry]   $i. ${sortedTypes[i]}');
+      _log.info('  $i. ${sortedTypes[i]}');
     }
     
     final providers = <SingleChildWidget>[];
@@ -249,11 +239,11 @@ class ServiceRegistry with ChangeNotifier {
       final binding = _bindings[type]!;
       final provider = _createValueProvider(binding);
       providers.add(provider);
-      debugPrint('[ServiceRegistry] ✓ 已创建 Provider: $type');
+      _log.info('[ServiceRegistry] ✓ 已创建 Provider: $type');
     }
 
-    debugPrint('[ServiceRegistry] Provider 列表生成完成，总数: ${providers.length}');
-    debugPrint('[ServiceRegistry] =========================================');
+    _log.info('Provider 列表生成完成，总数: ${providers.length}');
+
     
     return providers;
   }
@@ -388,7 +378,7 @@ class ServiceRegistry with ChangeNotifier {
 
         return instance as T;
       } catch (e) {
-        debugPrint('[ServiceRegistry] Error creating service $serviceType: $e');
+        _log.info('Error creating service $serviceType: $e');
         return null;
       }
     }
@@ -409,65 +399,71 @@ class ServiceRegistry with ChangeNotifier {
   T getServiceDirect<T>() {
     final serviceType = T;
 
-    debugPrint('[ServiceRegistry] -----------------------------------------');
-    debugPrint('[ServiceRegistry] 直接获取服务实例');
-    debugPrint('[ServiceRegistry]   服务类型: $serviceType');
+
+    _log.info('直接获取服务实例');
+
 
     // 1. 优先从立即实例化缓存获取
     if (_instantiatedServices.containsKey(serviceType)) {
       final instance = _instantiatedServices[serviceType] as T;
-      debugPrint('[ServiceRegistry] ✓ 从立即实例化缓存获取成功');
-      debugPrint('[ServiceRegistry]   实例哈希: ${instance.hashCode}');
-      debugPrint('[ServiceRegistry] -----------------------------------------');
+      _log.info('[ServiceRegistry] ✓ 从立即实例化缓存获取成功');
+
+
       return instance;
     }
 
-    debugPrint('[ServiceRegistry] 立即实例化缓存中未找到');
+    _log.info('立即实例化缓存中未找到');
 
-    // 2. 检查是否是懒加载服务，如果是则创建实例
+    // 2. 检查核心依赖（NodeRepository, GraphRepository, CommandBus 等）
+    if (_coreDependencies.containsKey(serviceType)) {
+      final instance = _coreDependencies[serviceType] as T;
+      _log.info('[ServiceRegistry] ✓ 从核心依赖获取成功');
+
+
+      return instance;
+    }
+
+    _log.info('核心依赖中未找到');
+
+    // 3. 检查是否是懒加载服务，如果是则创建实例
     if (_bindings.containsKey(serviceType)) {
       final binding = _bindings[serviceType]!;
       if (binding.isLazy) {
-        debugPrint('[ServiceRegistry] 服务标记为懒加载，开始实例化...');
+        _log.info('服务标记为懒加载，开始实例化...');
         try {
           final instance = _createServiceInstance(binding);
           _instantiatedServices[serviceType] = instance;
-          debugPrint('[ServiceRegistry] ✓ 懒加载实例化成功');
-          debugPrint('[ServiceRegistry]   实例类型: ${instance.runtimeType}');
-          debugPrint('[ServiceRegistry]   实例哈希: ${instance.hashCode}');
-          debugPrint(
-            '[ServiceRegistry] Lazy instantiated $serviceType',
-          );
-          debugPrint('[ServiceRegistry] -----------------------------------------');
+          _log.info('[ServiceRegistry] ✓ 懒加载实例化成功');
+
           return instance;
         } catch (e) {
-          debugPrint('[ServiceRegistry] ✗ 懒加载实例化失败: $e');
+          _log.warning('ServiceRegistry ✗ 懒加载实例化失败: $e');
           throw ServiceNotFoundException(
             'Failed to instantiate lazy service $T: $e',
           );
         }
       } else {
-        debugPrint('[ServiceRegistry] 服务已注册但未实例化（非懒加载）');
+        _log.info('服务已注册但未实例化（非懒加载）');
       }
     }
 
-    debugPrint('[ServiceRegistry] 服务未在注册表中找到');
+    _log.info('服务未在注册表中找到');
 
-    // 3. 尝试从父类实例缓存获取
-    debugPrint('[ServiceRegistry] 尝试从父类实例缓存获取...');
+    // 4. 尝试从父类实例缓存获取
+    _log.info('尝试从父类实例缓存获取...');
     final parentInstance = getService<T>();
     if (parentInstance != null) {
-      debugPrint('[ServiceRegistry] ✓ 从父类实例缓存获取成功');
-      debugPrint('[ServiceRegistry]   实例哈希: ${parentInstance.hashCode}');
-      debugPrint('[ServiceRegistry] -----------------------------------------');
+      _log.info('[ServiceRegistry] ✓ 从父类实例缓存获取成功');
+
+
       return parentInstance;
     }
 
-    debugPrint('[ServiceRegistry] ✗ 父类实例缓存中也未找到');
+    _log.warning('ServiceRegistry ✗ 父类实例缓存中也未找到');
 
-    // 4. 如果都找不到，抛出异常
-    debugPrint('[ServiceRegistry] ✗ 服务查找失败，抛出异常');
-    debugPrint('[ServiceRegistry] -----------------------------------------');
+    // 5. 如果都找不到，抛出异常
+    _log.warning('ServiceRegistry ✗ 服务查找失败，抛出异常');
+
     throw ServiceNotFoundException(
       'Service $T not found in registry',
     );
@@ -510,7 +506,7 @@ class ServiceRegistry with ChangeNotifier {
         try {
           binding.dispose(entry.value);
         } catch (e) {
-          debugPrint('[ServiceRegistry] Error disposing ${entry.key}: $e');
+          _log.info('Error disposing ${entry.key}: $e');
         }
       }
     }
@@ -522,7 +518,7 @@ class ServiceRegistry with ChangeNotifier {
         try {
           binding.dispose(entry.value);
         } catch (e) {
-          debugPrint('[ServiceRegistry] Error disposing ${entry.key}: $e');
+          _log.info('Error disposing ${entry.key}: $e');
         }
       }
     }

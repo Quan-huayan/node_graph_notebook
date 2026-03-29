@@ -1,4 +1,8 @@
-import 'package:flutter/foundation.dart';
+
+import '../../utils/logger.dart';
+
+/// Logger for HookPointDefinition
+const _log = AppLogger('HookPointDefinition');
 
 /// Hook 点定义
 ///
@@ -94,13 +98,13 @@ class HookPointDefinition {
       final expectedType = entry.value;
 
       if (!contextData.containsKey(key)) {
-        debugPrint('[HookPointDefinition] Missing required context key: $key');
+        _log.info('Missing required context key: $key');
         return false;
       }
 
       final value = contextData[key];
       if (value != null && value.runtimeType != expectedType) {
-        debugPrint('[HookPointDefinition] Context key $key has wrong type: '
+        _log.warning('[HookPointDefinition] Context key $key has wrong type: '
             'expected $expectedType, got ${value.runtimeType}');
         return false;
       }
@@ -144,7 +148,7 @@ class HookPointRegistry {
     }
 
     _points[point.id] = point;
-    debugPrint('[HookPointRegistry] Registered hook point: ${point.id}');
+    _log.info('Registered hook point: ${point.id}');
   }
 
   /// 获取 Hook 点定义
@@ -179,7 +183,7 @@ class HookPointRegistry {
   void unregisterPoint(String id) {
     final removed = _points.remove(id);
     if (removed != null) {
-      debugPrint('[HookPointRegistry] Unregistered hook point: $id');
+      _log.info('Unregistered hook point: $id');
     }
   }
 

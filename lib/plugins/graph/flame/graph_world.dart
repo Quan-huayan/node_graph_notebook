@@ -2,11 +2,18 @@ import 'dart:async';
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../core/config/feature_flags.dart';
 import '../../../../core/execution/execution_engine.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/services/theme/app_theme.dart';
+import '../../../../core/ui_layout/coordinate_system.dart';
+import '../../../../core/ui_layout/rendering/flame_renderer.dart';
+import '../../../../core/ui_layout/ui_layout_service.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../ui/bloc/ui_state.dart';
 import '../../ai/ui/ai_chat_dialog.dart';
 import '../../editor/ui/markdown_editor_page.dart';
@@ -17,6 +24,10 @@ import 'components/connection_renderer.dart';
 import 'components/node_component.dart';
 import 'graph_widget.dart';
 import 'mixins/bloc_consumer.dart';
+import 'spatial_index_manager.dart';
+import 'view_frustum_culler.dart';
+
+const _log = AppLogger('GraphWorld');
 
 /// 图世界 - Flame 的根组件（BLoC 集成版本）
 class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
@@ -40,8 +51,22 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   /// 执行引擎
   final ExecutionEngine? executionEngine;
 
+  /// 是否使用新的UI布局系统
+  bool get _useNewLayoutSystem =>
+      LayoutFeatureFlags.useNewLayoutSystem ||
+      LayoutFeatureFlags.useNewLayoutSystemForGraph;
+
   late final ConnectionRenderer _connectionRenderer;
   final Map<String, NodeComponent> _nodeComponents = {};
+
+  /// 空间索引管理器
+  late final SpatialIndexManager _spatialIndex;
+
+  /// 视锥裁剪管理器
+  late final ViewFrustumCuller _viewFrustumCuller;
+
+  /// 是否启用视锥裁剪
+  bool get enableViewFrustumCulling => true;
 
   // 🔥 性能优化：位置缓存机制，避免每帧重复计算
   final Map<String, Vector2> _positionCache = {};
@@ -50,6 +75,23 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+
+    // === 性能优化：初始化空间索引和视锥裁剪 ===
+    // 创建空间索引管理器
+    _spatialIndex = SpatialIndexManager(
+      capacity: 16,
+      maxDepth: 8,
+    );
+
+    // 初始化空间索引（使用10000x10000的世界边界）
+    _spatialIndex.init(const Rect.fromLTWH(0, 0, 10000, 10000));
+
+    // 创建视锥裁剪管理器
+    _viewFrustumCuller = ViewFrustumCuller(
+      updateInterval: 0.1, // 每100ms更新一次
+      paddingFactor: 1.2, // 扩展20%可见区域
+    );
+    _viewFrustumCuller.init(_spatialIndex, this);
 
     // 添加背景组件（处理空白区域拖拽）
     add(
@@ -65,6 +107,113 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
       ),
     );
 
+    // 根据特性开关选择渲染方式
+     // 根据特性开关选择渲染方式
+    if (_useNewLayoutSystem) {
+      await _loadWithNewLayoutSystem();
+    } else {
+      await _loadWithLegacySystem();
+    }
+
+    // 订阅 BLoC 状态变化
+    _subscribeToBloc();
+  }
+
+  /// 使用新的UILayoutService系统加载
+  Future<void> _loadWithNewLayoutSystem() async {
+    try {
+      final layoutService = context.read<UILayoutService>();
+
+      // 创建连接渲染器（先添加，在底层）
+      _connectionRenderer = ConnectionRenderer(
+        connections: graphBloc.state.connections,
+        nodePositions: _getNodePositions(),
+        theme: theme,
+        showConnections: graphBloc.state.viewState.showConnections,
+      );
+      add(_connectionRenderer);
+
+      final renderer = FlameRenderer(
+        nodeComponentBuilder: (nodeId, attachment, renderContext) {
+          // 从GraphBloc获取Node对象
+          final node = graphBloc.state.nodes.firstWhere(
+            (n) => n.id == nodeId,
+            orElse: () => graphBloc.state.nodes.first,
+          );
+
+          // 创建NodeComponent
+          final component = NodeComponent(
+            node: node,
+            viewConfig: graphBloc.state.graph.viewConfig,
+            theme: theme,
+            bloc: graphBloc,
+            onDragUpdateCallback: (Node updatedNode, Offset position) {
+              // 拖拽过程中实时更新连线位置
+              _updateConnectionRenderer();
+              // 更新空间索引
+              _spatialIndex.updateNodePosition(
+                updatedNode.id,
+                Vector2(updatedNode.position.dx.toDouble(), updatedNode.position.dy.toDouble()),
+              );
+              // 更新UILayoutService中的位置
+              if (_useNewLayoutSystem) {
+                try {
+                  layoutService.updateNodePosition(
+                    nodeId: updatedNode.id,
+                    newPosition: LocalPosition.absolute(position.dx, position.dy),
+                  );
+                } catch (e) {
+                  // 静默失败，不影响拖拽功能
+                }
+              }
+            },
+            onSecondaryTap: (Node node, Offset position) {
+              // 右键点击显示上下文菜单
+              showNodeContextMenu(context, node: node, position: position);
+            },
+            onDoubleTap: (Node node) {
+              // 双击节点时打开 Markdown 编辑器
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (ctx) => MarkdownEditorPage(node: node)),
+              );
+            },
+            onAIChatTap: (Node node) {
+              // AI 节点点击时显示聊天对话框
+              _showAIChatDialog(node);
+            },
+          );
+
+          // 保存到组件映射
+          _nodeComponents[nodeId] = component;
+
+          // 添加到空间索引
+          _spatialIndex.addNode(component);
+
+          return component;
+        },
+      );
+
+      final graphHook = layoutService.getHook('graph');
+      if (graphHook != null) {
+        final component = renderer.render(
+          graphHook,
+          {'gameWorld': this},
+        );
+        add(component);
+      } else {
+        // 如果Hook不存在，回退到旧实现
+        await _loadWithLegacySystem();
+      }
+    } catch (e) {
+      _log.warning('Failed to use new layout system, falling back: $e');
+      await _loadWithLegacySystem();
+    }
+  }
+
+  /// 使用旧的系统加载
+  Future<void> _loadWithLegacySystem() async {
+
     // 创建连接渲染器（先添加，在底层）
     // 🔥 优化：初始化时使用空位置映射，避免在组件创建前遍历
     _connectionRenderer = ConnectionRenderer(
@@ -77,9 +226,6 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
 
     // 创建初始节点组件
     graphBloc.state.nodes.forEach(_addNodeComponent);
-
-    // 订阅 BLoC 状态变化
-    _subscribeToBloc();
   }
 
   /// 订阅 BLoC 状态变化
@@ -266,6 +412,11 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
         // 🔥 优化：拖拽过程中只标记被拖拽节点为脏，避免全量重新计算
         _markPositionDirty(node.id);
         _updateConnectionRenderer();
+        // 更新空间索引
+        _spatialIndex.updateNodePosition(
+          node.id,
+          Vector2(node.position.dx.toDouble(), node.position.dy.toDouble()),
+        );
       },
       onSecondaryTap: (Node node, Offset position) {
         // 右键点击显示上下文菜单
@@ -285,6 +436,9 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     );
     add(component);
     _nodeComponents[node.id] = component;
+
+    // 添加到空间索引
+    _spatialIndex.addNode(component);
 
     // 🔥 优化：初始化节点位置缓存
     _positionCache[node.id] = component.position + component.size / 2;
@@ -336,6 +490,9 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   void _removeNodeComponent(String nodeId) {
     final component = _nodeComponents.remove(nodeId);
     if (component != null) {
+      // 从空间索引中移除
+      _spatialIndex.removeNode(nodeId);
+      // 从组件树中移除
       remove(component);
     }
   }
@@ -344,8 +501,14 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   void _updateNodeComponent(Node node) {
     final component = _nodeComponents[node.id];
     if (component != null) {
+      // 检查位置是否变化
       final oldPosition = component.position.clone();
       component.updateNode(node);
+
+      // 如果位置变化，更新空间索引
+      if (oldPosition != component.position) {
+        _spatialIndex.updateNodePosition(node.id, component.position);
+      }
 
       // 🔥 优化：只在位置真正改变时标记为脏
       if (component.position != oldPosition) {
@@ -420,6 +583,23 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
       builder: (dialogContext) =>
           AIChatDialog(aiNode: aiNode, connectedNodes: connectedNodes),
     );
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // === 性能优化：视锥裁剪 ===
+    // 只在启用时更新可见节点
+    if (enableViewFrustumCulling) {
+      final camera = game.camera;
+
+      // 获取可见矩形
+      final visibleRect = camera.visibleWorldRect;
+
+      // 更新可见节点
+      _viewFrustumCuller.updateVisibleNodes(camera, visibleRect, dt);
+    }
   }
 }
 

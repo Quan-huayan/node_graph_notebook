@@ -101,10 +101,7 @@ class ConvertPreviewPanel extends StatelessWidget {
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
-              leading: Icon(
-                node.isConcept ? Icons.category : Icons.note,
-                color: node.isConcept ? Colors.orange : null,
-              ),
+              leading: const Icon(Icons.note),
               title: Text(node.title),
               subtitle: Text(
                 '${node.content?.length ?? 0} characters, ${node.references.length} references',

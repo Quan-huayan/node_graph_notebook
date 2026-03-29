@@ -4,8 +4,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
+import '../graph/adjacency_list.dart';
 import '../models/models.dart';
+import '../utils/logger.dart';
+import '../utils/yaml_utils.dart';
 import 'exceptions.dart';
+
+/// Logger for FileSystemNodeRepository
+const _log = AppLogger('FileSystemNodeRepository');
 
 /// 节点仓库接口
 ///
@@ -85,10 +91,27 @@ class FileSystemNodeRepository implements NodeRepository {
   /// 创建文件系统节点仓库
   ///
   /// [nodesDir]: 节点文件存储目录，默认为 'data/nodes'
-  FileSystemNodeRepository({String nodesDir = 'data/nodes'})
-    : _nodesDir = nodesDir;
+  /// [useAdjacencyList]: 是否使用邻接表优化图查询，默认为true
+  FileSystemNodeRepository({
+    String nodesDir = 'data/nodes',
+    bool useAdjacencyList = true,
+  })  : _nodesDir = nodesDir,
+        _useAdjacencyList = useAdjacencyList {
+    if (_useAdjacencyList) {
+      _adjacencyList = AdjacencyList(storageDir: path.join(nodesDir, '../graph'));
+    }
+  }
 
   final String _nodesDir;
+  final bool _useAdjacencyList;
+
+  /// 邻接表（用于优化图查询）
+  AdjacencyList? _adjacencyList;
+
+  /// 获取邻接表
+  ///
+  /// 如果邻接表未初始化，返回null
+  AdjacencyList? get adjacencyList => _adjacencyList;
 
   /// 初始化节点存储目录
   ///
@@ -111,6 +134,18 @@ class FileSystemNodeRepository implements NodeRepository {
     } catch (e) {
       throw RepositoryException('Nodes directory is not writable: $e');
     }
+
+    // 初始化邻接表
+    if (_useAdjacencyList && _adjacencyList != null) {
+      await _adjacencyList!.init();
+
+      // 如果邻接表为空，从现有节点构建
+      if (_adjacencyList!.nodeCount == 0) {
+        final nodes = await queryAll();
+        _adjacencyList!.buildFromNodes(nodes);
+        await _adjacencyList!.save();
+      }
+    }
   }
 
   @override
@@ -119,6 +154,20 @@ class FileSystemNodeRepository implements NodeRepository {
     final content = _generateNodeMarkdown(node);
     await file.writeAsString(content);
     await updateIndex(node);
+
+    // 更新邻接表
+    if (_useAdjacencyList && _adjacencyList != null) {
+      // 移除旧的关系
+      _adjacencyList!.removeNode(node.id);
+
+      // 添加新的关系
+      for (final referencedId in node.references.keys) {
+        _adjacencyList!.addEdge(node.id, referencedId);
+      }
+
+      // 异步保存邻接表
+      _adjacencyList!.save();
+    }
   }
 
   @override
@@ -140,18 +189,24 @@ class FileSystemNodeRepository implements NodeRepository {
     if (file.existsSync()) {
       await file.delete();
     }
+
+    // 从邻接表中移除节点
+    if (_useAdjacencyList && _adjacencyList != null) {
+      _adjacencyList!.removeNode(nodeId);
+      await _adjacencyList!.save();
+    }
   }
 
   @override
   Future<void> saveAll(List<Node> nodes) async {
-    debugPrint('=== saveAll ===');
+    _log.debug('=== saveAll ===');
     for (final node in nodes) {
-      debugPrint(
+      _log.debug(
         'Saving node: ${node.title} with ${node.references.length} references',
       );
       await save(node);
     }
-    debugPrint('saveAll completed');
+    _log.debug('saveAll completed');
   }
 
   @override
@@ -194,7 +249,7 @@ class FileSystemNodeRepository implements NodeRepository {
           } catch (e) {
             // 记录损坏的文件，但继续处理其他文件
             corruptedFiles.add(entity.path);
-            debugPrint('Failed to load node file ${entity.path}: $e');
+            _log.warning('Failed to load node file ${entity.path}: $e');
           }
         }
       }
@@ -207,7 +262,7 @@ class FileSystemNodeRepository implements NodeRepository {
       try {
         await _cleanupIndex(nodes.map((n) => n.id).toSet());
       } catch (e) {
-        debugPrint('Failed to cleanup index: $e');
+        _log.warning('Failed to cleanup index: $e');
       }
     }
 
@@ -277,7 +332,7 @@ class FileSystemNodeRepository implements NodeRepository {
       );
     } catch (e) {
       // 索引文件损坏，返回空索引并重新构建
-      debugPrint('Index file corrupted, rebuilding: $e');
+      _log.warning('Index file corrupted, rebuilding: $e');
       return MetadataIndex(nodes: [], lastUpdated: DateTime.now());
     }
   }
@@ -377,10 +432,49 @@ class FileSystemNodeRepository implements NodeRepository {
   }
 
   /// 解析节点 Markdown 文件
+  ///
+  /// [markdown] Markdown 文件内容
+  /// [nodeId] 节点 ID（用于回退）
+  ///
+  /// 返回解析后的 Node 对象
   Node _parseNodeMarkdown(String markdown, String nodeId) {
     final lines = markdown.split('\n');
 
     // 解析 Frontmatter
+    final frontmatterData = _parseFrontmatter(lines);
+    final frontmatter = frontmatterData.$1;
+    final frontmatterEnd = frontmatterData.$2;
+
+    // 解析内容和标题
+    final contentData = _parseContentAndTitle(lines, frontmatter, frontmatterEnd);
+    final title = contentData.$1;
+    final content = contentData.$2;
+
+    // 解析引用
+    final references = _parseReferences(frontmatter);
+
+    return Node(
+      id: _parseStringValue(frontmatter['id']) ?? nodeId,
+      title: title ?? 'Untitled',
+      content: content,
+      references: references,
+      position: _parseOffset(frontmatter['position'] as Map<String, dynamic>?),
+      size: _parseSize(frontmatter['size'] as Map<String, dynamic>?),
+      viewMode:
+          NodeViewMode.values.firstOrNull ?? NodeViewMode.titleWithPreview,
+      color: _parseStringValue(frontmatter['color']),
+      createdAt: _parseDateTime(frontmatter['created_at']),
+      updatedAt: _parseDateTime(frontmatter['updated_at']),
+      metadata: frontmatter['metadata'] as Map<String, dynamic>? ?? {},
+    );
+  }
+
+  /// 解析 Markdown Frontmatter
+  ///
+  /// [lines] Markdown 文件的行列表
+  ///
+  /// 返回一个元组：(frontmatter Map, frontmatter 结束行索引)
+  (Map<String, dynamic>, int) _parseFrontmatter(List<String> lines) {
     var frontmatter = <String, dynamic>{};
     var frontmatterEnd = 0;
 
@@ -396,7 +490,21 @@ class FileSystemNodeRepository implements NodeRepository {
       frontmatter = _parseYamlMap(frontmatterLines.join('\n'));
     }
 
-    // 解析内容并提取第一个 # title（只提取一级标题）
+    return (frontmatter, frontmatterEnd);
+  }
+
+  /// 解析内容和标题
+  ///
+  /// [lines] Markdown 文件的行列表
+  /// [frontmatter] Frontmatter 元数据
+  /// [frontmatterEnd] Frontmatter 结束行索引
+  ///
+  /// 返回一个元组：(title, content)
+  (String?, String) _parseContentAndTitle(
+    List<String> lines,
+    Map<String, dynamic> frontmatter,
+    int frontmatterEnd,
+  ) {
     final contentLines = lines.skip(frontmatterEnd).toList();
     var title = _parseStringValue(frontmatter['title']);
     var content = '';
@@ -445,50 +553,48 @@ class FileSystemNodeRepository implements NodeRepository {
       }
     }
 
-    // 解析引用
+    return (title, content);
+  }
+
+  /// 解析节点引用
+  ///
+  /// [frontmatter] Frontmatter 元数据
+  ///
+  /// 返回节点 ID 到 NodeReference 的映射
+  Map<String, NodeReference> _parseReferences(Map<String, dynamic> frontmatter) {
     final references = <String, NodeReference>{};
-    if (frontmatter.containsKey('references')) {
-      (frontmatter['references'] as Map<String, dynamic>).forEach((key, value) {
-        final refData = value as Map<String, dynamic>;
 
-        // 构建 properties Map
-        final properties = <String, dynamic>{};
-
-        // 解析 type（必需）
-        properties['type'] = _parseStringValue(refData['type']) ?? 'relatesTo';
-
-        // 解析 role（可选）
-        final role = _parseStringValue(refData['role']);
-        if (role != null) {
-          properties['role'] = role;
-        }
-
-        // 合并 metadata 中的其他属性
-        if (refData.containsKey('metadata')) {
-          final metadata = refData['metadata'] as Map<String, dynamic>?;
-          if (metadata != null) {
-            properties.addAll(metadata);
-          }
-        }
-
-        references[key] = NodeReference(nodeId: key, properties: properties);
-      });
+    if (!frontmatter.containsKey('references')) {
+      return references;
     }
 
-    return Node(
-      id: _parseStringValue(frontmatter['id']) ?? nodeId,
-      title: title ?? 'Untitled',
-      content: content,
-      references: references,
-      position: _parseOffset(frontmatter['position'] as Map<String, dynamic>?),
-      size: _parseSize(frontmatter['size'] as Map<String, dynamic>?),
-      viewMode:
-          NodeViewMode.values.firstOrNull ?? NodeViewMode.titleWithPreview,
-      color: _parseStringValue(frontmatter['color']),
-      createdAt: _parseDateTime(frontmatter['created_at']),
-      updatedAt: _parseDateTime(frontmatter['updated_at']),
-      metadata: frontmatter['metadata'] as Map<String, dynamic>? ?? {},
-    );
+    (frontmatter['references'] as Map<String, dynamic>).forEach((key, value) {
+      final refData = value as Map<String, dynamic>;
+
+      // 构建 properties Map
+      final properties = <String, dynamic>{};
+
+      // 解析 type（必需）
+      properties['type'] = _parseStringValue(refData['type']) ?? 'relatesTo';
+
+      // 解析 role（可选）
+      final role = _parseStringValue(refData['role']);
+      if (role != null) {
+        properties['role'] = role;
+      }
+
+      // 合并 metadata 中的其他属性
+      if (refData.containsKey('metadata')) {
+        final metadata = refData['metadata'] as Map<String, dynamic>?;
+        if (metadata != null) {
+          properties.addAll(metadata);
+        }
+      }
+
+      references[key] = NodeReference(nodeId: key, properties: properties);
+    });
+
+    return references;
   }
 
   /// 安全地解析字符串值
@@ -557,156 +663,10 @@ class FileSystemNodeRepository implements NodeRepository {
     return value.toString();
   }
 
-  Map<String, dynamic> _parseYamlMap(String yaml) {
-    final result = <String, dynamic>{};
-    final lines = yaml.split('\n');
-    _parseYamlBlock(lines, 0, result);
-    return result;
-  }
-
-  /// 递归解析 YAML 块
-  /// 返回处理到的行索引
-  int _parseYamlBlock(
-    List<String> lines,
-    int startIndex,
-    Map<String, dynamic> output,
-  ) {
-    var i = startIndex;
-    int? baseIndent;
-
-    while (i < lines.length) {
-      final line = lines[i];
-      final trimmed = line.trim();
-
-      // Skip empty lines and comments
-      if (trimmed.isEmpty || trimmed.startsWith('#')) {
-        i++;
-        continue;
-      }
-
-      // Stop at frontmatter delimiter
-      if (trimmed == '---') {
-        break;
-      }
-
-      final indent = line.length - line.trimLeft().length;
-      baseIndent ??= indent;
-
-      // 如果缩进小于基础缩进，说明到了上一层
-      if (indent < baseIndent) {
-        break;
-      }
-
-      final match = RegExp(r'^([^:]+):\s*(.*)$').firstMatch(trimmed);
-
-      if (match != null) {
-        final key = match.group(1)!.trim();
-        final valueStr = match.group(2)!.trim();
-
-        if (valueStr.isEmpty) {
-          // 可能是嵌套对象或列表，需要向前看
-          i++;
-          if (i >= lines.length) break;
-
-          final nextLine = lines[i];
-          if (nextLine.trim().startsWith('-')) {
-            // 这是一个列表
-            final list = <dynamic>[];
-            while (i < lines.length) {
-              if (lines[i].trim().isEmpty || lines[i].trim().startsWith('#')) {
-                i++;
-                continue;
-              }
-              final nextIndent = lines[i].length - lines[i].trimLeft().length;
-              if (nextIndent <= baseIndent) break;
-
-              final itemTrimmed = lines[i].trim();
-              if (!itemTrimmed.startsWith('-')) break;
-
-              final itemContent = itemTrimmed.substring(1).trim();
-              final itemMatch = RegExp(
-                r'^([^:]+):\s*(.*)$',
-              ).firstMatch(itemContent);
-
-              if (itemMatch != null) {
-                // 列表项是对象
-                final itemMap = <String, dynamic>{};
-                final itemKey = itemMatch.group(1)!.trim();
-                final itemValue = itemMatch.group(2)!.trim();
-                itemMap[itemKey] = _parseYamlValue(itemValue);
-
-                // 检查是否有更多属性
-                i++;
-                while (i < lines.length) {
-                  if (lines[i].trim().isEmpty) {
-                    i++;
-                    continue;
-                  }
-                  final attrIndent =
-                      lines[i].length - lines[i].trimLeft().length;
-                  if (attrIndent <= nextIndent) break;
-
-                  final attrMatch = RegExp(
-                    r'^([^:]+):\s*(.*)$',
-                  ).firstMatch(lines[i].trim());
-                  if (attrMatch != null) {
-                    final attrKey = attrMatch.group(1)!.trim();
-                    final attrValue = attrMatch.group(2)!.trim();
-                    itemMap[attrKey] = _parseYamlValue(attrValue);
-                  }
-                  i++;
-                }
-                list.add(itemMap);
-              } else {
-                // 简单值
-                list.add(_parseYamlValue(itemContent));
-                i++;
-              }
-            }
-            output[key] = list;
-          } else {
-            // 这是一个嵌套对象
-            final nestedMap = <String, dynamic>{};
-            i = _parseYamlBlock(lines, i, nestedMap);
-            output[key] = nestedMap;
-          }
-        } else {
-          // 简单值
-          output[key] = _parseYamlValue(valueStr);
-          i++;
-        }
-      } else {
-        i++;
-      }
-    }
-
-    return i;
-  }
-
-  dynamic _parseYamlValue(String value) {
-    // 布尔值
-    if (value == 'true') return true;
-    if (value == 'false') return false;
-
-    // 数字
-    final parsedNum = num.tryParse(value);
-    if (parsedNum != null) return parsedNum;
-
-    // 带引号的字符串
-    if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) {
-      return value.substring(1, value.length - 1);
-    }
-
-    // 数组格式 [a, b, c]
-    if (value.startsWith('[') && value.endsWith(']')) {
-      final items = value.substring(1, value.length - 1).split(',');
-      return items.map((e) => e.trim()).toList();
-    }
-
-    // 默认返回字符串
-    return value;
-  }
+  /// 解析 YAML 字符串为 Map
+  ///
+  /// 使用 YamlUtils 进行解析，支持嵌套对象和列表
+  Map<String, dynamic> _parseYamlMap(String yaml) => YamlUtils.parse(yaml);
 
   Map<String, dynamic> _parseJson(String json) => jsonDecode(json) as Map<String, dynamic>;
 
@@ -735,16 +695,16 @@ class FileSystemNodeRepository implements NodeRepository {
         'last_updated': DateTime.now().toIso8601String(),
       };
       await indexFile.writeAsString(_stringifyJson(cleanedIndex));
-      debugPrint(
+      _log.info(
         'Cleaned up index: removed ${nodes.length - validNodes.length} invalid entries',
       );
     } catch (e) {
       // 如果清理失败，尝试删除索引文件，让它重新构建
       try {
         await indexFile.delete();
-        debugPrint('Deleted corrupted index file');
+        _log.info('Deleted corrupted index file');
       } catch (e2) {
-        debugPrint('Failed to delete corrupted index: $e2');
+        _log.warning('Failed to delete corrupted index: $e2');
       }
     }
   }

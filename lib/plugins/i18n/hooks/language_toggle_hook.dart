@@ -29,7 +29,7 @@ class LanguageToggleHook extends MainToolbarHookBase {
   );
 
   @override
-  HookPriority get priority => HookPriority.medium;
+  HookPriority get priority => HookPriority.custom90; // 主工具栏最左边位置
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {

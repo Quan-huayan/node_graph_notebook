@@ -19,6 +19,7 @@ class CacheMiddleware extends CommandMiddlewarePlugin {
 
   final Map<String, CommandResult> _cache = {};
   final Map<String, Duration> _cacheTtl = {};
+  final Map<String, DateTime> _cacheTimestamps = {}; // 存储每个缓存条目的创建时间
   final Duration _defaultTtl = const Duration(minutes: 5);
 
   @override
@@ -31,6 +32,7 @@ class CacheMiddleware extends CommandMiddlewarePlugin {
     // 清理缓存
     _cache.clear();
     _cacheTtl.clear();
+    _cacheTimestamps.clear();
   }
 
   @override
@@ -89,6 +91,7 @@ class CacheMiddleware extends CommandMiddlewarePlugin {
     if (result != null && command is CacheableCommand) {
       _cache[cacheKey] = result;
       _cacheTtl[cacheKey] = command.cacheTtl ?? _defaultTtl;
+      _cacheTimestamps[cacheKey] = DateTime.now(); // 记录缓存创建时间
     }
 
     return result;
@@ -97,16 +100,14 @@ class CacheMiddleware extends CommandMiddlewarePlugin {
   String _generateCacheKey(Command command) => '${command.runtimeType.toString()}:${command.hashCode}';
 
   bool _isValidCache(String key) {
-    if (!_cache.containsKey(key) || !_cacheTtl.containsKey(key)) {
+    if (!_cache.containsKey(key) || !_cacheTtl.containsKey(key) || !_cacheTimestamps.containsKey(key)) {
       return false;
     }
 
     final ttl = _cacheTtl[key]!;
-    final timestamp = _getCacheTimestamp(key);
+    final timestamp = _cacheTimestamps[key]!; // 使用实际存储的时间戳
     return DateTime.now().difference(timestamp) < ttl;
   }
-
-  DateTime _getCacheTimestamp(String key) => DateTime.now(); // 这里简化处理，实际应该存储时间戳
 
   /// 清除所有缓存
   ///
@@ -114,6 +115,7 @@ class CacheMiddleware extends CommandMiddlewarePlugin {
   void clearCache() {
     _cache.clear();
     _cacheTtl.clear();
+    _cacheTimestamps.clear();
   }
 
   /// 清除指定命令的缓存
@@ -123,6 +125,7 @@ class CacheMiddleware extends CommandMiddlewarePlugin {
     final key = _generateCacheKey(command);
     _cache.remove(key);
     _cacheTtl.remove(key);
+    _cacheTimestamps.remove(key);
   }
 }
 

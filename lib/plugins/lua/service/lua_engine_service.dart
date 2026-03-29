@@ -1,37 +1,19 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/logger.dart';
 import '../models/lua_execution_result.dart';
 import 'lua_security_manager.dart';
 import 'real_lua_engine.dart';
-import 'simple_script_engine.dart';
 
-/// Lua引擎类型
-///
-/// 定义支持的Lua引擎类型
-enum LuaEngineType {
-  /// 简单脚本引擎（默认，兼容性好）
-  ///
-  /// 轻量级Lua子集解释器，支持基础语法
-  /// 适用于学习场景和简单脚本
-  simple,
-
-  /// 真正的Lua引擎（功能完整）
-  ///
-  /// 基于FFI的完整Lua 5.2运行时
-  /// 支持完整Lua语法、标准库和模块系统
-  realLua,
-}
+const _log = AppLogger('LuaEngineService');
 
 /// Lua引擎服务
 ///
 /// 管理Lua引擎生命周期，执行Lua脚本，注册Dart函数给Lua调用。
-/// 支持双引擎架构：SimpleScriptEngine（兼容模式）和RealLuaEngine（完整功能）。
 ///
 /// ## 功能特性
-/// - 双引擎架构，可根据场景选择合适的引擎
 /// - Dart函数注册，让Lua脚本能调用原生功能
 /// - 上下文变量注入，支持参数传递
 /// - 完善的错误处理和输出捕获
@@ -40,7 +22,6 @@ enum LuaEngineType {
 /// ```dart
 /// // 创建引擎服务
 /// final engine = LuaEngineService(
-///   engineType: LuaEngineType.realLua,
 ///   enableDebugOutput: true,
 /// );
 ///
@@ -65,7 +46,6 @@ enum LuaEngineType {
 /// ```
 ///
 /// ## 架构说明
-/// - **SimpleScriptEngine**: 自实现的轻量级解释器，无外部依赖
 /// - **RealLuaEngine**: 基于flutter_embed_lua的完整Lua运行时
 ///
 /// ## 线程安全
@@ -81,21 +61,18 @@ class LuaEngineService {
   /// 参数：
   /// - [enableSandbox] 是否启用沙箱模式（已实现）
   /// - [enableDebugOutput] 是否启用调试输出
-  /// - [engineType] 使用的引擎类型，默认为realLua
   /// - [sandboxConfig] 沙箱配置，默认使用严格模式
   ///
   /// 示例：
   /// ```dart
   /// final engine = LuaEngineService(
   ///   enableDebugOutput: true,
-  ///   engineType: LuaEngineType.realLua,
   ///   sandboxConfig: LuaSandboxConfig.permissive(),
   /// );
   /// ```
   LuaEngineService({
     this.enableSandbox = false,
     this.enableDebugOutput = false,
-    this.engineType = LuaEngineType.realLua,
     LuaSandboxConfig? sandboxConfig,
   }) : securityManager = LuaSecurityManager(
           config: sandboxConfig ??
@@ -104,14 +81,8 @@ class LuaEngineService {
                   : LuaSandboxConfig.permissive()),
         );
 
-  /// 简单脚本引擎实例
-  SimpleScriptEngine? _simpleEngine;
-
   /// 真正Lua引擎实例
-  RealLuaEngine? _realLuaEngine;
-
-  /// 当前使用的引擎类型
-  final LuaEngineType engineType;
+  LuaEngine? _realLuaEngine;
 
   /// 是否启用沙箱模式
   final bool enableSandbox;
@@ -126,12 +97,11 @@ class LuaEngineService {
   final LuaSecurityManager securityManager;
 
   /// 是否已初始化
-  bool get isInitialized => _simpleEngine != null || _realLuaEngine != null;
+  bool get isInitialized => _realLuaEngine != null;
 
   /// 初始化Lua引擎
   ///
   /// 创建Lua状态机，注册基础函数，准备执行环境。
-  /// 根据[engineType]选择使用简单引擎或真正Lua引擎。
   ///
   /// ## 行为说明
   /// - 创建Lua运行时实例
@@ -149,32 +119,18 @@ class LuaEngineService {
   /// await engine.initialize(); // 抛出StateError
   /// ```
   Future<void> initialize() async {
-    if (_simpleEngine != null || _realLuaEngine != null) {
+    if (_realLuaEngine != null) {
       throw StateError('Lua引擎已经初始化');
     }
 
     try {
-      switch (engineType) {
-        case LuaEngineType.simple:
-          _simpleEngine = SimpleScriptEngine(
-            enableDebugOutput: enableDebugOutput,
-          );
-          await _simpleEngine!.initialize();
-          if (enableDebugOutput) {
-            debugPrint('[LUA] 使用简单脚本引擎');
-          }
-          break;
-
-        case LuaEngineType.realLua:
-          _realLuaEngine = RealLuaEngine(
-            enableDebugOutput: enableDebugOutput,
-            enableSandbox: enableSandbox,  // ✅ 修复：传递沙箱参数
-          );
-          await _realLuaEngine!.initialize();
-          if (enableDebugOutput) {
-            debugPrint('[LUA] 使用真正Lua引擎');
-          }
-          break;
+      _realLuaEngine = LuaEngine(
+        enableDebugOutput: enableDebugOutput,
+        enableSandbox: enableSandbox,  // ✅ 修复：传递沙箱参数
+      );
+      await _realLuaEngine!.initialize();
+      if (enableDebugOutput) {
+        _log.info('使用真正Lua引擎');
       }
 
       // 注册基础API
@@ -182,9 +138,7 @@ class LuaEngineService {
 
       if (enableDebugOutput) {
         final result = await executeString('debugPrint("Lua引擎初始化成功")');
-        for (final line in result.output) {
-          debugPrint('[LUA] $line');
-        }
+        result.output.forEach(_log.info);
       }
     } catch (e) {
       throw LuaEngineException('Lua引擎初始化失败: $e');
@@ -214,10 +168,10 @@ class LuaEngineService {
   ///
   /// ## 返回值
   /// 包含执行结果的[LuaExecutionResult]对象：
-  /// - [success]: 是否成功执行
-  /// - [output]: 输出日志列表
-  /// - [error]: 错误信息（如果失败）
-  /// - [returnValue]: 返回值（如果有）
+  /// - [LuaExecutionResult.success]: 是否成功执行
+  /// - [LuaExecutionResult.output]: 输出日志列表
+  /// - [LuaExecutionResult.error]: 错误信息（如果失败）
+  /// - [LuaExecutionResult.returnValue]: 返回值（如果有）
   ///
   /// ## 异常
   /// - [StateError]: 如果引擎未初始化
@@ -263,22 +217,10 @@ class LuaEngineService {
 
       // 根据引擎类型执行
       LuaExecutionResult result;
-      switch (engineType) {
-        case LuaEngineType.simple:
-          if (_simpleEngine == null) {
-            throw StateError('简单引擎未初始化');
-          }
-          result = await _simpleEngine!.executeString(script, context: context);
-          break;
-
-        case LuaEngineType.realLua:
-          if (_realLuaEngine == null) {
-            throw StateError('Lua引擎未初始化');
-          }
-          result = await _realLuaEngine!.executeString(script, context: context);
-          break;
+      if (_realLuaEngine == null) {
+        throw StateError('Lua引擎未初始化');
       }
-
+      result = await _realLuaEngine!.executeString(script, context: context);
       stopwatch.stop();
 
       // 🔒 检查执行时间
@@ -342,28 +284,7 @@ class LuaEngineService {
     }
 
     try {
-      // 根据引擎类型执行
-      switch (engineType) {
-        case LuaEngineType.simple:
-          if (_simpleEngine == null) {
-            throw StateError('简单引擎未初始化');
-          }
-          // 读取文件内容
-          final file = File(filePath);
-          if (!file.existsSync()) {
-            return LuaExecutionResult.failure(
-              error: '脚本文件不存在: $filePath',
-            );
-          }
-          final content = await file.readAsString();
-          return await _simpleEngine!.executeString(content, context: context);
-
-        case LuaEngineType.realLua:
-          if (_realLuaEngine == null) {
-            throw StateError('Lua引擎未初始化');
-          }
-          return await _realLuaEngine!.executeFile(filePath, context: context);
-      }
+      return await _realLuaEngine!.executeFile(filePath, context: context);
     } catch (e) {
       return LuaExecutionResult.failure(
         error: e.toString(),
@@ -431,14 +352,8 @@ class LuaEngineService {
     _registeredFunctions[name] = fn;
 
     // 注册到对应的引擎
-    switch (engineType) {
-      case LuaEngineType.simple:
-        _simpleEngine?.registerFunction(name, fn);
-        break;
-      case LuaEngineType.realLua:
-        _realLuaEngine?.registerFunction(name, fn);
-        break;
-    }
+    _realLuaEngine?.registerFunction(name, fn);
+        
 
     if (enableDebugOutput) {
       debugPrint('注册函数: $name');
@@ -477,14 +392,7 @@ class LuaEngineService {
     if (!isInitialized) return;
 
     try {
-      switch (engineType) {
-        case LuaEngineType.simple:
-          await _simpleEngine?.reset();
-          break;
-        case LuaEngineType.realLua:
-          await _realLuaEngine?.reset();
-          break;
-      }
+      await _realLuaEngine?.reset();
 
       if (enableDebugOutput) {
         debugPrint('Lua引擎已重置');
@@ -532,17 +440,10 @@ class LuaEngineService {
       throw StateError('Lua引擎未初始化');
     }
 
-    switch (engineType) {
-      case LuaEngineType.simple:
-        return LuaExecutionResult.failure(
-          error: '回调功能仅支持RealLuaEngine',
-        );
-      case LuaEngineType.realLua:
-        if (_realLuaEngine == null) {
-          throw StateError('RealLuaEngine未初始化');
-        }
-        return _realLuaEngine!.invokeCallback(callbackName, args);
+    if (_realLuaEngine == null) {
+      throw StateError('RealLuaEngine未初始化');
     }
+    return _realLuaEngine!.invokeCallback(callbackName, args);
   }
 
   /// 释放引擎资源
@@ -572,9 +473,7 @@ class LuaEngineService {
     if (!isInitialized) return;
 
     try {
-      await _simpleEngine?.dispose();
       await _realLuaEngine?.dispose();
-      _simpleEngine = null;
       _realLuaEngine = null;
       _registeredFunctions.clear();
 

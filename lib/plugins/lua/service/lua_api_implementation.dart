@@ -67,7 +67,7 @@ class LuaAPIImplementation {
   void _registerNodeAPIs() {
     // createNode(title, content, callback)
     // callback: function(success, result) end
-    engineService.registerFunction('createNode', (args) {
+    engineService..registerFunction('createNode', (args) {
       try {
         // 🔒 参数验证
         if (args.isEmpty) {
@@ -127,11 +127,11 @@ class LuaAPIImplementation {
         }
         return 0;
       }
-    });
+    })
 
     // updateNode(id, title, content, callback)
     // callback: function(success, result) end
-    engineService.registerFunction('updateNode', (args) {
+    ..registerFunction('updateNode', (args) {
       try {
         // 🔒 参数验证
         if (args.isEmpty) {
@@ -199,11 +199,11 @@ class LuaAPIImplementation {
         }
         return 0;
       }
-    });
+    })
 
     // deleteNode(id, callback)
     // callback: function(success, result) end
-    engineService.registerFunction('deleteNode', (args) {
+    ..registerFunction('deleteNode', (args) {
       try {
         // 🔒 参数验证
         if (args.isEmpty) {
@@ -244,11 +244,11 @@ class LuaAPIImplementation {
         }
         return 0;
       }
-    });
+    })
 
     // getNode(id, callback)
     // callback: function(success, result) end
-    engineService.registerFunction('getNode', (args) {
+    ..registerFunction('getNode', (args) {
       try {
         // 🔒 参数验证
         if (args.isEmpty) {
@@ -300,11 +300,11 @@ class LuaAPIImplementation {
         }
         return 0;
       }
-    });
+    })
 
     // getAllNodes(callback)
     // callback: function(success, result) end
-    engineService.registerFunction('getAllNodes', (args) {
+    ..registerFunction('getAllNodes', (args) {
       try {
         final callback = args.isNotEmpty ? args[0] : null;
 
@@ -345,11 +345,11 @@ class LuaAPIImplementation {
         }
         return 0;
       }
-    });
+    })
 
     // getChildNodes(parentId, callback)
     // callback: function(success, result) end
-    engineService.registerFunction('getChildNodes', (args) {
+    ..registerFunction('getChildNodes', (args) {
       try {
         // 🔒 参数验证
         if (args.isEmpty) {
@@ -412,7 +412,7 @@ class LuaAPIImplementation {
   /// 注册消息API
   void _registerMessageAPIs() {
     // showMessage(title, message) 或 showMessage(message)
-    engineService.registerFunction('showMessage', (args) {
+    engineService..registerFunction('showMessage', (args) {
       try {
         debugPrint('[LUA API] showMessage called with ${args.length} args');
 
@@ -446,10 +446,10 @@ class LuaAPIImplementation {
         debugPrint('[LUA MESSAGE] Error: $e');
         return 0;
       }
-    });
+    })
 
     // showWarning(message)
-    engineService.registerFunction('showWarning', (args) {
+    ..registerFunction('showWarning', (args) {
       try {
         if (args.isEmpty) return 0;
 
@@ -460,10 +460,10 @@ class LuaAPIImplementation {
       } catch (e) {
         return 0;
       }
-    });
+    })
 
     // showError(message)
-    engineService.registerFunction('showError', (args) {
+    ..registerFunction('showError', (args) {
       try {
         if (args.isEmpty) return 0;
 
@@ -480,7 +480,7 @@ class LuaAPIImplementation {
   /// 注册工具API
   void _registerUtilityAPIs() {
     // generateUUID()
-    engineService.registerFunction('generateUUID', (args) {
+    engineService..registerFunction('generateUUID', (args) {
       try {
         final id = _uuid.v4();
         engineService.executeString('return "$id"');
@@ -488,10 +488,10 @@ class LuaAPIImplementation {
       } catch (e) {
         return 0;
       }
-    });
+    })
 
     // getCurrentTime()
-    engineService.registerFunction('getCurrentTime', (args) {
+    ..registerFunction('getCurrentTime', (args) {
       try {
         final time = DateTime.now().toIso8601String();
         engineService.executeString('return "$time"');

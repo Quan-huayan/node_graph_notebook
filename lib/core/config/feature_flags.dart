@@ -1,4 +1,43 @@
-import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
+
+const _log = AppLogger('RenderingFeatureFlags');
+
+/// UI布局系统功能标志
+///
+/// **用途：**
+/// - 控制新的UILayoutService系统的启用/禁用
+/// - 支持渐进式迁移和A/B测试
+/// - 提供降级机制以确保稳定性
+///
+/// **使用场景：**
+/// 1. 在开发环境启用新系统
+/// 2. 在生产环境逐步推出
+/// 3. 遇到问题时快速禁用新系统
+class LayoutFeatureFlags {
+  /// 是否启用新的UI布局系统（总开关）
+  ///
+  /// 设为 false 可完全禁用新系统，回退到旧的HookRegistry实现
+  /// 设为 true 则使用新的UILayoutService系统
+  ///
+  /// **重要：** 默认为 false，确保系统稳定性
+  /// 在完成所有组件的测试和验证之前，请保持为 false
+  static const bool useNewLayoutSystem = false;
+
+  /// 是否为Sidebar启用新系统
+  ///
+  /// 支持组件级别的渐进式迁移
+  static const bool useNewLayoutSystemForSidebar = false;
+
+  /// 是否为Toolbar启用新系统
+  ///
+  /// 支持组件级别的渐进式迁移
+  static const bool useNewLayoutSystemForToolbar = false;
+
+  /// 是否为Graph启用新系统
+  ///
+  /// 支持组件级别的渐进式迁移
+  static const bool useNewLayoutSystemForGraph = false;
+}
 
 /// 渲染优化功能标志
 ///
@@ -118,21 +157,21 @@ class RenderingFeatureFlags {
   static bool validateConfig() {
     // 检查阈值合理性
     if (optimizationThreshold < 0) {
-      debugPrint('[RenderingFeatureFlags] WARNING: optimizationThreshold < 0');
+      _log.info('WARNING: optimizationThreshold < 0');
       return false;
     }
 
     if (multiThreadingThreshold < optimizationThreshold) {
-      debugPrint('[RenderingFeatureFlags] WARNING: multiThreadingThreshold < optimizationThreshold');
+      _log.info('WARNING: multiThreadingThreshold < optimizationThreshold');
     }
 
     if (textureCacheThreshold > optimizationThreshold) {
-      debugPrint('[RenderingFeatureFlags] WARNING: textureCacheThreshold > optimizationThreshold');
+      _log.info('WARNING: textureCacheThreshold > optimizationThreshold');
     }
 
     // 检查缓存大小
     if (maxTextureCacheSize < 10 * 1024 * 1024) {
-      debugPrint('[RenderingFeatureFlags] WARNING: maxTextureCacheSize < 10MB');
+      _log.info('WARNING: maxTextureCacheSize < 10MB');
     }
 
     return true;

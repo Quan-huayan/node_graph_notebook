@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../utils/logger.dart';
 import '../plugin_lifecycle.dart';
 import 'hook_api_registry.dart';
 import 'hook_base.dart';
 import 'hook_lifecycle.dart';
 import 'hook_point_registry.dart';
+
+/// Logger for HookRegistry
+const _log = AppLogger('HookRegistry');
 
 /// Hook 注册表
 ///
@@ -51,7 +55,7 @@ class HookRegistry extends ChangeNotifier {
   /// 允许插件注册自定义 Hook 点
   void registerHookPoint(HookPointDefinition point) {
     _pointRegistry.registerPoint(point);
-    debugPrint('[HookRegistry] Registered hook point: ${point.id}');
+    _log.info('Registered hook point: ${point.id}');
   }
 
   /// 获取 Hook 点定义
@@ -70,6 +74,15 @@ class HookRegistry extends ChangeNotifier {
   ///
   /// 返回所有已注册的 Hook 点定义列表
   List<HookPointDefinition> getAllHookPoints() => _pointRegistry.getAllPoints();
+
+  /// 注销 Hook 点
+  ///
+  /// [id] Hook 点 ID
+  ///
+  /// 注意：不建议注销标准 Hook 点
+  void unregisterHookPoint(String id) {
+    _pointRegistry.unregisterPoint(id);
+  }
 
   /// ===== Hook 注册 =====
 
@@ -162,7 +175,7 @@ class HookRegistry extends ChangeNotifier {
     // 移除空的 Hook 点
     hooksToRemove.forEach(_hooks.remove);
 
-    debugPrint('[HookRegistry] Unregistered all hooks for plugin: $pluginId');
+    _log.info('Unregistered all hooks for plugin: $pluginId');
   }
 
   /// ===== Hook 查询 =====
@@ -258,12 +271,12 @@ class HookRegistry extends ChangeNotifier {
       return a.registrationOrder.compareTo(b.registrationOrder);
     });
 
-    debugPrint('[HookRegistry] Registered hook wrapper: ${wrapper.hook.runtimeType}');
-    debugPrint('  - Hook point: $hookPointId');
-    debugPrint('  - Is enabled: ${wrapper.isEnabled}');
-    debugPrint('  - Priority: ${wrapper.hook.priority}');
-    debugPrint('  - Registration order: ${wrapper.registrationOrder}');
-    debugPrint('  - Total hooks at this point: ${_hooks[hookPointId]!.length}');
+    _log.info('Registered hook wrapper: ${wrapper.hook.runtimeType}');
+    _log.debug('  - Hook point: $hookPointId');
+    _log.debug('  - Is enabled: ${wrapper.isEnabled}');
+    _log.debug('  - Priority: ${wrapper.hook.priority}');
+    _log.debug('  - Registration order: ${wrapper.registrationOrder}');
+    _log.debug('  - Total hooks at this point: ${_hooks[hookPointId]!.length}');
   }
 
   /// 清空所有 Hook

@@ -8,7 +8,7 @@ import '../../editor/ui/markdown_editor_page.dart';
 import '../../graph/bloc/graph_bloc.dart';
 import '../../graph/bloc/graph_event.dart';
 import '../../graph/bloc/node_bloc.dart';
-import '../../graph/service/node_menu.dart';
+import '../../graph/ui/node_menu.dart';
 
 /// 节点项组件
 ///

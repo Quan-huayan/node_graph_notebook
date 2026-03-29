@@ -1,9 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../ui_layout/node_template.dart';
 import 'plugin_context.dart';
 import 'plugin_metadata.dart';
 import 'service_binding.dart';
 import 'ui_hooks/hook_base.dart';
+import 'ui_hooks/hook_point_registry.dart';
 
 /// 插件基础接口
 ///
@@ -100,6 +102,34 @@ abstract class Plugin {
   /// - Hook 的启用/禁用状态跟随 Plugin 的启用/禁用状态
   /// - Hook 可以通过 HookWrapper 访问 Plugin 的上下文和服务
   List<HookFactory> registerHooks() => [];
+
+  /// 注册插件提供的 Hook 点
+  ///
+  /// 在插件加载时调用，用于注册插件提供的自定义 Hook 点
+  ///
+  /// 返回 HookPointDefinition 列表，声明插件提供的 Hook 点
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// @override
+  /// List<HookPointDefinition> registerHookPoints() => [
+  ///   HookPointDefinition(
+  ///     id: 'my_plugin.custom_toolbar',
+  ///     name: 'Custom Toolbar',
+  ///     description: 'Custom toolbar for my plugin',
+  ///     category: 'toolbar',
+  ///   ),
+  /// ];
+  /// ```
+  ///
+  /// 默认返回空列表，表示插件不提供任何 Hook 点
+  ///
+  /// 架构说明：
+  /// - Hook 点在插件加载时注册到 HookPointRegistry
+  /// - Hook 点在插件卸载时自动注销
+  /// - 其他插件可以向这些 Hook 点注册 Hook
+  /// - Hook 点的 ID 应使用点分隔的格式，建议包含插件 ID 前缀
+  List<HookPointDefinition> registerHookPoints() => [];
 
   /// 插件加载
   ///
@@ -205,6 +235,45 @@ abstract class Plugin {
   ///
   /// 默认返回空列表，表示插件不提供任何 Bloc
   List<BlocProvider> registerBlocs() => [];
+
+  /// 注册插件提供的 Node 模板
+  ///
+  /// 在插件加载时调用，用于注册插件提供的 Node 类型模板
+  ///
+  /// 返回 NodeTemplate 列表，声明插件提供的 Node 模板
+  ///
+  /// 使用示例：
+  /// ```dart
+  /// @override
+  /// List<NodeTemplate> registerNodeTemplates() => [
+  ///   NodeTemplate(
+  ///     id: 'com.example.textNode',
+  ///     name: 'Text Node',
+  ///     description: 'A simple text note node',
+  ///     category: 'text',
+  ///     factory: ({required id, required title, content, params}) {
+  ///       return Node(
+  ///         id: id,
+  ///         title: title,
+  ///         content: content ?? '',
+  ///         metadata: params?['metadata'],
+  ///       );
+  ///     },
+  ///     defaultHookId: 'sidebar',
+  ///     defaultPosition: LocalPosition.sequential(index: 0),
+  ///     icon: Icons.note,
+  ///   ),
+  /// ];
+  /// ```
+  ///
+  /// 默认返回空列表，表示插件不提供任何 Node 模板
+  ///
+  /// 架构说明：
+  /// - Node 模板在插件加载时注册到 UILayoutService
+  /// - Node 模板在插件卸载时自动注销
+  /// - Node 模板定义了如何创建特定类型的 Node
+  /// - UILayoutService 使用模板创建 Node 实例
+  List<NodeTemplate> registerNodeTemplates() => [];
 
   @override
   String toString() => 'Plugin(${metadata.id}, version: ${metadata.version})';

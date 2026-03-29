@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/logger.dart';
+
+const _log = AppLogger('GlobalMessageService');
+
 /// 全局消息显示服务
 ///
 /// 用于在Lua脚本中显示消息对话框
@@ -15,7 +19,7 @@ class GlobalMessageService {
   /// 显示消息
   static void showMessage(String title, String message) {
     if (_context == null) {
-      debugPrint('[GlobalMessageService] No context available, showing in debug console only');
+      _log.info('No context available, showing in debug console only');
       debugPrint('[LUA MESSAGE] $title: $message');
       return;
     }
@@ -36,7 +40,7 @@ class GlobalMessageService {
   /// 显示警告
   static void showWarning(String message) {
     if (_context == null) {
-      debugPrint('[GlobalMessageService] No context available, showing in debug console only');
+      _log.info('No context available, showing in debug console only');
       debugPrint('[LUA WARNING] $message');
       return;
     }
@@ -53,7 +57,7 @@ class GlobalMessageService {
   /// 显示错误
   static void showError(String message) {
     if (_context == null) {
-      debugPrint('[GlobalMessageService] No context available, showing in debug console only');
+      _log.info('No context available, showing in debug console only');
       debugPrint('[LUA ERROR] $message');
       return;
     }

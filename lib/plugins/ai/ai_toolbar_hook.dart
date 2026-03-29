@@ -18,7 +18,7 @@ class AIToolbarHook extends MainToolbarHookBase {
   );
 
   @override
-  HookPriority get priority => HookPriority.custom500;
+  HookPriority get priority => HookPriority.custom70; // 主工具栏右三位置
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {

@@ -11,9 +11,13 @@ import '../repositories/node_repository.dart';
 import '../services/infrastructure/settings_registry.dart';
 import '../services/infrastructure/storage_path_service.dart';
 import '../services/infrastructure/theme_registry.dart';
+import '../utils/logger.dart';
 import 'api/api_registry.dart';
 import 'plugin.dart';
 import 'plugin_communication.dart';
+
+/// Logger for PluginContext
+const _log = AppLogger('PluginContext');
 
 /// 插件上下文
 ///
@@ -163,7 +167,7 @@ class PluginContext {
           return serviceRegistry!.getServiceDirect<T>();
         }
       } catch (e) {
-        debugPrint('[PluginContext] Failed to get service $T from ServiceRegistry: $e');
+        _log.info('Failed to get service $T from ServiceRegistry: $e');
       }
     }
 
@@ -315,7 +319,8 @@ class PluginLogger {
 
     final timestamp = DateTime.now().toIso8601String();
     final levelStr = level.name.toUpperCase();
-    debugPrint('[$timestamp] [$levelStr] [$pluginId] $message');
+    // 使用 AppLogger 替代 debugPrint
+    AppLogger('Plugin.$pluginId').debug('[$timestamp] [$levelStr] $message');
   }
 
   /// 记录信息日志
@@ -336,9 +341,9 @@ class PluginLogger {
   void error(String message, [dynamic error, StackTrace? stackTrace]) {
     _log(LogLevel.error, message);
     if (error != null) {
-      debugPrint('  Error: $error');
+      AppLogger('Plugin.$pluginId').error('  Error: $error');
       if (stackTrace != null) {
-        debugPrint('  Stack trace:\n$stackTrace');
+        AppLogger('Plugin.$pluginId').debug('  Stack trace:\n$stackTrace');
       }
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vector_math/vector_math.dart';
+
 import '../../../core/commands/command_bus.dart';
 import '../../../core/events/app_events.dart';
 import '../../../core/models/models.dart';
@@ -13,7 +14,6 @@ import 'bloc/node_bloc.dart';
 import 'bloc/node_event.dart';
 import 'command/graph_commands.dart';
 import 'command/node_commands.dart';
-import 'create_node_toolbar_hook.dart';
 import 'graph_nodes_toolbar_hook.dart';
 import 'handler/add_node_to_graph_handler.dart';
 import 'handler/connect_nodes_handler.dart';
@@ -29,12 +29,14 @@ import 'handler/resize_node_handler.dart';
 import 'handler/update_graph_handler.dart';
 import 'handler/update_node_handler.dart';
 import 'handler/update_node_position_handler.dart';
+import 'refresh_graph_toolbar_hook.dart';
 import 'service/graph_service.dart';
 import 'service/graph_service_bindings.dart';
 import 'service/node_service.dart';
 import 'tasks/connection_path_task.dart';
 import 'tasks/node_sizing_task.dart';
 import 'tasks/text_layout_task.dart';
+import 'toggle_connections_toolbar_hook.dart';
 
 /// Graph 插件
 ///
@@ -63,6 +65,7 @@ class GraphPlugin extends Plugin {
   @override
   List<ServiceBinding> registerServices() => [
     NodeServiceBinding(),
+    GraphServiceBinding(),
   ];
 
   @override
@@ -86,8 +89,9 @@ class GraphPlugin extends Plugin {
 
   @override
   List<HookFactory> registerHooks() => [
-    CreateNodeToolbarHook.new,
     GraphNodesToolbarHook.new,
+    RefreshGraphToolbarHook.new,
+    ToggleConnectionsToolbarHook.new,
   ];
 
   @override

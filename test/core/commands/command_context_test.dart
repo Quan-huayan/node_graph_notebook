@@ -106,15 +106,17 @@ void main() {
       final context = CommandContext(
         nodeRepository: nodeRepository,
         graphRepository: graphRepository,
-        nodeService: nodeService,
-        graphService: graphService,
         eventBus: eventBus,
+        additionalServices: {
+          MockNodeService: nodeService,
+          MockGraphService: graphService,
+        },
       );
 
       expect(context.nodeRepository, equals(nodeRepository));
       expect(context.graphRepository, equals(graphRepository));
-      expect(context.nodeService, equals(nodeService));
-      expect(context.graphService, equals(graphService));
+      expect(context.read<MockNodeService>(), equals(nodeService));
+      expect(context.read<MockGraphService>(), equals(graphService));
       expect(context.eventBus, equals(eventBus));
 
       eventBus.dispose();
@@ -130,8 +132,8 @@ void main() {
     test('should return null for optional missing services', () {
       final context = CommandContext();
 
-      expect(context.nodeService, isNull);
-      expect(context.graphService, isNull);
+      expect(context.tryRead<MockNodeService>(), isNull);
+      expect(context.tryRead<MockGraphService>(), isNull);
     });
 
     test('should register and read custom services', () {

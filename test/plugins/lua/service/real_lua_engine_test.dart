@@ -8,7 +8,6 @@ void main() {
     setUp(() async {
       // 使用真正的Lua引擎
       engineService = LuaEngineService(
-        engineType: LuaEngineType.realLua,
         enableDebugOutput: false,
       );
       await engineService.initialize();
@@ -180,7 +179,6 @@ void main() {
 
     setUp(() async {
       engineService = LuaEngineService(
-        engineType: LuaEngineType.realLua,
         enableDebugOutput: false,
       );
       await engineService.initialize();

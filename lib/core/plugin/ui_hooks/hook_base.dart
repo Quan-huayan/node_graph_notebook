@@ -384,3 +384,28 @@ abstract class SettingsHookBase extends UIHookBase {
   /// 返回要渲染的 Widget
   Widget renderSettings(SettingsHookContext context);
 }
+
+/// 图工具栏 Hook 基类
+///
+/// 用于 graph 插件的可拖动工具栏
+/// 使用独立的 hook point 'graph.toolbar'，避免与主工具栏按钮重复
+abstract class GraphToolbarHookBase extends UIHookBase {
+  @override
+  String get hookPointId => 'graph.toolbar';
+
+  @override
+  Widget render(HookContext context) {
+    final toolbarContext = MainToolbarHookContext(
+      data: context.data,
+      pluginContext: context.pluginContext,
+      hookAPIRegistry: context.hookAPIRegistry,
+    );
+    return renderToolbar(toolbarContext);
+  }
+
+  /// 渲染工具栏内容
+  ///
+  /// [context] 主工具栏上下文
+  /// 返回要渲染的 Widget
+  Widget renderToolbar(MainToolbarHookContext context);
+}

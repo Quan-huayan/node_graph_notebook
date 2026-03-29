@@ -153,7 +153,7 @@ class _GraphNodesDialogState extends State<GraphNodesDialog> {
                         },
                         title: Text(node.title),
                         subtitle: Text(
-                          node.isConcept ? i18n.t('Concept') : i18n.t('Content'),
+                          i18n.t('Content'),
                           style: TextStyle(
                             color: theme.text.secondary,
                             fontSize: 12,

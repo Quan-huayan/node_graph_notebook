@@ -1,6 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
+import '../../../core/ui_layout/node_template.dart';
+import 'folder_node_template.dart';
+import 'folder_sidebar_tab_hook.dart';
 
 /// 文件夹插件
 ///
@@ -29,6 +33,11 @@ class FolderPlugin extends Plugin {
   List<ServiceBinding> registerServices() => [];
 
   @override
+  List<NodeTemplate> registerNodeTemplates() => [
+        FolderNodeTemplate.template,
+      ];
+
+  @override
   Future<void> onLoad(PluginContext context) async {
     // 注册命令处理器
   }
@@ -53,4 +62,9 @@ class FolderPlugin extends Plugin {
 
   @override
   List<BlocProvider> registerBlocs() => [];
+
+  @override
+  List<HookFactory> registerHooks() => [
+    FolderSidebarTabHook.new,
+  ];
 }

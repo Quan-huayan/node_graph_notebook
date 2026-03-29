@@ -1,5 +1,6 @@
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
+import '../../../core/plugin/ui_hooks/hook_point_registry.dart';
 import '../../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../../core/repositories/graph_repository.dart';
 import '../../../core/repositories/node_repository.dart';
@@ -72,6 +73,16 @@ class LuaPlugin extends Plugin {
   List<HookFactory> registerHooks() => const [];
 
   @override
+  List<HookPointDefinition> registerHookPoints() => [
+    const HookPointDefinition(
+      id: 'lua.script_menu',
+      name: 'Lua Script Menu',
+      description: 'Menu for Lua script management and execution',
+      category: 'menu',
+    ),
+  ];
+
+  @override
   Future<void> onLoad(PluginContext context) async {
     try {
       // 初始化Lua引擎服务（使用真正Lua引擎）
@@ -79,7 +90,6 @@ class LuaPlugin extends Plugin {
       _engineService = LuaEngineService(
         enableSandbox: true,
         enableDebugOutput: true,
-        engineType: LuaEngineType.realLua,
         sandboxConfig: LuaSandboxConfig.permissive(), // ✅ 使用宽松模式
       );
       await _engineService!.initialize();
@@ -149,43 +159,39 @@ class LuaPlugin extends Plugin {
   void _registerCommandHandlers(PluginContext context) {
     final commandBus = context.commandBus;
 
-    // 注册Lua脚本执行命令处理器
-    commandBus.registerHandler(
-      ExecuteLuaScriptHandler(
-        engineService: _engineService!,
-        scriptService: _scriptService!,
-      ),
-      ExecuteLuaScriptCommand,
-    );
-
-    // 注册Lua脚本CRUD命令处理器
-    commandBus.registerHandler(
-      CreateLuaScriptHandler(
-        scriptService: _scriptService!,
-      ),
-      CreateLuaScriptCommand,
-    );
-
-    commandBus.registerHandler(
-      UpdateLuaScriptHandler(
-        scriptService: _scriptService!,
-      ),
-      UpdateLuaScriptCommand,
-    );
-
-    commandBus.registerHandler(
-      DeleteLuaScriptHandler(
-        scriptService: _scriptService!,
-      ),
-      DeleteLuaScriptCommand,
-    );
-
-    commandBus.registerHandler(
-      ToggleLuaScriptHandler(
-        scriptService: _scriptService!,
-      ),
-      ToggleLuaScriptCommand,
-    );
+    // 注册Lua脚本命令处理器
+    commandBus
+      ..registerHandler(
+        ExecuteLuaScriptHandler(
+          engineService: _engineService!,
+          scriptService: _scriptService!,
+        ),
+        ExecuteLuaScriptCommand,
+      )
+      ..registerHandler(
+        CreateLuaScriptHandler(
+          scriptService: _scriptService!,
+        ),
+        CreateLuaScriptCommand,
+      )
+      ..registerHandler(
+        UpdateLuaScriptHandler(
+          scriptService: _scriptService!,
+        ),
+        UpdateLuaScriptCommand,
+      )
+      ..registerHandler(
+        DeleteLuaScriptHandler(
+          scriptService: _scriptService!,
+        ),
+        DeleteLuaScriptCommand,
+      )
+      ..registerHandler(
+        ToggleLuaScriptHandler(
+          scriptService: _scriptService!,
+        ),
+        ToggleLuaScriptCommand,
+      );
   }
 
   /// 获取Lua引擎服务实例

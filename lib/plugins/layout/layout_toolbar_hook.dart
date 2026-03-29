@@ -9,17 +9,19 @@ import '../../../core/services/i18n.dart';
 import 'ui/layout_menu.dart';
 
 /// 布局工具栏钩子
-class LayoutToolbarHook extends MainToolbarHookBase {
+///
+/// 注册到 graph.toolbar hook point，用于可拖动工具栏
+class LayoutToolbarHook extends GraphToolbarHookBase {
   @override
   HookMetadata get metadata => const HookMetadata(
     id: 'layout_toolbar_hook',
     name: 'Layout Toolbar Hook',
     version: '1.0.0',
-    description: 'Provides layout button in toolbar',
+    description: 'Provides layout button in graph toolbar',
   );
 
   @override
-  HookPriority get priority => HookPriority.custom200;
+  HookPriority get priority => HookPriority.custom300;
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {

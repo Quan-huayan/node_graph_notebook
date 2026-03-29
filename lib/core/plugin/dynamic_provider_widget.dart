@@ -2,8 +2,12 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+import '../utils/logger.dart';
 import 'plugin_manager.dart';
 import 'service_registry.dart';
+
+/// 动态 Provider Widget 日志记录器
+const _log = AppLogger('DynamicProviderWidget');
 
 /// 动态 Provider Widget
 ///
@@ -81,18 +85,18 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
   @override
   void initState() {
     super.initState();
-    debugPrint('[DynamicProviderWidget] =========================================');
-    debugPrint('[DynamicProviderWidget] 初始化 DynamicProviderWidget');
-    debugPrint('[DynamicProviderWidget] =========================================');
+
+    _log.info('初始化 DynamicProviderWidget');
+
     
     // 初始化 Provider 列表
     _currentProviders = _buildProviders();
     _lastRegistryHash = _calculateRegistryHash();
     
-    debugPrint('[DynamicProviderWidget] ✓ 初始 Provider 列表构建完成');
-    debugPrint('[DynamicProviderWidget]   核心 Providers:');
+    _log.info('[DynamicProviderWidget] ✓ 初始 Provider 列表构建完成');
+    _log.info('  核心 Providers:');
     for (var i = 0; i < widget.coreProviders.length; i++) {
-      debugPrint('[DynamicProviderWidget]     [$i] ${widget.coreProviders[i].runtimeType}');
+      _log.info('    [$i] ${widget.coreProviders[i].runtimeType}');
     }
     
     // 从 _currentProviders 中提取服务 Providers 和 BLoC Providers 用于日志打印
@@ -102,21 +106,21 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
     ).toList();
     final blocProviders = _currentProviders.skip(coreCount + serviceProviders.length).toList();
     
-    debugPrint('[DynamicProviderWidget]   服务 Providers:');
+    _log.info('  服务 Providers:');
     for (var i = 0; i < serviceProviders.length; i++) {
-      debugPrint('[DynamicProviderWidget]     [$i] ${serviceProviders[i].runtimeType}');
+      _log.info('    [$i] ${serviceProviders[i].runtimeType}');
     }
-    debugPrint('[DynamicProviderWidget]   BLoC Providers:');
+    _log.info('  BLoC Providers:');
     for (var i = 0; i < blocProviders.length; i++) {
-      debugPrint('[DynamicProviderWidget]     [$i] ${blocProviders[i].runtimeType}');
+      _log.info('    [$i] ${blocProviders[i].runtimeType}');
     }
-    debugPrint('[DynamicProviderWidget]   总 Provider 数量: ${_currentProviders.length}');
-    debugPrint('[DynamicProviderWidget]   初始注册表哈希: $_lastRegistryHash');
+
+
 
     // 监听服务注册表的变化
     widget.serviceRegistry.addListener(_onServicesChanged);
-    debugPrint('[DynamicProviderWidget] ✓ 已监听 ServiceRegistry 变化');
-    debugPrint('[DynamicProviderWidget] =========================================');
+    _log.info('[DynamicProviderWidget] ✓ 已监听 ServiceRegistry 变化');
+
   }
 
   @override
@@ -125,9 +129,9 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
 
     // 如果 serviceRegistry 实例变了，重新监听
     if (widget.serviceRegistry != oldWidget.serviceRegistry) {
-      debugPrint('[DynamicProviderWidget] -----------------------------------------');
-      debugPrint('[DynamicProviderWidget] ServiceRegistry 实例已变化');
-      debugPrint('[DynamicProviderWidget] 移除旧监听器，添加新监听器');
+
+      _log.info('ServiceRegistry 实例已变化');
+      _log.info('移除旧监听器，添加新监听器');
       
       oldWidget.serviceRegistry.removeListener(_onServicesChanged);
       widget.serviceRegistry.addListener(_onServicesChanged);
@@ -135,22 +139,22 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
       // 重新构建 Provider 列表
       _updateProviders();
       
-      debugPrint('[DynamicProviderWidget] ✓ 监听器更新完成');
-      debugPrint('[DynamicProviderWidget] -----------------------------------------');
+      _log.info('[DynamicProviderWidget] ✓ 监听器更新完成');
+
     }
   }
 
   @override
   void dispose() {
-    debugPrint('[DynamicProviderWidget] -----------------------------------------');
-    debugPrint('[DynamicProviderWidget] 销毁 DynamicProviderWidget');
+
+    _log.info('销毁 DynamicProviderWidget');
     
     // 移除监听器
     widget.serviceRegistry.removeListener(_onServicesChanged);
-    debugPrint('[DynamicProviderWidget] ✓ 已移除 ServiceRegistry 监听器');
+    _log.info('[DynamicProviderWidget] ✓ 已移除 ServiceRegistry 监听器');
     
-    debugPrint('[DynamicProviderWidget] ✓ 销毁完成');
-    debugPrint('[DynamicProviderWidget] -----------------------------------------');
+    _log.info('[DynamicProviderWidget] ✓ 销毁完成');
+
     
     super.dispose();
   }
@@ -160,40 +164,40 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
   /// 当插件加载/卸载时，ServiceRegistry 会调用 notifyListeners()
   /// 这里监听到变化后，触发 Provider 树重建
   void _onServicesChanged() {
-    debugPrint('[DynamicProviderWidget] -----------------------------------------');
-    debugPrint('[DynamicProviderWidget] 检测到 ServiceRegistry 变化');
+
+    _log.info('检测到 ServiceRegistry 变化');
     
     // 计算新的哈希值
     final newHash = _calculateRegistryHash();
-    debugPrint('[DynamicProviderWidget]   旧哈希: $_lastRegistryHash');
-    debugPrint('[DynamicProviderWidget]   新哈希: $newHash');
+
+
 
     // 只有哈希值变化时才重建（避免不必要的重建）
     if (newHash != _lastRegistryHash) {
-      debugPrint('[DynamicProviderWidget] ✓ 哈希值已变化，触发 Provider 树重建');
+      _log.info('[DynamicProviderWidget] ✓ 哈希值已变化，触发 Provider 树重建');
       _updateProviders();
       _lastRegistryHash = newHash;
     } else {
-      debugPrint('[DynamicProviderWidget] ℹ 哈希值未变化，跳过重建');
+      _log.info('ℹ 哈希值未变化，跳过重建');
     }
     
-    debugPrint('[DynamicProviderWidget] -----------------------------------------');
+
   }
 
   /// 更新 Provider 列表并触发重建
   void _updateProviders() {
-    debugPrint('[DynamicProviderWidget] -----------------------------------------');
-    debugPrint('[DynamicProviderWidget] 开始更新 Provider 列表');
-    debugPrint('[DynamicProviderWidget]   更新前 Provider 数量: ${_currentProviders.length}');
+
+    _log.info('开始更新 Provider 列表');
+
     
     setState(() {
       _currentProviders = _buildProviders();
     });
 
-    debugPrint('[DynamicProviderWidget]   更新后 Provider 数量: ${_currentProviders.length}');
-    debugPrint('[DynamicProviderWidget]   核心 Providers:');
+
+    _log.info('  核心 Providers:');
     for (var i = 0; i < widget.coreProviders.length; i++) {
-      debugPrint('[DynamicProviderWidget]     [$i] ${widget.coreProviders[i].runtimeType}');
+      _log.info('    [$i] ${widget.coreProviders[i].runtimeType}');
     }
     
     // 从 _currentProviders 中提取服务 Providers 和 BLoC Providers 用于日志打印
@@ -203,21 +207,19 @@ class _DynamicProviderWidgetState extends State<DynamicProviderWidget> {
     ).toList();
     final blocProviders = _currentProviders.skip(coreCount + serviceProviders.length).toList();
     
-    debugPrint('[DynamicProviderWidget]   服务 Providers:');
+    _log.info('  服务 Providers:');
     for (var i = 0; i < serviceProviders.length; i++) {
-      debugPrint('[DynamicProviderWidget]     [$i] ${serviceProviders[i].runtimeType}');
+      _log.info('    [$i] ${serviceProviders[i].runtimeType}');
     }
-    debugPrint('[DynamicProviderWidget]   BLoC Providers:');
+    _log.info('  BLoC Providers:');
     for (var i = 0; i < blocProviders.length; i++) {
-      debugPrint('[DynamicProviderWidget]     [$i] ${blocProviders[i].runtimeType}');
+      _log.info('    [$i] ${blocProviders[i].runtimeType}');
     }
 
-    debugPrint(
-      '[DynamicProviderWidget] Provider tree rebuilt (${_currentProviders.length} providers)',
-    );
+    _log.info('Provider tree rebuilt (${_currentProviders.length} providers)');
     
-    debugPrint('[DynamicProviderWidget] ✓ Provider 列表更新完成');
-    debugPrint('[DynamicProviderWidget] -----------------------------------------');
+    _log.info('[DynamicProviderWidget] ✓ Provider 列表更新完成');
+
   }
 
   /// 构建完整的 Provider 列表（核心 + 服务 + BLoC）
@@ -335,17 +337,11 @@ class _DynamicProvidersLayer extends StatefulWidget {
 }
 
 class _DynamicProvidersLayerState extends State<_DynamicProvidersLayer> {
-  bool _isFirstBuild = true;
   bool _needsRebuild = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    if (_isFirstBuild) {
-      _isFirstBuild = false;
-      return;
-    }
 
     if (_needsRebuild) {
       _needsRebuild = false;
@@ -358,9 +354,15 @@ class _DynamicProvidersLayerState extends State<_DynamicProvidersLayer> {
   }
 
   void _onServicesChanged() {
-    if (!_isFirstBuild) {
-      _needsRebuild = true;
-    }
+    _needsRebuild = true;
+    // 立即触发更新，确保首次构建时也能响应
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _needsRebuild) {
+        setState(() {
+          _needsRebuild = false;
+        });
+      }
+    });
   }
 
   @override
@@ -376,13 +378,24 @@ class _DynamicProvidersLayerState extends State<_DynamicProvidersLayer> {
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) {
+
+    _log.info('构建动态 Provider 层');
+    final serviceProviders = widget.serviceRegistry.generateProviders();
+    _log.info('服务 Providers: ${serviceProviders.length}');
+    final blocProviders = widget.pluginManager.generateBlocProviders();
+    _log.info('BLoC Providers: ${blocProviders.length}');
+    _log.info('总 Providers: ${serviceProviders.length + blocProviders.length}');
+
+
+    return LayoutBuilder(
       builder: (context, constraints) => MultiProvider(
           providers: [
-            ...widget.serviceRegistry.generateProviders(),
-            ...widget.pluginManager.generateBlocProviders(),
+            ...serviceProviders,
+            ...blocProviders,
           ],
           child: widget.child,
         ),
     );
+  }
 }

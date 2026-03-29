@@ -13,11 +13,16 @@ import '../repositories/node_repository.dart';
 import '../services/infrastructure/settings_registry.dart';
 import '../services/infrastructure/storage_path_service.dart';
 import '../services/infrastructure/theme_registry.dart';
+import '../utils/logger.dart';
 import 'api/api_registry.dart';
 import 'plugin.dart';
+import 'ui_hooks/hook_base.dart';
 import 'ui_hooks/hook_context.dart';
 import 'ui_hooks/hook_lifecycle.dart';
 import 'ui_hooks/hook_registry.dart';
+
+/// 插件管理器日志记录器
+const _log = AppLogger('PluginManager');
 
 /// 插件管理器接口
 abstract class IPluginManager {
@@ -115,6 +120,12 @@ class PluginManager implements IPluginManager {
   /// Value: 该插件注册的所有 Hook 包装器列表
   final Map<String, List<HookWrapper>> _pluginHooks = {};
 
+  /// 跟踪每个插件注册的 Hook 点
+  ///
+  /// Key: Plugin ID
+  /// Value: 该插件注册的所有 Hook 点 ID 列表
+  final Map<String, List<String>> _pluginHookPoints = {};
+
   /// API 注册表（只读访问）
   ///
   /// 用于高级插件间通信
@@ -158,12 +169,14 @@ class PluginManager implements IPluginManager {
   /// 返回 BlocProvider 列表，可直接用于 MultiProvider
   List<SingleChildWidget> generateBlocProviders() {
     final blocs = <SingleChildWidget>[];
+    final allPlugins = _registry.getAllPlugins();
 
-    for (final wrapper in _registry.getAllPlugins()) {
+    for (final wrapper in allPlugins) {
       final pluginBlocs = wrapper.plugin.registerBlocs();
       blocs.addAll(pluginBlocs);
     }
 
+    _log.info('Generated ${blocs.length} BLoC providers from ${allPlugins.length} plugins');
     return blocs;
   }
 
@@ -172,35 +185,57 @@ class PluginManager implements IPluginManager {
 
   @override
   Future<void> loadPlugin(String pluginId) async {
-    debugPrint('[PluginManager] =========================================');
-    debugPrint('[PluginManager] 开始加载插件');
-    debugPrint('[PluginManager]   插件 ID: $pluginId');
-    debugPrint('[PluginManager] =========================================');
+    _log.info('Loading plugin: $pluginId');
 
+    try {
+      // 1. 验证插件
+      final plugin = await _validateAndDiscoverPlugin(pluginId);
+
+      // 2. 创建插件包装器和上下文
+      final (wrapper, context) = _createPluginWrapper(plugin, pluginId);
+
+      // 3. 注册到注册表
+      await _registerPluginWrapper(wrapper);
+
+      // 4. 初始化插件
+      await _initializePlugin(plugin, wrapper, context, pluginId);
+
+      _log.info('Plugin loaded successfully: $pluginId (state: ${wrapper.state})');
+    } catch (e) {
+      // 加载失败，清理资源
+      await _cleanupFailedPlugin(pluginId, e);
+      throw PluginLoadException(pluginId, e);
+    }
+  }
+
+  /// 验证插件并发现插件实例
+  ///
+  /// [pluginId] 插件 ID
+  ///
+  /// 返回发现的插件实例
+  ///
+  /// 抛出 [PluginAlreadyExistsException] 如果插件已加载
+  /// 抛出 [PluginNotFoundException] 如果插件未找到
+  /// 抛出 [PluginVersionException] 如果版本不兼容
+  Future<Plugin> _validateAndDiscoverPlugin(String pluginId) async {
     // 检查是否已加载
     if (_registry.isRegistered(pluginId)) {
-      debugPrint('[PluginManager] ✗ 加载失败: 插件已存在');
+      _log.warning('Plugin already exists: $pluginId');
       throw PluginAlreadyExistsException(pluginId);
     }
 
-    debugPrint('[PluginManager] 正在发现插件...');
     // 发现插件
     final plugin = await _discoverer.discoverPlugin(pluginId);
     if (plugin == null) {
-      debugPrint('[PluginManager] ✗ 发现失败: 插件未找到');
+      _log.error('Plugin not found: $pluginId');
       throw PluginNotFoundException(pluginId);
     }
 
-    debugPrint('[PluginManager] ✓ 插件发现成功');
-    debugPrint('[PluginManager]   插件名称: ${plugin.metadata.name}');
-    debugPrint('[PluginManager]   插件版本: ${plugin.metadata.version}');
-    debugPrint('[PluginManager]   插件作者: ${plugin.metadata.author}');
+    _log.debug('Discovered plugin: ${plugin.metadata.name} v${plugin.metadata.version}');
 
     // 检查版本兼容性
     if (!plugin.metadata.isCompatibleWith(appVersion)) {
-      debugPrint('[PluginManager] ✗ 版本不兼容');
-      debugPrint('[PluginManager]   插件版本: ${plugin.metadata.version}');
-      debugPrint('[PluginManager]   应用版本: $appVersion');
+      _log.warning('Version incompatibility: plugin ${plugin.metadata.version}, app $appVersion');
       throw PluginVersionException(
         pluginId,
         plugin.metadata.version,
@@ -208,8 +243,19 @@ class PluginManager implements IPluginManager {
       );
     }
 
-    debugPrint('[PluginManager] ✓ 版本兼容性检查通过');
+    return plugin;
+  }
 
+  /// 创建插件包装器和上下文
+  ///
+  /// [plugin] 插件实例
+  /// [pluginId] 插件 ID
+  ///
+  /// 返回元组：(PluginWrapper, PluginContext)
+  (PluginWrapper, PluginContext) _createPluginWrapper(
+    Plugin plugin,
+    String pluginId,
+  ) {
     // 创建插件上下文（包含所有依赖）
     final context = PluginContext(
       pluginId: pluginId,
@@ -228,123 +274,210 @@ class PluginManager implements IPluginManager {
       sharedPreferencesAsync: _sharedPreferencesAsync,
     );
 
-    debugPrint('[PluginManager] ✓ 插件上下文创建完成');
-
     // 创建生命周期管理器
     final lifecycle = PluginLifecycleManager(plugin);
 
     // 创建包装器
     final wrapper = PluginWrapper(plugin, context, lifecycle);
 
+    return (wrapper, context);
+  }
+
+  /// 注册插件包装器到注册表
+  ///
+  /// [wrapper] 插件包装器
+  ///
+  /// 抛出异常如果 API 依赖验证失败
+  Future<void> _registerPluginWrapper(PluginWrapper wrapper) async {
     // 在注册之前验证 API 依赖
-    debugPrint('[PluginManager] 验证 API 依赖');
-    await _validateAPIDependencies(plugin);
-    debugPrint('[PluginManager] ✓ API 依赖验证通过');
+    _log.info('验证 API 依赖');
+    await _validateAPIDependencies(wrapper.plugin);
+    _log.info('[PluginManager] ✓ API 依赖验证通过');
 
     // 注册到注册表
     _registry.register(wrapper);
-    debugPrint('[PluginManager] ✓ 插件已注册到注册表');
+    _log.info('[PluginManager] ✓ 插件已注册到注册表');
+  }
 
-    // 调用 onLoad
-    try {
-      debugPrint('[PluginManager] -----------------------------------------');
-      debugPrint('[PluginManager] 开始插件加载流程');
+  /// 初始化插件（注册服务、调用 onLoad、注册 API、Hook 点和 Hooks）
+  ///
+  /// [plugin] 插件实例
+  /// [wrapper] 插件包装器
+  /// [context] 插件上下文
+  /// [pluginId] 插件 ID
+  Future<void> _initializePlugin(
+    Plugin plugin,
+    PluginWrapper wrapper,
+    PluginContext context,
+    String pluginId,
+  ) async {
 
-      // 1. 注册插件提供的 Service
-      final serviceBindings = plugin.registerServices();
-      if (serviceBindings.isNotEmpty) {
-        debugPrint('[PluginManager]   步骤 1: 注册插件服务');
-        debugPrint('[PluginManager]   服务数量: ${serviceBindings.length}');
-        _serviceRegistry.registerServices(pluginId, serviceBindings);
-        debugPrint('[PluginManager]   ✓ 插件服务注册完成');
-      } else {
-        debugPrint('[PluginManager]   步骤 1: 插件不提供服务');
-      }
+    _log.info('开始插件加载流程');
 
-      // 2. 调用插件的 onLoad 方法
-      debugPrint('[PluginManager]   步骤 2: 调用插件 onLoad 方法');
-      await lifecycle.transitionTo(
-        PluginState.loaded,
-        () => plugin.onLoad(context),
-      );
-      debugPrint('[PluginManager]   ✓ onLoad 方法执行完成');
+    final lifecycle = wrapper.lifecycle;
 
-      // 3. 注册插件导出的 API
-      final exportedAPIs = plugin.exportAPIs();
-      if (exportedAPIs.isNotEmpty) {
-        debugPrint('[PluginManager]   步骤 3: 注册插件导出的 API');
-        debugPrint('[PluginManager]   API 数量: ${exportedAPIs.length}');
-        for (final entry in exportedAPIs.entries) {
-          _apiRegistry.registerAPI(
-            pluginId,
-            entry.key,
-            plugin.metadata.version,
-            entry.value,
-          );
-          debugPrint('[PluginManager]     ✓ 已注册 API: ${entry.key}');
-        }
-        debugPrint('[PluginManager]   ✓ API 注册完成');
-      } else {
-        debugPrint('[PluginManager]   步骤 3: 插件不导出 API');
-      }
+    // 1. 注册插件提供的 Service
+    await _registerPluginServices(plugin, pluginId);
 
-      // 4. 注册插件提供的 UI Hooks（新系统）
-      if (_hookRegistry != null) {
-        debugPrint('[PluginManager]   步骤 4: 注册插件 UI Hooks');
-        await _registerPluginHooks(wrapper);
-        debugPrint('[PluginManager]   ✓ UI Hooks 注册完成');
-      } else {
-        debugPrint('[PluginManager]   步骤 4: HookRegistry 为空，跳过');
-      }
+    // 2. 调用插件的 onLoad 方法
+    await _callPluginOnLoad(plugin, lifecycle, context);
 
-      debugPrint('[PluginManager] -----------------------------------------');
-      debugPrint('[PluginManager] ✓ 插件加载成功');
-      debugPrint('[PluginManager]   插件状态: ${wrapper.state}');
-      debugPrint('[PluginManager] =========================================');
-    } catch (e) {
-      debugPrint('[PluginManager] ✗ 插件加载失败: $e');
-      debugPrint('[PluginManager] 正在清理已注册的资源...');
+    // 3. 注册插件导出的 API
+    _registerPluginAPIs(plugin, pluginId);
 
-      // 加载失败，清理已注册的 Service、API、Hook 并从注册表移除
-      _serviceRegistry.unregisterPluginServices(pluginId);
-      _apiRegistry.unregisterPluginAPIs(pluginId);
-      if (_hookRegistry != null) {
-        _hookRegistry.unregisterPluginHooks(pluginId);
-      }
-      _registry.unregister(pluginId);
+    // 4. 注册插件提供的 Hook 点
+    await _registerPluginHookPoints(plugin, pluginId);
 
-      debugPrint('[PluginManager] ✓ 资源清理完成');
-      debugPrint('[PluginManager] =========================================');
+    // 5. 注册插件提供的 UI Hooks
+    await _registerPluginUIHooks(wrapper);
 
-      throw PluginLoadException(pluginId, e);
+
+  }
+
+  /// 注册插件服务
+  Future<void> _registerPluginServices(
+    Plugin plugin,
+    String pluginId,
+  ) async {
+    final serviceBindings = plugin.registerServices();
+    if (serviceBindings.isNotEmpty) {
+
+
+      _serviceRegistry.registerServices(pluginId, serviceBindings);
+      _log.info('  ✓ 插件服务注册完成');
+    } else {
+
     }
+  }
+
+  /// 调用插件的 onLoad 方法
+  Future<void> _callPluginOnLoad(
+    Plugin plugin,
+    PluginLifecycleManager lifecycle,
+    PluginContext context,
+  ) async {
+
+    await lifecycle.transitionTo(
+      PluginState.loaded,
+      () => plugin.onLoad(context),
+    );
+    _log.info('  ✓ onLoad 方法执行完成');
+  }
+
+  /// 注册插件导出的 API
+  void _registerPluginAPIs(Plugin plugin, String pluginId) {
+    final exportedAPIs = plugin.exportAPIs();
+    if (exportedAPIs.isNotEmpty) {
+
+
+      for (final entry in exportedAPIs.entries) {
+        _apiRegistry.registerAPI(
+          pluginId,
+          entry.key,
+          plugin.metadata.version,
+          entry.value,
+        );
+
+      }
+      _log.info('  ✓ API 注册完成');
+    } else {
+
+    }
+  }
+
+  /// 注册插件 Hook 点
+  Future<void> _registerPluginHookPoints(Plugin plugin, String pluginId) async {
+    if (_hookRegistry == null) {
+
+      return;
+    }
+
+    final hookPoints = plugin.registerHookPoints();
+    if (hookPoints.isEmpty) {
+
+      return;
+    }
+
+
+
+
+    // 初始化该插件的 Hook 点列表
+    _pluginHookPoints[pluginId] = [];
+
+    for (final point in hookPoints) {
+      try {
+        _hookRegistry.registerHookPoint(point);
+        _pluginHookPoints[pluginId]!.add(point.id);
+
+      } catch (e) {
+
+        // 继续注册其他 Hook 点，不中断整个流程
+      }
+    }
+
+    _log.info('  ✓ Hook 点注册完成');
+  }
+
+  /// 注册插件 UI Hooks
+  Future<void> _registerPluginUIHooks(PluginWrapper wrapper) async {
+    if (_hookRegistry != null) {
+
+      await _registerPluginHooks(wrapper);
+      _log.info('  ✓ UI Hooks 注册完成');
+    } else {
+
+    }
+  }
+
+  /// 清理加载失败的插件
+  ///
+  /// [pluginId] 插件 ID
+  /// [error] 加载失败的错误
+  Future<void> _cleanupFailedPlugin(String pluginId, Object error) async {
+    _log..warning('PluginManager ✗ 插件加载失败: $error')
+    ..info('正在清理已注册的资源...');
+
+    // 加载失败，清理已注册的 Hook 点、Service、API、Hook 并从注册表移除
+    _unregisterPluginHookPoints(pluginId);
+    _serviceRegistry.unregisterPluginServices(pluginId);
+    _apiRegistry.unregisterPluginAPIs(pluginId);
+    if (_hookRegistry != null) {
+      _hookRegistry.unregisterPluginHooks(pluginId);
+    }
+    _registry.unregister(pluginId);
+
+    _log.info('[PluginManager] ✓ 资源清理完成');
+
   }
 
   @override
   Future<void> unloadPlugin(String pluginId) async {
-    debugPrint('[PluginManager] =========================================');
-    debugPrint('[PluginManager] 开始卸载插件');
-    debugPrint('[PluginManager]   插件 ID: $pluginId');
-    debugPrint('[PluginManager] =========================================');
+
+    _log.info('开始卸载插件');
+
+
 
     final wrapper = _registry.getPlugin(pluginId);
     if (wrapper == null) {
-      debugPrint('[PluginManager] ✗ 卸载失败: 插件未找到');
+      _log.warning('PluginManager ✗ 卸载失败: 插件未找到');
       throw PluginNotFoundException(pluginId);
     }
 
-    debugPrint('[PluginManager] ✓ 插件找到');
-    debugPrint('[PluginManager]   当前状态: ${wrapper.state}');
-    debugPrint('[PluginManager]   是否已启用: ${wrapper.isEnabled}');
+    _log.info('[PluginManager] ✓ 插件找到');
+
+
 
     // 如果插件已启用，先禁用
     if (wrapper.isEnabled) {
-      debugPrint('[PluginManager] 插件当前已启用，先禁用...');
+      _log.info('插件当前已启用，先禁用...');
       await disablePlugin(pluginId);
-      debugPrint('[PluginManager] ✓ 插件已禁用');
+      _log.info('[PluginManager] ✓ 插件已禁用');
     }
 
-    debugPrint('[PluginManager] 开始清理插件资源...');
+    _log.info('开始清理插件资源...');
+
+    // 销毁插件提供的所有 Hook 点
+    _unregisterPluginHookPoints(pluginId);
 
     // 销毁插件提供的所有 UI Hooks
     await _disposePluginHooks(wrapper);
@@ -355,60 +488,60 @@ class PluginManager implements IPluginManager {
     // 注销插件的所有 Service
     _serviceRegistry.unregisterPluginServices(pluginId);
 
-    debugPrint('[PluginManager] ✓ 插件资源清理完成');
+    _log.info('[PluginManager] ✓ 插件资源清理完成');
 
     // 调用 onUnload
     try {
-      debugPrint('[PluginManager] 调用插件 onUnload 方法...');
+      _log.info('调用插件 onUnload 方法...');
       await wrapper.lifecycle.transitionTo(
         PluginState.unloaded,
         wrapper.plugin.onUnload,
       );
-      debugPrint('[PluginManager] ✓ onUnload 方法执行完成');
+      _log.info('[PluginManager] ✓ onUnload 方法执行完成');
     } catch (e) {
-      debugPrint('[PluginManager] ✗ onUnload 执行失败: $e');
+      _log.warning('PluginManager ✗ onUnload 执行失败: $e');
       throw PluginUnloadException(pluginId, e);
     } finally {
       // 从注册表移除
       _registry.unregister(pluginId);
-      debugPrint('[PluginManager] ✓ 插件已从注册表移除');
+      _log.info('[PluginManager] ✓ 插件已从注册表移除');
     }
 
-    debugPrint('[PluginManager] ✓ 插件卸载成功');
-    debugPrint('[PluginManager] =========================================');
+    _log.info('[PluginManager] ✓ 插件卸载成功');
+
   }
 
   @override
   Future<void> enablePlugin(String pluginId) async {
-    debugPrint('[PluginManager] =========================================');
-    debugPrint('[PluginManager] 开始启用插件');
-    debugPrint('[PluginManager]   插件 ID: $pluginId');
-    debugPrint('[PluginManager] =========================================');
+
+    _log.info('开始启用插件');
+
+
     
     final wrapper = _registry.getPlugin(pluginId);
     if (wrapper == null) {
-      debugPrint('[PluginManager] ✗ 启用失败: 插件未找到');
+      _log.warning('PluginManager ✗ 启用失败: 插件未找到');
       throw PluginNotFoundException(pluginId);
     }
 
-    debugPrint('[PluginManager] ✓ 插件找到');
-    debugPrint('[PluginManager]   当前状态: ${wrapper.state}');
-    debugPrint('[PluginManager]   是否已启用: ${wrapper.isEnabled}');
+    _log.info('[PluginManager] ✓ 插件找到');
+
+
 
     if (wrapper.isEnabled) {
-      debugPrint('[PluginManager] ℹ 插件已启用，跳过');
+      _log.info('ℹ 插件已启用，跳过');
       return; // 已启用
     }
 
     // 检查依赖
-    debugPrint('[PluginManager] 检查插件依赖...');
-    debugPrint('[PluginManager]   依赖列表: ${wrapper.metadata.dependencies}');
+    _log.info('检查插件依赖...');
+
     await _ensureDependencies(wrapper);
-    debugPrint('[PluginManager] ✓ 依赖检查通过');
+    _log.info('[PluginManager] ✓ 依赖检查通过');
 
     // 调用 onEnable
     try {
-      debugPrint('[PluginManager] 调用插件 onEnable 方法...');
+      _log.info('调用插件 onEnable 方法...');
       await wrapper.lifecycle.transitionTo(
         PluginState.enabled,
         wrapper.plugin.onEnable,
@@ -417,43 +550,43 @@ class PluginManager implements IPluginManager {
       // 启用插件提供的所有 UI Hooks
       await _enablePluginHooks(wrapper);
 
-      debugPrint('[PluginManager] ✓ 插件启用成功');
-      debugPrint('[PluginManager]   新状态: ${wrapper.state}');
-      debugPrint('[PluginManager] =========================================');
+      _log.info('[PluginManager] ✓ 插件启用成功');
+
+
     } catch (e) {
-      debugPrint('[PluginManager] ✗ 插件启用失败: $e');
-      debugPrint('[PluginManager]   当前状态: ${wrapper.state}');
-      debugPrint('[PluginManager] =========================================');
+      _log.warning('PluginManager ✗ 插件启用失败: $e');
+
+
       throw PluginEnableException(pluginId, e);
     }
   }
 
   @override
   Future<void> disablePlugin(String pluginId) async {
-    debugPrint('[PluginManager] =========================================');
-    debugPrint('[PluginManager] 开始禁用插件');
-    debugPrint('[PluginManager]   插件 ID: $pluginId');
-    debugPrint('[PluginManager] =========================================');
+
+    _log.info('开始禁用插件');
+
+
 
     final wrapper = _registry.getPlugin(pluginId);
     if (wrapper == null) {
-      debugPrint('[PluginManager] ✗ 禁用失败: 插件未找到');
+      _log.warning('PluginManager ✗ 禁用失败: 插件未找到');
       throw PluginNotFoundException(pluginId);
     }
 
-    debugPrint('[PluginManager] ✓ 插件找到');
-    debugPrint('[PluginManager]   当前状态: ${wrapper.state}');
-    debugPrint('[PluginManager]   是否已启用: ${wrapper.isEnabled}');
+    _log.info('[PluginManager] ✓ 插件找到');
+
+
 
     if (!wrapper.isEnabled) {
-      debugPrint('[PluginManager] ℹ 插件已禁用，跳过');
-      debugPrint('[PluginManager] =========================================');
+      _log.info('ℹ 插件已禁用，跳过');
+
       return; // 已禁用
     }
 
     // 调用 onDisable
     try {
-      debugPrint('[PluginManager] 调用插件 onDisable 方法...');
+      _log.info('调用插件 onDisable 方法...');
       
       // 禁用插件提供的所有 UI Hooks
       await _disablePluginHooks(wrapper);
@@ -463,12 +596,12 @@ class PluginManager implements IPluginManager {
         wrapper.plugin.onDisable,
       );
       
-      debugPrint('[PluginManager] ✓ 插件禁用成功');
-      debugPrint('[PluginManager]   新状态: ${wrapper.state}');
-      debugPrint('[PluginManager] =========================================');
+      _log.info('[PluginManager] ✓ 插件禁用成功');
+
+
     } catch (e) {
-      debugPrint('[PluginManager] ✗ 插件禁用失败: $e');
-      debugPrint('[PluginManager] =========================================');
+      _log.warning('PluginManager ✗ 插件禁用失败: $e');
+
       throw PluginDisableException(pluginId, e);
     }
   }
@@ -486,7 +619,7 @@ class PluginManager implements IPluginManager {
       try {
         await loadPlugin(pluginId);
       } catch (e) {
-        debugPrint('Failed to load plugin $pluginId: $e');
+        _log.error('Failed to load plugin $pluginId', error: e);
       }
     }
   }
@@ -496,36 +629,36 @@ class PluginManager implements IPluginManager {
     final dependencies = wrapper.metadata.dependencies;
     
     if (dependencies.isEmpty) {
-      debugPrint('[PluginManager]   插件无依赖');
+      _log.info('  插件无依赖');
       return;
     }
     
-    debugPrint('[PluginManager]   开始检查依赖...');
+    _log.info('  开始检查依赖...');
     
     for (final depId in dependencies) {
-      debugPrint('[PluginManager]     检查依赖: $depId');
+
       
       final dep = _registry.getPlugin(depId);
 
       if (dep == null) {
-        debugPrint('[PluginManager]     ✗ 依赖未找到');
+        _log.info('    ✗ 依赖未找到');
         throw MissingDependencyException(wrapper.metadata.id, depId);
       }
 
-      debugPrint('[PluginManager]     ✓ 依赖已找到');
-      debugPrint('[PluginManager]       状态: ${dep.state}');
-      debugPrint('[PluginManager]       是否已启用: ${dep.isEnabled}');
+      _log.info('    ✓ 依赖已找到');
+
+
 
       if (!dep.isEnabled) {
-        debugPrint('[PluginManager]     依赖未启用，正在启用...');
+        _log.info('    依赖未启用，正在启用...');
         await enablePlugin(depId);
-        debugPrint('[PluginManager]     ✓ 依赖已启用');
+        _log.info('    ✓ 依赖已启用');
       } else {
-        debugPrint('[PluginManager]     ✓ 依赖已启用');
+        _log.info('    ✓ 依赖已启用');
       }
     }
     
-    debugPrint('[PluginManager]   ✓ 所有依赖检查完成');
+    _log.info('  ✓ 所有依赖检查完成');
   }
 
   /// 验证 API 依赖
@@ -539,7 +672,7 @@ class PluginManager implements IPluginManager {
   /// Hook 的生命周期与 Plugin 自动同步
   Future<void> _registerPluginHooks(PluginWrapper wrapper) async {
     if (_hookRegistry == null) {
-      debugPrint('[PluginManager] HookRegistry is null, skipping hook registration');
+      _log.info('HookRegistry is null, skipping hook registration');
       return;
     }
 
@@ -548,19 +681,21 @@ class PluginManager implements IPluginManager {
     final hookFactories = plugin.registerHooks();
 
     if (hookFactories.isEmpty) {
-      debugPrint('[PluginManager] Plugin $pluginId provides no hooks');
+      _log.info('Plugin $pluginId provides no hooks');
       return;
     }
 
-    debugPrint('[PluginManager] Registering hooks for plugin: $pluginId');
+    _log.info('Registering hooks for plugin: $pluginId');
 
     // 初始化该插件的 Hook 列表
     _pluginHooks[pluginId] = [];
 
     for (final factory in hookFactories) {
+      // 在 try 块外部声明变量，确保 catch 块可以访问
+      UIHookBase? hook;
       try {
         // 创建 Hook 实例
-        final hook = factory();
+        hook = factory();
 
         // 创建 Hook 上下文
         final hookContext = BasicHookContext(
@@ -589,15 +724,12 @@ class PluginManager implements IPluginManager {
         // 初始化 Hook
         await hookWrapper.lifecycle.transitionTo(
           HookState.initialized,
-          () => hook.onInit(hookContext),
+          () => hook!.onInit(hookContext),
         );
 
-        debugPrint('[PluginManager] ✓ Registered hook: ${hook.metadata.id}');
-        debugPrint('    - Hook point: ${hook.hookPointId}');
-        debugPrint('    - Priority: ${hook.priority}');
-        debugPrint('    - Synced with plugin: $pluginId');
+        _log.info('Registered hook: ${hook.metadata.id} (point: ${hook.hookPointId}, priority: ${hook.priority})');
       } catch (e) {
-        debugPrint('[PluginManager] ✗ Error registering hook: $e');
+        _log.warning('Error registering hook: ${hook?.metadata.id ?? 'unknown'}', error: e);
         // 继续注册其他 Hook，不中断整个流程
       }
     }
@@ -618,11 +750,11 @@ class PluginManager implements IPluginManager {
     final hooks = _pluginHooks[pluginId];
 
     if (hooks == null || hooks.isEmpty) {
-      debugPrint('[PluginManager] No hooks to enable for plugin: $pluginId');
+      _log.info('No hooks to enable for plugin: $pluginId');
       return;
     }
 
-    debugPrint('[PluginManager] Enabling hooks for plugin: $pluginId');
+    _log.info('Enabling hooks for plugin: $pluginId');
 
     for (final hookWrapper in hooks) {
       try {
@@ -630,9 +762,9 @@ class PluginManager implements IPluginManager {
           HookState.enabled,
           hookWrapper.hook.onEnable,
         );
-        debugPrint('[PluginManager] ✓ Enabled hook: ${hookWrapper.hook.metadata.id}');
+        _log.info('[PluginManager] ✓ Enabled hook: ${hookWrapper.hook.metadata.id}');
       } catch (e) {
-        debugPrint('[PluginManager] ✗ Error enabling hook: $e');
+        _log.warning('PluginManager ✗ Error enabling hook: $e');
       }
     }
   }
@@ -647,11 +779,11 @@ class PluginManager implements IPluginManager {
     final hooks = _pluginHooks[pluginId];
 
     if (hooks == null || hooks.isEmpty) {
-      debugPrint('[PluginManager] No hooks to disable for plugin: $pluginId');
+      _log.info('No hooks to disable for plugin: $pluginId');
       return;
     }
 
-    debugPrint('[PluginManager] Disabling hooks for plugin: $pluginId');
+    _log.info('Disabling hooks for plugin: $pluginId');
 
     for (final hookWrapper in hooks) {
       try {
@@ -659,9 +791,9 @@ class PluginManager implements IPluginManager {
           HookState.disabled,
           hookWrapper.hook.onDisable,
         );
-        debugPrint('[PluginManager] ✓ Disabled hook: ${hookWrapper.hook.metadata.id}');
+        _log.info('[PluginManager] ✓ Disabled hook: ${hookWrapper.hook.metadata.id}');
       } catch (e) {
-        debugPrint('[PluginManager] ✗ Error disabling hook: $e');
+        _log.warning('PluginManager ✗ Error disabling hook: $e');
       }
     }
   }
@@ -676,11 +808,11 @@ class PluginManager implements IPluginManager {
     final hooks = _pluginHooks[pluginId];
 
     if (hooks == null || hooks.isEmpty) {
-      debugPrint('[PluginManager] No hooks to dispose for plugin: $pluginId');
+      _log.info('No hooks to dispose for plugin: $pluginId');
       return;
     }
 
-    debugPrint('[PluginManager] Disposing hooks for plugin: $pluginId');
+    _log.info('Disposing hooks for plugin: $pluginId');
 
     for (final hookWrapper in hooks) {
       try {
@@ -688,9 +820,9 @@ class PluginManager implements IPluginManager {
           HookState.disposed,
           hookWrapper.hook.onDispose,
         );
-        debugPrint('[PluginManager] ✓ Disposed hook: ${hookWrapper.hook.metadata.id}');
+        _log.info('[PluginManager] ✓ Disposed hook: ${hookWrapper.hook.metadata.id}');
       } catch (e) {
-        debugPrint('[PluginManager] ✗ Error disposing hook: $e');
+        _log.warning('PluginManager ✗ Error disposing hook: $e');
       }
     }
 
@@ -720,6 +852,30 @@ class PluginManager implements IPluginManager {
     }
   }
 
+  /// 注销插件的所有 Hook 点
+  ///
+  /// [pluginId] 插件 ID
+  void _unregisterPluginHookPoints(String pluginId) {
+    final hookPointIds = _pluginHookPoints[pluginId];
+    if (hookPointIds == null || hookPointIds.isEmpty) {
+      _log.info('插件 $pluginId 没有注册 Hook 点');
+      return;
+    }
+
+    _log.info('开始注销插件 Hook 点');
+
+
+
+    if (_hookRegistry != null) {
+      hookPointIds.forEach(_hookRegistry.unregisterHookPoint);
+    }
+
+    // 从本地跟踪中移除
+    _pluginHookPoints.remove(pluginId);
+
+    _log.info('[PluginManager] ✓ 插件 Hook 点注销完成');
+  }
+
   /// 释放资源
   Future<void> dispose() async {
     // 卸载所有插件
@@ -728,7 +884,7 @@ class PluginManager implements IPluginManager {
       try {
         await unloadPlugin(plugin.metadata.id);
       } catch (e) {
-        debugPrint('Error unloading plugin ${plugin.metadata.id}: $e');
+        _log.error('Error unloading plugin ${plugin.metadata.id}', error: e);
       }
     }
   }

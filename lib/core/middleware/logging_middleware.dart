@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import '../commands/models/command.dart';
 import '../commands/models/command_context.dart';
 import '../commands/models/middleware.dart';
+import '../utils/logger.dart';
 
 /// 日志中间件
 ///
@@ -91,27 +92,4 @@ class LoggingMiddleware extends CommandMiddlewareBase {
   }
 }
 
-/// 日志级别
-enum LogLevel {
-  /// 调试级别
-  debug(500),
 
-  /// 信息级别
-  info(800),
-
-  /// 警告级别
-  warning(900),
-
-  /// 错误级别
-  error(1000),
-
-  /// 无日志
-  none(1200);
-
-  const LogLevel(this.value);
-
-  /// 日志级别值
-  ///
-  /// 对应 Dart 的 log 函数的 level 参数
-  final int value;
-}

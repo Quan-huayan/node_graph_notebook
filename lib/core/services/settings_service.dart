@@ -5,7 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/logger.dart';
 import 'infrastructure/storage_path_service.dart';
+
+/// Logger for SettingsService
+const _log = AppLogger('SettingsService');
 
 /// 应用设置服务
 class SettingsService with ChangeNotifier {
@@ -121,7 +125,7 @@ class SettingsService with ChangeNotifier {
       try {
         await dir.create(recursive: true);
       } catch (e) {
-        debugPrint('Failed to create directory: $e');
+        _log.warning('Failed to create directory: $e');
         return false;
       }
     }
@@ -190,7 +194,7 @@ class SettingsService with ChangeNotifier {
 
       return true;
     } catch (e) {
-      debugPrint('Path validation failed: $e');
+      _log.warning('Path validation failed: $e');
       return false;
     }
   }
@@ -222,7 +226,7 @@ class SettingsService with ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('Failed to count files: $e');
+      _log.warning('Failed to count files: $e');
     }
 
     return StorageUsage(
@@ -242,7 +246,7 @@ class SettingsService with ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('Failed to calculate directory size: $e');
+      _log.warning('Failed to calculate directory size: $e');
     }
     return size;
   }

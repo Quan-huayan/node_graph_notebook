@@ -3,16 +3,18 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_embed_lua/lua_bindings.dart';
 import 'package:flutter_embed_lua/lua_runtime.dart';
 
+import '../../../core/utils/logger.dart';
 import '../models/lua_execution_result.dart';
 
-/// 真正的Lua引擎封装
-class RealLuaEngine {
+const AppLogger _logger = AppLogger('LuaEngine');
+
+/// Lua引擎封装
+class LuaEngine {
   /// 构造函数
-  RealLuaEngine({
+  LuaEngine({
     this.enableDebugOutput = false,
     this.enableSandbox = true,
     this.executionTimeout = defaultExecutionTimeout,
@@ -24,10 +26,10 @@ class RealLuaEngine {
   static const int callbackErrorPrefixLength = 16;
   static const Duration defaultExecutionTimeout = Duration(seconds: 5);
   static const Duration maxExecutionTimeout = Duration(seconds: 30);
-  static RealLuaEngine? _currentEngine;
+  static LuaEngine? _currentEngine;
 
   /// 当前引擎的函数注册表
-  static final Map<RealLuaEngine, Map<String, dynamic Function(List<dynamic>)>>
+  static final Map<LuaEngine, Map<String, dynamic Function(List<dynamic>)>>
       _engineFunctionRegistry = {};
 
   /// 用户函数名称池
@@ -535,7 +537,7 @@ class RealLuaEngine {
   void _output(String message) {
     _outputBuffer.add(message);
     if (enableDebugOutput) {
-      debugPrint('[LUA] $message');
+      _logger.info(message);
     }
   }
 

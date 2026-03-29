@@ -27,7 +27,6 @@ void main() {
     setUp(() async {
       // 创建引擎服务
       engineService = LuaEngineService(
-        engineType: LuaEngineType.realLua,
         enableDebugOutput: true,
         enableSandbox: false, // 测试环境关闭沙箱
       );
@@ -57,20 +56,6 @@ void main() {
     group('节点操作 API 测试', () {
       test('createNode - 创建节点并异步回调', () async {
         // Arrange
-        final testNode = Node(
-          id: 'test-node-1',
-          title: 'Test Node',
-          content: 'Test Content',
-          references: const {},
-          position: const Offset(100, 100),
-          size: const Size(200, 250),
-          viewMode: NodeViewMode.titleWithPreview,
-          color: null,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          metadata: const {},
-        );
-
         when(mockNodeRepo.save(any)).thenAnswer((_) async => {});
 
         // Act
@@ -713,8 +698,6 @@ void main() {
       });
 
       test('长字符串处理', () async {
-        final longString = 'A' * 10000;
-
         const script = '''
           local longStr = string.rep("A", 10000)
           debugPrint("字符串长度: " .. string.len(longStr))
@@ -751,7 +734,6 @@ void main() {
       test('沙箱模式应该禁用危险API', () async {
         // 创建启用沙箱的引擎
         final sandboxEngine = LuaEngineService(
-          engineType: LuaEngineType.realLua,
           enableSandbox: true,
           enableDebugOutput: true,
         );

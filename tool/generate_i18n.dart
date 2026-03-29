@@ -13,6 +13,7 @@
 /// dart tool/generate_i18n.dart
 /// dart tool/generate_i18n.dart --input=assets/i18n/source.csv
 /// dart tool/generate_i18n.dart --output=lib/core/services/i18n/translations.dart
+library;
 
 import 'dart:io';
 
@@ -256,41 +257,39 @@ String _generateDartCode(Map<String, Map<String, TranslationEntry>> translations
   final timestamp = DateTime.now().toIso8601String();
 
   // 文件头
-  buffer.writeln('/// 自动生成的翻译数据');
-  buffer.writeln('///');
-  buffer.writeln('/// 生成时间: $timestamp');
-  buffer.writeln('/// 翻译条目: ${_getTotalCount(translations)} 条');
-  buffer.writeln('/// 分类: ${categories.length} 个');
-  buffer.writeln('///');
-  buffer.writeln('/// ⚠️  请勿手动编辑此文件 ⚠️');
-  buffer.writeln('///');
-  buffer.writeln('/// 如需修改翻译，请编辑源 CSV 文件并重新运行生成工具：');
-  buffer.writeln('///   dart tool/generate_i18n.dart');
-  buffer.writeln();
-  buffer.writeln('// 忽略 long_string 提示，因为这是翻译数据');
-  buffer.writeln('// ignore_for_file: long_string_literal_lines');
-  buffer.writeln();
-  buffer.writeln('/// I18n 翻译数据类');
-  buffer.writeln('///');
-  buffer.writeln('/// 提供应用的多语言翻译支持');
-  buffer.writeln('class I18nTranslations {');
-  buffer.writeln('  /// 翻译数据映射');
-  buffer.writeln('  ///');
-  buffer.writeln('  /// 结构: { 语言代码: { 翻译键: 翻译值 } }');
-  buffer.writeln('  /// 例如: { "zh": { "Home": "主页" } }');
-  buffer.writeln('  static const Map<String, Map<String, String>> data = {');
+  buffer..writeln('/// 自动生成的翻译数据')
+  ..writeln('///')
+  ..writeln('/// 生成时间: $timestamp')
+  ..writeln('/// 翻译条目: ${_getTotalCount(translations)} 条')
+  ..writeln('/// 分类: ${categories.length} 个')
+  ..writeln('///')
+  ..writeln('/// ⚠️  请勿手动编辑此文件 ⚠️')
+  ..writeln('///')
+  ..writeln('/// 如需修改翻译，请编辑源 CSV 文件并重新运行生成工具：')
+  ..writeln('///   dart tool/generate_i18n.dart')
+  ..writeln()
+  ..writeln('// 忽略 long_string 提示，因为这是翻译数据')
+  ..writeln('// ignore_for_file: long_string_literal_lines')
+  ..writeln()
+  ..writeln('/// I18n 翻译数据类')
+  ..writeln('///')
+  ..writeln('/// 提供应用的多语言翻译支持')
+  ..writeln('class I18nTranslations {')
+  ..writeln('  /// 翻译数据映射')
+  ..writeln('  ///')
+  ..writeln('  /// 结构: { 语言代码: { 翻译键: 翻译值 } }')
+  ..writeln('  /// 例如: { "zh": { "Home": "主页" } }')
+  ..writeln('  static const Map<String, Map<String, String>> data = {');
 
   // 生成每种语言的翻译
   translations.forEach((lang, data) {
-    buffer.writeln("    '$lang': {");
-    buffer.writeln('      // === ${_getLanguageName(lang)} ===');
-    buffer.writeln('      // 共 ${data.length} 条翻译');
-    buffer.writeln();
+    buffer..writeln("    '$lang': {")
+    ..writeln('      // === ${_getLanguageName(lang)} ===')
+    ..writeln('      // 共 ${data.length} 条翻译')
+    ..writeln();
 
     // 按分类组织翻译
-    final categorizedData = _groupByCategory(data);
-
-    categorizedData.forEach((category, entries) {
+    _groupByCategory(data).forEach((category, entries) {
       if (category.isNotEmpty) {
         buffer.writeln('      // === $category ===');
       }
@@ -313,8 +312,8 @@ String _generateDartCode(Map<String, Map<String, TranslationEntry>> translations
     buffer.writeln('    },');
   });
 
-  buffer.writeln('  };');
-  buffer.writeln('}');
+  buffer..writeln('  };')
+  ..writeln('}');
 
   return buffer.toString();
 }
@@ -335,14 +334,12 @@ Map<String, List<TranslationEntry>> _groupByCategory(Map<String, TranslationEntr
 int _getTotalCount(Map<String, Map<String, TranslationEntry>> translations) => translations.values.first.length;
 
 /// 转义字符串中的特殊字符
-String _escapeString(String value) {
-  return value
-      .replaceAll('\\', '\\\\')  // 反斜杠
+String _escapeString(String value) => 
+  value.replaceAll('\\', '\\\\')  // 反斜杠
       .replaceAll("'", "\\'")     // 单引号
       .replaceAll('\n', '\\n')    // 换行
       .replaceAll('\r', '\\r')    // 回车
       .replaceAll('\t', '\\t');   // 制表符
-}
 
 /// 获取语言名称
 String _getLanguageName(String code) {

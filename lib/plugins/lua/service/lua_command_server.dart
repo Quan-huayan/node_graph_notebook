@@ -5,7 +5,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
+import '../../../core/utils/logger.dart';
 import 'lua_engine_service.dart';
+
+const _log = AppLogger('LuaCommandServer');
 
 /// Lua 命令服务器
 ///
@@ -43,7 +46,7 @@ class LuaCommandServer {
   /// 启动服务器
   Future<void> start() async {
     if (_isRunning) {
-      debugPrint('[LuaCommandServer] 服务器已在运行');
+      _log.info('服务器已在运行');
       return;
     }
 
@@ -55,11 +58,11 @@ class LuaCommandServer {
       await commandDir.create(recursive: true);
     }
 
-    debugPrint('[LuaCommandServer] 启动服务器');
-    debugPrint('[LuaCommandServer] 命令目录: ${commandDir.path}');
+    _log.info('启动服务器');
+    _log.info('命令目录: ${commandDir.path}');
     debugPrint('[LuaCommandServer]');
-    debugPrint('[LuaCommandServer] 使用方法:');
-    debugPrint('[LuaCommandServer]   echo "debugPrint(\'Hello\')" > ${commandDir.path}/command.lua');
+    _log.info('使用方法:');
+    _log.info('  echo "debugPrint(\'Hello\')" > ${commandDir.path}/command.lua');
     debugPrint('[LuaCommandServer]');
 
     _isRunning = true;
@@ -80,7 +83,7 @@ class LuaCommandServer {
     await _watcher?.stop();
     _watcher = null;
 
-    debugPrint('[LuaCommandServer] 服务器已停止');
+    _log.info('服务器已停止');
   }
 
   /// 处理文件变化
@@ -103,9 +106,9 @@ class LuaCommandServer {
 
     _lastProcessed[filePath] = stat.modified;
 
-    debugPrint('[LuaCommandServer] ========================================');
-    debugPrint('[LuaCommandServer] 检测到脚本: ${path.basename(filePath)}');
-    debugPrint('[LuaCommandServer] ========================================');
+
+    _log.info('检测到脚本: ${path.basename(filePath)}');
+
 
     try {
       // ✅ 明确使用UTF-8编码读取文件（带容错处理）
@@ -113,7 +116,7 @@ class LuaCommandServer {
       try {
         bytes = await file.readAsBytes();
       } catch (e) {
-        debugPrint('[LuaCommandServer] ✗ 无法读取文件: $e');
+        _log.warning('LuaCommandServer ✗ 无法读取文件: $e');
         return;
       }
 
@@ -121,57 +124,57 @@ class LuaCommandServer {
       String content;
       try {
         // 首先输出原始字节信息用于调试
-        debugPrint('[LuaCommandServer] 🔍 文件大小: ${bytes.length} 字节');
+        _log.info('🔍 文件大小: ${bytes.length} 字节');
         if (bytes.length > 60) {
-          debugPrint('[LuaCommandServer] 🔍 前60字节: ${bytes.sublist(0, 60)}');
-          debugPrint('[LuaCommandServer] 🔍 前60字节(Hex): ${bytes.sublist(0, 60).map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
+          _log.info('🔍 前60字节: ${bytes.sublist(0, 60)}');
+          _log.info('🔍 前60字节(Hex): ${bytes.sublist(0, 60).map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
         }
 
         if (bytes.length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
           // 移除UTF-8 BOM
-          debugPrint('[LuaCommandServer] 🔍 检测到UTF-8 BOM');
+          _log.info('🔍 检测到UTF-8 BOM');
           content = utf8.decode(bytes.sublist(3), allowMalformed: true);
         } else {
-          debugPrint('[LuaCommandServer] 🔍 未检测到BOM，直接解码');
+          _log.info('🔍 未检测到BOM，直接解码');
           content = utf8.decode(bytes, allowMalformed: true);
         }
       } catch (e) {
-        debugPrint('[LuaCommandServer] ✗ UTF-8解码失败: $e');
-        debugPrint('[LuaCommandServer] 尝试使用系统默认编码...');
+        _log.warning('LuaCommandServer ✗ UTF-8解码失败: $e');
+        _log.info('尝试使用系统默认编码...');
         content = await file.readAsString();
       }
 
-      debugPrint('[LuaCommandServer] 脚本内容:');
-      debugPrint('[LuaCommandServer] ---');
+      _log.info('脚本内容:');
+      _log.info('---');
       debugPrint(content);
-      debugPrint('[LuaCommandServer] ---');
+      _log.info('---');
       debugPrint('[LuaCommandServer]');
 
       // 执行脚本
       final result = await engineService.executeString(content);
 
       // 输出结果
-      debugPrint('[LuaCommandServer] 执行结果:');
-      debugPrint('[LuaCommandServer] ---');
+      _log.info('执行结果:');
+      _log.info('---');
       for (final line in result.output) {
-        debugPrint('[LuaCommandServer] $line');
+        _log.info(line);
       }
-      debugPrint('[LuaCommandServer] ---');
+      _log.info('---');
 
       if (result.success) {
-        debugPrint('[LuaCommandServer] ✓ 执行成功');
+        _log.info('[LuaCommandServer] ✓ 执行成功');
       } else {
-        debugPrint('[LuaCommandServer] ✗ 执行失败: ${result.error}');
+        _log.warning('LuaCommandServer ✗ 执行失败: ${result.error}');
       }
 
       // 删除已执行的文件
       await file.delete();
-      debugPrint('[LuaCommandServer] 已清理脚本文件');
+      _log.info('已清理脚本文件');
     } catch (e) {
-      debugPrint('[LuaCommandServer] ✗ 处理脚本时出错: $e');
+      _log.warning('LuaCommandServer ✗ 处理脚本时出错: $e');
     }
 
-    debugPrint('[LuaCommandServer] ========================================');
+
     debugPrint('[LuaCommandServer]');
   }
 }
@@ -210,7 +213,7 @@ class FileSystemWatcher {
       _checkFiles();
     });
 
-    debugPrint('[FileSystemWatcher] 开始监听: $directoryPath');
+    _log.info('开始监听: $directoryPath');
   }
 
   /// 停止监听
@@ -221,7 +224,7 @@ class FileSystemWatcher {
     _timer?.cancel();
     _timer = null;
 
-    debugPrint('[FileSystemWatcher] 停止监听');
+    _log.info('停止监听');
   }
 
   /// 检查文件变化

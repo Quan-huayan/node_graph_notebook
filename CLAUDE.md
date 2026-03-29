@@ -15,6 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Plugin system for extensibility
 - Data import/export functionality
 - Theme customization (light/dark modes)
+- Lua scripting support for automation
+- Internationalization (i18n) support
 
 ## Architecture Status
 
@@ -22,16 +24,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The refactoring has successfully introduced:
 - **Command Bus**: Centralized business logic execution with middleware pipeline
-- **CQRS Pattern**: Complete separation of read (Repository) and write (Command) operations
+- **CQRS Pattern**: Complete separation of read (Query Bus) and write (Command) operations
 - **Plugin System**: Fully functional plugin architecture with UI hooks, service providers, and middleware plugins
 - **BLoC Restructuring**: BLoCs now only manage UI state, all business logic in Command Handlers
 - **Event-Driven Architecture**: EventBus for cross-component communication
 - **Unified DI Container**: Single dependency injection system supporting both Provider and dynamic plugin loading
-
-**Remaining Work:**
-- Test coverage for new Command Handlers
-- Performance optimization for large datasets
-- Documentation updates for plugin development
+- **Lua Scripting**: Complete Lua integration for dynamic UI hooks and automation
 
 ## Architecture Pattern
 
@@ -40,16 +38,16 @@ UI Layer (Widgets)
     ↓
 BLoC Layer (UI State Management)
     ↓
-CommandBus (Business Logic Gateway)
+CommandBus/QueryBus (Business Logic Gateway)
     ↓
-Command Handlers (Business Logic)
+Command/Query Handlers (Business Logic)
     ↓
 Services/Repositories (Data Access)
 ```
 
 **Important Patterns:**
 - ✅ **Write operations** → Use `CommandBus.dispatch(command)`
-- ✅ **Read operations** → Use `Repository` directly
+- ✅ **Read operations** → Use `QueryBus.dispatch(query)` (CQRS) or Repository directly
 - ✅ **BLoCs** → Only manage UI state (isLoading, error, selection)
 - ✅ **EventBus** → Subscribe to data changes from other components
 - ✅ **Plugins** → Extend functionality via hooks, services, and middleware
@@ -100,74 +98,106 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - `Graph` - Manages node connections and relationships
 - `Connection` - Defines relationships between nodes
 - `NodeReference` - Reference objects for node relationships
-- `MetadataIndex` - Efficient indexing for fast node lookups
 
 **Repositories** (`repositories/`):
-- `FileSystemNodeRepository` - Node storage as Markdown files
-- `FileSystemGraphRepository` - Graph storage as JSON files
+- `NodeRepository` - Node storage as Markdown files
+- `GraphRepository` - Graph storage as JSON files
 - `MetadataIndex` - Fast metadata indexing system
 
 **Command System** (`commands/`):
 - `command_bus.dart` - Central command dispatcher with middleware pipeline
-- `command.dart` - Command base classes with optional undo support
-- `command_result.dart` - Type-safe result wrapper
-- `command_handler.dart` - Handler interface for commands
+- `models/command.dart` - Command base classes with optional undo support
+- `models/command_handler.dart` - Handler interface for commands
+- `command_handler_registry.dart` - Handler registration and lookup
+
+**CQRS System** (`cqrs/`):
+- `query/query_bus.dart` - Query dispatcher for read operations
+- `queries/` - Query definitions (search, list, load)
+- `handlers/` - Query handlers
+- `read_models/` - Read-optimized data models
 
 **Plugin System** (`plugin/`):
-- `plugin.dart` - Base Plugin interface and lifecycle
+- `plugin_base.dart` - Base Plugin interface and lifecycle
 - `plugin_manager.dart` - Plugin lifecycle management
 - `service_registry.dart` - Unified dependency injection container
-- `ui_hooks/` - UI Hook system (refactored 2026-03-17)
+- `ui_hooks/` - UI Hook system for extending UI
+- `middleware/` - Middleware pipeline and plugin support
+- `api/` - API registry for inter-plugin communication
 
 **Event System** (`events/`):
 - `AppEventBus` - Singleton for cross-component communication
+- `event_subscription_manager.dart` - Event subscription lifecycle management
+
+**Middleware** (`middleware/`):
+- `logging_middleware.dart` - Command execution logging
+- `validation_middleware.dart` - Command validation
+- `transaction_middleware.dart` - Transaction support
+- `undo_middleware.dart` - Undo/redo functionality
+- `performance_middleware.dart` - Performance monitoring
+- `cache_middleware.dart` - Caching layer
 
 ### Plugin Architecture (`lib/plugins/`)
 
 **Plugin Structure:**
+Plugins are organized as self-contained modules in `lib/plugins/{plugin_name}/`:
+
 ```
 {plugin_name}/
-├── command/        # Command definitions
-├── handler/        # Command handlers
-├── service/        # Business logic services
-├── bloc/           # State management BLoCs
-└── {plugin_name}_plugin.dart  # Main plugin file
+├── command/        # Command definitions (optional)
+├── handler/        # Command handlers (optional)
+├── service/        # Business logic services (optional)
+├── bloc/           # State management BLoCs (optional)
+├── ui/             # UI components (optional)
+├── models/         # Plugin-specific models (optional)
+├── {plugin_name}_plugin.dart  # Main plugin file
+└── *_hook.dart     # UI hook registrations (optional)
 ```
 
-**Key Plugins:**
+**Available Plugins:**
 - `graph/` - Core node and graph management with Flame integration
-- `ai/` - AI integration features
+- `ai/` - AI integration features (chat, analysis)
 - `editor/` - Text editing with Markdown support
-- `search/` - Node search functionality
+- `search/` - Node search functionality with presets
 - `layout/` - Graph layout algorithms
-- `converter/` - Import/export functionality
+- `converter/` - Import/export functionality (Markdown, JSON)
 - `settings/` - Application settings management
-- `builtin_middlewares/` - Logging, Validation, Transaction, Undo middlewares
+- `folder/` - Folder tree view sidebar
+- `lua/` - Lua scripting engine and automation
+- `i18n/` - Internationalization support
+- `market/` - Plugin marketplace UI
+- `data_recovery/` - Data backup and repair tools
+- `delete/` - Node deletion functionality
+- `sidebarNode/` - Sidebar node list view
 
 ### UI Layer (`lib/ui/`)
 
-- `bloc/ui_bloc.dart` - Core UI state management
-- `pages/` - Full-screen pages
+- `bloc/` - Core UI state management (UIBloc)
+- `pages/` - Full-screen pages (home, plugin market)
 - `widgets/` - Reusable components
 - `dialogs/` - Dialogs and modals
-- `views/` - View widgets (graph view, folder tree, etc.)
+- `bars/` - Toolbar, sidebar, app bar components
 
-### Visualization (`lib/flame/`)
+### Visualization (`lib/plugins/graph/flame/`)
 
-Flame engine components for interactive node graphs with custom rendering and interaction handling.
+Flame engine components for interactive node graphs:
+- `components/` - Node and connection renderers
+- `graph_world.dart` - Main Flame game world
+- `spatial_index_manager.dart` - Spatial indexing for performance
+- `lod/` - Level-of-detail rendering
 
 ### Data Persistence
 
-- **Nodes**: Markdown files with JSON metadata in `data/nodes/`
+- **Nodes**: Markdown files with YAML frontmatter in `data/nodes/`
 - **Graphs**: JSON files defining node connections in `data/graphs/`
-- **Settings**: SharedPreferences (async) for app configuration
+- **Settings**: SharedPreferences for app configuration
+- **Lua Scripts**: Stored in `data/lua_scripts/` and `data/scripts/`
 - **Search Presets**: Stored in SharedPreferences via SearchPresetService
 
 ## Dependency Injection Order
 
 The application initializes dependencies in strict layers using **DynamicProviderWidget**:
 
-1. **ServiceRegistry** - Core dependencies (Repositories, CommandBus, EventBus)
+1. **ServiceRegistry** - Core dependencies (Repositories, CommandBus, EventBus, QueryBus)
 2. **Settings/Theme** - Plugins may need these during initialization
 3. **Repositories** - All services depend on data access
 4. **EventBus** - Command handlers and services need event publishing
@@ -206,7 +236,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
   }
 
   Future<void> _onLoadNodes(NodeLoadEvent event, Emitter emit) async {
-    // Read operations go directly to Repository
+    // Read operations can go directly to Repository or use QueryBus
     final nodes = await _nodeRepository.queryAll();
     emit(state.copyWith(nodes: nodes));
   }
@@ -299,15 +329,6 @@ flutter test --coverage                # Run with coverage
 
 ## Plugin Development
 
-For detailed plugin development guidance, see `docs/plugin_development.md`, which covers:
-- Plugin types (Service, UI Hook, Middleware)
-- Plugin structure and lifecycle
-- Command and Handler development
-- Middleware development
-- Service bindings and dependency injection
-- Plugin dependencies and API exports
-- Example plugins and best practices
-
 ### Quick Plugin Template
 
 ```dart
@@ -321,6 +342,21 @@ class MyPlugin extends Plugin {
   );
 
   @override
+  Future<void> onLoad(PluginContext context) async {
+    // Plugin initialization
+  }
+
+  @override
+  Future<void> onEnable() async {
+    // Plugin activation
+  }
+
+  @override
+  Future<void> onDisable() async {
+    // Plugin deactivation
+  }
+
+  @override
   List<CommandHandlerBinding> registerCommandHandlers() {
     return [/* Register command handlers */];
   }
@@ -329,23 +365,31 @@ class MyPlugin extends Plugin {
   List<ServiceBinding> registerServices() {
     return [/* Register services */];
   }
+}
+```
 
-  @override
-  List<HookFactory> registerHooks() {
-    return [/* Register UI hooks */];
-  }
+### Service Registration
+
+```dart
+@ServiceBinding(
+  serviceType: MyService,
+  implementationType: MyServiceImpl,
+  lifetime: ServiceLifetime.singleton,
+)
+class MyServiceImpl implements MyService {
+  // Implementation
 }
 ```
 
 ## UI Hook System
 
-The UI Hook system enables extending the application UI at specific hook points. For comprehensive documentation, see `docs/ui_hook_system.md`.
+The UI Hook system enables extending the application UI at specific hook points.
 
 **Key Points:**
 - UIHookBase is independent of Plugin (simpler lifecycle)
 - String-based hook points (supports dynamic registration)
 - Semantic priorities (critical, high, medium, low, decorative)
-- Inter-hook API communication
+- Inter-hook API communication via HookContext
 
 **Available Hook Points:**
 - `main.toolbar` - Main toolbar
@@ -353,6 +397,19 @@ The UI Hook system enables extending the application UI at specific hook points.
 - `context_menu.node` / `context_menu.graph` - Context menus
 - `status.bar` - Status bar
 - `settings` - Settings page
+
+**Lua Dynamic Hooks:**
+Lua scripts can register dynamic hooks at runtime:
+```lua
+-- Register a toolbar button
+registerHook("main.toolbar", function(ctx)
+    ctx:addButton("myButton", "Click Me", function()
+        print("Button clicked!")
+    end)
+end)
+```
+
+See `docs/COMMAND_LINE_GUIDE.md` for complete Lua scripting documentation.
 
 ## Code Analysis
 
@@ -373,7 +430,7 @@ bash scripts/analyze.sh    # Filters third-party warnings
 ## Important Notes
 
 ### Architecture Patterns
-1. **CQRS Pattern**: Separate read (Repository) and write (CommandBus) operations
+1. **CQRS Pattern**: Separate read (QueryBus) and write (CommandBus) operations
 2. **Event-Driven**: Use EventBus for cross-component communication
 3. **Plugin Architecture**: Extend functionality via plugins, not direct modifications
 4. **Unified DI**: Single DI container (ServiceRegistry) supporting both Provider and dynamic plugin loading
@@ -381,14 +438,14 @@ bash scripts/analyze.sh    # Filters third-party warnings
 ### Development Guidelines
 1. **Always regenerate code** after modifying models with `@JsonSerializable` annotation
 2. **Provider dependency order is critical** - see dependency injection order above
-3. **Don't use `debugPrint()`** - use `debugPrint()` or LoggingMiddleware
+3. **Don't use `print()`** - use `debugPrint()` or LoggingMiddleware
 4. **File I/O should be async** - avoid blocking the UI thread
 5. **Flame performance** - cache resources, don't allocate in render()
 6. **Error recovery** - app has built-in data recovery on initialization failures
 
 ### Command Bus Usage
 1. **Write operations** → Always use `CommandBus.dispatch(command)`
-2. **Read operations** → Use `Repository` directly
+2. **Read operations** → Use `QueryBus.dispatch(query)` for CQRS, or Repository directly
 3. **Business logic** → Implement in Command Handlers, not in BLoCs or Services
 4. **Event publishing** → Publish events in Command Handlers after data changes
 5. **Undo support** → Implement `undo()` method in Command if operation should be undoable
@@ -409,12 +466,20 @@ bash scripts/analyze.sh    # Filters third-party warnings
 6. **UI Hooks** → Extend UI at specific hook points via HookRegistry
 7. **API exports** → Export APIs via `exportAPIs()` for inter-plugin communication
 
+### Lua Scripting
+1. **Script location** → Store scripts in `data/lua_scripts/` or `data/scripts/`
+2. **Security** → Lua scripts run in sandboxed environment with limited APIs
+3. **Dynamic hooks** → Scripts can register UI hooks at runtime
+4. **Event handling** → Scripts can listen to and emit events
+5. **API access** → Available APIs: node operations, graph operations, UI hooks, messaging
+
+See `docs/COMMAND_LINE_GUIDE.md` for complete Lua scripting documentation.
+
 ## Additional Documentation
 
 - `docs/coding_standards.md` - Detailed coding standards
 - `docs/testing_guidelines.md` - Comprehensive testing guidelines
-- `docs/plugin_development.md` - Plugin development guide
-- `docs/ui_hook_system.md` - UI Hook system architecture
-- `docs/ui_hook_migration_deprecations.md` - UI Hook migration guide
-- `docs/design/` - Design documents
-- `docs/test_analysis_report.md` - Test analysis report
+- `docs/bloc_integration_guide.md` - BLoC integration patterns
+- `docs/performance_optimization_complete.md` - Performance optimization guide
+- `docs/performance_optimization_summary.md` - Performance optimization summary
+- `docs/COMMAND_LINE_GUIDE.md` - Command line and Lua scripting guide

@@ -174,12 +174,12 @@ class LuaErrorInfo {
 
   /// 转换为详细的错误信息
   String toDetailedString() {
-    final buffer = StringBuffer();
-    buffer.writeln('╔════════════════════════════════════════');
-    buffer.writeln('║ Lua 错误详情');
-    buffer.writeln('╠════════════════════════════════════════');
-    buffer.writeln('║ 类型: ${_getTypeName()}');
-    buffer.writeln('║ 消息: $message');
+    final buffer = StringBuffer()
+    ..writeln('╔════════════════════════════════════════')
+    ..writeln('║ Lua 错误详情')
+    ..writeln('╠════════════════════════════════════════')
+    ..writeln('║ 类型: ${_getTypeName()}')
+    ..writeln('║ 消息: $message');
 
     if (line != null) {
       buffer.writeln('║ 位置: 第$line行');
@@ -189,13 +189,13 @@ class LuaErrorInfo {
     }
 
     if (suggestion != null) {
-      buffer.writeln('║ ');
-      buffer.writeln('║ 💡 建议: $suggestion');
+      buffer..writeln('║ ')
+      ..writeln('║ 💡 建议: $suggestion');
     }
 
     if (context != null && context!.isNotEmpty) {
-      buffer.writeln('║ ');
-      buffer.writeln('║ 上下文:');
+      buffer..writeln('║ ')
+      ..writeln('║ 上下文:');
       final lines = context!.split('\n');
       for (final line in lines) {
         buffer.writeln('║   $line');

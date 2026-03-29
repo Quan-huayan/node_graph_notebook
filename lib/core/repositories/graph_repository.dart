@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
+import '../utils/logger.dart';
 import 'exceptions.dart';
+
+/// Logger for FileSystemGraphRepository
+const _log = AppLogger('FileSystemGraphRepository');
 
 /// 图仓库接口
 ///
@@ -133,7 +136,7 @@ class FileSystemGraphRepository implements GraphRepository {
       // 实现方式：检查文件内容是否为空或仅包含空白字符
       // 重要性：允许应用从损坏的数据中恢复
       if (content.trim().isEmpty) {
-        debugPrint('[GraphRepository] Graph file is empty: $graphId');
+        _log.info('Graph file is empty: $graphId');
         return null;
       }
 
@@ -196,7 +199,7 @@ class FileSystemGraphRepository implements GraphRepository {
           } catch (e) {
             // 记录损坏的文件，但继续处理其他文件
             corruptedFiles.add(entity.path);
-            debugPrint('Failed to load graph file ${entity.path}: $e');
+            _log.warning('Failed to load graph file ${entity.path}: $e');
           }
         }
       }
@@ -211,7 +214,7 @@ class FileSystemGraphRepository implements GraphRepository {
 
     // 如果有损坏的文件，记录日志
     if (corruptedFiles.isNotEmpty) {
-      debugPrint('Found ${corruptedFiles.length} corrupted graph file(s)');
+      _log.warning('Found ${corruptedFiles.length} corrupted graph file(s)');
 
       // 尝试清理 current.json 如果当前图已损坏
       await _cleanupCurrentGraphIfNeeded(graphs);
@@ -231,7 +234,7 @@ class FileSystemGraphRepository implements GraphRepository {
           await setCurrent(graphs.first.id);
           return graphs.first;
         } catch (e) {
-          debugPrint('Failed to set default current graph: $e');
+          _log.warning('Failed to set default current graph: $e');
           return graphs.first;
         }
       }
@@ -250,7 +253,7 @@ class FileSystemGraphRepository implements GraphRepository {
       }
 
       // 当前图已被删除，清除设置并返回第一个可用的图
-      debugPrint('Current graph $graphId not found, clearing settings');
+      _log.warning('Current graph $graphId not found, clearing settings');
       await _clearCurrent();
 
       final graphs = await getAll();
@@ -260,24 +263,24 @@ class FileSystemGraphRepository implements GraphRepository {
       }
       return null;
     } on FileSystemException catch (e) {
-      debugPrint('Failed to load current graph: $e');
+      _log.warning('Failed to load current graph: $e');
       // 如果读取设置文件失败，尝试清除它
       try {
         await _clearCurrent();
       } catch (e2) {
-        debugPrint('Failed to clear current graph settings: $e2');
+        _log.warning('Failed to clear current graph settings: $e2');
       }
 
       // 返回第一个可用的图
       final graphs = await getAll();
       return graphs.isNotEmpty ? graphs.first : null;
     } catch (e) {
-      debugPrint('Failed to load current graph: $e');
+      _log.warning('Failed to load current graph: $e');
       // 如果读取设置文件失败，尝试清除它
       try {
         await _clearCurrent();
       } catch (e2) {
-        debugPrint('Failed to clear current graph settings: $e2');
+        _log.warning('Failed to clear current graph settings: $e2');
       }
 
       // 返回第一个可用的图
@@ -379,19 +382,19 @@ class FileSystemGraphRepository implements GraphRepository {
         // 检查当前图是否在有效图列表中
         final currentExists = validGraphs.any((g) => g.id == currentGraphId);
         if (!currentExists) {
-          debugPrint(
+          _log.warning(
             'Current graph $currentGraphId is corrupted or missing, clearing settings',
           );
           await _clearCurrent();
         }
       }
     } catch (e) {
-      debugPrint('Failed to cleanup current graph settings: $e');
+      _log.warning('Failed to cleanup current graph settings: $e');
       // 如果读取设置失败，尝试删除设置文件
       try {
         await settingsFile.delete();
       } catch (e2) {
-        debugPrint('Failed to delete corrupted current.json: $e2');
+        _log.warning('Failed to delete corrupted current.json: $e2');
       }
     }
   }

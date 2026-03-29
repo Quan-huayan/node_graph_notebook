@@ -1,5 +1,3 @@
-import '../../../plugins/graph/service/graph_service.dart';
-import '../../../plugins/graph/service/node_service.dart';
 import '../../events/app_events.dart';
 import '../../models/node.dart';
 import '../../plugin/service_registry.dart';
@@ -19,23 +17,19 @@ import '../../repositories/node_repository.dart';
 class CommandContext {
   /// 构造函数
   CommandContext({
-    NodeService? nodeService,
-    GraphService? graphService,
     NodeRepository? nodeRepository,
     GraphRepository? graphRepository,
     AppEventBus? eventBus,
+    Map<Type, dynamic>? additionalServices,
   }) {
-    if (nodeService != null) {
-      _services[NodeService] = nodeService;
-    }
-    if (graphService != null) {
-      _services[GraphService] = graphService;
-    }
     if (nodeRepository != null) {
       _services[NodeRepository] = nodeRepository;
     }
     if (graphRepository != null) {
       _services[GraphRepository] = graphRepository;
+    }
+    if (additionalServices != null) {
+      _services.addAll(additionalServices);
     }
     this.eventBus = eventBus ?? getAppEventBus();
   }
@@ -62,16 +56,6 @@ class CommandContext {
   ///
   /// 如果图仓库未注册，抛出 [ServiceNotFoundException]
   GraphRepository get graphRepository => read<GraphRepository>();
-
-  /// 获取节点服务
-  ///
-  /// 如果节点服务未注册，返回 null
-  NodeService? get nodeService => tryRead<NodeService>();
-
-  /// 获取图服务
-  ///
-  /// 如果图服务未注册，返回 null
-  GraphService? get graphService => tryRead<GraphService>();
 
   // === 事件发布辅助方法 ===
   // 说明：为常用的事件发布操作提供便捷方法
@@ -221,11 +205,10 @@ class CommandContext {
   /// 继承当前上下文的所有服务，但元数据独立
   CommandContext createChild() {
     final child = CommandContext(
-      nodeService: tryRead<NodeService>(),
-      graphService: tryRead<GraphService>(),
       nodeRepository: tryRead<NodeRepository>(),
       graphRepository: tryRead<GraphRepository>(),
       eventBus: eventBus,
+      additionalServices: Map.from(_services),
     );
 
     // 复制元数据

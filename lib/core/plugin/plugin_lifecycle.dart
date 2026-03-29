@@ -1,5 +1,8 @@
-import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
 import 'plugin.dart';
+
+/// Logger for PluginLifecycleManager
+const _log = AppLogger('PluginLifecycleManager');
 
 /// 插件生命周期管理器
 ///
@@ -56,14 +59,14 @@ class PluginLifecycleManager {
     PluginState targetState,
     Future<void> Function() action,
   ) async {
-    debugPrint('[PluginLifecycleManager] transitionTo:');
-    debugPrint('  - Plugin: ${_plugin.metadata.id}');
-    debugPrint('  - From state: $_state');
-    debugPrint('  - To state: $targetState');
-    debugPrint('  - Can transition: ${canTransitionTo(targetState)}');
+    _log..debug('transitionTo:')
+    ..debug('  - Plugin: ${_plugin.metadata.id}')
+    ..debug('  - From state: $_state')
+    ..debug('  - To state: $targetState')
+    ..debug('  - Can transition: ${canTransitionTo(targetState)}');
     
     if (!canTransitionTo(targetState)) {
-      debugPrint('[PluginLifecycleManager] ✗ Cannot transition!');
+      _log.warning('PluginLifecycleManager ✗ Cannot transition!');
       throw PluginStateException(
         _plugin.metadata.id,
         _state.name,
@@ -73,22 +76,22 @@ class PluginLifecycleManager {
 
     final oldState = _state;
     try {
-      debugPrint('[PluginLifecycleManager] Executing action...');
+      _log.info('Executing action...');
       await action();
       _state = targetState;
-      debugPrint('[PluginLifecycleManager] ✓ State transition successful!');
-      debugPrint('  - New state: $_state');
+      _log.info('[PluginLifecycleManager] ✓ State transition successful!');
+      _log.debug('  - New state: $_state');
       _plugin.state = _state;
       _notifyListeners(oldState, targetState);
     } catch (e) {
-      debugPrint('[PluginLifecycleManager] ✗ Action failed: $e');
+      _log.warning('PluginLifecycleManager ✗ Action failed: $e');
       // 转换失败，根据目标状态设置相应的失败状态
       if (targetState == PluginState.loaded) {
         _state = PluginState.loadFailed;
       } else if (targetState == PluginState.enabled) {
         _state = PluginState.enableFailed;
       }
-      debugPrint('[PluginLifecycleManager] Set failure state: $_state');
+      _log.info('Set failure state: $_state');
       _plugin.state = _state;
       _notifyListeners(oldState, _state);
       rethrow;
@@ -112,7 +115,7 @@ class PluginLifecycleManager {
         listener(_plugin, oldState, newState);
       } catch (e) {
         // 监听器异常不应影响其他监听器
-        debugPrint('Error in plugin state listener: $e');
+        _log.warning('Error in plugin state listener: $e');
       }
     }
   }

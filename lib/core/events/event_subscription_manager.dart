@@ -1,5 +1,9 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+
+import '../utils/logger.dart';
+
+/// Logger for EventSubscriptionManager
+const _log = AppLogger('EventSubscriptionManager');
 
 /// 事件订阅管理器
 ///
@@ -66,7 +70,7 @@ class EventSubscriptionManager {
 
     // 添加错误处理器，防止订阅错误导致内存泄漏
     subscription.onError((error, stackTrace) {
-      debugPrint(
+      _log.error(
         '[$ownerId] Subscription error on "$key": $error\n$stackTrace',
       );
     });
@@ -103,7 +107,7 @@ class EventSubscriptionManager {
         entry.value.cancel();
       } catch (e, stackTrace) {
         // 记录但继续清理其他订阅
-        debugPrint(
+        _log.warning(
           '[$ownerId] Error canceling subscription "${entry.key}": $e\n$stackTrace',
         );
       }

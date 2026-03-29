@@ -11,11 +11,15 @@ import '../../plugins/lua/lua_plugin.dart';
 import '../../plugins/market/market_plugin.dart';
 import '../../plugins/search/search_plugin.dart';
 import '../../plugins/settings/settings_plugin.dart';
+import '../utils/logger.dart';
 import 'dependency_resolver.dart';
 import 'plugin_base.dart';
 import 'plugin_discoverer.dart';
 import 'plugin_manager.dart';
 import 'ui_hooks/hook_registry.dart';
+
+/// Logger for BuiltinPluginLoader
+const _log = AppLogger('BuiltinPluginLoader');
 
 /// 内置插件加载器
 ///
@@ -65,7 +69,7 @@ class BuiltinPluginLoader {
   ///
   /// 返回成功加载的插件数量
   Future<int> loadAllBuiltinPlugins() async {
-    debugPrint('[BuiltinPluginLoader] ===== Starting Built-in Plugin Load =====');
+    _log.info('===== Starting Built-in Plugin Load =====');
     var loadedCount = 0;
 
     try {
@@ -74,7 +78,7 @@ class BuiltinPluginLoader {
 
       // 步骤 2：发现所有可用插件
       final allPluginIds = await _discoverer.discoverAvailablePlugins();
-      debugPrint(
+      _log.info(
         '[BuiltinPluginLoader] Discovered ${allPluginIds.length} plugins: $allPluginIds',
       );
 
@@ -86,30 +90,34 @@ class BuiltinPluginLoader {
           .toList();
 
       final loadOrder = _dependencyResolver.resolveLoadOrder(allPluginMetadata);
-      debugPrint(
+      _log.info(
         '[BuiltinPluginLoader] Resolved load order: ${loadOrder.map((p) => p.metadata.id).toList()}',
       );
 
       // 步骤 4：按顺序加载插件
       for (final plugin in loadOrder) {
         try {
-          debugPrint('[BuiltinPluginLoader] Loading plugin: ${plugin.metadata.id}');
+          _log.info('Loading plugin: ${plugin.metadata.id}');
 
           await _pluginManager.loadPlugin(plugin.metadata.id);
 
           // 如果插件默认启用，自动启用
           if (plugin.metadata.enabledByDefault) {
+            _log.info('Enabling plugin: ${plugin.metadata.id}');
             await _pluginManager.enablePlugin(plugin.metadata.id);
+            _log.info('[BuiltinPluginLoader] ✓ Plugin enabled: ${plugin.metadata.id}');
           }
 
           loadedCount++;
-        } catch (e) {
-          debugPrint('[BuiltinPluginLoader] ✗ Failed to load plugin ${plugin.metadata.id}: $e');
+          _log.info('[BuiltinPluginLoader] ✓ Plugin loaded: ${plugin.metadata.id}');
+        } catch (e, st) {
+          _log.warning('BuiltinPluginLoader ✗ Failed to load plugin ${plugin.metadata.id}: $e');
+          _log.info('Stack trace: $st');
           // 继续加载其他插件
         }
       }
 
-      debugPrint(
+      _log.info(
         '[BuiltinPluginLoader] Summary: Loaded $loadedCount/${allPluginMetadata.length} builtin plugins',
       );
 
@@ -118,7 +126,7 @@ class BuiltinPluginLoader {
         _debugPrintHooks();
       }
     } catch (e) {
-      debugPrint('[BuiltinPluginLoader] Error loading builtin plugins: $e');
+      _log.info('Error loading builtin plugins: $e');
     }
 
     return loadedCount;
@@ -132,7 +140,7 @@ class BuiltinPluginLoader {
       _discoverer.registerFactory(plugin.metadata.id, factory);
     }
 
-    debugPrint(
+    _log.info(
       '[BuiltinPluginLoader] Registered ${_builtinPluginFactories.length} plugin factories',
     );
   }
@@ -144,14 +152,14 @@ class BuiltinPluginLoader {
     final totalHooks = _hookRegistry.totalHooks;
     final hookPoints = _hookRegistry.registeredHookPointIds;
 
-    debugPrint('[BuiltinPluginLoader] ===== Hook Registration Summary =====');
-    debugPrint('[BuiltinPluginLoader] Total hooks registered: $totalHooks');
-    debugPrint('[BuiltinPluginLoader] Hook points used: ${hookPoints.length}');
+    _log.info('===== Hook Registration Summary =====');
+    _log.info('Total hooks registered: $totalHooks');
+    _log.info('Hook points used: ${hookPoints.length}');
     for (final pointId in hookPoints) {
       final hooks = _hookRegistry.getHookWrappers(pointId);
-      debugPrint('    - $pointId: ${hooks.length} hooks');
+      _log.debug('    - $pointId: ${hooks.length} hooks');
     }
-    debugPrint('[BuiltinPluginLoader] ========================================');
+
   }
 
   /// 卸载所有内置插件
@@ -170,9 +178,9 @@ class BuiltinPluginLoader {
     for (final plugin in unloadOrder) {
       try {
         await _pluginManager.unloadPlugin(plugin.metadata.id);
-        debugPrint('[BuiltinPluginLoader] Unloaded plugin: ${plugin.metadata.id}');
+        _log.info('Unloaded plugin: ${plugin.metadata.id}');
       } catch (e) {
-        debugPrint('[BuiltinPluginLoader] Failed to unload plugin ${plugin.metadata.id}: $e');
+        _log.info('Failed to unload plugin ${plugin.metadata.id}: $e');
       }
     }
   }

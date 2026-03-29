@@ -249,7 +249,7 @@ class NodeServiceImpl implements NodeService {
   Future<void> batchDelete(List<String> nodeIds) async {
     // 🔥 优化：并发执行所有删除操作，提升性能 8-10x
     await Future.wait(
-      nodeIds.map((nodeId) => deleteNode(nodeId)),
+      nodeIds.map(deleteNode),
     );
   }
 

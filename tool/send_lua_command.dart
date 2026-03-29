@@ -18,6 +18,7 @@
 /// # 从文件读取
 /// dart run tool/send_lua_command.dart --file=myscript.lua
 /// ```
+library;
 
 import 'dart:convert';
 import 'dart:io';

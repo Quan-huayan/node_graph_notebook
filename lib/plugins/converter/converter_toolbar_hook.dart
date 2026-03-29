@@ -19,7 +19,7 @@ class ConverterToolbarHook extends MainToolbarHookBase {
   );
 
   @override
-  HookPriority get priority => HookPriority.custom300;
+  HookPriority get priority => HookPriority.custom80; // 主工具栏右四位置
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {

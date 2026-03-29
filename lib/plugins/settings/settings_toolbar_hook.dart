@@ -19,7 +19,7 @@ class SettingsToolbarHook extends MainToolbarHookBase {
   );
 
   @override
-  HookPriority get priority => HookPriority.custom400;
+  HookPriority get priority => HookPriority.custom50; // 主工具栏最右边位置
 
   @override
   Widget renderToolbar(MainToolbarHookContext context) {

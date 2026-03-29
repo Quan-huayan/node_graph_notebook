@@ -21,7 +21,6 @@ void main() async {
   final engineService = LuaEngineService(
     enableSandbox: true,
     enableDebugOutput: true,
-    engineType: LuaEngineType.realLua,
   );
 
   try {
@@ -90,9 +89,7 @@ debugPrint("测试完成")
     final result = await engineService.executeString(testScript);
 
     debugPrint('--- 执行输出 ---');
-    for (final line in result.output) {
-      debugPrint(line);
-    }
+    result.output.forEach(debugPrint);
     debugPrint('----------------');
 
     if (result.success) {
@@ -122,9 +119,7 @@ end
     final result = await engineService.executeString(unregisterScript);
 
     debugPrint('--- 执行输出 ---');
-    for (final line in result.output) {
-      debugPrint(line);
-    }
+    result.output.forEach(debugPrint);
     debugPrint('----------------');
 
     if (result.success) {

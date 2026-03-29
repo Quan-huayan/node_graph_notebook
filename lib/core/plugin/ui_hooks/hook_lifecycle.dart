@@ -1,7 +1,10 @@
-import 'package:flutter/foundation.dart';
 
+import '../../utils/logger.dart';
 import '../plugin_lifecycle.dart';
 import 'hook_base.dart';
+
+/// Logger for HookLifecycleManager
+const _log = AppLogger('HookLifecycleManager');
 
 /// Hook 状态枚举
 ///
@@ -111,29 +114,29 @@ class HookLifecycleManager {
     HookState targetState,
     Future<void> Function() action,
   ) async {
-    debugPrint('[HookLifecycleManager] transitionTo:');
-    debugPrint('  - Hook: $hookId');
-    debugPrint('  - From state: $_state');
-    debugPrint('  - To state: $targetState');
-    debugPrint('  - Can transition: ${canTransitionTo(targetState)}');
+    _log.info('transitionTo:');
+    _log.debug('  - Hook: $hookId');
+    _log.debug('  - From state: $_state');
+    _log.debug('  - To state: $targetState');
+    _log.debug('  - Can transition: ${canTransitionTo(targetState)}');
 
     if (!canTransitionTo(targetState)) {
-      debugPrint('[HookLifecycleManager] ✗ Cannot transition!');
+      _log.warning('HookLifecycleManager ✗ Cannot transition!');
       throw StateError(
           'Invalid state transition for hook $hookId: $_state → $targetState');
     }
 
     try {
-      debugPrint('[HookLifecycleManager] Executing action...');
+      _log.info('Executing action...');
       await action();
       _state = targetState;
-      debugPrint('[HookLifecycleManager] ✓ State transition successful!');
-      debugPrint('  - New state: $_state');
+      _log.info('[HookLifecycleManager] ✓ State transition successful!');
+      _log.debug('  - New state: $_state');
     } catch (e) {
-      debugPrint('[HookLifecycleManager] ✗ Action failed: $e');
+      _log.warning('HookLifecycleManager ✗ Action failed: $e');
       // Hook 状态转换失败时，保持原状态
       // 与 Plugin 不同，Hook 不会设置失败状态
-      debugPrint('[HookLifecycleManager] State unchanged: $_state');
+      _log.info('State unchanged: $_state');
       rethrow;
     }
   }

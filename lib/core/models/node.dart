@@ -2,14 +2,56 @@ import 'dart:ui';
 
 import 'package:json_annotation/json_annotation.dart';
 
+import '../ui_layout/node_attachment.dart' show NodeAttachment;
+import '../ui_layout/ui_layout_service.dart' show UILayoutService;
 import 'converters.dart';
 import 'enums.dart';
 import 'node_reference.dart';
+import 'node_rendering.dart';
 
 part 'node.g.dart';
 
 /// 统一节点模型
 /// 所有元素（内容、关系、概念）都继承自统一的 Node 模型
+///
+/// ## Design Philosophy (Phase 4 Refactoring)
+///
+/// Nodes are **autonomous components** that:
+/// - Don't store position (managed by UILayoutService)
+/// - Provide dual rendering (Flutter Widget + Flame Component)
+/// - Maintain state independent of location
+/// - Can be attached to any Hook in the layout tree
+///
+/// ## Positioning
+///
+/// **DEPRECATED**: The `position` field is deprecated and will be removed in Phase 6.
+/// Positions are now managed by [UILayoutService] via [NodeAttachment].
+///
+/// Use `UILayoutService.attachNode()` to position Nodes:
+/// ```dart
+/// await layoutService.attachNode(
+///   nodeId: node.id,
+///   hookId: 'sidebar',
+///   position: LocalPosition.absolute(10, 20),
+/// );
+/// ```
+///
+/// ## Rendering
+///
+/// Nodes support dual rendering via [NodeRendering] mixin:
+/// - `buildFlutterWidget()` - Render in Flutter context (Sidebar, Toolbar)
+/// - `buildFlameComponent()` - Render in Flame context (Graph)
+///
+/// Mix in [NodeRendering] to add custom rendering:
+/// ```dart
+/// class MyNode extends Node with NodeRendering {
+///   @override
+///   Widget buildFlutterWidget(BuildContext context) { ... }
+///
+///   @override
+///   Component buildFlameComponent(GraphWorld world) { ... }
+/// }
+/// ```
 @JsonSerializable()
 class Node {
   /// 创建一个统一节点模型
@@ -55,6 +97,27 @@ class Node {
   final Map<String, NodeReference> references;
 
   /// 位置坐标
+  ///
+  /// **DEPRECATED**: This field is deprecated and will be removed in Phase 6.
+  /// Positions are now managed by UILayoutService via NodeAttachment.
+  ///
+  /// Migration Guide:
+  /// ```dart
+  /// // OLD (deprecated):
+  /// final node = Node(position: Offset(100, 200), ...);
+  ///
+  /// // NEW (correct):
+  /// await layoutService.attachNode(
+  ///   nodeId: node.id,
+  ///   hookId: 'graph',
+  ///   position: LocalPosition.absolute(100, 200),
+  /// );
+  /// ```
+  @Deprecated(
+    'Position is now managed by UILayoutService via NodeAttachment. '
+    'This field will be removed in Phase 6. '
+    'Use layoutService.attachNode() to position Nodes.',
+  )
   @OffsetConverter()
   final Offset position;
 
@@ -86,12 +149,6 @@ class Node {
     );
     return json;
   }
-
-  /// 便捷方法：是否是概念节点（已废弃，统一使用content类型）
-  @Deprecated(
-    'All nodes are now content type. Use isFolder to check if node is a folder.',
-  )
-  bool get isConcept => false;
 
   /// 便捷方法：是否是文件夹
   bool get isFolder =>
