@@ -8,15 +8,17 @@ import 'dart:ui' as _i13;
 
 import 'package:flutter_bloc/flutter_bloc.dart' as _i9;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i14;
+import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i15;
 import 'package:node_graph_notebook/core/commands/models/command.dart' as _i5;
 import 'package:node_graph_notebook/core/commands/models/command_handler.dart'
-    as _i15;
-import 'package:node_graph_notebook/core/commands/models/middleware.dart'
-    as _i16;
-import 'package:node_graph_notebook/core/models/models.dart' as _i4;
-import 'package:node_graph_notebook/core/plugin/middleware/middleware_plugin.dart'
     as _i17;
+import 'package:node_graph_notebook/core/commands/models/middleware.dart'
+    as _i18;
+import 'package:node_graph_notebook/core/events/app_events.dart' as _i16;
+import 'package:node_graph_notebook/core/models/models.dart' as _i14;
+import 'package:node_graph_notebook/core/models/node.dart' as _i4;
+import 'package:node_graph_notebook/core/plugin/middleware/middleware_plugin.dart'
+    as _i19;
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_bloc.dart' as _i10;
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_event.dart'
     as _i11;
@@ -278,7 +280,7 @@ class MockNodeService extends _i1.Mock implements _i12.NodeService {
     _i13.Offset? position,
     _i13.Size? size,
     String? color,
-    Map<String, _i4.NodeReference>? references,
+    Map<String, _i14.NodeReference>? references,
     Map<String, dynamic>? metadata,
   }) =>
       (super.noSuchMethod(
@@ -315,9 +317,9 @@ class MockNodeService extends _i1.Mock implements _i12.NodeService {
     String? content,
     _i13.Offset? position,
     _i13.Size? size,
-    _i4.NodeViewMode? viewMode,
+    _i14.NodeViewMode? viewMode,
     String? color,
-    Map<String, _i4.NodeReference>? references,
+    Map<String, _i14.NodeReference>? references,
     Map<String, dynamic>? metadata,
   }) =>
       (super.noSuchMethod(
@@ -452,22 +454,30 @@ class MockNodeService extends _i1.Mock implements _i12.NodeService {
 /// A class which mocks [CommandBus].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockCommandBus extends _i1.Mock implements _i14.CommandBus {
+class MockCommandBus extends _i1.Mock implements _i15.CommandBus {
   MockCommandBus() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i7.Stream<_i14.CommandEvent> get commandStream =>
+  _i7.Stream<_i15.CommandEvent> get commandStream =>
       (super.noSuchMethod(
             Invocation.getter(#commandStream),
-            returnValue: _i7.Stream<_i14.CommandEvent>.empty(),
+            returnValue: _i7.Stream<_i15.CommandEvent>.empty(),
           )
-          as _i7.Stream<_i14.CommandEvent>);
+          as _i7.Stream<_i15.CommandEvent>);
+
+  @override
+  _i7.Stream<_i16.AppEvent> get eventStream =>
+      (super.noSuchMethod(
+            Invocation.getter(#eventStream),
+            returnValue: _i7.Stream<_i16.AppEvent>.empty(),
+          )
+          as _i7.Stream<_i16.AppEvent>);
 
   @override
   void registerHandler<T extends _i5.Command<dynamic>>(
-    _i15.CommandHandler<T>? handler,
+    _i17.CommandHandler<T>? handler,
     Type? commandType,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandler, [handler, commandType]),
@@ -476,27 +486,27 @@ class MockCommandBus extends _i1.Mock implements _i14.CommandBus {
 
   @override
   void registerHandlers(
-    Map<Type, _i15.CommandHandler<_i5.Command<dynamic>>>? handlers,
+    Map<Type, _i17.CommandHandler<_i5.Command<dynamic>>>? handlers,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandlers, [handlers]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddleware(_i16.CommandMiddleware? middleware) => super.noSuchMethod(
+  void addMiddleware(_i18.CommandMiddleware? middleware) => super.noSuchMethod(
     Invocation.method(#addMiddleware, [middleware]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddlewarePlugin(_i17.CommandMiddlewarePlugin? middleware) =>
+  void addMiddlewarePlugin(_i19.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#addMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void removeMiddlewarePlugin(_i17.CommandMiddlewarePlugin? middleware) =>
+  void removeMiddlewarePlugin(_i19.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#removeMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
@@ -527,6 +537,18 @@ class MockCommandBus extends _i1.Mock implements _i14.CommandBus {
   @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishEvent(_i16.AppEvent? event) => super.noSuchMethod(
+    Invocation.method(#publishEvent, [event]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishEvents(List<_i16.AppEvent>? events) => super.noSuchMethod(
+    Invocation.method(#publishEvents, [events]),
     returnValueForMissingStub: null,
   );
 }

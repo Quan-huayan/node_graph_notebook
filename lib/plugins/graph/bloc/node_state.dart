@@ -14,10 +14,10 @@ class NodeState extends Equatable {
     this.selectedNodeIds = const {},
   }) : nodesMap = {for (var node in nodes) node.id: node};
 
+  /// 初始状态工厂方法
   factory NodeState.initial() => _initialState;
 
-  /// 初始状态 - 缓存以提高性能
-  static final _emptyMap = <String, Node>{};
+  /// 初始状态 - 缓存以提高性能=
   static final _initialState = NodeState(
       nodes: const [],
       isLoading: false,

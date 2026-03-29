@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/commands/models/command.dart';
 import 'package:node_graph_notebook/core/commands/models/command_context.dart';
-import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/core/repositories/graph_repository.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
@@ -12,7 +13,7 @@ import 'package:node_graph_notebook/plugins/graph/bloc/graph_bloc.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_event.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_state.dart';
 
-@GenerateMocks([CommandBus, GraphRepository, NodeRepository, AppEventBus])
+@GenerateMocks([CommandBus, GraphRepository, NodeRepository])
 import 'graph_bloc_test.mocks.dart';
 
 class TestCommand extends Command<void> {
@@ -32,21 +33,19 @@ void main() {
     late MockCommandBus mockCommandBus;
     late MockGraphRepository mockGraphRepository;
     late MockNodeRepository mockNodeRepository;
-    late MockAppEventBus mockEventBus;
 
     setUp(() {
       mockCommandBus = MockCommandBus();
       mockGraphRepository = MockGraphRepository();
       mockNodeRepository = MockNodeRepository();
-      mockEventBus = MockAppEventBus();
 
-      when(mockEventBus.stream).thenAnswer((_) => const Stream.empty());
+      // Mock the eventStream
+      when(mockCommandBus.eventStream).thenAnswer((_) => const Stream.empty());
 
       graphBloc = GraphBloc(
         commandBus: mockCommandBus,
         graphRepository: mockGraphRepository,
         nodeRepository: mockNodeRepository,
-        eventBus: mockEventBus,
       );
     });
 

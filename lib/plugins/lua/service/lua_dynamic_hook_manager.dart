@@ -60,6 +60,7 @@ class LuaDynamicHookManager {
           iconName: iconName,
         ).catchError((e) {
           _log.info('Error enabling hook: $e');
+          return 0;
         });
 
         return 1;
@@ -77,7 +78,12 @@ class LuaDynamicHookManager {
         }
 
         final buttonId = args[0] as String;
-        return _unregisterToolbarButton(buttonId);
+        // 异步注销，不阻塞Lua脚本
+        _unregisterToolbarButton(buttonId).catchError((e) {
+          _log.info('Error in async unregister: $e');
+          return 0;
+        });
+        return 1;
       } catch (e) {
         _log.info('Error unregistering toolbar button: $e');
         return 0;
@@ -133,6 +139,7 @@ class LuaDynamicHookManager {
 
     if (hookWrapper != null) {
       // 先初始化（创建临时的HookContext）
+      // Note: 参数可以为null，BasicHookContext接受nullable参数
       final tempContext = BasicHookContext(
         data: {'hookPointId': hook.hookPointId},
         pluginContext: null,
@@ -149,9 +156,6 @@ class LuaDynamicHookManager {
         hook.onEnable,
       );
       _log.info('Hook enabled successfully');
-
-      // ✅ 通知 UI 重新构建
-      hookRegistry.notifyListeners();
     } else {
       _log.info('Warning: Hook wrapper not found');
     }
@@ -166,7 +170,7 @@ class LuaDynamicHookManager {
   }
 
   /// 注销工具栏按钮
-  int _unregisterToolbarButton(String buttonId) {
+  Future<int> _unregisterToolbarButton(String buttonId) async {
     final hookId = 'lua.dynamic.toolbar.$buttonId';
     final hook = _dynamicHooks.remove(hookId);
 
@@ -176,7 +180,7 @@ class LuaDynamicHookManager {
       final hookWrapper = hooks.where((h) => h.hook.metadata.id == hookId).firstOrNull;
 
       if (hookWrapper != null && hookWrapper.isEnabled) {
-        hookWrapper.lifecycle.transitionTo(
+        await hookWrapper.lifecycle.transitionTo(
           HookState.disabled,
           hook.onDisable,
         );
@@ -185,9 +189,6 @@ class LuaDynamicHookManager {
 
       // ✅ 从HookRegistry中移除Hook（使用已有的hooks变量）
       hooks.removeWhere((h) => h.hook.metadata.id == hookId);
-
-      // ✅ 通知 UI 重新构建
-      hookRegistry.notifyListeners();
 
       _log.info('Unregistered toolbar button: $buttonId');
       debugPrint('  - Status: Disabled ✓');

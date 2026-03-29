@@ -142,6 +142,18 @@ class ServiceRegistry with ChangeNotifier {
     }
   }
 
+  /// 注册核心依赖
+  ///
+  /// 用于在 ServiceRegistry 创建后动态添加核心依赖
+  /// 例如：QueryBus 需要在 ServiceRegistry 创建后才能初始化
+  ///
+  /// [type] 依赖类型
+  /// [instance] 依赖实例
+  void registerCoreDependency<T>(Type type, T instance) {
+    _coreDependencies[type] = instance;
+    _log.info('Registered core dependency: $type');
+  }
+
   /// 注销插件的所有 Service
   ///
   /// [pluginId] 插件 ID

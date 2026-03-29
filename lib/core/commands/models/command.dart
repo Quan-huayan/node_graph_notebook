@@ -1,3 +1,4 @@
+import '../../events/app_events.dart';
 import 'command_context.dart';
 
 /// 命令基类
@@ -39,15 +40,28 @@ abstract class Command<T> {
 /// 命令执行结果
 ///
 /// 封装命令执行的结果，支持成功和失败两种状态
+/// 支持携带命令执行过程中产生的应用事件
 class CommandResult<T> {
   /// 私有构造函数
-  CommandResult._({required this.isSuccess, this.data, this.error});
+  const CommandResult._({
+    required this.isSuccess,
+    this.data,
+    this.error,
+    this.events,
+  });
 
   /// 创建成功结果
-  factory CommandResult.success([T? data]) => CommandResult._(isSuccess: true, data: data);
+  ///
+  /// [data] 结果数据
+  /// [events] 命令执行产生的应用事件列表（可选）
+  factory CommandResult.success([T? data, List<AppEvent>? events]) =>
+      CommandResult._(isSuccess: true, data: data, events: events);
 
   /// 创建失败结果
-  factory CommandResult.failure(String error) => CommandResult._(isSuccess: false, error: error);
+  ///
+  /// [error] 错误信息
+  factory CommandResult.failure(String error) =>
+      CommandResult._(isSuccess: false, error: error);
 
   /// 是否成功
   final bool isSuccess;
@@ -58,10 +72,17 @@ class CommandResult<T> {
   /// 错误信息（失败时可用）
   final String? error;
 
+  /// 命令执行产生的应用事件
+  ///
+  /// 这些事件将在命令执行成功后由 CommandBus 自动发布到 eventStream
+  /// BLoC 可以订阅 CommandBus.eventStream 来接收这些事件
+  final List<AppEvent>? events;
+
   /// 创建带类型的失败结果（用于类型转换）
   ///
   /// 当需要在错误处理中转换结果类型时使用
-  static CommandResult<T> failureTyped<T>(String error) => CommandResult<T>._(isSuccess: false, error: error);
+  static CommandResult<T> failureTyped<T>(String error) =>
+      CommandResult<T>._(isSuccess: false, error: error);
 
   /// 获取数据或抛出异常
   ///
@@ -77,17 +98,43 @@ class CommandResult<T> {
   ///
   /// 如果结果成功，使用 [mapper] 函数转换数据类型
   /// 返回新的 [CommandResult] 对象
+  /// 注意：映射后事件列表会保留
   CommandResult<R> map<R>(R Function(T data) mapper) {
     if (isSuccess) {
       try {
-        return CommandResult.success(mapper(data as T));
+        return CommandResult<R>._(
+          isSuccess: true,
+          data: mapper(data as T),
+          events: events,
+        );
       } catch (e) {
-        return CommandResult.failureTyped<R>(e.toString());
+        return CommandResult<R>._(isSuccess: false, error: e.toString());
       }
     } else {
-      return CommandResult.failureTyped<R>(error!);
+      return CommandResult<R>._(isSuccess: false, error: error);
     }
   }
+
+  /// 添加事件到结果
+  ///
+  /// 返回一个新的 CommandResult，包含额外的事件
+  /// 用于在命令执行过程中追加事件
+  CommandResult<T> withEvents(List<AppEvent> newEvents) => CommandResult<T>._(
+      isSuccess: isSuccess,
+      data: data,
+      error: error,
+      events: [...?events, ...newEvents],
+    );
+
+  /// 添加单个事件到结果
+  ///
+  /// 返回一个新的 CommandResult，包含额外的事件
+  CommandResult<T> withEvent(AppEvent event) => CommandResult<T>._(
+      isSuccess: isSuccess,
+      data: data,
+      error: error,
+      events: [...?events, event],
+    );
 }
 
 /// 命令执行异常
@@ -105,3 +152,4 @@ class CommandExecutionException implements Exception {
   @override
   String toString() => 'CommandExecutionException: $message';
 }
+

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../events/app_events.dart';
 import '../plugin/middleware/middleware_pipeline.dart';
 import '../plugin/middleware/middleware_plugin.dart';
 import 'command_handler_registry.dart';
@@ -10,11 +11,18 @@ import 'models/middleware.dart';
 
 /// 命令总线
 ///
-/// 作为业务逻辑的统一入口，负责：
+/// 作为业务逻辑的统一入口和事件发布的中心，负责：
 /// 1. 命令分发到对应的处理器
 /// 2. 中间件管道执行
 /// 3. 执行结果处理
 /// 4. 错误处理和日志
+/// 5. 事件发布（替代 AppEventBus）
+///
+/// 架构说明：
+/// - CommandBus 现在是统一的通信中心
+/// - 命令执行后自动发布事件到 eventStream
+/// - BLoC 订阅 eventStream 接收数据变化通知
+/// - 移除了 EventBus 与 CommandBus 的职责重叠
 class CommandBus {
   /// 构造函数
   CommandBus() {
@@ -43,6 +51,18 @@ class CommandBus {
 
   /// 命令执行事件流
   Stream<CommandEvent> get commandStream => _commandStreamController.stream;
+
+  /// 应用事件流控制器
+  ///
+  /// 用于发布应用事件（替代 AppEventBus）
+  /// BLoC 订阅此流以接收数据变化通知
+  final _eventStreamController = StreamController<AppEvent>.broadcast();
+
+  /// 应用事件流
+  ///
+  /// 替代 AppEventBus.stream
+  /// BLoC 应该订阅此流以接收节点数据变化、图关系变化等事件
+  Stream<AppEvent> get eventStream => _eventStreamController.stream;
 
   /// 注册命令处理器
   ///
@@ -152,10 +172,19 @@ class CommandBus {
         handler,
       );
 
+      // 5. 从 CommandContext 收集待发布的事件
+      final pendingEvents = context.getPendingEvents();
+
       // 6. 执行传统中间件（后置）
       for (final middleware in _middlewares) {
         await middleware.processAfter(command, context, result);
       }
+
+      // 合并 CommandResult 中的事件和 CommandContext 中的待发布事件
+      final allEvents = [
+        ...?result.events,
+        ...pendingEvents,
+      ];
 
       // 发布命令成功事件
       _commandStreamController.add(
@@ -166,7 +195,20 @@ class CommandBus {
         ),
       );
 
-      return result as CommandResult<T>;
+      // 发布应用事件（如果有）
+      if (allEvents.isNotEmpty) {
+        for (final event in allEvents) {
+          _eventStreamController.add(event);
+        }
+      }
+
+      // 清空 CommandContext 中的待发布事件
+      context.clearPendingEvents();
+
+      // 如果有新事件，返回带事件的 CommandResult
+      return allEvents.isNotEmpty
+          ? result.withEvents(allEvents) as CommandResult<T>
+          : result as CommandResult<T>;
     } catch (e, stackTrace) {
       // 发布命令失败事件
       _commandStreamController.add(
@@ -227,9 +269,36 @@ class CommandBus {
     if (_disposed) return;
 
     _commandStreamController.close();
+    _eventStreamController.close();
     _handlerRegistry.clear();
     _middlewares.clear();
     _disposed = true;
+  }
+
+  /// 发布应用事件
+  ///
+  /// 直接发布事件到 eventStream，无需通过命令执行
+  /// 用于在命令处理器外部发布事件（向后兼容）
+  ///
+  /// 注意：推荐在 CommandHandler 中使用 CommandContext.publishEvent()
+  /// 而不是直接调用此方法
+  void publishEvent(AppEvent event) {
+    if (_disposed) {
+      throw StateError('CommandBus 已释放，无法发布事件');
+    }
+    _eventStreamController.add(event);
+  }
+
+  /// 批量发布应用事件
+  ///
+  /// 批量发布多个事件到 eventStream
+  void publishEvents(List<AppEvent> events) {
+    if (_disposed) {
+      throw StateError('CommandBus 已释放，无法发布事件');
+    }
+    for (final event in events) {
+      _eventStreamController.add(event);
+    }
   }
 }
 

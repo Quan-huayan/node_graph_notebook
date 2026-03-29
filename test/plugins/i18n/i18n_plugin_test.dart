@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:node_graph_notebook/core/commands/command_bus.dart';
-import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/plugin/plugin.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_registry.dart';
 import 'package:node_graph_notebook/core/services/i18n.dart';
@@ -9,7 +8,6 @@ import 'package:node_graph_notebook/plugins/i18n/i18n_plugin.dart';
 
 @GenerateMocks([
   CommandBus,
-  AppEventBus,
 ])
 import 'i18n_plugin_test.mocks.dart';
 

@@ -461,26 +461,22 @@ void main() {
     late MockPluginDiscoverer discoverer;
     late HookRegistry hookRegistry;
     late ServiceRegistry serviceRegistry;
-    late AppEventBus eventBus;
 
     setUp(() {
       commandBus = CommandBus();
       hookRegistry = HookRegistry();
       serviceRegistry = ServiceRegistry(coreDependencies: {});
-      eventBus = AppEventBus();
       discoverer = MockPluginDiscoverer();
       pluginManager = PluginManager(
         commandBus: commandBus,
         discoverer: discoverer,
         hookRegistry: hookRegistry,
         serviceRegistry: serviceRegistry,
-        eventBus: eventBus,
       );
     });
 
     tearDown(() {
       commandBus.dispose();
-      eventBus.dispose();
     });
 
     group('Plugin Lifecycle Integration', () {
@@ -657,12 +653,18 @@ void main() {
         discoverer.registerPlugin('plugin_a', pluginA);
 
         final events = <AppEvent>[];
-        eventBus.stream.listen(events.add);
+
+        // 订阅 CommandBus 的事件流
+        final subscription = commandBus.eventStream.listen((event) {
+          events.add(event);
+        });
 
         await pluginManager.loadPlugin('plugin_a');
         await pluginManager.enablePlugin('plugin_a');
 
         await Future.delayed(const Duration(milliseconds: 100));
+
+        await subscription.cancel();
 
         expect(events.isNotEmpty, true);
       });

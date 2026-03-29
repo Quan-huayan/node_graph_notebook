@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/commands/command_bus.dart';
+import '../../../../core/cqrs/query/query_bus.dart';
+import '../../../../core/cqrs/queries/search_nodes_query.dart';
 import '../../../../core/events/app_events.dart';
 import '../../../../core/events/event_subscription_manager.dart';
+import '../../../../core/models/node.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../command/node_commands.dart';
 import 'node_event.dart';
@@ -14,23 +17,30 @@ import 'node_state.dart';
 /// - 管理UI状态（isLoading, error）
 /// - 分发Event到CommandBus（写操作）
 /// - 直接查询Repository（读操作）
-/// - 订阅EventBus更新状态
+/// - 订阅CommandBus事件流更新状态
 ///
-/// 架构变更：
-/// - 写操作通过CommandBus（业务逻辑层）
-/// - 读操作直接通过Repository（数据访问层）
-/// - BLoC只负责状态管理，不包含业务逻辑
+/// 架构说明：
+/// - 写操作通过 CommandBus（业务逻辑层）
+/// - 读操作直接通过 Repository（数据访问层）
+/// - 订阅 CommandBus.eventStream 接收数据变化通知（替代 AppEventBus）
+/// - BLoC 只负责 UI 状态管理，不包含业务逻辑
 class NodeBloc extends Bloc<NodeEvent, NodeState> {
   /// 创建 Node BLoC
   ///
-  /// [commandBus] - 命令总线，用于执行写操作
-  /// [nodeRepository] - 节点数据仓库，用于读操作
-  /// [eventBus] - 事件总线，用于订阅数据变化
+  /// [commandBus] - 命令总线，用于执行写操作和订阅事件流
+  /// [queryBus] - 查询总线，用于复杂查询操作
+  /// [nodeRepository] - 节点数据仓库，用于简单读操作
+  ///
+  /// 架构变更：
+  /// - 移除了 eventBus 参数，改用 commandBus.eventStream
+  /// - CommandBus 现在是统一的通信中心（命令 + 事件）
+  /// - 复杂查询（如搜索）通过 QueryBus，简单查询直接通过 Repository
   NodeBloc({
     required CommandBus commandBus,
+    required QueryBus queryBus,
     required NodeRepository nodeRepository,
-    required AppEventBus eventBus,
-  }) : _commandBus = commandBus,
+  })  : _commandBus = commandBus,
+       _queryBus = queryBus,
        _nodeRepository = nodeRepository,
        super(NodeState.initial()) {
     // 初始化事件订阅管理器
@@ -49,11 +59,11 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     on<NodeClearErrorEvent>(_onClearError);
     on<NodeDataChangedInternalEvent>(_onDataChangedInternal);
 
-    // 订阅EventBus以响应其他BLoC的更改
+    // 订阅 CommandBus 的事件流以响应其他组件的更改
     // 使用 EventSubscriptionManager 自动管理订阅生命周期
     _subscriptionManager.track(
       'NodeDataChanged',
-      eventBus.stream.listen((event) {
+      _commandBus.eventStream.listen((event) {
         if (event is NodeDataChangedEvent) {
           add(
             NodeDataChangedInternalEvent(
@@ -67,6 +77,7 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
   }
 
   final CommandBus _commandBus;
+  final QueryBus _queryBus;
   final NodeRepository _nodeRepository;
 
   /// 事件订阅管理器
@@ -105,13 +116,16 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      // 直接查询Repository（读操作）
-      // search 方法接受 title 和 content 参数，不是 query
-      final nodes = await _nodeRepository.search(
-        title: event.query,
-        content: event.query,
+      // 通过 QueryBus 执行复杂查询（读操作）
+      final result = await _queryBus.dispatch<List<Node>, SearchNodesQuery>(
+        SearchNodesQuery(keyword: event.query),
       );
-      emit(state.copyWith(nodes: nodes, isLoading: false, error: null));
+
+      if (result.isSuccess) {
+        emit(state.copyWith(nodes: result.data ?? [], isLoading: false, error: null));
+      } else {
+        emit(state.copyWith(isLoading: false, error: result.error));
+      }
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }

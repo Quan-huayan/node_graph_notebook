@@ -149,7 +149,7 @@ class GenerateNodeCommand extends Command<Node> {
         await context.nodeRepository.delete(_generatedNodeId!);
 
         // 发布节点删除事件
-        context.eventBus.publish(const NodeDataChangedEvent(
+        context.commandBus.publishEvent(const NodeDataChangedEvent(
           changedNodes: [],
           action: DataChangeAction.delete,
         ));

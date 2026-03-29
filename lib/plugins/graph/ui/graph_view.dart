@@ -97,10 +97,9 @@ class GraphView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(i18n.t('Create your first graph to get started')),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
+            IconButton(
               onPressed: () => _createGraph(context),
               icon: const Icon(Icons.add),
-              label: Text(i18n.t('Create Graph')),
             ),
           ],
         ),
@@ -209,14 +208,10 @@ class _CreateNodeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final i18n = I18n.of(context);
 
-    return FloatingActionButton.extended(
+    return IconButton.filled(
       icon: const Icon(Icons.add, size: 28),
-      label: Text(i18n.t('Create Node')),
       tooltip: i18n.t('Create Node'),
       onPressed: () => _showCreateNodeDialog(context),
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      elevation: 6,
     );
   }
 

@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 
 void main() {
-  group('AppEventBus', () {
-    late AppEventBus eventBus;
+  group('CommandBus EventStream', () {
+    late CommandBus commandBus;
 
     setUp(() {
-      eventBus = AppEventBus.createForTest();
+      commandBus = CommandBus();
     });
 
     tearDown(() {
-      eventBus.dispose();
+      commandBus.dispose();
     });
 
     test('should publish event to subscribers', () async {
@@ -21,66 +22,26 @@ void main() {
         action: DataChangeAction.create,
       );
 
-      eventBus.stream.listen(completer.complete);
-      eventBus.publish(event);
+      commandBus.eventStream.listen(completer.complete);
+      commandBus.publishEvent(event);
 
       final receivedEvent = await completer.future;
       expect(receivedEvent, equals(event));
-    });
-
-    test('should call onError when publish fails', () async {
-      final errorCompleter = Completer<Object?>();
-      final stackTraceCompleter = Completer<StackTrace>();
-
-      eventBus..onError = (event, error, stackTrace) {
-        errorCompleter.complete(error);
-        stackTraceCompleter.complete(stackTrace);
-      }
-      // Close the event bus to trigger error
-      ..dispose();
-
-      const event = NodeDataChangedEvent(
-        changedNodes: [],
-        action: DataChangeAction.create,
-      );
-
-      eventBus.publish(event);
-
-      final error = await errorCompleter.future;
-      expect(error, isA<StateError>());
-
-      final stackTrace = await stackTraceCompleter.future;
-      expect(stackTrace, isA<StackTrace>());
-    });
-
-    test('should use default error handler when onError is null', () async {
-      // This test verifies that the default error handler doesn't throw
-      final eventBus = AppEventBus.createForTest()
-      // Close the event bus
-      ..dispose();
-
-      const event = NodeDataChangedEvent(
-        changedNodes: [],
-        action: DataChangeAction.create,
-      );
-
-      // Should not throw even though bus is closed
-      expect(() => eventBus.publish(event), returnsNormally);
     });
 
     test('should support multiple subscribers', () async {
       final completer1 = Completer<AppEvent>();
       final completer2 = Completer<AppEvent>();
 
-      eventBus.stream.listen(completer1.complete);
-      eventBus.stream.listen(completer2.complete);
+      commandBus.eventStream.listen(completer1.complete);
+      commandBus.eventStream.listen(completer2.complete);
 
       const event = NodeDataChangedEvent(
         changedNodes: [],
         action: DataChangeAction.update,
       );
 
-      eventBus.publish(event);
+      commandBus.publishEvent(event);
 
       final received1 = await completer1.future;
       final received2 = await completer2.future;
@@ -98,11 +59,11 @@ void main() {
       );
 
       // Publish before subscription
-      eventBus.publish(event1);
+      commandBus.publishEvent(event1);
 
       // Subscribe after event
       late StreamSubscription<AppEvent> subscription;
-      subscription = eventBus.stream.listen((event) {
+      subscription = commandBus.eventStream.listen((event) {
         completer.complete(event);
         subscription.cancel();
       });
@@ -113,7 +74,7 @@ void main() {
       );
 
       // Publish after subscription
-      eventBus.publish(event2);
+      commandBus.publishEvent(event2);
 
       final received = await completer.future;
       expect(received, equals(event2));
@@ -123,7 +84,7 @@ void main() {
     test('should filter events by type', () async {
       final nodeEventCompleter = Completer<NodeDataChangedEvent>();
 
-      eventBus.stream
+      commandBus.eventStream
           .where((event) => event is NodeDataChangedEvent)
           .cast<NodeDataChangedEvent>()
           .listen(nodeEventCompleter.complete);
@@ -139,14 +100,14 @@ void main() {
         action: RelationChangeAction.addedToGraph,
       );
 
-      eventBus.publish(graphEvent);
+      commandBus.publishEvent(graphEvent);
 
       // Wait a bit to ensure node event is not completed
       await Future.delayed(const Duration(milliseconds: 10));
 
       expect(nodeEventCompleter.isCompleted, false);
 
-      eventBus.publish(nodeEvent);
+      commandBus.publishEvent(nodeEvent);
 
       final receivedNode = await nodeEventCompleter.future;
       expect(receivedNode, equals(nodeEvent));
@@ -156,10 +117,10 @@ void main() {
       const eventCount = 100;
       final receivedEvents = <AppEvent>[];
 
-      eventBus.stream.listen(receivedEvents.add);
+      commandBus.eventStream.listen(receivedEvents.add);
 
       for (var i = 0; i < eventCount; i++) {
-        eventBus.publish(
+        commandBus.publishEvent(
           const NodeDataChangedEvent(
             changedNodes: [],
             action: DataChangeAction.update,

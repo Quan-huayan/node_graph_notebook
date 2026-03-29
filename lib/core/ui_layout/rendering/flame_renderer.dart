@@ -43,6 +43,8 @@ import 'renderer_base.dart';
 
 /// Reference to avoid direct Flame import issues.
 typedef FlameGame = Game;
+
+/// Typedef for Flame Component to avoid direct import issues.
 typedef FlameComponent = Component;
 
 /// Renderer that maps Hook tree to Flame component tree.
@@ -468,10 +470,12 @@ class _DefaultNodeComponent extends PositionComponent {
 
 /// Extension to convert Offset to Vector2.
 extension OffsetToVector2 on Offset {
+  /// Converts this Offset to a Flame Vector2.
   Vector2 toVector2() => Vector2(dx, dy);
 }
 
 /// Extension to convert Size to Vector2.
 extension SizeToVector2 on Size {
+  /// Converts this Size to a Flame Vector2.
   Vector2 toVector2() => Vector2(width, height);
 }

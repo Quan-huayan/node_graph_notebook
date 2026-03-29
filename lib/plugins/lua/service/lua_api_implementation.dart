@@ -10,8 +10,10 @@ import 'lua_engine_service.dart';
 
 /// Lua参数验证异常
 class LuaArgumentException implements Exception {
+  /// 创建Lua参数验证异常
   const LuaArgumentException(this.message);
 
+  /// 错误消息
   final String message;
 
   @override

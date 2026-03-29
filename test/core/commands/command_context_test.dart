@@ -101,12 +101,10 @@ void main() {
       final graphRepository = MockGraphRepository();
       final nodeService = MockNodeService();
       final graphService = MockGraphService();
-      final eventBus = AppEventBus.createForTest();
 
       final context = CommandContext(
         nodeRepository: nodeRepository,
         graphRepository: graphRepository,
-        eventBus: eventBus,
         additionalServices: {
           MockNodeService: nodeService,
           MockGraphService: graphService,
@@ -117,9 +115,6 @@ void main() {
       expect(context.graphRepository, equals(graphRepository));
       expect(context.read<MockNodeService>(), equals(nodeService));
       expect(context.read<MockGraphService>(), equals(graphService));
-      expect(context.eventBus, equals(eventBus));
-
-      eventBus.dispose();
     });
 
     test('should throw ServiceNotFoundException for missing service', () {
@@ -185,12 +180,10 @@ void main() {
     test('should create child context with inherited services', () {
       final nodeRepository = MockNodeRepository();
       final graphRepository = MockGraphRepository();
-      final eventBus = AppEventBus.createForTest();
 
       final parent = CommandContext(
         nodeRepository: nodeRepository,
         graphRepository: graphRepository,
-        eventBus: eventBus,
       )
 
       ..setMetadata('parentKey', 'parentValue');
@@ -200,8 +193,6 @@ void main() {
       expect(child.nodeRepository, equals(nodeRepository));
       expect(child.graphRepository, equals(graphRepository));
       expect(child.getMetadata('parentKey'), equals('parentValue'));
-
-      eventBus.dispose();
     });
 
     test('child context should have independent metadata', () {
@@ -216,65 +207,43 @@ void main() {
     });
 
     test('should publish node event', () async {
-      final eventBus = AppEventBus.createForTest();
-      final context = CommandContext(eventBus: eventBus);
+      final context = CommandContext();
       final node = _createTestNode(id: 'test-id');
-
-      NodeDataChangedEvent? receivedEvent;
-      eventBus.stream.listen((event) {
-        if (event is NodeDataChangedEvent) {
-          receivedEvent = event;
-        }
-      });
 
       context.publishSingleNodeEvent(node, DataChangeAction.create);
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      // Check pending events instead of subscribing to eventBus
+      final pendingEvents = context.getPendingEvents();
+      expect(pendingEvents.length, equals(1));
+      expect(pendingEvents.first, isA<NodeDataChangedEvent>());
 
-      expect(receivedEvent, isNotNull);
-      expect(receivedEvent!.changedNodes.length, equals(1));
-      expect(receivedEvent!.changedNodes.first.id, equals('test-id'));
-      expect(receivedEvent!.action, equals(DataChangeAction.create));
-
-      eventBus.dispose();
+      final event = pendingEvents.first as NodeDataChangedEvent;
+      expect(event.changedNodes.length, equals(1));
+      expect(event.changedNodes.first.id, equals('test-id'));
+      expect(event.action, equals(DataChangeAction.create));
     });
 
     test('should publish multiple nodes event', () async {
-      final eventBus = AppEventBus.createForTest();
-      final context = CommandContext(eventBus: eventBus);
+      final context = CommandContext();
       final nodes = <Node>[
         _createTestNode(id: 'node-1', title: 'Node 1'),
         _createTestNode(id: 'node-2', title: 'Node 2'),
       ];
 
-      NodeDataChangedEvent? receivedEvent;
-      eventBus.stream.listen((event) {
-        if (event is NodeDataChangedEvent) {
-          receivedEvent = event;
-        }
-      });
-
       context.publishNodeEvent(nodes, DataChangeAction.update);
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      // Check pending events instead of subscribing to eventBus
+      final pendingEvents = context.getPendingEvents();
+      expect(pendingEvents.length, equals(1));
+      expect(pendingEvents.first, isA<NodeDataChangedEvent>());
 
-      expect(receivedEvent, isNotNull);
-      expect(receivedEvent!.changedNodes.length, equals(2));
-      expect(receivedEvent!.action, equals(DataChangeAction.update));
-
-      eventBus.dispose();
+      final event = pendingEvents.first as NodeDataChangedEvent;
+      expect(event.changedNodes.length, equals(2));
+      expect(event.action, equals(DataChangeAction.update));
     });
 
     test('should publish graph relation event', () async {
-      final eventBus = AppEventBus.createForTest();
-      final context = CommandContext(eventBus: eventBus);
-
-      GraphNodeRelationChangedEvent? receivedEvent;
-      eventBus.stream.listen((event) {
-        if (event is GraphNodeRelationChangedEvent) {
-          receivedEvent = event;
-        }
-      });
+      final context = CommandContext();
 
       context.publishGraphRelationEvent(
         'graph-1',
@@ -282,14 +251,15 @@ void main() {
         RelationChangeAction.addedToGraph,
       );
 
-      await Future.delayed(const Duration(milliseconds: 10));
+      // Check pending events instead of subscribing to eventBus
+      final pendingEvents = context.getPendingEvents();
+      expect(pendingEvents.length, equals(1));
+      expect(pendingEvents.first, isA<GraphNodeRelationChangedEvent>());
 
-      expect(receivedEvent, isNotNull);
-      expect(receivedEvent!.graphId, equals('graph-1'));
-      expect(receivedEvent!.nodeIds.length, equals(2));
-      expect(receivedEvent!.action, equals(RelationChangeAction.addedToGraph));
-
-      eventBus.dispose();
+      final event = pendingEvents.first as GraphNodeRelationChangedEvent;
+      expect(event.graphId, equals('graph-1'));
+      expect(event.nodeIds.length, equals(2));
+      expect(event.action, equals(RelationChangeAction.addedToGraph));
     });
 
     test('should track transaction state', () async {

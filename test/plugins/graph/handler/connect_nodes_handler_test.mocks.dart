@@ -7,9 +7,10 @@ import 'dart:async' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i8;
+import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i3;
 import 'package:node_graph_notebook/core/commands/models/command_context.dart'
     as _i7;
-import 'package:node_graph_notebook/core/events/app_events.dart' as _i3;
+import 'package:node_graph_notebook/core/events/app_events.dart' as _i9;
 import 'package:node_graph_notebook/core/models/models.dart' as _i2;
 import 'package:node_graph_notebook/core/repositories/graph_repository.dart'
     as _i5;
@@ -36,8 +37,8 @@ class _FakeMetadataIndex_0 extends _i1.SmartFake implements _i2.MetadataIndex {
     : super(parent, parentInvocation);
 }
 
-class _FakeAppEventBus_1 extends _i1.SmartFake implements _i3.AppEventBus {
-  _FakeAppEventBus_1(Object parent, Invocation parentInvocation)
+class _FakeCommandBus_1 extends _i1.SmartFake implements _i3.CommandBus {
+  _FakeCommandBus_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -186,12 +187,15 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
   }
 
   @override
-  _i3.AppEventBus get eventBus =>
+  _i3.CommandBus get commandBus =>
       (super.noSuchMethod(
-            Invocation.getter(#eventBus),
-            returnValue: _FakeAppEventBus_1(this, Invocation.getter(#eventBus)),
+            Invocation.getter(#commandBus),
+            returnValue: _FakeCommandBus_1(
+              this,
+              Invocation.getter(#commandBus),
+            ),
           )
-          as _i3.AppEventBus);
+          as _i3.CommandBus);
 
   @override
   _i4.NodeRepository get nodeRepository =>
@@ -224,20 +228,46 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
           as bool);
 
   @override
-  set eventBus(_i3.AppEventBus? value) => super.noSuchMethod(
-    Invocation.setter(#eventBus, value),
+  set commandBus(_i3.CommandBus? value) => super.noSuchMethod(
+    Invocation.setter(#commandBus, value),
     returnValueForMissingStub: null,
   );
 
   @override
-  void publishNodeEvent(List<_i2.Node>? nodes, _i3.DataChangeAction? action) =>
+  void publishEvent(_i9.AppEvent? event) => super.noSuchMethod(
+    Invocation.method(#publishEvent, [event]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishEvents(List<_i9.AppEvent>? events) => super.noSuchMethod(
+    Invocation.method(#publishEvents, [events]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  List<_i9.AppEvent> getPendingEvents() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPendingEvents, []),
+            returnValue: <_i9.AppEvent>[],
+          )
+          as List<_i9.AppEvent>);
+
+  @override
+  void clearPendingEvents() => super.noSuchMethod(
+    Invocation.method(#clearPendingEvents, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishNodeEvent(List<_i2.Node>? nodes, _i9.DataChangeAction? action) =>
       super.noSuchMethod(
         Invocation.method(#publishNodeEvent, [nodes, action]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void publishSingleNodeEvent(_i2.Node? node, _i3.DataChangeAction? action) =>
+  void publishSingleNodeEvent(_i2.Node? node, _i9.DataChangeAction? action) =>
       super.noSuchMethod(
         Invocation.method(#publishSingleNodeEvent, [node, action]),
         returnValueForMissingStub: null,
@@ -247,7 +277,7 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
   void publishGraphRelationEvent(
     String? graphId,
     List<String>? nodeIds,
-    _i3.RelationChangeAction? action,
+    _i9.RelationChangeAction? action,
   ) => super.noSuchMethod(
     Invocation.method(#publishGraphRelationEvent, [graphId, nodeIds, action]),
     returnValueForMissingStub: null,
@@ -271,17 +301,6 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
                 ),
           )
           as _i6.Future<T>);
-
-  @override
-  _i3.AppEventBus getAppEventBus() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAppEventBus, []),
-            returnValue: _FakeAppEventBus_1(
-              this,
-              Invocation.method(#getAppEventBus, []),
-            ),
-          )
-          as _i3.AppEventBus);
 
   @override
   void registerService<T>(T? service) => super.noSuchMethod(

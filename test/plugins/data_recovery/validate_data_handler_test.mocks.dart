@@ -8,11 +8,12 @@ import 'dart:ui' as _i10;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i9;
+import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i3;
 import 'package:node_graph_notebook/core/commands/models/command_context.dart'
     as _i7;
-import 'package:node_graph_notebook/core/events/app_events.dart' as _i3;
+import 'package:node_graph_notebook/core/events/app_events.dart' as _i11;
 import 'package:node_graph_notebook/core/models/models.dart' as _i8;
-import 'package:node_graph_notebook/core/models/node.dart' as _i11;
+import 'package:node_graph_notebook/core/models/node.dart' as _i12;
 import 'package:node_graph_notebook/core/repositories/graph_repository.dart'
     as _i5;
 import 'package:node_graph_notebook/core/repositories/node_repository.dart'
@@ -40,8 +41,8 @@ class _FakeStorageUsage_0 extends _i1.SmartFake implements _i2.StorageUsage {
     : super(parent, parentInvocation);
 }
 
-class _FakeAppEventBus_1 extends _i1.SmartFake implements _i3.AppEventBus {
-  _FakeAppEventBus_1(Object parent, Invocation parentInvocation)
+class _FakeCommandBus_1 extends _i1.SmartFake implements _i3.CommandBus {
+  _FakeCommandBus_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -241,12 +242,15 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
   }
 
   @override
-  _i3.AppEventBus get eventBus =>
+  _i3.CommandBus get commandBus =>
       (super.noSuchMethod(
-            Invocation.getter(#eventBus),
-            returnValue: _FakeAppEventBus_1(this, Invocation.getter(#eventBus)),
+            Invocation.getter(#commandBus),
+            returnValue: _FakeCommandBus_1(
+              this,
+              Invocation.getter(#commandBus),
+            ),
           )
-          as _i3.AppEventBus);
+          as _i3.CommandBus);
 
   @override
   _i4.NodeRepository get nodeRepository =>
@@ -279,20 +283,48 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
           as bool);
 
   @override
-  set eventBus(_i3.AppEventBus? value) => super.noSuchMethod(
-    Invocation.setter(#eventBus, value),
+  set commandBus(_i3.CommandBus? value) => super.noSuchMethod(
+    Invocation.setter(#commandBus, value),
     returnValueForMissingStub: null,
   );
 
   @override
-  void publishNodeEvent(List<_i11.Node>? nodes, _i3.DataChangeAction? action) =>
-      super.noSuchMethod(
-        Invocation.method(#publishNodeEvent, [nodes, action]),
-        returnValueForMissingStub: null,
-      );
+  void publishEvent(_i11.AppEvent? event) => super.noSuchMethod(
+    Invocation.method(#publishEvent, [event]),
+    returnValueForMissingStub: null,
+  );
 
   @override
-  void publishSingleNodeEvent(_i11.Node? node, _i3.DataChangeAction? action) =>
+  void publishEvents(List<_i11.AppEvent>? events) => super.noSuchMethod(
+    Invocation.method(#publishEvents, [events]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  List<_i11.AppEvent> getPendingEvents() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPendingEvents, []),
+            returnValue: <_i11.AppEvent>[],
+          )
+          as List<_i11.AppEvent>);
+
+  @override
+  void clearPendingEvents() => super.noSuchMethod(
+    Invocation.method(#clearPendingEvents, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishNodeEvent(
+    List<_i12.Node>? nodes,
+    _i11.DataChangeAction? action,
+  ) => super.noSuchMethod(
+    Invocation.method(#publishNodeEvent, [nodes, action]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishSingleNodeEvent(_i12.Node? node, _i11.DataChangeAction? action) =>
       super.noSuchMethod(
         Invocation.method(#publishSingleNodeEvent, [node, action]),
         returnValueForMissingStub: null,
@@ -302,7 +334,7 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
   void publishGraphRelationEvent(
     String? graphId,
     List<String>? nodeIds,
-    _i3.RelationChangeAction? action,
+    _i11.RelationChangeAction? action,
   ) => super.noSuchMethod(
     Invocation.method(#publishGraphRelationEvent, [graphId, nodeIds, action]),
     returnValueForMissingStub: null,
@@ -326,17 +358,6 @@ class MockCommandContext extends _i1.Mock implements _i7.CommandContext {
                 ),
           )
           as _i6.Future<T>);
-
-  @override
-  _i3.AppEventBus getAppEventBus() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAppEventBus, []),
-            returnValue: _FakeAppEventBus_1(
-              this,
-              Invocation.method(#getAppEventBus, []),
-            ),
-          )
-          as _i3.AppEventBus);
 
   @override
   void registerService<T>(T? service) => super.noSuchMethod(
@@ -397,7 +418,7 @@ class MockNodeRepository extends _i1.Mock implements _i4.NodeRepository {
   }
 
   @override
-  _i6.Future<void> save(_i11.Node? node) =>
+  _i6.Future<void> save(_i12.Node? node) =>
       (super.noSuchMethod(
             Invocation.method(#save, [node]),
             returnValue: _i6.Future<void>.value(),
@@ -406,12 +427,12 @@ class MockNodeRepository extends _i1.Mock implements _i4.NodeRepository {
           as _i6.Future<void>);
 
   @override
-  _i6.Future<_i11.Node?> load(String? nodeId) =>
+  _i6.Future<_i12.Node?> load(String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#load, [nodeId]),
-            returnValue: _i6.Future<_i11.Node?>.value(),
+            returnValue: _i6.Future<_i12.Node?>.value(),
           )
-          as _i6.Future<_i11.Node?>);
+          as _i6.Future<_i12.Node?>);
 
   @override
   _i6.Future<void> delete(String? nodeId) =>
@@ -423,7 +444,7 @@ class MockNodeRepository extends _i1.Mock implements _i4.NodeRepository {
           as _i6.Future<void>);
 
   @override
-  _i6.Future<void> saveAll(List<_i11.Node>? nodes) =>
+  _i6.Future<void> saveAll(List<_i12.Node>? nodes) =>
       (super.noSuchMethod(
             Invocation.method(#saveAll, [nodes]),
             returnValue: _i6.Future<void>.value(),
@@ -432,23 +453,23 @@ class MockNodeRepository extends _i1.Mock implements _i4.NodeRepository {
           as _i6.Future<void>);
 
   @override
-  _i6.Future<List<_i11.Node>> loadAll(List<String>? nodeIds) =>
+  _i6.Future<List<_i12.Node>> loadAll(List<String>? nodeIds) =>
       (super.noSuchMethod(
             Invocation.method(#loadAll, [nodeIds]),
-            returnValue: _i6.Future<List<_i11.Node>>.value(<_i11.Node>[]),
+            returnValue: _i6.Future<List<_i12.Node>>.value(<_i12.Node>[]),
           )
-          as _i6.Future<List<_i11.Node>>);
+          as _i6.Future<List<_i12.Node>>);
 
   @override
-  _i6.Future<List<_i11.Node>> queryAll() =>
+  _i6.Future<List<_i12.Node>> queryAll() =>
       (super.noSuchMethod(
             Invocation.method(#queryAll, []),
-            returnValue: _i6.Future<List<_i11.Node>>.value(<_i11.Node>[]),
+            returnValue: _i6.Future<List<_i12.Node>>.value(<_i12.Node>[]),
           )
-          as _i6.Future<List<_i11.Node>>);
+          as _i6.Future<List<_i12.Node>>);
 
   @override
-  _i6.Future<List<_i11.Node>> search({
+  _i6.Future<List<_i12.Node>> search({
     String? title,
     String? content,
     List<String>? tags,
@@ -463,9 +484,9 @@ class MockNodeRepository extends _i1.Mock implements _i4.NodeRepository {
               #startDate: startDate,
               #endDate: endDate,
             }),
-            returnValue: _i6.Future<List<_i11.Node>>.value(<_i11.Node>[]),
+            returnValue: _i6.Future<List<_i12.Node>>.value(<_i12.Node>[]),
           )
-          as _i6.Future<List<_i11.Node>>);
+          as _i6.Future<List<_i12.Node>>);
 
   @override
   String getNodeFilePath(String? nodeId) =>
@@ -492,7 +513,7 @@ class MockNodeRepository extends _i1.Mock implements _i4.NodeRepository {
           as _i6.Future<_i8.MetadataIndex>);
 
   @override
-  _i6.Future<void> updateIndex(_i11.Node? node) =>
+  _i6.Future<void> updateIndex(_i12.Node? node) =>
       (super.noSuchMethod(
             Invocation.method(#updateIndex, [node]),
             returnValue: _i6.Future<void>.value(),

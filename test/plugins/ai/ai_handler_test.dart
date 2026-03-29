@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/commands/models/command_context.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/models/connection.dart';
@@ -644,21 +645,17 @@ class MockNodeService implements NodeService {
 }
 
 class MockCommandContext implements CommandContext {
-  AppEventBus _eventBus = MockEventBus();
-
-  @override
-  AppEventBus get eventBus => _eventBus;
-
-  @override
-  set eventBus(AppEventBus value) {
-    _eventBus = value;
+  MockCommandContext() {
+    _commandBus = CommandBus();
   }
 
-  List<AppEvent> get publishedEvents => (_eventBus as MockEventBus).publishedEvents;
+  final List<AppEvent> _pendingEvents = [];
 
   List<Node> nodes = [];
 
   final MockNodeRepository _nodeRepository = MockNodeRepository();
+
+  late final CommandBus _commandBus;
 
   @override
   NodeRepository get nodeRepository => _nodeRepository;
@@ -707,7 +704,22 @@ class MockCommandContext implements CommandContext {
   CommandContext createChild() => this;
 
   @override
-  AppEventBus getAppEventBus() => eventBus;
+  void publishEvent(AppEvent event) {
+    _pendingEvents.add(event);
+  }
+
+  @override
+  void publishEvents(List<AppEvent> events) {
+    _pendingEvents.addAll(events);
+  }
+
+  @override
+  List<AppEvent> getPendingEvents() => List.unmodifiable(_pendingEvents);
+
+  @override
+  void clearPendingEvents() {
+    _pendingEvents.clear();
+  }
 
   NodeService? get nodeService => null;
 
@@ -715,24 +727,15 @@ class MockCommandContext implements CommandContext {
   GraphRepository get graphRepository => throw UnimplementedError();
 
   GraphService? get graphService => null;
-}
-
-class MockEventBus implements AppEventBus {
-  final List<AppEvent> publishedEvents = [];
 
   @override
-  Stream<AppEvent> get stream => const Stream.empty();
+  CommandBus get commandBus => _commandBus;
 
   @override
-  void publish(AppEvent event) {
-    publishedEvents.add(event);
-  }
+  set commandBus(CommandBus value) {}
 
-  @override
-  void dispose() {}
-
-  @override
-  void Function(AppEvent? event, Object error, StackTrace stackTrace)? onError;
+  /// 已发布的事件列表（用于测试验证）
+  List<AppEvent> get publishedEvents => _pendingEvents;
 }
 
 class MockNodeRepository implements NodeRepository {

@@ -2,12 +2,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vector_math/vector_math.dart';
 
 import '../../../core/commands/command_bus.dart';
-import '../../../core/events/app_events.dart';
 import '../../../core/models/models.dart';
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/repositories/graph_repository.dart';
 import '../../../core/repositories/node_repository.dart';
+import '../../core/cqrs/query/query_bus.dart';
 import 'bloc/graph_bloc.dart';
 import 'bloc/graph_event.dart';
 import 'bloc/node_bloc.dart';
@@ -73,8 +73,8 @@ class GraphPlugin extends Plugin {
     BlocProvider<NodeBloc>(
       create: (ctx) => NodeBloc(
         commandBus: ctx.read<CommandBus>(),
+        queryBus: ctx.read<QueryBus>(),
         nodeRepository: ctx.read<NodeRepository>(),
-        eventBus: ctx.read<AppEventBus>(),
       )..add(const NodeLoadEvent()),
     ),
     BlocProvider<GraphBloc>(
@@ -82,7 +82,6 @@ class GraphPlugin extends Plugin {
         commandBus: ctx.read<CommandBus>(),
         graphRepository: ctx.read<GraphRepository>(),
         nodeRepository: ctx.read<NodeRepository>(),
-        eventBus: ctx.read<AppEventBus>(),
       )..add(const GraphInitializeEvent()),
     ),
   ];

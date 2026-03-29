@@ -13,7 +13,7 @@ const AppLogger _logger = AppLogger('LuaEngine');
 
 /// Lua引擎封装
 class LuaEngine {
-  /// 构造函数
+  /// 创建Lua引擎实例
   LuaEngine({
     this.enableDebugOutput = false,
     this.enableSandbox = true,
@@ -22,10 +22,19 @@ class LuaEngine {
 
   /// 最大用户函数注册数量
   static const int maxUserFunctions = 50;
+
+  /// 错误前缀长度
   static const int errorPrefixLength = 7;
+
+  /// 回调错误前缀长度
   static const int callbackErrorPrefixLength = 16;
+
+  /// 默认执行超时时间
   static const Duration defaultExecutionTimeout = Duration(seconds: 5);
+
+  /// 最大执行超时时间
   static const Duration maxExecutionTimeout = Duration(seconds: 30);
+
   static LuaEngine? _currentEngine;
 
   /// 当前引擎的函数注册表
@@ -784,41 +793,81 @@ class LuaEngine {
 
 /// Lua引擎异常
 class LuaEngineException implements Exception {
+  /// 创建Lua引擎异常
   const LuaEngineException(this.message);
+
+  /// 错误消息
   final String message;
 
   @override
   String toString() => 'LuaEngineException: $message';
 }
 
-/// Lua类型常量
+/// Lua类型常量 - 无类型
 const int luaTypeNone = -1;
+
+/// Lua类型常量 - nil类型
 const int luaTypeNil = 0;
+
+/// Lua类型常量 - 布尔类型
 const int luaTypeBoolean = 1;
+
+/// Lua类型常量 - 轻量级用户数据类型
 const int luaTypeLightUserdata = 2;
+
+/// Lua类型常量 - 数字类型
 const int luaTypeNumber = 3;
+
+/// Lua类型常量 - 字符串类型
 const int luaTypeString = 4;
+
+/// Lua类型常量 - 表类型
 const int luaTypeTable = 5;
+
+/// Lua类型常量 - 函数类型
 const int luaTypeFunction = 6;
+
+/// Lua类型常量 - 用户数据类型
 const int luaTypeUserdata = 7;
+
+/// Lua类型常量 - 线程类型
 const int luaTypeThread = 8;
 
+/// Lua类型常量 - nil类型（已弃用，请使用 luaTypeNil）
 @Deprecated('Use luaTypeNil instead')
 const LUA_TNIL = luaTypeNil;
+
+/// Lua类型常量 - 布尔类型（已弃用，请使用 luaTypeBoolean）
 @Deprecated('Use luaTypeBoolean instead')
 const LUA_TBOOLEAN = luaTypeBoolean;
+
+/// Lua类型常量 - 轻量级用户数据类型（已弃用，请使用 luaTypeLightUserdata）
 @Deprecated('Use luaTypeLightUserdata instead')
 const LUA_TLIGHTUSERDATA = luaTypeLightUserdata;
+
+/// Lua类型常量 - 数字类型（已弃用，请使用 luaTypeNumber）
 @Deprecated('Use luaTypeNumber instead')
 const LUA_TNUMBER = luaTypeNumber;
+
+/// Lua类型常量 - 字符串类型（已弃用，请使用 luaTypeString）
 @Deprecated('Use luaTypeString instead')
 const LUA_TSTRING = luaTypeString;
+
+/// Lua类型常量 - 表类型（已弃用，请使用 luaTypeTable）
 @Deprecated('Use luaTypeTable instead')
 const LUA_TTABLE = luaTypeTable;
+
+/// Lua类型常量 - 函数类型（已弃用，请使用 luaTypeFunction）
 @Deprecated('Use luaTypeFunction instead')
 const LUA_TFUNCTION = luaTypeFunction;
+
+/// Lua类型常量 - 用户数据类型（已弃用，请使用 luaTypeUserdata）
 @Deprecated('Use luaTypeUserdata instead')
 const LUA_TUSERDATA = luaTypeUserdata;
+
+/// Lua类型常量 - 线程类型（已弃用，请使用 luaTypeThread）
 @Deprecated('Use luaTypeThread instead')
 const LUA_TTHREAD = luaTypeThread;
+
+/// Lua类型常量 - 无类型（旧版名称，已弃用，请使用 luaTypeNone）
 const LUA_TNONE = luaTypeNone;

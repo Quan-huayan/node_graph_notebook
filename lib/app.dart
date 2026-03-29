@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/commands/command_bus.dart';
+import 'core/cqrs/handlers/advanced_search_handler.dart';
 import 'core/cqrs/handlers/graph_query_handler.dart';
 import 'core/cqrs/handlers/list_nodes_handler.dart';
 import 'core/cqrs/handlers/load_node_handler.dart';
 import 'core/cqrs/handlers/search_index_handler.dart';
 import 'core/cqrs/handlers/search_nodes_handler.dart';
 import 'core/cqrs/materialized_views/search_index_view.dart';
+import 'core/cqrs/queries/advanced_search_query.dart';
 import 'core/cqrs/queries/graph_query.dart';
 import 'core/cqrs/queries/list_nodes_query.dart';
 import 'core/cqrs/queries/load_node_query.dart';
@@ -17,7 +19,6 @@ import 'core/cqrs/queries/search_index_query.dart';
 import 'core/cqrs/queries/search_nodes_query.dart';
 import 'core/cqrs/query/query_bus.dart';
 import 'core/cqrs/read_models/node_read_model.dart';
-import 'core/events/app_events.dart';
 import 'core/execution/execution_engine.dart';
 import 'core/execution/task_registry.dart';
 import 'core/middleware/logging_middleware.dart';
@@ -69,7 +70,6 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   late GraphRepository _graphRepository;
   late CommandBus _commandBus;
   late QueryBus _queryBus;
-  late AppEventBus _eventBus;
   late TaskRegistry _taskRegistry;
   late SettingsRegistry _settingsRegistry;
   late ThemeRegistry _themeRegistry;
@@ -107,11 +107,11 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       _log.info('Step 3: Getting storage paths...');
       final nodesPath = await _storagePathService.getNodesPath();
       final graphsPath = await _storagePathService.getGraphsPath();
-      _log.info('[App] ✓ Nodes path: $nodesPath');
-      _log.info('[App] ✓ Graphs path: $graphsPath');
+      _log..info('[App] ✓ Nodes path: $nodesPath')
+      ..info('[App] ✓ Graphs path: $graphsPath')
 
       // 5. 初始化 Repositories
-      _log.info('Step 4: Initializing repositories...');
+      ..info('Step 4: Initializing repositories...');
       _nodeRepository = FileSystemNodeRepository(nodesDir: nodesPath);
       _graphRepository = FileSystemGraphRepository(graphsDir: graphsPath);
 
@@ -130,18 +130,17 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       // 6. 初始化 CommandBus 和 EventBus
       _log.info('Step 5: Creating CommandBus and EventBus...');
       _commandBus = _createCommandBus();
-      _eventBus = AppEventBus();
-      _log.info('[App] ✓ CommandBus and EventBus created');
+      _log..info('[App] ✓ CommandBus and EventBus created')
 
       // 7. 创建三个注册表
-      _log.info('Step 6: Creating registries...');
+      ..info('Step 6: Creating registries...');
       _taskRegistry = TaskRegistry();
       _settingsRegistry = SettingsRegistry(prefs);
       _themeRegistry = ThemeRegistry();
-      _log.info('[App] ✓ Registries created');
+      _log..info('[App] ✓ Registries created')
 
       // 8. 初始化 ExecutionEngine（使用 TaskRegistry）
-      _log.info('Step 7: Initializing ExecutionEngine...');
+      ..info('Step 7: Initializing ExecutionEngine...');
       _executionEngine = ExecutionEngine();
       await _executionEngine.initialize(
         taskRegistry: _taskRegistry,
@@ -155,7 +154,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
       // 10. 初始化 UILayoutService（在创建 ServiceRegistry 之前）
       _log.info('Step 9: Initializing UILayoutService...');
-      _layoutService = UILayoutService(eventBus: _eventBus);
+      _layoutService = UILayoutService(commandBus: _commandBus);
       await _layoutService.initialize();
       _log.info('[App] ✓ UILayoutService initialized');
 
@@ -166,7 +165,6 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
           NodeRepository: _nodeRepository,
           GraphRepository: _graphRepository,
           CommandBus: _commandBus,
-          AppEventBus: _eventBus,
           SettingsService: widget.settingsService,
           ThemeService: widget.themeService,
           SharedPreferencesAsync: _sharedPreferencesAsync,
@@ -179,7 +177,10 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       // 12. 创建 QueryBus（依赖 ServiceRegistry）
       _log.info('Step 11: Creating QueryBus...');
       _queryBus = _createQueryBus();
-      _log.info('[App] ✓ QueryBus created');
+
+      // 将 QueryBus 注册到 ServiceRegistry，使其可供其他组件使用
+      _serviceRegistry.registerCoreDependency<QueryBus>(QueryBus, _queryBus);
+      _log.info('[App] ✓ QueryBus created and registered');
 
       _log.info('[App] ✓ Core initialization completed successfully');
 
@@ -300,6 +301,11 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     ..registerHandler<List<Node>, FilterNodesQuery>(
       FilterNodesQuery,
       () => FilterNodesQueryHandler(nodeRepository),
+    )
+
+    ..registerHandler<List<Node>, AdvancedSearchQuery>(
+      AdvancedSearchQuery,
+      () => AdvancedSearchQueryHandler(nodeRepository),
     )
 
     ..registerHandler<List<Node>, GetRecentNodesQuery>(
@@ -510,7 +516,6 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     // 插件管理器（需要在 MultiProvider 外部初始化，以确保插件加载完成）
     final pluginManager = PluginManager(
       commandBus: _commandBus,
-      eventBus: _eventBus,
       nodeRepository: _nodeRepository,
       graphRepository: _graphRepository,
       serviceRegistry: _serviceRegistry,
@@ -598,11 +603,11 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
             Provider<NodeRepository>.value(value: _nodeRepository),
             Provider<GraphRepository>.value(value: _graphRepository),
 
-            // 2. 事件总线（在 BLoC 之前注入，供 BLoC 使用）
-            Provider<AppEventBus>.value(value: _eventBus),
-
-            // 3. 命令总线（Command Bus - 业务逻辑统一入口）
+            // 2. 命令总线（Command Bus - 业务逻辑统一入口）
             Provider<CommandBus>.value(value: _commandBus),
+
+            // 3. 查询总线（Query Bus - CQRS 读操作层）
+            Provider<QueryBus>.value(value: _queryBus),
 
             // === 国际化 Provider ===
             // 注意：I18n 服务现在由 I18nPlugin 提供

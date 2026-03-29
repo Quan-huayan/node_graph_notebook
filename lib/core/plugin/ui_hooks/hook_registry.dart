@@ -183,12 +183,12 @@ class HookRegistry extends ChangeNotifier {
   /// 获取指定 Hook 点的所有 Hook
   ///
   /// [hookPointId] Hook 点 ID（字符串）
-  /// [includeDisabled] 是否包含已禁用的 Hook（默认 true）
+  /// [includeDisabled] 是否包含已禁用的 Hook（默认 false）
   ///
   /// 返回按优先级排序的 Hook 包装器列表
   List<HookWrapper> getHookWrappers(
     String hookPointId, {
-    bool includeDisabled = true,
+    bool includeDisabled = false,
   }) {
     final allHooks = _hooks[hookPointId] ?? [];
 

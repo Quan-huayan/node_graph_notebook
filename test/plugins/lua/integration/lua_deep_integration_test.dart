@@ -20,7 +20,6 @@ import 'lua_deep_integration_test.mocks.dart';
 void main() {
   group('Lua 深度集成测试', () {
     late LuaEngineService engineService;
-    late LuaAPIImplementation apiImpl;
     late MockNodeRepository mockNodeRepo;
     late MockGraphRepository mockGraphRepo;
 
@@ -39,14 +38,11 @@ void main() {
       mockGraphRepo = MockGraphRepository();
 
       // 创建 API 实现
-      apiImpl = LuaAPIImplementation(
+      LuaAPIImplementation(
         engineService: engineService,
         nodeRepository: mockNodeRepo,
         graphRepository: mockGraphRepo,
-      );
-
-      // 注册所有 API
-      apiImpl.registerAllAPIs();
+      ).registerAllAPIs();
     });
 
     tearDown(() async {
@@ -741,12 +737,11 @@ void main() {
         await sandboxEngine.initialize();
 
         // 注册 API
-        final sandboxApi = LuaAPIImplementation(
+        LuaAPIImplementation(
           engineService: sandboxEngine,
           nodeRepository: mockNodeRepo,
           graphRepository: mockGraphRepo,
-        );
-        sandboxApi.registerAllAPIs();
+        ).registerAllAPIs();
 
         const script = '''
           -- 尝试访问被禁用的 API

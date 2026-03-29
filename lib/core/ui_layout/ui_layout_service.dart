@@ -53,7 +53,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../events/app_events.dart';
+import '../commands/command_bus.dart';
 import '../models/node.dart';
 import 'coordinate_system.dart';
 import 'events/layout_events.dart';
@@ -69,18 +69,18 @@ import 'ui_hook_tree.dart';
 class UILayoutService {
   /// Creates a UI layout service.
   ///
-  /// [eventBus] is required for publishing layout events.
+  /// [commandBus] is required for publishing layout events.
   /// [nodeTemplateRegistry] is optional custom template registry.
   UILayoutService({
-    required AppEventBus eventBus,
+    required CommandBus commandBus,
     NodeTemplateRegistry? nodeTemplateRegistry,
-  })  : _eventBus = eventBus,
+  })  : _commandBus = commandBus,
         _nodeTemplateRegistry = nodeTemplateRegistry ?? NodeTemplateRegistry() {
     _registerDefaultCalculators();
   }
 
-  /// EventBus for publishing layout events.
-  final AppEventBus _eventBus;
+  /// CommandBus for publishing layout events.
+  final CommandBus _commandBus;
 
   /// Root Hook of the Hook tree.
   late final UIHookNode _rootHook;
@@ -338,7 +338,7 @@ class UILayoutService {
     _nodeToHookIndex[nodeId] = hookId;
 
     // Publish event
-    _eventBus.publish(NodeAttachedEvent(
+    _commandBus.publishEvent(NodeAttachedEvent(
       nodeId: nodeId,
       hookId: hookId,
       position: position,
@@ -384,7 +384,7 @@ class UILayoutService {
     _nodeToHookIndex.remove(nodeId);
 
     // Publish event
-    _eventBus.publish(NodeDetachedEvent(
+    _commandBus.publishEvent(NodeDetachedEvent(
       nodeId: nodeId,
       hookId: hookId,
       oldPosition: attachment.localPosition,
@@ -451,7 +451,7 @@ class UILayoutService {
       }
 
       // Publish event
-      _eventBus.publish(NodePositionUpdatedEvent(
+      _commandBus.publishEvent(NodePositionUpdatedEvent(
         nodeId: nodeId,
         hookId: currentHookId,
         oldPosition: oldPosition,
@@ -476,7 +476,7 @@ class UILayoutService {
       _nodeToHookIndex[nodeId] = targetHookId;
 
       // Publish event
-      _eventBus.publish(NodeMovedEvent(
+      _commandBus.publishEvent(NodeMovedEvent(
         nodeId: nodeId,
         oldHookId: currentHookId,
         newHookId: targetHookId,
@@ -525,7 +525,7 @@ class UILayoutService {
     hook.updateNodePosition(nodeId, newPosition);
 
     // Publish event
-    _eventBus.publish(NodePositionUpdatedEvent(
+    _commandBus.publishEvent(NodePositionUpdatedEvent(
       nodeId: nodeId,
       hookId: hookId,
       oldPosition: oldAttachment.localPosition,
@@ -599,7 +599,7 @@ class UILayoutService {
     }
 
     // Publish event
-    _eventBus.publish(LayoutRecalculatedEvent(
+    _commandBus.publishEvent(LayoutRecalculatedEvent(
       hookId: hookId,
       hasChanges: true,
     ));

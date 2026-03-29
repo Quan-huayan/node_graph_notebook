@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:node_graph_notebook/core/commands/command_bus.dart';
-import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/plugin/plugin.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_point_registry.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_registry.dart';
@@ -11,17 +10,14 @@ void main() {
     late HookRegistry hookRegistry;
     late ServiceRegistry serviceRegistry;
     late CommandBus commandBus;
-    late AppEventBus eventBus;
 
     setUp(() {
-      eventBus = AppEventBus();
       commandBus = CommandBus();
       hookRegistry = HookRegistry();
       serviceRegistry = ServiceRegistry();
 
       pluginManager = PluginManager(
         commandBus: commandBus,
-        eventBus: eventBus,
         hookRegistry: hookRegistry,
         serviceRegistry: serviceRegistry,
       );

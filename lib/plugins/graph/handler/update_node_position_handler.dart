@@ -3,6 +3,7 @@ import '../../../../core/commands/models/command.dart';
 import '../../../../core/commands/models/command_context.dart';
 import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/repositories/graph_repository.dart';
+import '../../layout/event/layout_events.dart';
 import '../command/graph_commands.dart';
 
 /// 更新节点位置处理器
@@ -38,6 +39,11 @@ class UpdateNodePositionHandler
 
       final updatedGraph = graph.copyWith(nodePositions: updatedPositions);
       await _repository.save(updatedGraph);
+
+      // 发布节点位置变化事件（使用新API）
+      context.publishEvent(
+        NodePositionsChangedEvent(nodeIds: [command.nodeId]),
+      );
 
       return CommandResult.success(null);
     } catch (e) {

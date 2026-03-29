@@ -12,7 +12,7 @@ import '../../../../core/events/event_subscription_manager.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/repositories/graph_repository.dart';
 import '../../../../core/repositories/node_repository.dart';
-import '../../layout/service/layout_service.dart';
+import '../../layout/command/layout_commands.dart';
 import '../command/graph_commands.dart';
 import '../service/graph_service.dart';
 import 'graph_event.dart';
@@ -25,29 +25,31 @@ import 'graph_state.dart';
 /// - 节点在图中的位置管理（视图层）
 /// - 节点选择状态（视图层）
 /// - 视图状态（缩放、平移、网格、连接线显示）
-/// - 订阅事件总线，响应节点数据变化
+/// - 订阅命令总线事件流，响应节点数据变化
 ///
-/// 不再负责：
-/// - 节点数据的 CRUD（由 NodeBloc 管理）
-/// - 直接订阅 NodeBloc（通过事件总线解耦）
-/// - 业务逻辑（由 CommandHandler 处理）
+/// 架构说明：
+/// - 写操作通过 CommandBus（业务逻辑层）
+/// - 读操作直接通过 Repository（数据访问层）
+/// - 订阅 CommandBus.eventStream 接收数据变化通知（替代 AppEventBus）
+/// - BLoC 只负责 UI 状态管理，不包含业务逻辑
 class GraphBloc extends Bloc<GraphEvent, GraphState> {
   /// 创建 Graph BLoC
   ///
-  /// [commandBus] - 命令总线，用于执行写操作
+  /// [commandBus] - 命令总线，用于执行写操作和订阅事件流
   /// [graphRepository] - 图数据仓库，用于读操作
   /// [nodeRepository] - 节点数据仓库，用于读操作
-  /// [eventBus] - 事件总线，用于订阅数据变化
+  ///
+  /// 架构变更：
+  /// - 移除了 eventBus 参数，改用 commandBus.eventStream
+  /// - CommandBus 现在是统一的通信中心（命令 + 事件）
   GraphBloc({
     required CommandBus commandBus,
     required GraphRepository graphRepository,
     required NodeRepository nodeRepository,
-    required AppEventBus eventBus,
-  }) : _commandBus = commandBus,
-       _graphRepository = graphRepository,
-       _nodeRepository = nodeRepository,
-       _eventBus = eventBus,
-       super(GraphState.initial()) {
+  })  : _commandBus = commandBus,
+        _graphRepository = graphRepository,
+        _nodeRepository = nodeRepository,
+        super(GraphState.initial()) {
     // 初始化事件订阅管理器
     _subscriptionManager = EventSubscriptionManager('GraphBloc');
 
@@ -78,14 +80,14 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<FocusNodeEvent>(_onFocusNode);
     on<_NodeSyncedEvent>(_onNodeSynced);
 
-    // 订阅事件总线，响应节点数据变化
+    // 订阅命令总线的事件流，响应节点数据变化
+    // CommandBus 现在是统一的通信中心，替代了 AppEventBus
     _subscribeToEvents();
   }
 
   final CommandBus _commandBus;
   final GraphRepository _graphRepository;
   final NodeRepository _nodeRepository;
-  final AppEventBus _eventBus;
 
   /// 事件订阅管理器
   ///
@@ -294,7 +296,18 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     emit(state.copyWith(graph: updatedGraph));
 
     // 持久化位置（不阻塞 UI）
-    _persistNodePosition(event.nodeId, event.newPosition);
+    // 直接通过 CommandBus 异步持久化
+    _commandBus
+        .dispatch(UpdateNodePositionCommand(
+      graphId: state.graph.id,
+      nodeId: event.nodeId,
+      newPosition: event.newPosition,
+    ))
+        .catchError((e) async {
+      // 静默失败，不影响用户体验
+      debugPrint('Failed to persist node position: $e');
+      return CommandResult<void>.failure(e.toString());
+    });
   }
 
   /// 移动多个节点（批量乐观更新）
@@ -318,7 +331,20 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     emit(currentState.copyWith(graph: updatedGraph));
 
     // 持久化位置（不阻塞 UI）
-    _persistNodePositions(event.movements);
+    // 批量更新节点位置
+    for (final entry in event.movements.entries) {
+      _commandBus
+          .dispatch(UpdateNodePositionCommand(
+        graphId: currentState.graph.id,
+        nodeId: entry.key,
+        newPosition: entry.value,
+      ))
+          .catchError((e) {
+        // 静默失败，不影响用户体验
+        debugPrint('Failed to persist node position: $e');
+        return CommandResult<void>.failure(e.toString());
+      });
+    }
   }
 
   /// 移出节点（从图中移除，但保留节点数据）
@@ -415,145 +441,108 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   }
 
   /// 缩放视图
+  ///
+  /// 架构说明：
+  /// - BLoC 先更新 UI 状态（乐观更新）
+  /// - 然后异步持久化到 GraphRepository
+  /// - 持久化失败不影响用户体验
   Future<void> _onViewZoom(
     ViewZoomEvent event,
     Emitter<GraphState> emit,
   ) async {
-    if (state.graph.id.isEmpty) {
-      // 如果没有加载 graph，只更新内存状态
-      emit(
-        state.copyWith(
-          viewState: state.viewState.copyWith(
-            zoomLevel: event.zoomLevel,
-            camera: event.position != null
-                ? state.viewState.camera.copyWith(
-                    position: event.position,
-                    zoom: event.zoomLevel,
-                  )
-                : state.viewState.camera.copyWith(zoom: event.zoomLevel),
+    // 使用事件中提供的位置，或者使用当前位置
+    final newPosition = event.position ?? state.viewState.camera.position;
+
+    // 乐观更新 - 立即更新 UI 状态
+    emit(
+      state.copyWith(
+        viewState: state.viewState.copyWith(
+          zoomLevel: event.zoomLevel,
+          camera: state.viewState.camera.copyWith(
+            position: newPosition,
+            zoom: event.zoomLevel,
           ),
         ),
-      );
-      return;
-    }
+      ),
+    );
 
-    try {
-      // === 架构说明：缩放持久化 ===
-      // 设计意图：缩放变化时持久化到 graph 配置
-      // 实现方式：更新 viewConfig.camera.zoom 和 position 并保存
-      // 重要性：确保用户下次打开图时保持相同的缩放级别和位置
+    // 如果没有加载 graph，只更新内存状态
+    if (state.graph.id.isEmpty) return;
 
-      // 使用事件中提供的位置，或者使用当前位置
-      final newPosition = event.position ?? state.viewState.camera.position;
+    // 异步持久化到 GraphRepository（不阻塞 UI）
+    final updatedConfig = state.graph.viewConfig.copyWith(
+      camera: Camera(
+        x: newPosition.dx,
+        y: newPosition.dy,
+        zoom: event.zoomLevel,
+        centerWidth: state.graph.viewConfig.camera.centerWidth,
+        centerHeight: state.graph.viewConfig.camera.centerHeight,
+      ),
+    );
 
-      // 先持久化缩放配置到文件
-      final updatedConfig = state.graph.viewConfig.copyWith(
-        camera: Camera(
-          x: newPosition.dx,
-          y: newPosition.dy,
-          zoom: event.zoomLevel,
-          centerWidth: state.graph.viewConfig.camera.centerWidth,
-          centerHeight: state.graph.viewConfig.camera.centerHeight,
-        ),
-      );
-
-      // 写操作：通过 CommandBus
-      final command = UpdateGraphCommand(
-        graphId: state.graph.id,
-        viewConfig: updatedConfig,
-      );
-      final result = await _commandBus.dispatch(command);
-
-      if (!result.isSuccess) {
-        throw Exception(result.error);
+    _commandBus
+        .dispatch(UpdateGraphCommand(
+      graphId: state.graph.id,
+      viewConfig: updatedConfig,
+    ))
+        .then((result) {
+      // 持久化成功，更新 graph 对象
+      if (result.isSuccess && result.data != null) {
+        // 注意：这里不能直接 emit，因为可能在另一个事件处理中
+        // 实际的 graph 更新会通过事件总线同步
       }
-
-      final updatedGraph = result.data!;
-
-      // 更新状态（使用更新后的 graph）
-      emit(
-        state.copyWith(
-          graph: updatedGraph,
-          viewState: state.viewState.copyWith(
-            zoomLevel: event.zoomLevel,
-            camera: state.viewState.camera.copyWith(
-              position: newPosition,
-              zoom: event.zoomLevel,
-            ),
-          ),
-        ),
-      );
-    } catch (e) {
-      // 持久化失败不影响内存状态的更新
+    }).catchError((e) {
+      // 持久化失败，不影响用户体验
       debugPrint('Failed to persist camera zoom: $e');
-      // 即使持久化失败，也要更新内存状态
-      emit(
-        state.copyWith(
-          viewState: state.viewState.copyWith(
-            zoomLevel: event.zoomLevel,
-            camera: event.position != null
-                ? state.viewState.camera.copyWith(
-                    position: event.position,
-                    zoom: event.zoomLevel,
-                  )
-                : state.viewState.camera.copyWith(zoom: event.zoomLevel),
-          ),
-        ),
-      );
-    }
+    });
   }
 
   /// 移动相机位置
+  ///
+  /// 架构说明：
+  /// - BLoC 先更新 UI 状态（乐观更新）
+  /// - 然后异步持久化到 GraphRepository
+  /// - 持久化失败不影响用户体验
   Future<void> _onViewMove(
     ViewMoveEvent event,
     Emitter<GraphState> emit,
   ) async {
+    // 乐观更新 - 立即更新 UI 状态
+    emit(
+      state.copyWith(
+        viewState: state.viewState.copyWith(
+          camera: state.viewState.camera.copyWith(position: event.position),
+        ),
+      ),
+    );
+
+    // 如果没有加载 graph，只更新内存状态
     if (state.graph.id.isEmpty) return;
 
-    try {
-      // 先持久化相机配置到文件
-      final updatedConfig = state.graph.viewConfig.copyWith(
-        camera: Camera(
-          x: event.position.dx,
-          y: event.position.dy,
-          zoom: state.viewState.camera.zoom,
-        ),
-      );
+    // 异步持久化到 GraphRepository（不阻塞 UI）
+    final updatedConfig = state.graph.viewConfig.copyWith(
+      camera: Camera(
+        x: event.position.dx,
+        y: event.position.dy,
+        zoom: state.viewState.camera.zoom,
+      ),
+    );
 
-      // 写操作：通过 CommandBus
-      final command = UpdateGraphCommand(
-        graphId: state.graph.id,
-        viewConfig: updatedConfig,
-      );
-      final result = await _commandBus.dispatch(command);
-
-      if (!result.isSuccess) {
-        throw Exception(result.error);
+    _commandBus
+        .dispatch(UpdateGraphCommand(
+      graphId: state.graph.id,
+      viewConfig: updatedConfig,
+    ))
+        .then((result) {
+      // 持久化成功，更新 graph 对象
+      if (result.isSuccess && result.data != null) {
+        // 注意：这里不能直接 emit，因为可能在另一个事件处理中
+        // 实际的 graph 更新会通过事件总线同步
       }
-
-      final updatedGraph = result.data!;
-
-      // 更新状态（使用更新后的 graph 和新的 viewState）
-      emit(
-        state.copyWith(
-          graph: updatedGraph,
-          viewState: state.viewState.copyWith(
-            camera: state.viewState.camera.copyWith(position: event.position),
-          ),
-        ),
-      );
-    } catch (e) {
-      // 持久化失败不影响内存状态的更新
+    }).catchError((e) {
+      // 持久化失败，不影响用户体验
       debugPrint('Failed to persist camera position: $e');
-      // 即使持久化失败，也要更新内存状态
-      emit(
-        state.copyWith(
-          viewState: state.viewState.copyWith(
-            camera: state.viewState.camera.copyWith(position: event.position),
-          ),
-        ),
-      );
-    }
+    });
   }
 
   /// 切换连接线显示
@@ -582,6 +571,11 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   }
 
   /// 应用布局
+  ///
+  /// 架构说明：
+  /// - 布局业务逻辑已迁移到 ApplyLayoutCommandHandler
+  /// - BLoC 只负责管理 UI 状态和触发命令
+  /// - 节点位置更新会通过事件总线自动同步
   Future<void> _onApplyLayout(
     LayoutApplyEvent event,
     Emitter<GraphState> emit,
@@ -589,36 +583,37 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     if (state.graph.id.isEmpty) return;
 
     try {
-      // 布局操作：直接使用 LayoutService
-      final layoutService = LayoutServiceImpl();
+      // 更新 UI 状态：正在应用布局
+      emit(state.copyWith(loadingState: LoadingState.loading));
 
-      // 获取当前图的节点
-      final nodeIds = state.graph.nodeIds;
-      final nodes = await _nodeRepository.loadAll(nodeIds);
-
-      // 应用布局算法
-      final layoutResult = await layoutService.applyLayout(
-        nodes: nodes,
-        algorithm: event.algorithm,
+      // 通过 CommandBus 执行布局操作
+      // 业务逻辑在 ApplyLayoutHandler 中处理
+      final result = await _commandBus.dispatch(
+        ApplyLayoutCommand(
+          // 将 LayoutAlgorithm 枚举转换为字符串
+          layoutType: event.algorithm.name,
+          graphId: state.graph.id,
+        ),
       );
 
-      // 更新节点位置（通过 CommandBus）
-      for (final entry in layoutResult.entries) {
-        final command = UpdateNodePositionCommand(
-          graphId: state.graph.id,
-          nodeId: entry.key,
-          newPosition: entry.value,
-        );
-        await _commandBus.dispatch(command);
-      }
+      if (result.isSuccess) {
+        // 布局应用成功，更新 UI 状态
+        emit(state.copyWith(loadingState: LoadingState.loaded));
 
-      // 重新加载图数据
-      final graph = await _graphRepository.load(state.graph.id);
-      if (graph != null) {
-        await _loadGraphData(graph, emit);
+        // 节点位置会通过事件总线自动更新
+        // 不需要手动重新加载图数据
+      } else {
+        // 布局应用失败，显示错误
+        emit(state.copyWith(
+          loadingState: LoadingState.error,
+          error: result.error ?? 'Failed to apply layout',
+        ));
       }
     } catch (e) {
-      emit(state.copyWith(error: 'Failed to apply layout: ${e.toString()}'));
+      emit(state.copyWith(
+        loadingState: LoadingState.error,
+        error: 'Failed to apply layout: ${e.toString()}',
+      ));
     }
   }
 
@@ -781,38 +776,6 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     }
   }
 
-  /// 持久化节点位置（不阻塞 UI）
-  Future<void> _persistNodePosition(String nodeId, Offset position) async {
-    try {
-      // 写操作：通过 CommandBus（异步，不阻塞 UI）
-      final command = UpdateNodePositionCommand(
-        graphId: state.graph.id,
-        nodeId: nodeId,
-        newPosition: position,
-      );
-      _commandBus.dispatch(command).catchError((e) {
-        debugPrint('Failed to persist node position: $e');
-        return CommandResult.failureTyped<void>(e.toString());
-      });
-    } catch (e) {
-      // 静默失败，不影响用户体验
-      debugPrint('Failed to persist node position: $e');
-    }
-  }
-
-  /// 持久化多个节点位置（不阻塞 UI）
-  Future<void> _persistNodePositions(Map<String, Offset> positions) async {
-    try {
-      // 批量更新节点位置
-      for (final entry in positions.entries) {
-        await _persistNodePosition(entry.key, entry.value);
-      }
-    } catch (e) {
-      // 静默失败，不影响用户体验
-      debugPrint('Failed to persist node positions: $e');
-    }
-  }
-
   /// 重命名图
   Future<void> _onRenameGraph(
     GraphRenameEvent event,
@@ -901,17 +864,22 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     }
   }
 
-  /// 订阅事件总线，响应节点数据变化
+  /// 订阅命令总线的事件流，响应节点数据变化
   ///
-  /// 通过事件总线监听 NodeBloc 发布的节点变化事件，
+  /// 通过 CommandBus.eventStream 监听节点变化事件，
   /// 实现图视图与节点数据的同步。
+  ///
+  /// 架构变更：
+  /// - 使用 CommandBus.eventStream 替代 AppEventBus.stream
+  /// - CommandBus 现在是统一的通信中心
+  /// - 命令执行后自动发布事件到 eventStream
   ///
   /// 使用 EventSubscriptionManager 自动管理订阅生命周期，
   /// 防止内存泄漏。
   void _subscribeToEvents() {
     _subscriptionManager.track(
       'NodeDataChanged',
-      _eventBus.stream.listen((event) {
+      _commandBus.eventStream.listen((event) {
         if (event is NodeDataChangedEvent) {
           _handleNodeDataChanged(event);
         }
@@ -921,36 +889,23 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
   /// 处理节点数据变化事件
   ///
-  /// 根据变化类型更新图中的节点数据：
-  /// - delete: 从图中移除已删除的节点
-  /// - create/update: 更新图中节点的数据
+  /// 架构说明：
+  /// - BLoC 订阅 CommandBus 的事件流
+  /// - 当节点数据变化时更新 UI 状态
+  /// - 只处理 UI 状态更新，不包含业务逻辑
   void _handleNodeDataChanged(NodeDataChangedEvent event) {
-    // 只在图已加载时同步
     if (state.graph.id.isEmpty) return;
 
-    // 获取当前图中的节点 ID 集合
     final graphNodeIds = state.graph.nodeIds.toSet();
+    List<Node> updatedNodes;
+    List<Connection> updatedConnections;
 
     switch (event.action) {
       case DataChangeAction.delete:
         // 从图中移除已删除的节点
         final deletedNodeIds = event.changedNodes.map((n) => n.id).toSet();
-
-        final updatedNodes = state.nodes
-            .where((n) => !deletedNodeIds.contains(n.id))
-            .toList();
-
-        final updatedConnections = Connection.calculateConnections(
-          updatedNodes,
-        );
-
-        // 使用 add 而不是 emit，因为我们在 stream 回调中
-        add(
-          _NodeSyncedEvent(
-            nodes: updatedNodes,
-            connections: updatedConnections,
-          ),
-        );
+        updatedNodes = state.nodes.where((n) => !deletedNodeIds.contains(n.id)).toList();
+        updatedConnections = Connection.calculateConnections(updatedNodes);
         break;
 
       case DataChangeAction.update:
@@ -962,25 +917,21 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
 
         if (affectedNodes.isEmpty) return;
 
-        // 正确的替换逻辑：移除旧版本，添加新版本
+        // 替换逻辑：移除旧版本，添加新版本
         final affectedNodeIds = affectedNodes.map((n) => n.id).toSet();
-        final updatedNodes = [
+        updatedNodes = [
           ...state.nodes.where((n) => !affectedNodeIds.contains(n.id)),
           ...affectedNodes,
         ];
-
-        final updatedConnections = Connection.calculateConnections(
-          updatedNodes,
-        );
-
-        add(
-          _NodeSyncedEvent(
-            nodes: updatedNodes,
-            connections: updatedConnections,
-          ),
-        );
+        updatedConnections = Connection.calculateConnections(updatedNodes);
         break;
     }
+
+    // 使用 add 而不是 emit，因为我们在 stream 回调中
+    add(_NodeSyncedEvent(
+      nodes: updatedNodes,
+      connections: updatedConnections,
+    ));
   }
 
   @override

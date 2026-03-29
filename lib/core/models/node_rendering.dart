@@ -303,5 +303,6 @@ class _PlaceholderNodeComponent extends Component {
 
 /// Extension to convert Flutter Size to Flame Vector2.
 extension SizeToVector2 on Size {
+  /// Converts this Size to a Flame Vector2.
   Vector2 toVector2() => Vector2(width, height);
 }

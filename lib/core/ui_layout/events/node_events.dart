@@ -26,6 +26,7 @@
 // ignore_for_file: avoid_dynamic_calls
 library;
 
+import '../../commands/command_bus.dart';
 import '../../events/app_events.dart';
 import '../coordinate_system.dart';
 
@@ -224,17 +225,17 @@ class FlutterGestureAdapter extends EventAdapter {
   /// Creates a Flutter gesture adapter.
   ///
   /// [nodeId] is the ID of the Node this adapter is for.
-  /// [eventBus] is the EventBus to publish adapted events to.
+  /// [commandBus] is the CommandBus to publish adapted events to.
   FlutterGestureAdapter({
     required this.nodeId,
-    required dynamic eventBus,
-  }) : _eventBus = eventBus;
+    required CommandBus commandBus,
+  }) : _commandBus = commandBus;
 
   /// ID of the Node this adapter is for.
   final String nodeId;
 
-  /// EventBus to publish events to.
-  final dynamic _eventBus;
+  /// CommandBus to publish events to.
+  final CommandBus _commandBus;
 
   /// Adapts a tap gesture.
   ///
@@ -345,7 +346,7 @@ class FlutterGestureAdapter extends EventAdapter {
   }
 
   void _publish(NodeInteractionEvent event) {
-    _eventBus.publish(event);
+    _commandBus.publishEvent(event);
   }
 }
 
@@ -370,17 +371,17 @@ class FlameInteractionAdapter extends EventAdapter {
   /// Creates a Flame interaction adapter.
   ///
   /// [nodeId] is the ID of the Node this adapter is for.
-  /// [eventBus] is the EventBus to publish adapted events to.
+  /// [commandBus] is the CommandBus to publish adapted events to.
   FlameInteractionAdapter({
     required this.nodeId,
-    required dynamic eventBus,
-  }) : _eventBus = eventBus;
+    required CommandBus commandBus,
+  }) : _commandBus = commandBus;
 
   /// ID of the Node this adapter is for.
   final String nodeId;
 
-  /// EventBus to publish events to.
-  final dynamic _eventBus;
+  /// CommandBus to publish events to.
+  final CommandBus _commandBus;
 
   /// Adapts a tap event.
   ///
@@ -448,6 +449,6 @@ class FlameInteractionAdapter extends EventAdapter {
   }
 
   void _publish(NodeInteractionEvent event) {
-    _eventBus.publish(event);
+    _commandBus.publishEvent(event);
   }
 }

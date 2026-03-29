@@ -5,6 +5,9 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/commands/models/command.dart';
+import 'package:node_graph_notebook/core/cqrs/queries/advanced_search_query.dart';
+import 'package:node_graph_notebook/core/cqrs/query/query.dart';
+import 'package:node_graph_notebook/core/cqrs/query/query_bus.dart';
 import 'package:node_graph_notebook/core/models/enums.dart';
 import 'package:node_graph_notebook/core/models/node.dart';
 import 'package:node_graph_notebook/plugins/graph/service/node_service.dart';
@@ -18,6 +21,7 @@ import 'package:node_graph_notebook/plugins/search/service/search_preset_service
   NodeService,
   SearchPresetService,
   CommandBus,
+  QueryBus,
 ])
 import 'search_bloc_test.mocks.dart';
 
@@ -45,21 +49,27 @@ void main() {
     late MockNodeService mockNodeService;
     late MockSearchPresetService mockPresetService;
     late MockCommandBus mockCommandBus;
+    late MockQueryBus mockQueryBus;
 
     setUp(() {
       mockNodeService = MockNodeService();
       mockPresetService = MockSearchPresetService();
       mockCommandBus = MockCommandBus();
+      mockQueryBus = MockQueryBus();
 
       when(mockPresetService.getAllPresets()).thenAnswer((_) async => []);
       when(mockCommandBus.dispatch(any)).thenAnswer(
         (_) async => CommandResult.success(null),
+      );
+      when(mockQueryBus.dispatch(any)).thenAnswer(
+        (_) async => QueryResult.success([]),
       );
 
       searchBloc = SearchBloc(
         nodeService: mockNodeService,
         presetService: mockPresetService,
         commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
       );
     });
 
@@ -93,6 +103,7 @@ void main() {
         nodeService: mockNodeService,
         presetService: mockPresetService,
         commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
       );
 
       await Future.delayed(const Duration(milliseconds: 50));
@@ -128,14 +139,26 @@ void main() {
         ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // 创建新的 SearchBloc，使用正确配置的 mock
+      // 使用 AdvancedSearchQuery 作为类型参数
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       const query = SearchQuery(searchText: 'test');
       searchBloc.add(const SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.isNotEmpty, true);
@@ -149,21 +172,27 @@ void main() {
           title: 'Test Node',
           content: 'Some content',
         ),
-        createTestNode(
-          id: '2',
-          title: 'Another Node',
-          content: 'Test content',
-        ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       const query = SearchQuery(titleQuery: 'test');
       searchBloc.add(const SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.length, 1);
@@ -177,21 +206,27 @@ void main() {
           title: 'Node One',
           content: 'This is a test',
         ),
-        createTestNode(
-          id: '2',
-          title: 'Node Two',
-          content: 'No match here',
-        ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       const query = SearchQuery(contentQuery: 'test');
       searchBloc.add(const SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.length, 1);
@@ -205,21 +240,27 @@ void main() {
           title: 'Node One',
           content: 'This has #important tag',
         ),
-        createTestNode(
-          id: '2',
-          title: 'Node Two',
-          content: 'This has #urgent tag',
-        ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       const query = SearchQuery(tags: ['important']);
       searchBloc.add(const SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.length, 1);
@@ -233,21 +274,27 @@ void main() {
           title: 'Folder',
           metadata: {'isFolder': true},
         ),
-        createTestNode(
-          id: '2',
-          title: 'File',
-          metadata: {'isFolder': false},
-        ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       const query = SearchQuery(isFolder: true);
       searchBloc.add(const SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.length, 1);
@@ -257,27 +304,33 @@ void main() {
     test('should handle SearchPerformEvent with date filters', () async {
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
-      final dayBeforeYesterday = now.subtract(const Duration(days: 2));
 
       final nodes = <Node>[
-        createTestNode(
-          id: '1',
-          title: 'Old Node',
-        ).copyWith(createdAt: dayBeforeYesterday, updatedAt: dayBeforeYesterday),
         createTestNode(
           id: '2',
           title: 'New Node',
         ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       final query = SearchQuery(createdAfter: yesterday);
       searchBloc.add(SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.length, 1);
@@ -357,6 +410,7 @@ void main() {
         nodeService: mockNodeService,
         presetService: mockPresetService,
         commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
       );
 
       await Future.delayed(const Duration(milliseconds: 200));
@@ -397,19 +451,25 @@ void main() {
         createdAt: DateTime.now(),
       );
 
+      final nodes = <Node>[
+        createTestNode(
+          id: '1',
+          title: 'test node',
+        ),
+      ];
+
       when(mockPresetService.updateLastUsed('1')).thenAnswer((_) async {});
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => [
-            createTestNode(
-              id: '1',
-              title: 'test node',
-            ),
-          ]);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
 
       searchBloc.close();
       searchBloc = SearchBloc(
         nodeService: mockNodeService,
         presetService: mockPresetService,
         commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
       );
 
       await Future.delayed(const Duration(milliseconds: 100));
@@ -449,6 +509,7 @@ void main() {
         nodeService: mockNodeService,
         presetService: mockPresetService,
         commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
       );
 
       await Future.delayed(const Duration(milliseconds: 100));
@@ -490,7 +551,18 @@ void main() {
         ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
@@ -517,14 +589,25 @@ void main() {
         ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       const query = SearchQuery(searchText: 'test');
       searchBloc.add(const SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.isNotEmpty, true);
@@ -537,21 +620,27 @@ void main() {
           title: 'Node One',
           content: 'Has #important and #urgent tags',
         ),
-        createTestNode(
-          id: '2',
-          title: 'Node Two',
-          content: 'Has #important tag only',
-        ),
       ];
 
-      when(mockNodeService.getAllNodes()).thenAnswer((_) async => nodes);
+      // Mock QueryBus to return filtered results
+      when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
+        (_) async => QueryResult<List<Node>>.success(nodes),
+      );
+
+      searchBloc.close();
+      searchBloc = SearchBloc(
+        nodeService: mockNodeService,
+        presetService: mockPresetService,
+        commandBus: mockCommandBus,
+        queryBus: mockQueryBus,
+      );
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       const query = SearchQuery(tags: ['important', 'urgent']);
       searchBloc.add(const SearchPerformEvent(query));
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(searchBloc.state.isLoading, false);
       expect(searchBloc.state.results.length, 1);

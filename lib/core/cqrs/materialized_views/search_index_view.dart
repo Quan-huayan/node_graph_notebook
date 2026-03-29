@@ -129,6 +129,20 @@ class SearchIndexMaterializedView {
   /// 返回包含该词的节点ID集合
   Set<String>? getNodesWithToken(String token) => _invertedIndex[token.toLowerCase()];
 
+  /// 获取热门tokens（按包含的节点数量排序）
+  ///
+  /// [limit] 返回的最大token数量
+  /// 返回按节点数量降序排列的token列表
+  List<String> getPopularTokens({int limit = 10}) {
+    if (_invertedIndex.isEmpty) return [];
+
+    // 按节点数量排序
+    final sortedEntries = _invertedIndex.entries.toList()
+      ..sort((a, b) => b.value.length.compareTo(a.value.length));
+
+    return sortedEntries.take(limit).map((e) => e.key).toList();
+  }
+
   /// 清空索引
   void clear() {
     _invertedIndex.clear();

@@ -3,6 +3,7 @@ import '../models/lua_script.dart';
 
 /// Lua脚本状态
 class LuaScriptState extends Equatable {
+  /// 创建Lua脚本状态
   const LuaScriptState({
     this.scripts = const [],
     this.selectedScriptId,

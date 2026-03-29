@@ -55,13 +55,8 @@ class GetPopularTokensQueryHandler extends QueryHandler<List<String>, GetPopular
   @override
   Future<QueryResult<List<String>>> handle(GetPopularTokensQuery query) async {
     try {
-      // TODO: 实现热门token统计
-      // 这里简化实现，实际应该维护一个使用计数器
-      // 目前返回前N个包含节点最多的tokens
-
-      // 为了演示，返回一些常见的tokens
-      // 实际应用中应该从_searchIndex内部获取token->nodes映射
-      final popularTokens = <String>[];
+      // 从搜索索引获取热门tokens（按包含的节点数量排序）
+      final popularTokens = _searchIndex.getPopularTokens(limit: query.limit);
 
       return QueryResult.success(popularTokens);
     } catch (error, stackTrace) {

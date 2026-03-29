@@ -80,8 +80,8 @@ class ApplyLayoutHandler implements CommandHandler<ApplyLayoutCommand> {
         await _commandBus.dispatch(BatchMoveNodesCommand(positions: positions));
       }
 
-      // 发布布局应用事件
-      context.eventBus.publish(
+      // 发布布局应用事件（使用新API）
+      context.publishEvent(
         LayoutAppliedEvent(
           graphId: graphId,
           layoutType: command.layoutType,
@@ -147,8 +147,8 @@ class BatchMoveNodesHandler implements CommandHandler<BatchMoveNodesCommand> {
         }
       }
 
-      // 发布节点位置变化事件
-      context.eventBus.publish(
+      // 发布节点位置变化事件（使用新API）
+      context.publishEvent(
         NodePositionsChangedEvent(nodeIds: command.positions.keys.toList()),
       );
 

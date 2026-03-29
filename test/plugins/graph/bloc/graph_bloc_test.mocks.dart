@@ -6,21 +6,21 @@
 import 'dart:async' as _i5;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i11;
+import 'package:mockito/src/dummies.dart' as _i12;
 import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i4;
 import 'package:node_graph_notebook/core/commands/models/command.dart' as _i2;
 import 'package:node_graph_notebook/core/commands/models/command_handler.dart'
-    as _i6;
-import 'package:node_graph_notebook/core/commands/models/middleware.dart'
     as _i7;
-import 'package:node_graph_notebook/core/events/app_events.dart' as _i12;
+import 'package:node_graph_notebook/core/commands/models/middleware.dart'
+    as _i8;
+import 'package:node_graph_notebook/core/events/app_events.dart' as _i6;
 import 'package:node_graph_notebook/core/models/models.dart' as _i3;
 import 'package:node_graph_notebook/core/plugin/middleware/middleware_plugin.dart'
-    as _i8;
-import 'package:node_graph_notebook/core/repositories/graph_repository.dart'
     as _i9;
-import 'package:node_graph_notebook/core/repositories/node_repository.dart'
+import 'package:node_graph_notebook/core/repositories/graph_repository.dart'
     as _i10;
+import 'package:node_graph_notebook/core/repositories/node_repository.dart'
+    as _i11;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -70,8 +70,16 @@ class MockCommandBus extends _i1.Mock implements _i4.CommandBus {
           as _i5.Stream<_i4.CommandEvent>);
 
   @override
+  _i5.Stream<_i6.AppEvent> get eventStream =>
+      (super.noSuchMethod(
+            Invocation.getter(#eventStream),
+            returnValue: _i5.Stream<_i6.AppEvent>.empty(),
+          )
+          as _i5.Stream<_i6.AppEvent>);
+
+  @override
   void registerHandler<T extends _i2.Command<dynamic>>(
-    _i6.CommandHandler<T>? handler,
+    _i7.CommandHandler<T>? handler,
     Type? commandType,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandler, [handler, commandType]),
@@ -80,27 +88,27 @@ class MockCommandBus extends _i1.Mock implements _i4.CommandBus {
 
   @override
   void registerHandlers(
-    Map<Type, _i6.CommandHandler<_i2.Command<dynamic>>>? handlers,
+    Map<Type, _i7.CommandHandler<_i2.Command<dynamic>>>? handlers,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandlers, [handlers]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddleware(_i7.CommandMiddleware? middleware) => super.noSuchMethod(
+  void addMiddleware(_i8.CommandMiddleware? middleware) => super.noSuchMethod(
     Invocation.method(#addMiddleware, [middleware]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddlewarePlugin(_i8.CommandMiddlewarePlugin? middleware) =>
+  void addMiddlewarePlugin(_i9.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#addMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void removeMiddlewarePlugin(_i8.CommandMiddlewarePlugin? middleware) =>
+  void removeMiddlewarePlugin(_i9.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#removeMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
@@ -133,12 +141,24 @@ class MockCommandBus extends _i1.Mock implements _i4.CommandBus {
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
+
+  @override
+  void publishEvent(_i6.AppEvent? event) => super.noSuchMethod(
+    Invocation.method(#publishEvent, [event]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishEvents(List<_i6.AppEvent>? events) => super.noSuchMethod(
+    Invocation.method(#publishEvents, [events]),
+    returnValueForMissingStub: null,
+  );
 }
 
 /// A class which mocks [GraphRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGraphRepository extends _i1.Mock implements _i9.GraphRepository {
+class MockGraphRepository extends _i1.Mock implements _i10.GraphRepository {
   MockGraphRepository() {
     _i1.throwOnMissingStub(this);
   }
@@ -217,7 +237,7 @@ class MockGraphRepository extends _i1.Mock implements _i9.GraphRepository {
 /// A class which mocks [NodeRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNodeRepository extends _i1.Mock implements _i10.NodeRepository {
+class MockNodeRepository extends _i1.Mock implements _i11.NodeRepository {
   MockNodeRepository() {
     _i1.throwOnMissingStub(this);
   }
@@ -297,7 +317,7 @@ class MockNodeRepository extends _i1.Mock implements _i10.NodeRepository {
   String getNodeFilePath(String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#getNodeFilePath, [nodeId]),
-            returnValue: _i11.dummyValue<String>(
+            returnValue: _i12.dummyValue<String>(
               this,
               Invocation.method(#getNodeFilePath, [nodeId]),
             ),
@@ -325,40 +345,4 @@ class MockNodeRepository extends _i1.Mock implements _i10.NodeRepository {
             returnValueForMissingStub: _i5.Future<void>.value(),
           )
           as _i5.Future<void>);
-}
-
-/// A class which mocks [AppEventBus].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockAppEventBus extends _i1.Mock implements _i12.AppEventBus {
-  MockAppEventBus() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  _i5.Stream<_i12.AppEvent> get stream =>
-      (super.noSuchMethod(
-            Invocation.getter(#stream),
-            returnValue: _i5.Stream<_i12.AppEvent>.empty(),
-          )
-          as _i5.Stream<_i12.AppEvent>);
-
-  @override
-  set onError(void Function(_i12.AppEvent?, Object, StackTrace)? value) =>
-      super.noSuchMethod(
-        Invocation.setter(#onError, value),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void publish(_i12.AppEvent? event) => super.noSuchMethod(
-    Invocation.method(#publish, [event]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
-    returnValueForMissingStub: null,
-  );
 }

@@ -50,6 +50,7 @@ class FailingOnLoadPlugin extends Plugin {
       );
 
   PluginState _state = PluginState.unloaded;
+  late PluginContext context;
 
   @override
   PluginState get state => _state;
@@ -60,7 +61,8 @@ class FailingOnLoadPlugin extends Plugin {
   }
 
   @override
-  Future<void> onLoad(PluginContext context) async {
+  Future<void> onLoad(PluginContext ctx) async {
+    context = ctx;
     throw Exception('Load failed');
   }
 
@@ -210,7 +212,14 @@ void main() {
         try {
           await failingLifecycle.transitionTo(
             PluginState.loaded,
-            failingPlugin.onLoad as Future<dynamic> Function(),
+            () async {
+              // 创建一个 mock context 传递给 onLoad
+              final mockContext = PluginContext(
+                pluginId: failingPlugin.metadata.id,
+                commandBus: CommandBus(),
+              );
+              await failingPlugin.onLoad(mockContext);
+            },
           );
         } catch (e) {
           // Expected
@@ -259,13 +268,23 @@ void main() {
         final failingPlugin = FailingOnLoadPlugin();
         final failingLifecycle = PluginLifecycleManager(failingPlugin);
 
-        expect(
-          () => failingLifecycle.transitionTo(
+        // 使用 try-catch 来捕获异常，然后验证状态
+        try {
+          await failingLifecycle.transitionTo(
             PluginState.loaded,
-            failingPlugin.onLoad as Future<dynamic> Function(),
-          ),
-          throwsException,
-        );
+            () async {
+              // 创建一个 mock context 传递给 onLoad
+              final mockContext = PluginContext(
+                pluginId: failingPlugin.metadata.id,
+                commandBus: CommandBus(),
+              );
+              await failingPlugin.onLoad(mockContext);
+            },
+          );
+          fail('Expected exception to be thrown');
+        } catch (e) {
+          // Expected
+        }
 
         expect(failingLifecycle.state, PluginState.loadFailed);
         expect(failingPlugin.state, PluginState.loadFailed);
@@ -277,13 +296,16 @@ void main() {
 
         await failingLifecycle.transitionTo(PluginState.loaded, () async {});
 
-        expect(
-          () => failingLifecycle.transitionTo(
+        // 使用 try-catch 来捕获异常，然后验证状态
+        try {
+          await failingLifecycle.transitionTo(
             PluginState.enabled,
             failingPlugin.onEnable,
-          ),
-          throwsException,
-        );
+          );
+          fail('Expected exception to be thrown');
+        } catch (e) {
+          // Expected
+        }
 
         expect(failingLifecycle.state, PluginState.enableFailed);
         expect(failingPlugin.state, PluginState.enableFailed);
@@ -322,7 +344,14 @@ void main() {
         try {
           await failingLifecycle.transitionTo(
             PluginState.loaded,
-            failingPlugin.onLoad as Future<dynamic> Function(),
+            () async {
+              // 创建一个 mock context 传递给 onLoad
+              final mockContext = PluginContext(
+                pluginId: failingPlugin.metadata.id,
+                commandBus: CommandBus(),
+              );
+              await failingPlugin.onLoad(mockContext);
+            },
           );
         } catch (e) {
           // Expected

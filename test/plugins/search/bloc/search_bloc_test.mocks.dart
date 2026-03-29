@@ -3,25 +3,29 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
-import 'dart:ui' as _i7;
+import 'dart:async' as _i8;
+import 'dart:ui' as _i9;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i9;
+import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i11;
 import 'package:node_graph_notebook/core/commands/models/command.dart' as _i4;
 import 'package:node_graph_notebook/core/commands/models/command_handler.dart'
-    as _i10;
+    as _i13;
 import 'package:node_graph_notebook/core/commands/models/middleware.dart'
-    as _i11;
+    as _i14;
+import 'package:node_graph_notebook/core/cqrs/query/query.dart' as _i6;
+import 'package:node_graph_notebook/core/cqrs/query/query_bus.dart' as _i16;
+import 'package:node_graph_notebook/core/cqrs/query/query_cache.dart' as _i5;
+import 'package:node_graph_notebook/core/events/app_events.dart' as _i12;
 import 'package:node_graph_notebook/core/models/models.dart' as _i2;
 import 'package:node_graph_notebook/core/plugin/middleware/middleware_plugin.dart'
-    as _i12;
+    as _i15;
 import 'package:node_graph_notebook/plugins/graph/service/node_service.dart'
-    as _i5;
+    as _i7;
 import 'package:node_graph_notebook/plugins/search/model/search_preset_model.dart'
     as _i3;
 import 'package:node_graph_notebook/plugins/search/service/search_preset_service.dart'
-    as _i8;
+    as _i10;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -54,20 +58,32 @@ class _FakeCommandResult_2<T1> extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
+class _FakeQueryCacheStats_3 extends _i1.SmartFake
+    implements _i5.QueryCacheStats {
+  _FakeQueryCacheStats_3(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeQueryResult_4<T1> extends _i1.SmartFake
+    implements _i6.QueryResult<T1> {
+  _FakeQueryResult_4(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [NodeService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockNodeService extends _i1.Mock implements _i5.NodeService {
+class MockNodeService extends _i1.Mock implements _i7.NodeService {
   MockNodeService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i6.Future<_i2.Node> createNode({
+  _i8.Future<_i2.Node> createNode({
     required String? title,
     String? content,
-    _i7.Offset? position,
-    _i7.Size? size,
+    _i9.Offset? position,
+    _i9.Size? size,
     String? color,
     Map<String, _i2.NodeReference>? references,
     Map<String, dynamic>? metadata,
@@ -82,7 +98,7 @@ class MockNodeService extends _i1.Mock implements _i5.NodeService {
               #references: references,
               #metadata: metadata,
             }),
-            returnValue: _i6.Future<_i2.Node>.value(
+            returnValue: _i8.Future<_i2.Node>.value(
               _FakeNode_0(
                 this,
                 Invocation.method(#createNode, [], {
@@ -97,15 +113,15 @@ class MockNodeService extends _i1.Mock implements _i5.NodeService {
               ),
             ),
           )
-          as _i6.Future<_i2.Node>);
+          as _i8.Future<_i2.Node>);
 
   @override
-  _i6.Future<_i2.Node> updateNode(
+  _i8.Future<_i2.Node> updateNode(
     String? nodeId, {
     String? title,
     String? content,
-    _i7.Offset? position,
-    _i7.Size? size,
+    _i9.Offset? position,
+    _i9.Size? size,
     _i2.NodeViewMode? viewMode,
     String? color,
     Map<String, _i2.NodeReference>? references,
@@ -126,7 +142,7 @@ class MockNodeService extends _i1.Mock implements _i5.NodeService {
                 #metadata: metadata,
               },
             ),
-            returnValue: _i6.Future<_i2.Node>.value(
+            returnValue: _i8.Future<_i2.Node>.value(
               _FakeNode_0(
                 this,
                 Invocation.method(
@@ -146,43 +162,43 @@ class MockNodeService extends _i1.Mock implements _i5.NodeService {
               ),
             ),
           )
-          as _i6.Future<_i2.Node>);
+          as _i8.Future<_i2.Node>);
 
   @override
-  _i6.Future<void> deleteNode(String? nodeId) =>
+  _i8.Future<void> deleteNode(String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#deleteNode, [nodeId]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i6.Future<_i2.Node?> getNode(String? nodeId) =>
+  _i8.Future<_i2.Node?> getNode(String? nodeId) =>
       (super.noSuchMethod(
             Invocation.method(#getNode, [nodeId]),
-            returnValue: _i6.Future<_i2.Node?>.value(),
+            returnValue: _i8.Future<_i2.Node?>.value(),
           )
-          as _i6.Future<_i2.Node?>);
+          as _i8.Future<_i2.Node?>);
 
   @override
-  _i6.Future<List<_i2.Node>> getAllNodes() =>
+  _i8.Future<List<_i2.Node>> getAllNodes() =>
       (super.noSuchMethod(
             Invocation.method(#getAllNodes, []),
-            returnValue: _i6.Future<List<_i2.Node>>.value(<_i2.Node>[]),
+            returnValue: _i8.Future<List<_i2.Node>>.value(<_i2.Node>[]),
           )
-          as _i6.Future<List<_i2.Node>>);
+          as _i8.Future<List<_i2.Node>>);
 
   @override
-  _i6.Future<List<_i2.Node>> searchNodes(String? query) =>
+  _i8.Future<List<_i2.Node>> searchNodes(String? query) =>
       (super.noSuchMethod(
             Invocation.method(#searchNodes, [query]),
-            returnValue: _i6.Future<List<_i2.Node>>.value(<_i2.Node>[]),
+            returnValue: _i8.Future<List<_i2.Node>>.value(<_i2.Node>[]),
           )
-          as _i6.Future<List<_i2.Node>>);
+          as _i8.Future<List<_i2.Node>>);
 
   @override
-  _i6.Future<void> connectNodes({
+  _i8.Future<void> connectNodes({
     required String? fromNodeId,
     required String? toNodeId,
     Map<String, dynamic>? properties,
@@ -193,13 +209,13 @@ class MockNodeService extends _i1.Mock implements _i5.NodeService {
               #toNodeId: toNodeId,
               #properties: properties,
             }),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i6.Future<void> disconnectNodes({
+  _i8.Future<void> disconnectNodes({
     required String? fromNodeId,
     required String? toNodeId,
   }) =>
@@ -208,116 +224,124 @@ class MockNodeService extends _i1.Mock implements _i5.NodeService {
               #fromNodeId: fromNodeId,
               #toNodeId: toNodeId,
             }),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i6.Future<void> batchUpdate(List<_i5.NodeUpdate>? updates) =>
+  _i8.Future<void> batchUpdate(List<_i7.NodeUpdate>? updates) =>
       (super.noSuchMethod(
             Invocation.method(#batchUpdate, [updates]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i6.Future<void> batchDelete(List<String>? nodeIds) =>
+  _i8.Future<void> batchDelete(List<String>? nodeIds) =>
       (super.noSuchMethod(
             Invocation.method(#batchDelete, [nodeIds]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i6.Future<Map<String, int>> calculateNodeDepths(List<_i2.Node>? nodes) =>
+  _i8.Future<Map<String, int>> calculateNodeDepths(List<_i2.Node>? nodes) =>
       (super.noSuchMethod(
             Invocation.method(#calculateNodeDepths, [nodes]),
-            returnValue: _i6.Future<Map<String, int>>.value(<String, int>{}),
+            returnValue: _i8.Future<Map<String, int>>.value(<String, int>{}),
           )
-          as _i6.Future<Map<String, int>>);
+          as _i8.Future<Map<String, int>>);
 }
 
 /// A class which mocks [SearchPresetService].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSearchPresetService extends _i1.Mock
-    implements _i8.SearchPresetService {
+    implements _i10.SearchPresetService {
   MockSearchPresetService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i6.Future<List<_i3.SearchPreset>> getAllPresets() =>
+  _i8.Future<List<_i3.SearchPreset>> getAllPresets() =>
       (super.noSuchMethod(
             Invocation.method(#getAllPresets, []),
-            returnValue: _i6.Future<List<_i3.SearchPreset>>.value(
+            returnValue: _i8.Future<List<_i3.SearchPreset>>.value(
               <_i3.SearchPreset>[],
             ),
           )
-          as _i6.Future<List<_i3.SearchPreset>>);
+          as _i8.Future<List<_i3.SearchPreset>>);
 
   @override
-  _i6.Future<_i3.SearchPreset?> getPreset(String? id) =>
+  _i8.Future<_i3.SearchPreset?> getPreset(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getPreset, [id]),
-            returnValue: _i6.Future<_i3.SearchPreset?>.value(),
+            returnValue: _i8.Future<_i3.SearchPreset?>.value(),
           )
-          as _i6.Future<_i3.SearchPreset?>);
+          as _i8.Future<_i3.SearchPreset?>);
 
   @override
-  _i6.Future<_i3.SearchPreset> savePreset(_i3.SearchPreset? preset) =>
+  _i8.Future<_i3.SearchPreset> savePreset(_i3.SearchPreset? preset) =>
       (super.noSuchMethod(
             Invocation.method(#savePreset, [preset]),
-            returnValue: _i6.Future<_i3.SearchPreset>.value(
+            returnValue: _i8.Future<_i3.SearchPreset>.value(
               _FakeSearchPreset_1(
                 this,
                 Invocation.method(#savePreset, [preset]),
               ),
             ),
           )
-          as _i6.Future<_i3.SearchPreset>);
+          as _i8.Future<_i3.SearchPreset>);
 
   @override
-  _i6.Future<void> deletePreset(String? id) =>
+  _i8.Future<void> deletePreset(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deletePreset, [id]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i6.Future<void> updateLastUsed(String? id) =>
+  _i8.Future<void> updateLastUsed(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#updateLastUsed, [id]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
 }
 
 /// A class which mocks [CommandBus].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockCommandBus extends _i1.Mock implements _i9.CommandBus {
+class MockCommandBus extends _i1.Mock implements _i11.CommandBus {
   MockCommandBus() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i6.Stream<_i9.CommandEvent> get commandStream =>
+  _i8.Stream<_i11.CommandEvent> get commandStream =>
       (super.noSuchMethod(
             Invocation.getter(#commandStream),
-            returnValue: _i6.Stream<_i9.CommandEvent>.empty(),
+            returnValue: _i8.Stream<_i11.CommandEvent>.empty(),
           )
-          as _i6.Stream<_i9.CommandEvent>);
+          as _i8.Stream<_i11.CommandEvent>);
+
+  @override
+  _i8.Stream<_i12.AppEvent> get eventStream =>
+      (super.noSuchMethod(
+            Invocation.getter(#eventStream),
+            returnValue: _i8.Stream<_i12.AppEvent>.empty(),
+          )
+          as _i8.Stream<_i12.AppEvent>);
 
   @override
   void registerHandler<T extends _i4.Command<dynamic>>(
-    _i10.CommandHandler<T>? handler,
+    _i13.CommandHandler<T>? handler,
     Type? commandType,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandler, [handler, commandType]),
@@ -326,53 +350,128 @@ class MockCommandBus extends _i1.Mock implements _i9.CommandBus {
 
   @override
   void registerHandlers(
-    Map<Type, _i10.CommandHandler<_i4.Command<dynamic>>>? handlers,
+    Map<Type, _i13.CommandHandler<_i4.Command<dynamic>>>? handlers,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandlers, [handlers]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddleware(_i11.CommandMiddleware? middleware) => super.noSuchMethod(
+  void addMiddleware(_i14.CommandMiddleware? middleware) => super.noSuchMethod(
     Invocation.method(#addMiddleware, [middleware]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddlewarePlugin(_i12.CommandMiddlewarePlugin? middleware) =>
+  void addMiddlewarePlugin(_i15.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#addMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void removeMiddlewarePlugin(_i12.CommandMiddlewarePlugin? middleware) =>
+  void removeMiddlewarePlugin(_i15.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#removeMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
       );
 
   @override
-  _i6.Future<_i4.CommandResult<T>> dispatch<T>(_i4.Command<T>? command) =>
+  _i8.Future<_i4.CommandResult<T>> dispatch<T>(_i4.Command<T>? command) =>
       (super.noSuchMethod(
             Invocation.method(#dispatch, [command]),
-            returnValue: _i6.Future<_i4.CommandResult<T>>.value(
+            returnValue: _i8.Future<_i4.CommandResult<T>>.value(
               _FakeCommandResult_2<T>(
                 this,
                 Invocation.method(#dispatch, [command]),
               ),
             ),
           )
-          as _i6.Future<_i4.CommandResult<T>>);
+          as _i8.Future<_i4.CommandResult<T>>);
 
   @override
-  _i6.Future<void> undo(_i4.Command<dynamic>? command) =>
+  _i8.Future<void> undo(_i4.Command<dynamic>? command) =>
       (super.noSuchMethod(
             Invocation.method(#undo, [command]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i8.Future<void>);
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishEvent(_i12.AppEvent? event) => super.noSuchMethod(
+    Invocation.method(#publishEvent, [event]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void publishEvents(List<_i12.AppEvent>? events) => super.noSuchMethod(
+    Invocation.method(#publishEvents, [events]),
+    returnValueForMissingStub: null,
+  );
+}
+
+/// A class which mocks [QueryBus].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockQueryBus extends _i1.Mock implements _i16.QueryBus {
+  MockQueryBus() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i5.QueryCacheStats get cacheStats =>
+      (super.noSuchMethod(
+            Invocation.getter(#cacheStats),
+            returnValue: _FakeQueryCacheStats_3(
+              this,
+              Invocation.getter(#cacheStats),
+            ),
+          )
+          as _i5.QueryCacheStats);
+
+  @override
+  void registerHandler<T, Q extends _i6.Query<T>>(
+    Type? queryType,
+    _i6.QueryHandler<T, Q> Function()? handlerFactory,
+  ) => super.noSuchMethod(
+    Invocation.method(#registerHandler, [queryType, handlerFactory]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void registerMiddleware(_i16.QueryMiddleware? middleware) =>
+      super.noSuchMethod(
+        Invocation.method(#registerMiddleware, [middleware]),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i8.Future<_i6.QueryResult<T>> dispatch<T, Q extends _i6.Query<T>>(
+    Q? query,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#dispatch, [query]),
+            returnValue: _i8.Future<_i6.QueryResult<T>>.value(
+              _FakeQueryResult_4<T>(
+                this,
+                Invocation.method(#dispatch, [query]),
+              ),
+            ),
+          )
+          as _i8.Future<_i6.QueryResult<T>>);
+
+  @override
+  void clearCache([Type? queryType]) => super.noSuchMethod(
+    Invocation.method(#clearCache, [queryType]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void dispose() => super.noSuchMethod(

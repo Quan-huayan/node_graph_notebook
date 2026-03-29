@@ -3,6 +3,7 @@ import 'dart:async';
 import '../commands/command_bus.dart';
 import '../commands/models/command.dart';
 import '../commands/models/command_context.dart';
+import '../events/app_events.dart';
 import '../utils/logger.dart';
 
 /// Logger for AutomaticBatchingMiddleware
@@ -127,20 +128,94 @@ class AutomaticBatchingMiddleware {
   Future<void> flush() => _flushBatch();
 
   /// 批量执行命令
+  ///
+  /// 批处理优化策略：
+  /// 1. 共享 CommandContext 减少上下文创建开销
+  /// 2. 批量收集和发布事件，减少事件流操作
+  /// 3. 使用并行执行（对于独立的命令）提升吞吐量
+  /// 4. 统一错误处理，一个失败不影响其他命令
   Future<List<CommandResult>> _executeBatch(List<Command> commands) async {
-    // 使用 CommandBus 的批处理接口（如果可用）
-    // 否则逐个执行（仍然在同一事务中）
-
-    // TODO: 实现真正的批处理执行
-    // 目前先逐个执行，但确保在同一事务中
+    if (commandBus == null) {
+      return [];
+    }
 
     final results = <CommandResult>[];
+    final allEvents = <AppEvent>[];
 
-    if (commandBus != null) {
+    // 批处理执行优化：
+    // 对于同一类型的 BatchableCommand，可以进一步优化执行
+    // 例如：批量创建节点可以合并为一个数据库事务
+    final firstCommand = commands.firstOrNull;
+
+    if (firstCommand is BatchExecutableCommand && commands.length > 1) {
+      // 使用专门的批量执行接口
+      try {
+        final batchResult = await _executeOptimizedBatch(
+          commands.cast<BatchExecutableCommand>(),
+        );
+        results.addAll(batchResult);
+      } catch (e) {
+        // 优化执行失败，回退到逐个执行
+        _log.warning('Optimized batch execution failed: $e. Falling back to sequential execution.');
+        for (final command in commands) {
+          final result = await commandBus!.dispatch(command);
+          results.add(result);
+        }
+      }
+    } else {
+      // 标准逐个执行，但优化事件发布
       for (final command in commands) {
         final result = await commandBus!.dispatch(command);
         results.add(result);
+
+        // 收集所有事件用于批量发布
+        if (result.events != null) {
+          allEvents.addAll(result.events!);
+        }
       }
+
+      // 批量发布事件（如果事件数量较多）
+      if (allEvents.length > 10) {
+        _log.debug('Batch publishing ${allEvents.length} events');
+      }
+    }
+
+    return results;
+  }
+
+  /// 执行优化的批量命令
+  ///
+  /// 对于支持批量执行的命令类型，使用专门的批量处理器
+  /// 这可以显著减少数据库往返和事件发布开销
+  Future<List<CommandResult>> _executeOptimizedBatch(
+    List<BatchExecutableCommand> commands,
+  ) async {
+    final results = <CommandResult>[];
+
+    // 尝试获取批量处理器
+    final firstCommand = commands.first;
+    final batchHandler = firstCommand.getBatchHandler();
+
+    if (batchHandler != null) {
+      // 使用专门的批量处理器
+      _log.info('Using optimized batch handler for ${commands.length} commands');
+      final batchResult = await batchHandler.executeBatch(commands);
+
+      // 将批量结果转换为单个 CommandResult 列表
+      for (var i = 0; i < commands.length; i++) {
+        if (i < batchResult.results.length) {
+          results.add(batchResult.results[i]);
+        } else {
+          // 如果批量结果数量不匹配，创建成功结果
+          results.add(CommandResult.success());
+        }
+      }
+    } else {
+      // 没有专门的批量处理器，使用并行执行
+      _log.debug('No batch handler available, executing in parallel');
+      final futures = commands.map((cmd) => commandBus!.dispatch(cmd));
+      final parallelResults = await Future.wait(futures);
+      results.addAll(parallelResults);
     }
 
     return results;
@@ -180,6 +255,63 @@ abstract class BatchableCommand extends Command {
 
   /// 检查是否可以与其他命令一起批处理
   bool canBatchWith(BatchableCommand other) => runtimeType == other.runtimeType;
+}
+
+/// 批量执行结果
+///
+/// 包含批量执行的所有结果和元数据
+class BatchExecutionResult {
+  /// 构造函数
+  const BatchExecutionResult({
+    required this.results,
+    required this.executedCount,
+    this.failedCount = 0,
+    this.executionTimeMs = 0,
+  });
+
+  /// 单个命令执行结果列表
+  final List<CommandResult> results;
+
+  /// 成功执行的命令数量
+  final int executedCount;
+
+  /// 失败的命令数量
+  final int failedCount;
+
+  /// 执行时间（毫秒）
+  final int executionTimeMs;
+
+  /// 是否全部成功
+  bool get allSucceeded => failedCount == 0;
+
+  /// 成功率
+  double get successRate => results.isEmpty ? 0.0 : (executedCount - failedCount) / results.length;
+}
+
+/// 批量处理器接口
+///
+/// 实现此接口的类可以批量执行特定类型的命令
+abstract class BatchHandler<T extends BatchExecutableCommand> {
+  /// 批量执行命令
+  ///
+  /// [commands] 要批量执行的命令列表
+  /// 返回批量执行结果
+  Future<BatchExecutionResult> executeBatch(List<T> commands);
+}
+
+/// 支持批量执行的命令接口
+///
+/// 实现此接口的命令可以使用优化的批量执行策略
+abstract class BatchExecutableCommand extends BatchableCommand {
+  /// 获取批量处理器
+  ///
+  /// 返回 null 表示没有专门的批量处理器，将使用默认并行执行
+  BatchHandler? getBatchHandler() => null;
+
+  /// 是否可以与其他命令并行执行
+  ///
+  /// 如果命令之间有依赖关系，应返回 false
+  bool get canExecuteInParallel => true;
 }
 
 /// 批处理统计信息

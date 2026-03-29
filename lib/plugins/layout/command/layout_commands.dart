@@ -60,8 +60,8 @@ class ApplyLayoutCommand extends Command<Map<String, Offset>> {
         await repository.save(node.copyWith(position: entry.value));
       }
 
-      // 发布节点更新事件
-      context.eventBus.publish(const NodeDataChangedEvent(
+      // 发布节点更新事件（使用新API）
+      context.publishEvent(const NodeDataChangedEvent(
         changedNodes: [],
         action: DataChangeAction.update,
       ));

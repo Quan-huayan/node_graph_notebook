@@ -27,7 +27,7 @@ class AnalyzeNodeHandler implements CommandHandler<AnalyzeNodeCommand> {
       final analysis = await _aiService.analyzeNode(command.node);
 
       // 发布分析完成事件
-      context.eventBus.publish(
+      context.publishEvent(
         NodeAnalyzedEvent(
           nodeId: command.node.id,
           summary: analysis.summary,
@@ -76,7 +76,7 @@ class SuggestConnectionsHandler
           .toList();
 
       // 发布建议事件
-      context.eventBus.publish(
+      context.publishEvent(
         ConnectionsSuggestedEvent(suggestions: filteredSuggestions),
       );
 
@@ -131,7 +131,7 @@ class GenerateGraphSummaryHandler
       final summary = await _aiService.generateGraphSummary(nodes, connections);
 
       // 发布摘要生成事件
-      context.eventBus.publish(GraphSummaryGeneratedEvent(summary: summary));
+      context.publishEvent(GraphSummaryGeneratedEvent(summary: summary));
 
       return CommandResult.success(summary);
     } catch (e) {
@@ -180,7 +180,7 @@ class GenerateNodeHandler implements CommandHandler<GenerateNodeCommand> {
       // 暂时跳过此步骤，因为命令对象不应该被修改
 
       // 发布节点创建事件
-      context.eventBus.publish(
+      context.publishEvent(
         NodeGeneratedEvent(nodeId: savedNode.id, prompt: command.prompt),
       );
 

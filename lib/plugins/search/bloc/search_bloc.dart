@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/commands/command_bus.dart';
+import '../../../../core/cqrs/queries/advanced_search_query.dart';
+import '../../../../core/cqrs/query/query_bus.dart';
 import '../../../../core/models/node.dart';
 import '../../graph/service/node_service.dart';
 import '../command/search_commands.dart';
@@ -12,17 +14,20 @@ import 'search_state.dart';
 /// 搜索 BLoC
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   /// 创建搜索 BLoC
-  /// 
-  /// [nodeService] - 节点服务
+  ///
+  /// [nodeService] - 节点服务（用于获取所有节点）
   /// [presetService] - 搜索预设服务
   /// [commandBus] - 命令总线
+  /// [queryBus] - 查询总线（用于复杂搜索查询）
   SearchBloc({
     required NodeService nodeService,
     required SearchPresetService presetService,
     required CommandBus commandBus,
+    required QueryBus queryBus,
   }) : _nodeService = nodeService,
        _presetService = presetService,
        _commandBus = commandBus,
+       _queryBus = queryBus,
        super(SearchState.initial()) {
     on<SearchPerformEvent>(_onPerformSearch);
     on<SearchLoadPresetsEvent>(_onLoadPresets);
@@ -35,9 +40,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     add(const SearchLoadPresetsEvent());
   }
 
+  // ignore: unused_field
   final NodeService _nodeService;
   final SearchPresetService _presetService;
   final CommandBus _commandBus;
+  final QueryBus _queryBus;
 
   /// 执行搜索
   Future<void> _onPerformSearch(
@@ -62,90 +69,32 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(state.copyWith(isLoading: true, currentQuery: query, error: null));
 
     try {
-      // 构建搜索字符串
-      final searchParts = <String>[];
-      if (query.searchText != null && query.searchText!.isNotEmpty) {
-        searchParts.add(query.searchText!);
+      // 通过 QueryBus 执行复杂搜索查询
+      final result = await _queryBus.dispatch<List<Node>, AdvancedSearchQuery>(
+        AdvancedSearchQuery(
+          searchText: query.searchText,
+          titleQuery: query.titleQuery,
+          contentQuery: query.contentQuery,
+          tags: query.tags,
+          isFolder: query.isFolder,
+          createdAfter: query.createdAfter,
+          createdBefore: query.createdBefore,
+          limit: 100,
+        ),
+      );
+
+      if (result.isSuccess) {
+        emit(state.copyWith(
+          results: result.data ?? [],
+          isLoading: false,
+          error: null,
+        ));
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: result.error,
+        ));
       }
-      if (query.titleQuery != null && query.titleQuery!.isNotEmpty) {
-        searchParts.add('title:${query.titleQuery}');
-      }
-      if (query.contentQuery != null && query.contentQuery!.isNotEmpty) {
-        searchParts.add('content:${query.contentQuery}');
-      }
-      if (query.tags != null && query.tags!.isNotEmpty) {
-        for (final tag in query.tags!) {
-          searchParts.add('tag:$tag');
-        }
-      }
-
-      final allNodes = await _nodeService.getAllNodes();
-
-      // 过滤节点
-      final results = allNodes.where((node) {
-        // 标题过滤
-        if (query.titleQuery != null && query.titleQuery!.isNotEmpty) {
-          if (!node.title.toLowerCase().contains(
-            query.titleQuery!.toLowerCase(),
-          )) {
-            return false;
-          }
-        }
-
-        // 内容过滤
-        if (query.contentQuery != null && query.contentQuery!.isNotEmpty) {
-          final content = node.content ?? '';
-          if (!content.toLowerCase().contains(
-            query.contentQuery!.toLowerCase(),
-          )) {
-            return false;
-          }
-        }
-
-        // 通用搜索文本过滤
-        if (query.searchText != null && query.searchText!.isNotEmpty) {
-          final searchLower = query.searchText!.toLowerCase();
-          final titleMatch = node.title.toLowerCase().contains(searchLower);
-          final contentMatch = (node.content ?? '').toLowerCase().contains(
-            searchLower,
-          );
-          if (!titleMatch && !contentMatch) {
-            return false;
-          }
-        }
-
-        // 标签过滤
-        if (query.tags != null && query.tags!.isNotEmpty) {
-          final nodeTags = _extractTags(node);
-          final hasAllTags = query.tags!.every(nodeTags.contains);
-          if (!hasAllTags) {
-            return false;
-          }
-        }
-
-        // 文件夹过滤
-        if (query.isFolder != null) {
-          if (node.isFolder != query.isFolder) {
-            return false;
-          }
-        }
-
-        // 日期过滤
-        if (query.createdAfter != null) {
-          if (node.createdAt.isBefore(query.createdAfter!)) {
-            return false;
-          }
-        }
-        if (query.createdBefore != null) {
-          if (node.createdAt.isAfter(query.createdBefore!)) {
-            return false;
-          }
-        }
-
-        return true;
-      }).toList();
-
-      emit(state.copyWith(results: results, isLoading: false, error: null));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
@@ -247,25 +196,5 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       currentQuery: null,
       error: null,
     ));
-  }
-
-  /// 从节点内容中提取标签
-  Set<String> _extractTags(Node node) {
-    final tags = <String>{};
-    final content = node.content ?? '';
-
-    // 提取 #tag 格式的标签
-    final tagRegex = RegExp(r'#(\w+)');
-    for (final match in tagRegex.allMatches(content)) {
-      tags.add(match.group(1)!);
-    }
-
-    // 也可以从元数据中提取标签
-    final metadataTags = node.metadata['tags'];
-    if (metadataTags is List<String>) {
-      tags.addAll(metadataTags);
-    }
-
-    return tags;
   }
 }

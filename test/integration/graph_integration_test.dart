@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:node_graph_notebook/core/commands/command_bus.dart';
-import 'package:node_graph_notebook/core/events/app_events.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/core/repositories/graph_repository.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
@@ -78,27 +77,23 @@ void main() {
     late CommandBus commandBus;
     late GraphRepository graphRepository;
     late NodeRepository nodeRepository;
-    late AppEventBus eventBus;
     late GraphBloc graphBloc;
 
     setUp(() {
       commandBus = CommandBus();
       graphRepository = MockGraphRepository();
       nodeRepository = MockNodeRepository();
-      eventBus = AppEventBus();
 
       graphBloc = GraphBloc(
         commandBus: commandBus,
         graphRepository: graphRepository,
         nodeRepository: nodeRepository,
-        eventBus: eventBus,
       );
     });
 
     tearDown(() {
       graphBloc.close();
       commandBus.dispose();
-      eventBus.dispose();
     });
 
     test('should create and initialize a graph', () async {

@@ -1,7 +1,5 @@
 // 插件系统核心导出
 
-// 日志级别
-export '../middleware/logging_middleware.dart' show LogLevel;
 // 依赖解析
 export 'dependency_resolver.dart'
     show DependencyResolver, DependencyResolutionResult;

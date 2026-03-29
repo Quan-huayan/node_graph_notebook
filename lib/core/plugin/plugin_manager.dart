@@ -57,7 +57,6 @@ class PluginManager implements IPluginManager {
   /// 创建一个新的插件管理器实例。
   ///
   /// [commandBus] 命令总线，用于执行写操作
-  /// [eventBus] 事件总线，用于订阅数据变化
   /// [nodeRepository] 节点仓库，用于读取节点数据
   /// [graphRepository] 图仓库，用于读取图数据
   /// [executionEngine] 执行引擎，用于 CPU 密集型任务
@@ -71,7 +70,6 @@ class PluginManager implements IPluginManager {
   /// [hookRegistry] Hook 注册表，用于管理 UI Hook（可选）
   PluginManager({
     required CommandBus commandBus,
-    AppEventBus? eventBus,
     NodeRepository? nodeRepository,
     GraphRepository? graphRepository,
     ExecutionEngine? executionEngine,
@@ -84,7 +82,6 @@ class PluginManager implements IPluginManager {
     StoragePathService? storagePathService,
     HookRegistry? hookRegistry,
   }) : _commandBus = commandBus,
-       _eventBus = eventBus,
        _nodeRepository = nodeRepository,
        _graphRepository = graphRepository,
        _executionEngine = executionEngine,
@@ -99,7 +96,6 @@ class PluginManager implements IPluginManager {
        _hookRegistry = hookRegistry;
 
   final CommandBus _commandBus;
-  final AppEventBus? _eventBus;
   final NodeRepository? _nodeRepository;
   final GraphRepository? _graphRepository;
   final ExecutionEngine? _executionEngine;
@@ -201,10 +197,14 @@ class PluginManager implements IPluginManager {
       await _initializePlugin(plugin, wrapper, context, pluginId);
 
       _log.info('Plugin loaded successfully: $pluginId (state: ${wrapper.state})');
+
+      // 发布插件加载事件
+      _commandBus.publishEvent(PluginLoadedEvent(pluginId: pluginId));
     } catch (e) {
       // 加载失败，清理资源
       await _cleanupFailedPlugin(pluginId, e);
-      throw PluginLoadException(pluginId, e);
+      // 重新抛出原始异常，保持异常类型
+      rethrow;
     }
   }
 
@@ -260,7 +260,6 @@ class PluginManager implements IPluginManager {
     final context = PluginContext(
       pluginId: pluginId,
       commandBus: _commandBus,
-      eventBus: _eventBus,
       logger: PluginLogger(pluginId),
       apiRegistry: _apiRegistry,
       nodeRepository: _nodeRepository,
@@ -444,7 +443,10 @@ class PluginManager implements IPluginManager {
     if (_hookRegistry != null) {
       _hookRegistry.unregisterPluginHooks(pluginId);
     }
-    _registry.unregister(pluginId);
+    // 只有在插件已注册的情况下才注销
+    if (_registry.isRegistered(pluginId)) {
+      _registry.unregister(pluginId);
+    }
 
     _log.info('[PluginManager] ✓ 资源清理完成');
 
@@ -552,7 +554,8 @@ class PluginManager implements IPluginManager {
 
       _log.info('[PluginManager] ✓ 插件启用成功');
 
-
+      // 发布插件启用事件
+      _commandBus.publishEvent(PluginEnabledEvent(pluginId: pluginId));
     } catch (e) {
       _log.warning('PluginManager ✗ 插件启用失败: $e');
 

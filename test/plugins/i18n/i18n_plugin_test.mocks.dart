@@ -9,12 +9,12 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:node_graph_notebook/core/commands/command_bus.dart' as _i3;
 import 'package:node_graph_notebook/core/commands/models/command.dart' as _i2;
 import 'package:node_graph_notebook/core/commands/models/command_handler.dart'
-    as _i5;
-import 'package:node_graph_notebook/core/commands/models/middleware.dart'
     as _i6;
-import 'package:node_graph_notebook/core/events/app_events.dart' as _i8;
-import 'package:node_graph_notebook/core/plugin/middleware/middleware_plugin.dart'
+import 'package:node_graph_notebook/core/commands/models/middleware.dart'
     as _i7;
+import 'package:node_graph_notebook/core/events/app_events.dart' as _i5;
+import 'package:node_graph_notebook/core/plugin/middleware/middleware_plugin.dart'
+    as _i8;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -54,8 +54,16 @@ class MockCommandBus extends _i1.Mock implements _i3.CommandBus {
           as _i4.Stream<_i3.CommandEvent>);
 
   @override
+  _i4.Stream<_i5.AppEvent> get eventStream =>
+      (super.noSuchMethod(
+            Invocation.getter(#eventStream),
+            returnValue: _i4.Stream<_i5.AppEvent>.empty(),
+          )
+          as _i4.Stream<_i5.AppEvent>);
+
+  @override
   void registerHandler<T extends _i2.Command<dynamic>>(
-    _i5.CommandHandler<T>? handler,
+    _i6.CommandHandler<T>? handler,
     Type? commandType,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandler, [handler, commandType]),
@@ -64,27 +72,27 @@ class MockCommandBus extends _i1.Mock implements _i3.CommandBus {
 
   @override
   void registerHandlers(
-    Map<Type, _i5.CommandHandler<_i2.Command<dynamic>>>? handlers,
+    Map<Type, _i6.CommandHandler<_i2.Command<dynamic>>>? handlers,
   ) => super.noSuchMethod(
     Invocation.method(#registerHandlers, [handlers]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddleware(_i6.CommandMiddleware? middleware) => super.noSuchMethod(
+  void addMiddleware(_i7.CommandMiddleware? middleware) => super.noSuchMethod(
     Invocation.method(#addMiddleware, [middleware]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void addMiddlewarePlugin(_i7.CommandMiddlewarePlugin? middleware) =>
+  void addMiddlewarePlugin(_i8.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#addMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
       );
 
   @override
-  void removeMiddlewarePlugin(_i7.CommandMiddlewarePlugin? middleware) =>
+  void removeMiddlewarePlugin(_i8.CommandMiddlewarePlugin? middleware) =>
       super.noSuchMethod(
         Invocation.method(#removeMiddlewarePlugin, [middleware]),
         returnValueForMissingStub: null,
@@ -117,40 +125,16 @@ class MockCommandBus extends _i1.Mock implements _i3.CommandBus {
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
-}
-
-/// A class which mocks [AppEventBus].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockAppEventBus extends _i1.Mock implements _i8.AppEventBus {
-  MockAppEventBus() {
-    _i1.throwOnMissingStub(this);
-  }
 
   @override
-  _i4.Stream<_i8.AppEvent> get stream =>
-      (super.noSuchMethod(
-            Invocation.getter(#stream),
-            returnValue: _i4.Stream<_i8.AppEvent>.empty(),
-          )
-          as _i4.Stream<_i8.AppEvent>);
-
-  @override
-  set onError(void Function(_i8.AppEvent?, Object, StackTrace)? value) =>
-      super.noSuchMethod(
-        Invocation.setter(#onError, value),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void publish(_i8.AppEvent? event) => super.noSuchMethod(
-    Invocation.method(#publish, [event]),
+  void publishEvent(_i5.AppEvent? event) => super.noSuchMethod(
+    Invocation.method(#publishEvent, [event]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
+  void publishEvents(List<_i5.AppEvent>? events) => super.noSuchMethod(
+    Invocation.method(#publishEvents, [events]),
     returnValueForMissingStub: null,
   );
 }

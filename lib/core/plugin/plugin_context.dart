@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../commands/command_bus.dart';
-import '../events/app_events.dart';
 import '../execution/cpu_task.dart';
 import '../execution/execution_engine.dart';
 import '../execution/task_registry.dart';
@@ -44,7 +43,6 @@ class PluginContext {
   PluginContext({
     required this.pluginId,
     required this.commandBus,
-    this.eventBus,
     this.logger,
     this.apiRegistry,
     this.nodeRepository,
@@ -65,9 +63,6 @@ class PluginContext {
 
   /// Command Bus（执行写操作）
   final CommandBus commandBus;
-
-  /// Event Bus（订阅数据变化）
-  final AppEventBus? eventBus;
 
   /// 插件日志记录器
   final PluginLogger? logger;
@@ -193,15 +188,9 @@ class PluginContext {
       return graphRepository as T;
     }
 
-    // 3. 特殊处理：CommandBus 和 EventBus
+    // 3. 特殊处理：CommandBus
     if (T == CommandBus) {
       return commandBus as T;
-    }
-    if (T == AppEventBus) {
-      if (eventBus == null) {
-        throw PluginStateException('plugin', 'uninitialized', 'AppEventBus available');
-      }
-      return eventBus as T;
     }
 
     // 4. 特殊处理：StoragePathService 和 SharedPreferencesAsync

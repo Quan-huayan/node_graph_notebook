@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/commands/command_bus.dart';
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
+import '../../core/cqrs/query/query_bus.dart';
 import '../graph/service/node_service.dart';
 import 'bloc/search_bloc.dart';
 import 'command/search_commands.dart';
@@ -47,6 +48,7 @@ class SearchPlugin extends Plugin {
         nodeService: ctx.read<NodeService>(),
         presetService: ctx.read<SearchPresetService>(),
         commandBus: ctx.read<CommandBus>(),
+        queryBus: ctx.read<QueryBus>(),
       ),
     ),
   ];

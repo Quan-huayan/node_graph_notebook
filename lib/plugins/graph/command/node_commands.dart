@@ -143,7 +143,7 @@ class DeleteNodeCommand extends Command<void> {
       }
 
       // 发布连接恢复事件
-      context.eventBus.publish(NodeDataChangedEvent(
+      context.commandBus.publishEvent(NodeDataChangedEvent(
         changedNodes: [node],
         action: DataChangeAction.update,
       ));
