@@ -13,7 +13,7 @@ import 'package:path/path.dart' as path;
 ///
 /// 测试核心图操作的性能表现
 void main() {
-  group('Graph Performance Benchmarks', () {
+  group('图性能基准测试', () {
     late String testDir;
     late FileSystemNodeRepository repository;
     late AdjacencyList adjacencyList;
@@ -33,7 +33,7 @@ void main() {
     });
 
     group('邻接表性能测试', () {
-      test('Adjacency List - O(1) neighbor lookup performance', () {
+      test('邻接表 - O(1) 邻居查询性能', () {
         // 创建大图
         const nodeCount = 1000;
         for (var i = 0; i < nodeCount; i++) {
@@ -52,16 +52,16 @@ void main() {
 
         final avgTimeMicroseconds = stopwatch.elapsedMicroseconds / queryCount;
 
-        debugPrint('Adjacency List Neighbor Lookup Performance:');
-        debugPrint('  Total queries: $queryCount');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Average per query: ${avgTimeMicroseconds.toStringAsFixed(2)}μs');
+        debugPrint('邻接表邻居查询性能:');
+        debugPrint('  总查询次数: $queryCount');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  平均每次查询: ${avgTimeMicroseconds.toStringAsFixed(2)}μs');
 
         // O(1) 查找应该非常快 (< 10μs)
         expect(avgTimeMicroseconds, lessThan(10));
       });
 
-      test('Adjacency List - O(1) edge existence check performance', () {
+      test('邻接表 - O(1) 边存在性检查性能', () {
         // 创建密集图
         const nodeCount = 100;
         for (var i = 0; i < nodeCount; i++) {
@@ -87,15 +87,15 @@ void main() {
 
         final avgTimeMicroseconds = stopwatch.elapsedMicroseconds / checkCount;
 
-        debugPrint('Adjacency List Edge Check Performance:');
-        debugPrint('  Total checks: $checkCount');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Average per check: ${avgTimeMicroseconds.toStringAsFixed(2)}μs');
+        debugPrint('邻接表边检查性能:');
+        debugPrint('  总检查次数: $checkCount');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  平均每次检查: ${avgTimeMicroseconds.toStringAsFixed(2)}μs');
 
         expect(avgTimeMicroseconds, lessThan(5));
       });
 
-      test('Adjacency List - Add/Remove edge performance', () {
+      test('邻接表 - 添加/删除边性能', () {
         const operationCount = 10000;
         final random = Random(42);
 
@@ -108,10 +108,10 @@ void main() {
 
         final addTimePerOp = stopwatch.elapsedMicroseconds / operationCount;
 
-        debugPrint('Adjacency List Add Edge Performance:');
-        debugPrint('  Total operations: $operationCount');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Average per add: ${addTimePerOp.toStringAsFixed(2)}μs');
+        debugPrint('邻接表添加边性能:');
+        debugPrint('  总操作次数: $operationCount');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  平均每次添加: ${addTimePerOp.toStringAsFixed(2)}μs');
 
         // 删除边性能测试
         stopwatch = Stopwatch()..start();
@@ -122,10 +122,10 @@ void main() {
 
         final removeTimePerOp = stopwatch.elapsedMicroseconds / operationCount;
 
-        debugPrint('Adjacency List Remove Edge Performance:');
-        debugPrint('  Total operations: $operationCount');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Average per remove: ${removeTimePerOp.toStringAsFixed(2)}μs');
+        debugPrint('邻接表删除边性能:');
+        debugPrint('  总操作次数: $operationCount');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  平均每次删除: ${removeTimePerOp.toStringAsFixed(2)}μs');
 
         expect(addTimePerOp, lessThan(50));
         expect(removeTimePerOp, lessThan(50));
@@ -133,7 +133,7 @@ void main() {
     });
 
     group('存储库性能测试', () {
-      test('Repository - Batch save performance', () async {
+      test('存储库 - 批量保存性能', () async {
         const batchSize = 100;
         final nodes = List.generate(batchSize, (i) => Node(
           id: 'node_$i',
@@ -154,15 +154,15 @@ void main() {
 
         final timePerNode = stopwatch.elapsedMilliseconds / batchSize;
 
-        debugPrint('Repository Batch Save Performance:');
-        debugPrint('  Total nodes: $batchSize');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Average per node: ${timePerNode.toStringAsFixed(2)}ms');
+        debugPrint('存储库批量保存性能:');
+        debugPrint('  总节点数: $batchSize');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  平均每节点: ${timePerNode.toStringAsFixed(2)}ms');
 
         expect(stopwatch.elapsedMilliseconds, lessThan(5000));
       });
 
-      test('Repository - Query all nodes performance', () async {
+      test('存储库 - 查询所有节点性能', () async {
         // 先创建一些节点
         const nodeCount = 100;
         for (var i = 0; i < nodeCount; i++) {
@@ -186,16 +186,16 @@ void main() {
 
         final timePerNode = stopwatch.elapsedMicroseconds / nodeCount;
 
-        debugPrint('Repository Query All Performance:');
-        debugPrint('  Total nodes: $nodeCount');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Average per node: ${timePerNode.toStringAsFixed(2)}μs');
+        debugPrint('存储库查询全部性能:');
+        debugPrint('  总节点数: $nodeCount');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  平均每节点: ${timePerNode.toStringAsFixed(2)}μs');
 
         expect(nodes.length, nodeCount);
         expect(stopwatch.elapsedMilliseconds, lessThan(1000));
       });
 
-      test('Repository - Search performance', () async {
+      test('存储库 - 搜索性能', () async {
         // 创建测试数据
         const nodeCount = 100;
         for (var i = 0; i < nodeCount; i++) {
@@ -217,16 +217,16 @@ void main() {
         final results = await repository.search(title: 'Test');
         stopwatch.stop();
 
-        debugPrint('Repository Search Performance:');
-        debugPrint('  Total nodes: $nodeCount');
-        debugPrint('  Results found: ${results.length}');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('存储库搜索性能:');
+        debugPrint('  总节点数: $nodeCount');
+        debugPrint('  搜索结果: ${results.length}');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
 
         expect(results.length, nodeCount);
         expect(stopwatch.elapsedMilliseconds, lessThan(500));
       });
 
-      test('Repository - Load single node performance', () async {
+      test('存储库 - 加载单个节点性能', () async {
         // 创建节点
         const nodeCount = 50;
         for (var i = 0; i < nodeCount; i++) {
@@ -255,17 +255,17 @@ void main() {
 
         final avgTimeMicroseconds = stopwatch.elapsedMicroseconds / loadCount;
 
-        debugPrint('Repository Load Single Node Performance:');
-        debugPrint('  Total loads: $loadCount');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Average per load: ${avgTimeMicroseconds.toStringAsFixed(2)}μs');
+        debugPrint('存储库加载单个节点性能:');
+        debugPrint('  总加载次数: $loadCount');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  平均每次加载: ${avgTimeMicroseconds.toStringAsFixed(2)}μs');
 
         expect(avgTimeMicroseconds, lessThan(1000));
       });
     });
 
     group('大规模图性能测试', () {
-      test('Large graph - 1000 nodes with connections', () async {
+      test('大图 - 1000个带连接的节点', () async {
         const nodeCount = 1000;
         final stopwatch = Stopwatch()..start();
 
@@ -307,17 +307,17 @@ void main() {
 
         final queryTime = stopwatch.elapsedMilliseconds;
 
-        debugPrint('Large Graph Performance (1000 nodes):');
-        debugPrint('  Create time: ${createTime}ms');
-        debugPrint('  Connect time: ${connectTime}ms');
-        debugPrint('  Query all time: ${queryTime}ms');
-        debugPrint('  Total edges: ${adjacencyList.edgeCount}');
+        debugPrint('大图性能 (1000个节点):');
+        debugPrint('  创建耗时: ${createTime}ms');
+        debugPrint('  连接耗时: ${connectTime}ms');
+        debugPrint('  查询全部耗时: ${queryTime}ms');
+        debugPrint('  总边数: ${adjacencyList.edgeCount}');
 
         expect(nodes.length, nodeCount);
         expect(adjacencyList.edgeCount, greaterThan(0));
       });
 
-      test('Dense graph - 100 nodes fully connected', () {
+      test('密集图 - 100个完全连接的节点', () {
         const nodeCount = 100;
         final stopwatch = Stopwatch()..start();
 
@@ -334,17 +334,17 @@ void main() {
 
         const expectedEdges = nodeCount * (nodeCount - 1);
 
-        debugPrint('Dense Graph Performance:');
-        debugPrint('  Nodes: $nodeCount');
-        debugPrint('  Edges: $expectedEdges');
-        debugPrint('  Build time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Time per edge: ${(stopwatch.elapsedMicroseconds / expectedEdges).toStringAsFixed(2)}μs');
+        debugPrint('密集图性能:');
+        debugPrint('  节点数: $nodeCount');
+        debugPrint('  边数: $expectedEdges');
+        debugPrint('  构建耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  每条边耗时: ${(stopwatch.elapsedMicroseconds / expectedEdges).toStringAsFixed(2)}μs');
 
         expect(adjacencyList.edgeCount, expectedEdges);
         expect(stopwatch.elapsedMilliseconds, lessThan(1000));
       });
 
-      test('Graph traversal performance', () {
+      test('图遍历性能', () {
         // 创建链式图: 0 -> 1 -> 2 -> ... -> 999
         const nodeCount = 1000;
         for (var i = 0; i < nodeCount - 1; i++) {
@@ -365,10 +365,10 @@ void main() {
 
         stopwatch.stop();
 
-        debugPrint('Graph Traversal Performance:');
-        debugPrint('  Nodes visited: $visited');
-        debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('  Time per node: ${(stopwatch.elapsedMicroseconds / visited).toStringAsFixed(2)}μs');
+        debugPrint('图遍历性能:');
+        debugPrint('  访问节点数: $visited');
+        debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('  每节点耗时: ${(stopwatch.elapsedMicroseconds / visited).toStringAsFixed(2)}μs');
 
         expect(visited, nodeCount - 1);
         expect(stopwatch.elapsedMilliseconds, lessThan(100));
@@ -376,7 +376,7 @@ void main() {
     });
 
     group('内存使用测试', () {
-      test('Adjacency list memory efficiency', () {
+      test('邻接表内存效率', () {
         const nodeCount = 10000;
         const edgesPerNode = 5;
 
@@ -391,11 +391,11 @@ void main() {
 
         final stats = adjacencyList.stats;
 
-        debugPrint('Adjacency List Memory Stats:');
-        debugPrint('  Nodes: ${stats.nodeCount}');
-        debugPrint('  Edges: ${stats.edgeCount}');
-        debugPrint('  Avg out degree: ${stats.avgOutDegree.toStringAsFixed(2)}');
-        debugPrint('  Max out degree: ${stats.maxOutDegree}');
+        debugPrint('邻接表内存统计:');
+        debugPrint('  节点数: ${stats.nodeCount}');
+        debugPrint('  边数: ${stats.edgeCount}');
+        debugPrint('  平均出度: ${stats.avgOutDegree.toStringAsFixed(2)}');
+        debugPrint('  最大出度: ${stats.maxOutDegree}');
 
         // 验证边数
         expect(stats.edgeCount, lessThanOrEqualTo(nodeCount * edgesPerNode));
@@ -403,7 +403,7 @@ void main() {
     });
 
     group('序列化性能测试', () {
-      test('Adjacency list save/load performance', () async {
+      test('邻接表保存/加载性能', () async {
         // 创建大图
         const nodeCount = 1000;
         final random = Random(42);
@@ -428,11 +428,11 @@ void main() {
 
         final loadTime = stopwatch.elapsedMilliseconds;
 
-        debugPrint('Adjacency List Serialization Performance:');
-        debugPrint('  Nodes: $nodeCount');
-        debugPrint('  Edges: ${adjacencyList.edgeCount}');
-        debugPrint('  Save time: ${saveTime}ms');
-        debugPrint('  Load time: ${loadTime}ms');
+        debugPrint('邻接表序列化性能:');
+        debugPrint('  节点数: $nodeCount');
+        debugPrint('  边数: ${adjacencyList.edgeCount}');
+        debugPrint('  保存耗时: ${saveTime}ms');
+        debugPrint('  加载耗时: ${loadTime}ms');
 
         // 加载后验证数据
         expect(newList.isLoaded, true);

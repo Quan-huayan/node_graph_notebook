@@ -21,7 +21,7 @@ void main() {
     });
 
     group('Initialization', () {
-      test('should initialize with default theme', () async {
+      test('应该使用默认主题初始化', () async {
         when(mockPrefs.getBool(any)).thenReturn(null);
         when(mockPrefs.getString(any)).thenReturn(null);
 
@@ -31,7 +31,7 @@ void main() {
         expect(service.themeData, AppThemeData.lightTheme);
       });
 
-      test('should handle invalid custom theme', () async {
+      test('应该处理无效的自定义主题', () async {
         when(mockPrefs.getBool('use_custom_theme')).thenReturn(true);
         when(mockPrefs.getString('custom_theme')).thenReturn('invalid json');
 
@@ -43,7 +43,7 @@ void main() {
     });
 
     group('Theme Data', () {
-      test('should return light theme when not using custom theme', () async {
+      test('不使用自定义主题时应该返回亮色主题', () async {
         when(mockPrefs.getBool(any)).thenReturn(null);
 
         await service.init();
@@ -51,7 +51,7 @@ void main() {
         expect(service.themeData, AppThemeData.lightTheme);
       });
 
-      test('should return custom theme when using custom theme', () async {
+      test('使用自定义主题时应该返回自定义主题', () async {
         final customTheme = AppThemeData.lightTheme.copyWith(
           nodes: AppThemeData.lightTheme.nodes.copyWith(
             nodePrimary: const Color(0xFFFF0000),
@@ -68,7 +68,7 @@ void main() {
     });
 
     group('Theme Mode', () {
-      test('should return light theme for light mode', () async {
+      test('亮色模式应该返回亮色主题', () async {
         when(mockPrefs.getBool(any)).thenReturn(null);
 
         await service.init();
@@ -78,7 +78,7 @@ void main() {
         expect(theme, AppThemeData.lightTheme);
       });
 
-      test('should return dark theme for dark mode', () async {
+      test('暗色模式应该返回暗色主题', () async {
         when(mockPrefs.getBool(any)).thenReturn(null);
 
         await service.init();
@@ -88,7 +88,7 @@ void main() {
         expect(theme, AppThemeData.darkTheme);
       });
 
-      test('should return light theme for system mode with light brightness', () async {
+      test('系统模式在亮色亮度下应该返回亮色主题', () async {
         when(mockPrefs.getBool(any)).thenReturn(null);
 
         await service.init();
@@ -98,7 +98,7 @@ void main() {
         expect(theme, AppThemeData.lightTheme);
       });
 
-      test('should return dark theme for system mode with dark brightness', () async {
+      test('系统模式在暗色亮度下应该返回暗色主题', () async {
         when(mockPrefs.getBool(any)).thenReturn(null);
 
         await service.init();
@@ -108,7 +108,7 @@ void main() {
         expect(theme, AppThemeData.darkTheme);
       });
 
-      test('should return custom theme for any mode when using custom theme', () async {
+      test('使用自定义主题时任何模式都应该返回自定义主题', () async {
         final customTheme = AppThemeData.lightTheme.copyWith(
           nodes: AppThemeData.lightTheme.nodes.copyWith(
             nodePrimary: const Color(0xFFFF0000),
@@ -131,7 +131,7 @@ void main() {
     });
 
     group('Set Custom Theme', () {
-      test('should set custom theme', () async {
+      test('应该设置自定义主题', () async {
         final customTheme = AppThemeData.lightTheme.copyWith(
           nodes: AppThemeData.lightTheme.nodes.copyWith(
             nodePrimary: const Color(0xFFFF0000),
@@ -147,7 +147,7 @@ void main() {
         expect(service.themeData.nodes.nodePrimary, const Color(0xFFFF0000));
       });
 
-      test('should notify listeners when setting custom theme', () async {
+      test('设置自定义主题时应该通知监听器', () async {
         const customTheme = AppThemeData.lightTheme;
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
         when(mockPrefs.setBool(any, any)).thenAnswer((_) async => true);
@@ -164,7 +164,7 @@ void main() {
     });
 
     group('Reset to Preset', () {
-      test('should reset to preset theme', () async {
+      test('应该重置为预设主题', () async {
         final customTheme = AppThemeData.lightTheme.copyWith(
           nodes: AppThemeData.lightTheme.nodes.copyWith(
             nodePrimary: const Color(0xFFFF0000),
@@ -182,7 +182,7 @@ void main() {
         expect(service.themeData, AppThemeData.lightTheme);
       });
 
-      test('should notify listeners when resetting to preset', () async {
+      test('重置为预设主题时应该通知监听器', () async {
         when(mockPrefs.remove(any)).thenAnswer((_) async => true);
         when(mockPrefs.setBool(any, any)).thenAnswer((_) async => true);
 
@@ -198,7 +198,7 @@ void main() {
     });
 
     group('Update Custom Theme', () {
-      test('should update custom theme partially', () async {
+      test('应该部分更新自定义主题', () async {
         final customNodes = AppThemeData.lightTheme.nodes.copyWith(
           nodePrimary: const Color(0xFFFF0000),
         );
@@ -212,7 +212,7 @@ void main() {
         expect(service.themeData.nodes.nodePrimary, const Color(0xFFFF0000));
       });
 
-      test('should update multiple theme parts', () async {
+      test('应该更新多个主题部分', () async {
         final customNodes = AppThemeData.lightTheme.nodes.copyWith(
           nodePrimary: const Color(0xFFFF0000),
         );
@@ -232,7 +232,7 @@ void main() {
         expect(service.themeData.connections.contains, const Color(0x00FF00FF));
       });
 
-      test('should notify listeners when updating custom theme', () async {
+      test('更新自定义主题时应该通知监听器', () async {
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
         when(mockPrefs.setBool(any, any)).thenAnswer((_) async => true);
 

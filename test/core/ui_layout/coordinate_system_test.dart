@@ -6,7 +6,7 @@ import 'package:node_graph_notebook/core/ui_layout/ui_hook_tree.dart';
 
 void main() {
   group('LocalPosition', () {
-    test('creates absolute position', () {
+    test('创建绝对位置', () {
       const pos = LocalPosition.absolute(10, 20);
 
       expect(pos.x, 10.0);
@@ -15,7 +15,7 @@ void main() {
       expect(pos.proportionalValue, isNull);
     });
 
-    test('creates proportional position', () {
+    test('创建比例位置', () {
       const pos = LocalPosition.proportional(0.5, 0.75);
 
       expect(pos.x, 0.5);
@@ -24,7 +24,7 @@ void main() {
       expect(pos.proportionalValue, isNull);
     });
 
-    test('creates sequential position', () {
+    test('创建顺序位置', () {
       final pos = LocalPosition.sequential(index: 2);
 
       expect(pos.x, 2.0);
@@ -33,7 +33,7 @@ void main() {
       expect(pos.proportionalValue, isNull);
     });
 
-    test('creates fill position', () {
+    test('创建填充位置', () {
       const pos = LocalPosition.fill();
 
       expect(pos.x, 0.0);
@@ -42,7 +42,7 @@ void main() {
       expect(pos.proportionalValue, isNull);
     });
 
-    test('converts absolute position to offset', () {
+    test('将绝对位置转换为偏移量', () {
       const pos = LocalPosition.absolute(100, 200);
       const parentSize = Size(800, 600);
 
@@ -52,17 +52,17 @@ void main() {
       expect(offset.dy, 200.0);
     });
 
-    test('converts proportional position to offset', () {
+    test('将比例位置转换为偏移量', () {
       const pos = LocalPosition.proportional(0.5, 0.75);
       const parentSize = Size(800, 600);
 
       final offset = pos.toAbsolute(parentSize);
 
-      expect(offset.dx, 400.0); // 50% of 800
-      expect(offset.dy, 450.0); // 75% of 600
+      expect(offset.dx, 400.0); // 800的50%
+      expect(offset.dy, 450.0); // 600的75%
     });
 
-    test('throws on sequential position to offset', () {
+    test('顺序位置转偏移量时抛出异常', () {
       final pos = LocalPosition.sequential(index: 2);
       const parentSize = Size(800, 600);
 
@@ -72,7 +72,7 @@ void main() {
       );
     });
 
-    test('returns zero offset for fill position', () {
+    test('填充位置返回零偏移量', () {
       const pos = LocalPosition.fill();
       const parentSize = Size(800, 600);
 
@@ -82,7 +82,7 @@ void main() {
       expect(offset.dy, 0.0);
     });
 
-    test('equality works correctly', () {
+    test('相等性判断正常工作', () {
       const pos1 = LocalPosition.absolute(10, 20);
       const pos2 = LocalPosition.absolute(10, 20);
       const pos3 = LocalPosition.absolute(10, 21);
@@ -92,7 +92,7 @@ void main() {
       expect(pos1 == pos1, isTrue);
     });
 
-    test('hashCode is consistent with equality', () {
+    test('hashCode与相等性一致', () {
       const pos1 = LocalPosition.absolute(10, 20);
       const pos2 = LocalPosition.absolute(10, 20);
 
@@ -101,14 +101,14 @@ void main() {
   });
 
   group('GlobalPosition', () {
-    test('creates global position', () {
+    test('创建全局位置', () {
       const pos = GlobalPosition(150, 300);
 
       expect(pos.x, 150.0);
       expect(pos.y, 300.0);
     });
 
-    test('converts to offset', () {
+    test('转换为偏移量', () {
       const pos = GlobalPosition(150, 300);
 
       final offset = pos.toOffset();
@@ -117,7 +117,7 @@ void main() {
       expect(offset.dy, 300.0);
     });
 
-    test('equality works correctly', () {
+    test('相等性判断正常工作', () {
       const pos1 = GlobalPosition(150, 300);
       const pos2 = GlobalPosition(150, 300);
       const pos3 = GlobalPosition(150, 301);
@@ -126,7 +126,7 @@ void main() {
       expect(pos1, isNot(equals(pos3)));
     });
 
-    test('hashCode is consistent with equality', () {
+    test('hashCode与相等性一致', () {
       const pos1 = GlobalPosition(150, 300);
       const pos2 = GlobalPosition(150, 300);
 
@@ -140,10 +140,10 @@ void main() {
     late UIHookNode grandchildHook;
 
     setUp(() {
-      // Create a simple Hook tree
-      // Root (0, 0) size: 800x600
-      //   Child (100, 50) size: 200x300
-      //     Grandchild (10, 20) size: 100x100
+      // 创建一个简单的Hook树
+      // 根节点 (0, 0) 尺寸: 800x600
+      //   子节点 (100, 50) 尺寸: 200x300
+      //     孙节点 (10, 20) 尺寸: 100x100
       rootHook = UIHookNode(
         id: 'root',
         hookPointId: 'root',
@@ -171,7 +171,7 @@ void main() {
       );
     });
 
-    test('localToGlobal converts position in root Hook', () {
+    test('localToGlobal转换根Hook中的位置', () {
       const localPos = LocalPosition.absolute(50, 100);
 
       final globalPos = CoordinateSystem.localToGlobal(rootHook, localPos);
@@ -180,28 +180,28 @@ void main() {
       expect(globalPos.y, 100.0);
     });
 
-    test('localToGlobal converts position in child Hook', () {
+    test('localToGlobal转换子Hook中的位置', () {
       const localPos = LocalPosition.absolute(30, 40);
 
       final globalPos = CoordinateSystem.localToGlobal(childHook, localPos);
 
-      // Child is at (100, 50), so local (30, 40) → global (130, 90)
+      // 子节点在(100, 50)，所以局部(30, 40) → 全局(130, 90)
       expect(globalPos.x, 130.0);
       expect(globalPos.y, 90.0);
     });
 
-    test('localToGlobal converts position in grandchild Hook', () {
+    test('localToGlobal转换孙Hook中的位置', () {
       const localPos = LocalPosition.absolute(5, 10);
 
       final globalPos = CoordinateSystem.localToGlobal(grandchildHook, localPos);
 
-      // Root (0,0) + Child (100, 50) + Grandchild (10, 20) + Local (5, 10)
+      // 根节点(0,0) + 子节点(100, 50) + 孙节点(10, 20) + 局部(5, 10)
       // = (115, 80)
       expect(globalPos.x, 115.0);
       expect(globalPos.y, 80.0);
     });
 
-    test('globalToLocal converts position to root Hook', () {
+    test('globalToLocal转换位置到根Hook', () {
       const globalPos = GlobalPosition(50, 100);
 
       final localPos = CoordinateSystem.globalToLocal(rootHook, globalPos);
@@ -211,29 +211,29 @@ void main() {
       expect(localPos.type, PositionType.absolute);
     });
 
-    test('globalToLocal converts position to child Hook', () {
+    test('globalToLocal转换位置到子Hook', () {
       const globalPos = GlobalPosition(130, 90);
 
       final localPos = CoordinateSystem.globalToLocal(childHook, globalPos);
 
-      // Child is at (100, 50), so global (130, 90) → local (30, 40)
+      // 子节点在(100, 50)，所以全局(130, 90) → 局部(30, 40)
       expect(localPos.x, 30.0);
       expect(localPos.y, 40.0);
       expect(localPos.type, PositionType.absolute);
     });
 
-    test('globalToLocal converts position to grandchild Hook', () {
+    test('globalToLocal转换位置到孙Hook', () {
       const globalPos = GlobalPosition(115, 80);
 
       final localPos = CoordinateSystem.globalToLocal(grandchildHook, globalPos);
 
-      // Global (115, 80) - Child (100, 50) - Grandchild (10, 20) = (5, 10)
+      // 全局(115, 80) - 子节点(100, 50) - 孙节点(10, 20) = (5, 10)
       expect(localPos.x, 5.0);
       expect(localPos.y, 10.0);
       expect(localPos.type, PositionType.absolute);
     });
 
-    test('convertBetweenHooks converts positions', () {
+    test('convertBetweenHooks转换位置', () {
       const localPosInChild = LocalPosition.absolute(30, 40);
 
       final localPosInRoot = CoordinateSystem.convertBetweenHooks(
@@ -242,12 +242,12 @@ void main() {
         localPosInChild,
       );
 
-      // (30, 40) in child → (130, 90) global → (130, 90) in root
+      // 子节点中的(30, 40) → 全局(130, 90) → 根节点中的(130, 90)
       expect(localPosInRoot.x, 130.0);
       expect(localPosInRoot.y, 90.0);
     });
 
-    test('calculateGlobalBounds returns correct rect for root', () {
+    test('calculateGlobalBounds返回根节点的正确矩形', () {
       final bounds = CoordinateSystem.calculateGlobalBounds(rootHook);
 
       expect(bounds.left, 0.0);
@@ -256,7 +256,7 @@ void main() {
       expect(bounds.height, 600.0);
     });
 
-    test('calculateGlobalBounds returns correct rect for child', () {
+    test('calculateGlobalBounds返回子节点的正确矩形', () {
       final bounds = CoordinateSystem.calculateGlobalBounds(childHook);
 
       expect(bounds.left, 100.0);
@@ -265,7 +265,7 @@ void main() {
       expect(bounds.height, 300.0);
     });
 
-    test('calculateGlobalBounds returns correct rect for grandchild', () {
+    test('calculateGlobalBounds返回孙节点的正确矩形', () {
       final bounds = CoordinateSystem.calculateGlobalBounds(grandchildHook);
 
       expect(bounds.left, 110.0); // 100 + 10
@@ -274,7 +274,7 @@ void main() {
       expect(bounds.height, 100.0);
     });
 
-    test('containsPoint works correctly', () {
+    test('containsPoint正常工作', () {
       const pointInside = GlobalPosition(150, 100);
       const pointOutside = GlobalPosition(500, 500);
 
@@ -282,7 +282,7 @@ void main() {
       expect(CoordinateSystem.containsPoint(childHook, pointOutside), isFalse);
     });
 
-    test('round-trip conversion preserves position', () {
+    test('往返转换保持位置不变', () {
       const originalLocal = LocalPosition.absolute(25, 35);
 
       final global = CoordinateSystem.localToGlobal(childHook, originalLocal);

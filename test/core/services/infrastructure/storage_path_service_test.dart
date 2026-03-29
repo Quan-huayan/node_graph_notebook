@@ -4,7 +4,7 @@ import 'package:node_graph_notebook/core/services/infrastructure/storage_path_se
 
 void main() {
   group('StorageUsage', () {
-    test('should create StorageUsage with correct properties', () {
+    test('应该创建具有正确属性的 StorageUsage', () {
       const usage = StorageUsage(
         totalSize: 1024,
         nodesCount: 10,
@@ -16,7 +16,7 @@ void main() {
       expect(usage.graphsCount, 5);
     });
 
-    test('should create StorageUsage from JSON', () {
+    test('应该从 JSON 创建 StorageUsage', () {
       final json = {
         'totalSize': 2048,
         'nodesCount': 20,
@@ -30,7 +30,7 @@ void main() {
       expect(usage.graphsCount, 10);
     });
 
-    test('should convert StorageUsage to JSON', () {
+    test('应该将 StorageUsage 转换为 JSON', () {
       const usage = StorageUsage(
         totalSize: 1024,
         nodesCount: 10,
@@ -45,7 +45,7 @@ void main() {
       expect(json.containsKey('formattedSize'), true);
     });
 
-    test('should format size in bytes', () {
+    test('应该以字节格式化大小', () {
       const usage = StorageUsage(
         totalSize: 512,
         nodesCount: 0,
@@ -55,7 +55,7 @@ void main() {
       expect(usage.formattedSize, '512 B');
     });
 
-    test('should format size in kilobytes', () {
+    test('应该以千字节格式化大小', () {
       const usage = StorageUsage(
         totalSize: 2048,
         nodesCount: 0,
@@ -65,7 +65,7 @@ void main() {
       expect(usage.formattedSize, '2.0 KB');
     });
 
-    test('should format size in megabytes', () {
+    test('应该以兆字节格式化大小', () {
       const usage = StorageUsage(
         totalSize: 2097152,
         nodesCount: 0,
@@ -75,7 +75,7 @@ void main() {
       expect(usage.formattedSize, '2.0 MB');
     });
 
-    test('should format size in gigabytes', () {
+    test('应该以吉字节格式化大小', () {
       const usage = StorageUsage(
         totalSize: 2147483648,
         nodesCount: 0,

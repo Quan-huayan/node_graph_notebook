@@ -17,7 +17,7 @@ import 'package:path/path.dart' as path;
 ///
 /// 测试完整的节点创建、连接、查询、删除工作流
 void main() {
-  group('Graph Workflow Integration Tests', () {
+  group('图工作流集成测试', () {
     late String testDir;
     late FileSystemNodeRepository repository;
     late NodeService nodeService;
@@ -58,25 +58,25 @@ void main() {
     });
 
     group('完整节点生命周期工作流', () {
-      test('should create, connect, update, and delete nodes', () async {
+      test('应该能够创建、连接、更新和删除节点', () async {
         // 1. 创建节点
         final createResult1 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Node A',
-          content: 'Content of Node A',
+          title: '节点 A',
+          content: '节点 A 的内容',
         ));
         expect(createResult1.isSuccess, true);
         final nodeA = createResult1.data!;
 
         final createResult2 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Node B',
-          content: 'Content of Node B',
+          title: '节点 B',
+          content: '节点 B 的内容',
         ));
         expect(createResult2.isSuccess, true);
         final nodeB = createResult2.data!;
 
         final createResult3 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Node C',
-          content: 'Content of Node C',
+          title: '节点 C',
+          content: '节点 C 的内容',
         ));
         expect(createResult3.isSuccess, true);
         final nodeC = createResult3.data!;
@@ -121,7 +121,7 @@ void main() {
         expect(adjacencyList.hasEdge(nodeC.id, nodeA.id), true);
 
         // 5. 搜索节点
-        final searchResults = await repository.search(title: 'Node');
+        final searchResults = await repository.search(title: '节点');
         expect(searchResults.length, 3);
 
         // 6. 删除节点
@@ -132,19 +132,19 @@ void main() {
         expect(deletedB, isNull);
       });
 
-      test('should handle complex graph with multiple connections', () async {
+      test('应该能够处理具有多个连接的复杂图', () async {
         // 创建一个星型图结构
         final centerResult = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Center Node',
-          content: 'Central hub',
+          title: '中心节点',
+          content: '中心枢纽',
         ));
         final centerNode = centerResult.data!;
 
         final leafNodes = <Node>[];
         for (var i = 0; i < 5; i++) {
           final result = await commandBus.dispatch(CreateNodeCommand(
-            title: 'Leaf Node $i',
-            content: 'Leaf content $i',
+            title: '叶子节点 $i',
+            content: '叶子内容 $i',
           ));
           leafNodes.add(result.data!);
 
@@ -162,21 +162,21 @@ void main() {
         }
 
         // 验证搜索
-        final leafResults = await repository.search(title: 'Leaf');
+        final leafResults = await repository.search(title: '叶子');
         expect(leafResults.length, 5);
       });
 
-      test('should handle node updates preserving connections', () async {
+      test('应该能够在保留连接的情况下处理节点更新', () async {
         // 创建节点并连接
         final result1 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Original Title',
-          content: 'Original content',
+          title: '原始标题',
+          content: '原始内容',
         ));
         final node = result1.data!;
 
         final result2 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Connected Node',
-          content: 'Connected content',
+          title: '已连接节点',
+          content: '已连接内容',
         ));
         final connectedNode = result2.data!;
 
@@ -191,15 +191,15 @@ void main() {
 
         // 更新节点（保留连接信息）
         final updatedNode = nodeWithConnection!.copyWith(
-          title: 'Updated Title',
-          content: 'Updated content',
+          title: '更新后的标题',
+          content: '更新后的内容',
         );
         await repository.save(updatedNode);
 
         // 验证更新
         final loaded = await repository.load(node.id);
-        expect(loaded!.title, 'Updated Title');
-        expect(loaded.content, 'Updated content');
+        expect(loaded!.title, '更新后的标题');
+        expect(loaded.content, '更新后的内容');
 
         // 验证连接仍然保留
         expect(loaded.references.containsKey(connectedNode.id), true);
@@ -207,11 +207,11 @@ void main() {
     });
 
     group('错误恢复工作流', () {
-      test('should handle connection to non-existent node gracefully', () async {
+      test('应该能够优雅地处理连接到不存在节点的情况', () async {
         // 创建源节点
         final result = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Source Node',
-          content: 'Source content',
+          title: '源节点',
+          content: '源内容',
         ));
         final sourceNode = result.data!;
 
@@ -225,17 +225,17 @@ void main() {
         expect(connectResult.error, contains('目标节点不存在'));
       });
 
-      test('should handle duplicate connection attempts', () async {
+      test('应该能够处理重复的连接尝试', () async {
         // 创建两个节点
         final result1 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Node 1',
-          content: 'Content 1',
+          title: '节点 1',
+          content: '内容 1',
         ));
         final node1 = result1.data!;
 
         final result2 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Node 2',
-          content: 'Content 2',
+          title: '节点 2',
+          content: '内容 2',
         ));
         final node2 = result2.data!;
 
@@ -255,11 +255,11 @@ void main() {
         expect(connectResult2.error, contains('节点连接已存在'));
       });
 
-      test('should recover from corrupted node file', () async {
+      test('应该能够从损坏的节点文件中恢复', () async {
         // 创建节点
         final result = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Test Node',
-          content: 'Test content',
+          title: '测试节点',
+          content: '测试内容',
         ));
         final node = result.data!;
 
@@ -281,14 +281,14 @@ void main() {
     });
 
     group('批量操作工作流', () {
-      test('should handle batch node creation', () async {
+      test('应该能够处理批量节点创建', () async {
         const batchSize = 50;
         final nodes = <Node>[];
 
         for (var i = 0; i < batchSize; i++) {
           final result = await commandBus.dispatch(CreateNodeCommand(
-            title: 'Batch Node $i',
-            content: 'Batch content $i',
+            title: '批量节点 $i',
+            content: '批量内容 $i',
           ));
           nodes.add(result.data!);
         }
@@ -302,15 +302,15 @@ void main() {
         expect(index.nodes.length, batchSize);
       });
 
-      test('should handle batch connections', () async {
+      test('应该能够处理批量连接', () async {
         // 创建节点链
         const chainLength = 10;
         final nodes = <Node>[];
 
         for (var i = 0; i < chainLength; i++) {
           final result = await commandBus.dispatch(CreateNodeCommand(
-            title: 'Chain Node $i',
-            content: 'Chain content $i',
+            title: '链式节点 $i',
+            content: '链式内容 $i',
           ));
           nodes.add(result.data!);
         }
@@ -331,15 +331,15 @@ void main() {
         }
       });
 
-      test('should handle batch deletion', () async {
+      test('应该能够处理批量删除', () async {
         // 创建节点
         const nodeCount = 20;
         final nodeIds = <String>[];
 
         for (var i = 0; i < nodeCount; i++) {
           final result = await commandBus.dispatch(CreateNodeCommand(
-            title: 'Node $i',
-            content: 'Content $i',
+            title: '节点 $i',
+            content: '内容 $i',
           ));
           nodeIds.add(result.data!.id);
         }
@@ -356,19 +356,19 @@ void main() {
     });
 
     group('搜索和过滤工作流', () {
-      test('should search by multiple criteria', () async {
+      test('应该能够按多个条件搜索', () async {
         // 创建测试数据
         await commandBus.dispatch(CreateNodeCommand(
-          title: 'Python Programming',
-          content: 'Learn Python basics',
+          title: 'Python 编程',
+          content: '学习 Python 基础',
         ));
         await commandBus.dispatch(CreateNodeCommand(
-          title: 'Dart Language',
-          content: 'Dart for Flutter development',
+          title: 'Dart 语言',
+          content: '用于 Flutter 开发的 Dart',
         ));
         await commandBus.dispatch(CreateNodeCommand(
-          title: 'Machine Learning',
-          content: 'Python ML tutorials',
+          title: '机器学习',
+          content: 'Python 机器学习教程',
         ));
 
         // 按标题搜索
@@ -387,12 +387,12 @@ void main() {
         expect(combinedResults.length, 2);
       });
 
-      test('should handle date range filtering', () async {
+      test('应该能够处理日期范围过滤', () async {
         // 创建带特定日期的节点
         final node1 = Node(
           id: 'node_1',
-          title: 'Old Node',
-          content: 'Created long ago',
+          title: '旧节点',
+          content: '很久以前创建的',
           references: const {},
           position: const Offset(0, 0),
           size: const Size(100, 100),
@@ -405,8 +405,8 @@ void main() {
 
         final node2 = Node(
           id: 'node_2',
-          title: 'Recent Node',
-          content: 'Created recently',
+          title: '最近节点',
+          content: '最近创建的',
           references: const {},
           position: const Offset(0, 0),
           size: const Size(100, 100),
@@ -422,23 +422,23 @@ void main() {
           startDate: DateTime(2024, 1, 1),
         );
         expect(recentResults.length, 1);
-        expect(recentResults[0].title, 'Recent Node');
+        expect(recentResults[0].title, '最近节点');
       });
     });
 
     group('持久化和恢复工作流', () {
-      test('should persist and restore graph state', () async {
+      test('应该能够持久化和恢复图状态', () async {
         // 创建图结构
         final result1 = await commandBus.dispatch(CreateNodeCommand(
-          title: 'Root Node',
-          content: 'Root content',
+          title: '根节点',
+          content: '根内容',
         ));
         final rootNode = result1.data!;
 
         for (var i = 0; i < 3; i++) {
           final result = await commandBus.dispatch(CreateNodeCommand(
-            title: 'Child Node $i',
-            content: 'Child content $i',
+            title: '子节点 $i',
+            content: '子内容 $i',
           ));
           await commandBus.dispatch(ConnectNodesCommand(
             sourceId: rootNode.id,

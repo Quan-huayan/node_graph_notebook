@@ -49,7 +49,7 @@ void main() {
       handler = CreateNodeHandler(mockService);
     });
 
-    test('should create node successfully', () async {
+    test('应该成功创建节点', () async {
       final command = CreateNodeCommand(
         title: 'Test Node',
         content: 'Test Content',
@@ -87,7 +87,7 @@ void main() {
       )).called(1);
     });
 
-    test('should fail when title is empty', () async {
+    test('标题为空时应该失败', () async {
       final command = CreateNodeCommand(
         title: '',
         content: 'Test Content',
@@ -104,7 +104,7 @@ void main() {
       ));
     });
 
-    test('should fail when title is only whitespace', () async {
+    test('标题只有空白字符时应该失败', () async {
       final command = CreateNodeCommand(
         title: '   ',
         content: 'Test Content',
@@ -121,7 +121,7 @@ void main() {
       ));
     });
 
-    test('should handle service exceptions', () async {
+    test('应该处理服务异常', () async {
       final command = CreateNodeCommand(
         title: 'Test Node',
         content: 'Test Content',
@@ -151,7 +151,7 @@ void main() {
       handler = UpdateNodeHandler(mockService);
     });
 
-    test('should update node successfully', () async {
+    test('应该成功更新节点', () async {
       final oldNode = Node(
         id: 'test-id',
         title: 'Old Title',
@@ -208,7 +208,7 @@ void main() {
       )).called(1);
     });
 
-    test('should fail when node IDs do not match', () async {
+    test('节点ID不匹配时应该失败', () async {
       final oldNode = Node(
         id: 'old-id',
         title: 'Old Title',
@@ -289,7 +289,7 @@ void main() {
       handler = DeleteNodeHandler(mockService);
     });
 
-    test('should delete node successfully', () async {
+    test('应该成功删除节点', () async {
       final node = Node(
         id: 'test-id',
         title: 'Test Node',
@@ -313,7 +313,7 @@ void main() {
       verify(mockService.deleteNode('test-id')).called(1);
     });
 
-    test('should handle delete exceptions', () async {
+    test('应该处理删除异常', () async {
       final node = Node(
         id: 'test-id',
         title: 'Test Node',
@@ -349,7 +349,7 @@ void main() {
       handler = ConnectNodesHandler(mockRepository);
     });
 
-    test('should connect nodes successfully', () async {
+    test('应该成功连接节点', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',
@@ -393,7 +393,7 @@ void main() {
       verify(mockRepository.save(any)).called(1);
     });
 
-    test('should fail when source node does not exist', () async {
+    test('源节点不存在时应该失败', () async {
       when(mockRepository.load('non-existent')).thenAnswer((_) async => null);
       when(mockRepository.load('target-id')).thenAnswer((_) async => Node(
         id: 'target-id',
@@ -419,7 +419,7 @@ void main() {
       expect(result.error, contains('源节点不存在'));
     });
 
-    test('should fail when target node does not exist', () async {
+    test('目标节点不存在时应该失败', () async {
       when(mockRepository.load('source-id')).thenAnswer((_) async => Node(
         id: 'source-id',
         title: 'Source',
@@ -445,7 +445,7 @@ void main() {
       expect(result.error, contains('目标节点不存在'));
     });
 
-    test('should fail when connection already exists', () async {
+    test('连接已存在时应该失败', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',
@@ -488,7 +488,7 @@ void main() {
       expect(result.error, contains('连接已存在'));
     });
 
-    test('should handle repository exceptions', () async {
+    test('应该处理仓库异常', () async {
       when(mockRepository.load('source-id')).thenThrow(Exception('Database error'));
 
       final command = ConnectNodesCommand(
@@ -514,7 +514,7 @@ void main() {
       handler = DisconnectNodesHandler(mockRepository);
     });
 
-    test('should disconnect nodes successfully', () async {
+    test('应该成功断开节点连接', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',
@@ -559,7 +559,7 @@ void main() {
       expect(result.error, contains('源节点不存在'));
     });
 
-    test('should fail when connection does not exist', () async {
+    test('连接不存在时应该失败', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',
@@ -612,7 +612,7 @@ void main() {
       handler = MoveNodeHandler(mockRepository);
     });
 
-    test('should move node successfully', () async {
+    test('应该成功移动节点', () async {
       final node = Node(
         id: 'test-id',
         title: 'Test Node',
@@ -643,7 +643,7 @@ void main() {
       )))).called(1);
     });
 
-    test('should fail when node does not exist', () async {
+    test('节点不存在时应该失败', () async {
       when(mockRepository.load('non-existent')).thenAnswer((_) async => null);
 
       final command = MoveNodeCommand(
@@ -683,7 +683,7 @@ void main() {
       handler = ResizeNodeHandler(mockRepository);
     });
 
-    test('should resize node successfully', () async {
+    test('应该成功调整节点大小', () async {
       final node = Node(
         id: 'test-id',
         title: 'Test Node',
@@ -754,7 +754,7 @@ void main() {
       handler = CreateGraphHandler(mockService);
     });
 
-    test('should create graph successfully', () async {
+    test('应该成功创建图', () async {
       final graph = Graph(
         id: 'graph-1',
         name: 'Test Graph',
@@ -776,7 +776,7 @@ void main() {
       verify(mockService.createGraph(name: 'Test Graph')).called(1);
     });
 
-    test('should fail when graph name is empty', () async {
+    test('图名称为空时应该失败', () async {
       final command = CreateGraphCommand(graphName: '');
       final result = await handler.execute(command, mockContext);
 
@@ -785,7 +785,7 @@ void main() {
       verifyNever(mockService.createGraph(name: anyNamed('name')));
     });
 
-    test('should fail when graph name is whitespace only', () async {
+    test('图名称只有空白字符时应该失败', () async {
       final command = CreateGraphCommand(graphName: '   ');
       final result = await handler.execute(command, mockContext);
 
@@ -817,7 +817,7 @@ void main() {
       handler = LoadGraphHandler(mockService);
     });
 
-    test('should load graph successfully', () async {
+    test('应该成功加载图', () async {
       final graph = Graph(
         id: 'graph-1',
         name: 'Test Graph',
@@ -838,7 +838,7 @@ void main() {
       expect(result.data!.nodeIds.length, 2);
     });
 
-    test('should fail when graph does not exist', () async {
+    test('图不存在时应该失败', () async {
       when(mockService.getGraph('non-existent')).thenAnswer((_) async => null);
 
       final command = LoadGraphCommand(graphId: 'non-existent');
@@ -870,7 +870,7 @@ void main() {
       handler = RenameGraphHandler(mockService);
     });
 
-    test('should rename graph successfully', () async {
+    test('应该成功重命名图', () async {
       final oldGraph = Graph(
         id: 'graph-1',
         name: 'Old Name',
@@ -906,7 +906,7 @@ void main() {
       expect(command.previousName, 'Old Name');
     });
 
-    test('should fail when new name is empty', () async {
+    test('新名称为空时应该失败', () async {
       final command = RenameGraphCommand(
         graphId: 'graph-1',
         updatedName: '',
@@ -942,7 +942,7 @@ void main() {
       handler = UpdateGraphHandler(mockService);
     });
 
-    test('should update graph successfully', () async {
+    test('应该成功更新图', () async {
       final oldGraph = Graph(
         id: 'graph-1',
         name: 'Old Name',
@@ -1033,7 +1033,7 @@ void main() {
       handler = AddNodeToGraphHandler(mockService);
     });
 
-    test('should add node to graph successfully', () async {
+    test('应该成功添加节点到图', () async {
       when(mockService.addNodeToGraph('graph-1', 'node-1'))
           .thenAnswer((_) async {});
 
@@ -1073,7 +1073,7 @@ void main() {
       handler = RemoveNodeFromGraphHandler(mockService);
     });
 
-    test('should remove node from graph successfully', () async {
+    test('应该成功从图中移除节点', () async {
       when(mockService.removeNodeFromGraph('graph-1', 'node-1'))
           .thenAnswer((_) async {});
 
@@ -1113,7 +1113,7 @@ void main() {
       handler = UpdateNodePositionHandler(mockRepository);
     });
 
-    test('should update node position successfully', () async {
+    test('应该成功更新节点位置', () async {
       final graph = Graph(
         id: 'graph-1',
         name: 'Test Graph',
@@ -1141,7 +1141,7 @@ void main() {
       )))).called(1);
     });
 
-    test('should handle null old position', () async {
+    test('应该处理空旧位置', () async {
       final graph = Graph(
         id: 'graph-1',
         name: 'Test Graph',

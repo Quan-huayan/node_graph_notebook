@@ -28,7 +28,7 @@ void main() {
       );
     });
 
-    test('should create backup successfully when directories exist', () async {
+    test('当目录存在时应该成功创建备份', () async {
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       final nodesDir = Directory('${tempDir.path}/nodes')..createSync();
       final graphsDir = Directory('${tempDir.path}/graphs')..createSync();
@@ -53,7 +53,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should create backup when nodes directory does not exist', () async {
+    test('当节点目录不存在时应该创建备份', () async {
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       final graphsDir = Directory('${tempDir.path}/graphs')..createSync();
       final nodesDir = Directory('${tempDir.path}/nodes');
@@ -75,7 +75,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should create backup when graphs directory does not exist', () async {
+    test('当图目录不存在时应该创建备份', () async {
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       final nodesDir = Directory('${tempDir.path}/nodes')..createSync();
       final graphsDir = Directory('${tempDir.path}/graphs');
@@ -97,7 +97,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should create backup when both directories do not exist', () async {
+    test('当两个目录都不存在时应该创建备份', () async {
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       final nodesDir = Directory('${tempDir.path}/nodes');
       final graphsDir = Directory('${tempDir.path}/graphs');
@@ -118,7 +118,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should copy files from nodes directory', () async {
+    test('应该从节点目录复制文件', () async {
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       final nodesDir = Directory('${tempDir.path}/nodes')..createSync();
       final graphsDir = Directory('${tempDir.path}/graphs')..createSync();
@@ -144,7 +144,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should copy nested directories', () async {
+    test('应该复制嵌套目录', () async {
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       final nodesDir = Directory('${tempDir.path}/nodes')..createSync();
       final graphsDir = Directory('${tempDir.path}/graphs')..createSync();
@@ -170,7 +170,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should return failure when storage path fails', () async {
+    test('存储路径获取失败时应该返回失败结果', () async {
       when(mockStoragePathService.getStoragePath()).thenThrow(Exception('Storage path error'));
 
       final command = BackupDataCommand();
@@ -180,7 +180,7 @@ void main() {
       expect(result.error, contains('备份失败'));
     });
 
-    test('should return failure when backup directory creation fails', () async {
+    test('备份目录创建失败时应该返回失败结果', () async {
       when(mockStoragePathService.getStoragePath()).thenAnswer((_) async => '/invalid/path/that/does/not/exist');
 
       final command = BackupDataCommand();
@@ -190,7 +190,7 @@ void main() {
       expect(result.error, contains('备份失败'));
     });
 
-    test('should include success message in result', () async {
+    test('结果中应该包含成功消息', () async {
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       final nodesDir = Directory('${tempDir.path}/nodes')..createSync();
       final graphsDir = Directory('${tempDir.path}/graphs')..createSync();

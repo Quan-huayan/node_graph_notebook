@@ -3,7 +3,7 @@ import 'package:node_graph_notebook/core/services/infrastructure/settings_regist
 
 void main() {
   group('SettingDefinition', () {
-    test('should create SettingDefinition with all properties', () {
+    test('应该创建包含所有属性的 SettingDefinition', () {
       const definition = SettingDefinition<String>(
         key: 'test.key',
         defaultValue: 'default',
@@ -22,7 +22,7 @@ void main() {
       expect(definition.isSensitive, false);
     });
 
-    test('should create SettingDefinition with validator', () {
+    test('应该创建带有验证器的 SettingDefinition', () {
       const definition = SettingDefinition<int>(
         key: 'test.number',
         defaultValue: 10,
@@ -35,7 +35,7 @@ void main() {
       expect(definition.validator, isNotNull);
     });
 
-    test('should create SettingDefinition with onChanged callback', () {
+    test('应该创建带有 onChanged 回调的 SettingDefinition', () {
       var callbackCalled = false;
       final definition = SettingDefinition<bool>(
         key: 'test.bool',
@@ -52,7 +52,7 @@ void main() {
       expect(callbackCalled, true);
     });
 
-    test('should create SettingDefinition as sensitive', () {
+    test('应该创建敏感类型的 SettingDefinition', () {
       const definition = SettingDefinition<String>(
         key: 'test.sensitive',
         defaultValue: 'secret',

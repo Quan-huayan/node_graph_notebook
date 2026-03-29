@@ -15,22 +15,22 @@ class TestCommand extends Command<dynamic> {
     if (shouldSucceed) {
       return CommandResult.success();
     }
-    return CommandResult.failure('Command failed');
+    return CommandResult.failure('命令执行失败');
   }
 
   @override
   Future<void> undo(CommandContext context) async {
     if (undoShouldFail) {
-      throw Exception('Undo failed');
+      throw Exception('撤销失败');
     }
     undone = true;
   }
 
   @override
-  String get name => 'TestCommand';
+  String get name => '测试命令';
 
   @override
-  String get description => 'Test command for transaction middleware';
+  String get description => '用于事务中间件测试的命令';
 }
 
 class NonUndoableTestCommand extends Command<dynamic> {
@@ -43,17 +43,17 @@ class NonUndoableTestCommand extends Command<dynamic> {
     if (shouldSucceed) {
       return CommandResult.success();
     }
-    return CommandResult.failure('Command failed');
+    return CommandResult.failure('命令执行失败');
   }
 
   @override
   bool get isUndoable => false;
 
   @override
-  String get name => 'NonUndoableTestCommand';
+  String get name => '不可撤销测试命令';
 
   @override
-  String get description => 'Non-undoable test command';
+  String get description => '不可撤销的测试命令';
 }
 
 void main() {
@@ -67,7 +67,7 @@ void main() {
     });
 
     group('processBefore', () {
-      test('should set transaction metadata', () async {
+      test('应该设置事务元数据', () async {
         final command = TestCommand();
 
         await middleware.processBefore(command, context);
@@ -78,7 +78,7 @@ void main() {
     });
 
     group('processAfter', () {
-      test('should clear metadata after processing', () async {
+      test('处理后应该清除元数据', () async {
         final command = TestCommand();
         final result = CommandResult.success();
 
@@ -89,7 +89,7 @@ void main() {
         expect(context.getMetadata('_transaction_command'), isNull);
       });
 
-      test('should not undo successful command', () async {
+      test('不应该撤销成功的命令', () async {
         final command = TestCommand();
         final result = CommandResult.success();
 
@@ -99,9 +99,9 @@ void main() {
         expect(command.undone, false);
       });
 
-      test('should undo failed undoable command', () async {
+      test('应该撤销失败的可撤销命令', () async {
         final command = TestCommand(shouldSucceed: false);
-        final result = CommandResult.failure('Failed');
+        final result = CommandResult.failure('失败');
 
         await middleware.processBefore(command, context);
         await middleware.processAfter(command, context, result);
@@ -109,20 +109,20 @@ void main() {
         expect(command.undone, true);
       });
 
-      test('should not undo failed non-undoable command', () async {
+      test('不应该撤销失败的不可撤销命令', () async {
         final command = NonUndoableTestCommand(shouldSucceed: false);
-        final result = CommandResult.failure('Failed');
+        final result = CommandResult.failure('失败');
 
         await middleware.processBefore(command, context);
         await middleware.processAfter(command, context, result);
       });
 
-      test('should handle undo failure gracefully', () async {
+      test('应该优雅地处理撤销失败', () async {
         final command = TestCommand(
           shouldSucceed: false,
           undoShouldFail: true,
         );
-        final result = CommandResult.failure('Failed');
+        final result = CommandResult.failure('失败');
 
         await middleware.processBefore(command, context);
         await middleware.processAfter(command, context, result);
@@ -130,7 +130,7 @@ void main() {
     });
 
     group('transaction workflow', () {
-      test('should handle complete transaction cycle', () async {
+      test('应该处理完整的事务周期', () async {
         final command = TestCommand();
         final result = CommandResult.success();
 
@@ -141,9 +141,9 @@ void main() {
         expect(context.getMetadata('_transaction_active'), isNull);
       });
 
-      test('should handle failed transaction cycle', () async {
+      test('应该处理失败的事务周期', () async {
         final command = TestCommand(shouldSucceed: false);
-        final result = CommandResult.failure('Failed');
+        final result = CommandResult.failure('失败');
 
         await middleware.processBefore(command, context);
         expect(context.getMetadata('_transaction_active'), true);

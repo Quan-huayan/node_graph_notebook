@@ -53,7 +53,7 @@ void main() {
       graphBloc.close();
     });
 
-    test('initial state is correct', () {
+    test('初始状态正确', () {
       expect(graphBloc.state.loadingState, LoadingState.initial);
       expect(graphBloc.state.nodes, []);
       expect(graphBloc.state.connections, []);
@@ -62,7 +62,7 @@ void main() {
       expect(graphBloc.state.viewState.gridVisible, true);
     });
 
-    test('should handle NodeSelectEvent', () async {
+    test('应该处理节点选择事件', () async {
       graphBloc.add(const NodeSelectEvent('node_1', addToSelection: false));
 
       await expectLater(
@@ -71,7 +71,7 @@ void main() {
       );
     });
 
-    test('should handle SelectionClearEvent', () async {
+    test('应该处理清除选择事件', () async {
       graphBloc.add(const NodeSelectEvent('node_1', addToSelection: false));
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -83,7 +83,7 @@ void main() {
       );
     });
 
-    test('should handle ViewToggleConnectionsEvent', () async {
+    test('应该处理切换连接显示事件', () async {
       graphBloc.add(const ViewToggleConnectionsEvent());
 
       await expectLater(
@@ -92,7 +92,7 @@ void main() {
       );
     });
 
-    test('should handle ViewToggleGridEvent', () async {
+    test('应该处理切换网格显示事件', () async {
       graphBloc.add(const ViewToggleGridEvent());
 
       await expectLater(
@@ -101,7 +101,7 @@ void main() {
       );
     });
 
-    test('should handle GraphInitializeEvent with existing graph', () async {
+    test('应该处理存在图的初始化事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'Test Graph',
@@ -132,7 +132,7 @@ void main() {
       );
     });
 
-    test('should handle GraphInitializeEvent with no existing graph', () async {
+    test('应该处理无图的初始化事件', () async {
       when(mockGraphRepository.getCurrent()).thenAnswer((_) async => null);
 
       graphBloc.add(const GraphInitializeEvent());
@@ -146,7 +146,7 @@ void main() {
       );
     });
 
-    test('should handle GraphInitializeEvent with error', () async {
+    test('应该处理初始化错误事件', () async {
       when(mockGraphRepository.getCurrent()).thenThrow(Exception('Test error'));
 
       graphBloc.add(const GraphInitializeEvent());
@@ -160,7 +160,7 @@ void main() {
       );
     });
 
-    test('should handle GraphLoadEvent successfully', () async {
+    test('应该成功处理图加载事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'Test Graph',
@@ -191,7 +191,7 @@ void main() {
       );
     });
 
-    test('should handle GraphLoadEvent when graph not found', () async {
+    test('图未找到时应该处理加载事件', () async {
       when(mockGraphRepository.load('non_existent')).thenAnswer((_) async => null);
 
       graphBloc.add(const GraphLoadEvent('non_existent'));
@@ -205,7 +205,7 @@ void main() {
       );
     });
 
-    test('should handle GraphLoadEvent with error', () async {
+    test('应该处理加载错误事件', () async {
       when(mockGraphRepository.load('graph_1')).thenThrow(Exception('Test error'));
 
       graphBloc.add(const GraphLoadEvent('graph_1'));
@@ -219,7 +219,7 @@ void main() {
       );
     });
 
-    test('should handle GraphCreateEvent successfully', () async {
+    test('应该成功处理图创建事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'New Graph',
@@ -251,7 +251,7 @@ void main() {
       );
     });
 
-    test('should handle GraphCreateEvent with failure', () async {
+    test('应该处理图创建失败事件', () async {
       when(mockCommandBus.dispatch<Graph>(argThat(isA<Command<Graph>>()))).thenAnswer((_) async => CommandResult<Graph>.failure('Creation failed'));
 
       graphBloc.add(const GraphCreateEvent('New Graph'));
@@ -265,7 +265,7 @@ void main() {
       );
     });
 
-    test('should handle GraphCreateEvent with error', () async {
+    test('应该处理图创建错误事件', () async {
       when(mockCommandBus.dispatch<Graph>(argThat(isA<Command<Graph>>()))).thenThrow(Exception('Test error'));
 
       graphBloc.add(const GraphCreateEvent('New Graph'));
@@ -279,7 +279,7 @@ void main() {
       );
     });
 
-    test('should handle NodeAddEvent successfully', () async {
+    test('应该成功处理节点添加事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'Test Graph',
@@ -308,7 +308,7 @@ void main() {
       );
     });
 
-    test('should handle NodeAddEvent with failure', () async {
+    test('应该处理节点添加失败事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'Test Graph',
@@ -337,7 +337,7 @@ void main() {
       );
     });
 
-    test('should handle NodeMoveEvent', () async {
+    test('应该处理节点移动事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'Test Graph',
@@ -368,7 +368,7 @@ void main() {
       );
     });
 
-    test('should handle NodeMultiSelectEvent', () async {
+    test('应该处理节点多选事件', () async {
       final nodeIds = {'node_1', 'node_2', 'node_3'};
 
       graphBloc.add(NodeMultiSelectEvent(nodeIds));
@@ -382,7 +382,7 @@ void main() {
       );
     });
 
-    test('should handle ViewZoomEvent without graph', () async {
+    test('应该处理无图时的视图缩放事件', () async {
       graphBloc.add(const ViewZoomEvent(2));
 
       await expectLater(
@@ -393,7 +393,7 @@ void main() {
       );
     });
 
-    test('should handle ViewZoomEvent with graph', () async {
+    test('应该处理有图时的视图缩放事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'Test Graph',
@@ -424,7 +424,7 @@ void main() {
       );
     });
 
-    test('should handle ViewMoveEvent with graph', () async {
+    test('应该处理有图时的视图移动事件', () async {
       final mockGraph = Graph(
         id: 'graph_1',
         name: 'Test Graph',
@@ -455,7 +455,7 @@ void main() {
       );
     });
 
-    test('should handle ErrorClearEvent', () async {
+    test('应该处理错误清除事件', () async {
       graphBloc..emit(graphBloc.state.copyWith(error: 'Test error'))
 
       ..add(const ErrorClearEvent());
@@ -468,7 +468,7 @@ void main() {
       );
     });
 
-    test('should handle RetryEvent', () async {
+    test('应该处理重试事件', () async {
       when(mockGraphRepository.getCurrent()).thenAnswer((_) async => null);
 
       graphBloc.add(const RetryEvent());

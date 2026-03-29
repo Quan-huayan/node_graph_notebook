@@ -134,14 +134,14 @@ void main() {
     });
 
     group('registerHook - Hook 注册', () {
-      test('should register hook successfully', () {
+      test('应该成功注册hook', () {
         final hook = TestHook(id: 'test_hook', name: 'Test Hook');
         registry.registerHook(hook);
 
         expect(registry.hasHooks('test.hook'), true);
       });
 
-      test('should register multiple hooks at same hook point', () {
+      test('应该在同一个hook点注册多个hooks', () {
         registry..registerHook(TestHook(id: 'hook1', name: 'Hook 1'))
         ..registerHook(TestHook(id: 'hook2', name: 'Hook 2'));
 
@@ -150,7 +150,7 @@ void main() {
         expect(wrappers.length, 2);
       });
 
-      test('should register hooks at different hook points', () {
+      test('应该在不同的hook点注册hooks', () {
         registry..registerHook(TestHook(id: 'hook1', name: 'Hook 1', hookPoint: 'point.a'))
         ..registerHook(TestHook(id: 'hook2', name: 'Hook 2', hookPoint: 'point.b'));
 
@@ -160,7 +160,7 @@ void main() {
     });
 
     group('unregisterHook - Hook 注销', () {
-      test('should unregister hook successfully', () {
+      test('应该成功注销hook', () {
         final hook = TestHook(id: 'test_hook', name: 'Test Hook');
         registry..registerHook(hook)
 
@@ -169,7 +169,7 @@ void main() {
         expect(registry.hasHooks('test.hook'), false);
       });
 
-      test('should remove hook point when last hook is unregistered', () {
+      test('当最后一个hook被注销时应该移除hook点', () {
         final hook = TestHook(id: 'test_hook', name: 'Test Hook');
         registry..registerHook(hook)
 
@@ -178,7 +178,7 @@ void main() {
         expect(registry.registeredHookPointIds.contains('test.hook'), false);
       });
 
-      test('should keep hook point when other hooks remain', () {
+      test('当还有其他hooks时应该保留hook点', () {
         final hook1 = TestHook(id: 'hook1', name: 'Hook 1');
         final hook2 = TestHook(id: 'hook2', name: 'Hook 2');
         registry..registerHook(hook1)
@@ -192,7 +192,7 @@ void main() {
     });
 
     group('unregisterPluginHooks - 插件 Hook 注销', () {
-      test('should unregister all hooks for plugin', () {
+      test('应该注销插件的所有hooks', () {
         final pluginWrapper = _createMockPluginWrapper('test_plugin');
 
         registry..registerHook(TestHook(id: 'hook1', name: 'Hook 1'), parentPlugin: pluginWrapper)
@@ -203,7 +203,7 @@ void main() {
         expect(registry.totalHooks, 0);
       });
 
-      test('should not affect hooks from other plugins', () {
+      test('不应该影响其他插件的hooks', () {
         final pluginA = _createMockPluginWrapper('plugin_a');
         final pluginB = _createMockPluginWrapper('plugin_b');
 
@@ -217,7 +217,7 @@ void main() {
     });
 
     group('priority sorting - 优先级排序', () {
-      test('should sort hooks by priority', () {
+      test('应该按优先级排序hooks', () {
         registry..registerHook(LowPriorityHook())
         ..registerHook(HighPriorityHook())
         ..registerHook(CriticalPriorityHook());
@@ -229,7 +229,7 @@ void main() {
         expect(wrappers[2].hook.metadata.id, 'low_priority_hook');
       });
 
-      test('should maintain priority order after multiple registrations', () {
+      test('多次注册后应该保持优先级顺序', () {
         registry..registerHook(LowPriorityHook())
         ..registerHook(CriticalPriorityHook())
         ..registerHook(HighPriorityHook())
@@ -250,13 +250,13 @@ void main() {
     });
 
     group('API export - API 导出', () {
-      test('should register hook APIs', () {
+      test('应该注册hook API', () {
         registry.registerHook(HookWithAPI());
 
         expect(registry.hasHookAPI('hook_with_api', 'test_api'), true);
       });
 
-      test('should return API instance', () {
+      test('应该返回API实例', () {
         registry.registerHook(HookWithAPI());
 
         final api = registry.getHookAPI<TestAPI>('hook_with_api', 'test_api');
@@ -265,7 +265,7 @@ void main() {
         expect(api!.greet(), 'Hello from TestAPI');
       });
 
-      test('should unregister APIs when hook is unregistered', () {
+      test('hook被注销时应该注销API', () {
         final hook = HookWithAPI();
         registry..registerHook(hook)
 
@@ -274,7 +274,7 @@ void main() {
         expect(registry.hasHookAPI('hook_with_api', 'test_api'), false);
       });
 
-      test('should return all hook APIs', () {
+      test('应该返回所有hook API', () {
         registry.registerHook(HookWithAPI());
 
         final apis = registry.getHookAPIs('hook_with_api');
@@ -285,13 +285,13 @@ void main() {
     });
 
     group('getHookWrappers - Hook 查询', () {
-      test('should return empty list for non-existent hook point', () {
+      test('对于不存在的hook点应该返回空列表', () {
         final wrappers = registry.getHookWrappers('non_existent');
 
         expect(wrappers, isEmpty);
       });
 
-      test('should exclude disabled hooks by default', () async {
+      test('默认应该排除禁用的hooks', () async {
         final hook = TestHook(id: 'test_hook', name: 'Test Hook');
         registry.registerHook(hook);
 
@@ -311,7 +311,7 @@ void main() {
         expect(registry.getHookWrappers('test.hook').length, 0);
       });
 
-      test('should include disabled hooks when requested', () async {
+      test('请求时应该包含禁用的hooks', () async {
         final hook = TestHook(id: 'test_hook', name: 'Test Hook');
         registry.registerHook(hook);
 
@@ -329,7 +329,7 @@ void main() {
     });
 
     group('hook points - Hook 点管理', () {
-      test('should register custom hook point', () {
+      test('应该注册自定义hook点', () {
         registry.registerHookPoint(const HookPointDefinition(
           id: 'custom.point',
           name: 'Custom Hook Point',
@@ -340,7 +340,7 @@ void main() {
         expect(registry.hasHookPoint('custom.point'), true);
       });
 
-      test('should return hook point definition', () {
+      test('应该返回hook点定义', () {
         registry.registerHookPoint(const HookPointDefinition(
           id: 'custom.point',
           name: 'Custom Hook Point',
@@ -355,7 +355,7 @@ void main() {
         expect(point.name, 'Custom Hook Point');
       });
 
-      test('should return all hook points', () {
+      test('应该返回所有hook点', () {
         registry..registerHookPoint(const HookPointDefinition(
           id: 'point.a',
           name: 'Point A',
@@ -376,14 +376,14 @@ void main() {
     });
 
     group('statistics - 统计信息', () {
-      test('should report total hooks correctly', () {
+      test('应该正确报告hooks总数', () {
         registry..registerHook(TestHook(id: 'hook1', name: 'Hook 1'))
         ..registerHook(TestHook(id: 'hook2', name: 'Hook 2', hookPoint: 'other.point'));
 
         expect(registry.totalHooks, 2);
       });
 
-      test('should report registered hook point IDs', () {
+      test('应该报告已注册的hook点ID', () {
         registry..registerHook(TestHook(id: 'hook1', name: 'Hook 1', hookPoint: 'point.a'))
         ..registerHook(TestHook(id: 'hook2', name: 'Hook 2', hookPoint: 'point.b'));
 
@@ -392,7 +392,7 @@ void main() {
     });
 
     group('clear - 清空', () {
-      test('should clear all hooks and hook points', () {
+      test('应该清空所有hooks和hook点', () {
         registry..registerHook(TestHook(id: 'hook1', name: 'Hook 1'))
         ..registerHookPoint(const HookPointDefinition(
           id: 'custom.point',

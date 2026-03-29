@@ -10,7 +10,7 @@ void main() {
     });
 
     group('resolve - 拓扑排序', () {
-      test('should return correct load order for simple dependency chain', () {
+      test('应该为简单依赖链返回正确的加载顺序', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -32,7 +32,7 @@ void main() {
         expect(result.loadOrder, equals(['plugin_b', 'plugin_a']));
       });
 
-      test('should return correct load order for diamond dependency', () {
+      test('应该为菱形依赖返回正确的加载顺序', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -69,7 +69,7 @@ void main() {
         expect(result.loadOrder.indexOf('plugin_c'), lessThan(result.loadOrder.indexOf('plugin_a')));
       });
 
-      test('should handle independent plugins', () {
+      test('应该处理独立插件', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -100,7 +100,7 @@ void main() {
     });
 
     group('detectCycles - 循环依赖检测', () {
-      test('should detect simple circular dependency', () {
+      test('应该检测简单循环依赖', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -121,7 +121,7 @@ void main() {
         expect(cycles.isNotEmpty, true);
       });
 
-      test('should detect longer circular dependency chain', () {
+      test('应该检测更长的循环依赖链', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -148,7 +148,7 @@ void main() {
         expect(cycles.isNotEmpty, true);
       });
 
-      test('should return empty list for no circular dependency', () {
+      test('没有循环依赖时应该返回空列表', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -171,7 +171,7 @@ void main() {
     });
 
     group('getTransitiveDependencies - 传递依赖', () {
-      test('should return all transitive dependencies', () {
+      test('应该返回所有传递依赖', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -198,7 +198,7 @@ void main() {
         expect(deps, equals({'plugin_b', 'plugin_c'}));
       });
 
-      test('should return empty set for plugin with no dependencies', () {
+      test('对于没有依赖的插件应该返回空集合', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -213,7 +213,7 @@ void main() {
         expect(deps, isEmpty);
       });
 
-      test('should handle missing dependency gracefully', () {
+      test('应该优雅地处理缺失的依赖', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -230,7 +230,7 @@ void main() {
     });
 
     group('getDependents - 获取依赖者', () {
-      test('should return all plugins that depend on given plugin', () {
+      test('应该返回所有依赖给定插件的插件', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -257,7 +257,7 @@ void main() {
         expect(dependents, containsAll(['plugin_a', 'plugin_b']));
       });
 
-      test('should return empty set for plugin with no dependents', () {
+      test('对于没有依赖者的插件应该返回空集合', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -274,7 +274,7 @@ void main() {
     });
 
     group('checkCompatibility - 版本兼容性检查', () {
-      test('should return empty list when all plugins are compatible', () {
+      test('当所有插件都兼容时应该返回空列表', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -289,7 +289,7 @@ void main() {
         expect(incompatible, isEmpty);
       });
 
-      test('should return incompatible plugins', () {
+      test('应该返回不兼容的插件', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -306,7 +306,7 @@ void main() {
     });
 
     group('resolve - 错误处理', () {
-      test('should report missing dependency', () {
+      test('应该报告缺失的依赖', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',
@@ -322,7 +322,7 @@ void main() {
         expect(result.errors.any((e) => e.contains('missing dependency')), true);
       });
 
-      test('should report circular dependency', () {
+      test('应该报告循环依赖', () {
         final plugins = {
           'plugin_a': const PluginMetadata(
             id: 'plugin_a',

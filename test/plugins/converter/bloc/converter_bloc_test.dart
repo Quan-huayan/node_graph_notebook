@@ -30,7 +30,7 @@ void main() {
       converterBloc.close();
     });
 
-    test('initial state is correct', () {
+    test('初始状态正确', () {
       expect(converterBloc.state.isLoading, false);
       expect(converterBloc.state.importPreviewNodes, isEmpty);
       expect(converterBloc.state.exportPreviewMarkdown, '');
@@ -43,7 +43,7 @@ void main() {
     });
 
     group('ImportPreviewEvent', () {
-      test('should handle ImportPreviewEvent successfully', () async {
+      test('成功处理导入预览事件', () async {
         final mockNodes = [
           Node(
             id: 'node_1',
@@ -100,7 +100,7 @@ void main() {
         );
       });
 
-      test('should handle ImportPreviewEvent with error', () async {
+      test('处理导入预览事件出错', () async {
         const rule = ConversionRule(
           splitStrategy: SplitStrategy.heading,
           headingRule: HeadingSplitRule(level: 2),
@@ -109,7 +109,7 @@ void main() {
         when(mockImportExportService.previewImport(
           filePath: anyNamed('filePath'),
           rule: anyNamed('rule'),
-        )).thenThrow(Exception('File not found'));
+        )).thenThrow(Exception('文件未找到'));
 
         converterBloc.add(
           const ImportPreviewEvent(
@@ -130,7 +130,7 @@ void main() {
     });
 
     group('ImportExecuteEvent', () {
-      test('should handle ImportExecuteEvent successfully', () async {
+      test('成功处理导入执行事件', () async {
         final mockNodes = [
           Node(
             id: 'node_1',
@@ -191,7 +191,7 @@ void main() {
         );
       });
 
-      test('should handle ImportExecuteEvent with error', () async {
+      test('处理导入执行事件出错', () async {
         const rule = ConversionRule(
           splitStrategy: SplitStrategy.heading,
           headingRule: HeadingSplitRule(level: 2),
@@ -202,7 +202,7 @@ void main() {
           rule: anyNamed('rule'),
           selectedIndices: anyNamed('selectedIndices'),
           addToGraph: anyNamed('addToGraph'),
-        )).thenThrow(Exception('Import failed'));
+        )).thenThrow(Exception('导入失败'));
 
         converterBloc.add(
           const ImportExecuteEvent(
@@ -224,7 +224,7 @@ void main() {
     });
 
     group('ExportPreviewEvent', () {
-      test('should handle ExportPreviewEvent successfully', () async {
+      test('成功处理导出预览事件', () async {
         const mockMarkdown = '# Test Node 1\n\nContent 1\n\n---\n\n# Test Node 2\n\nContent 2';
 
         const rule = MergeRule(
@@ -256,7 +256,7 @@ void main() {
         );
       });
 
-      test('should handle ExportPreviewEvent with error', () async {
+      test('处理导出预览事件出错', () async {
         const rule = MergeRule(
           strategy: MergeStrategy.sequence,
           sequenceRule: SequenceMergeRule(),
@@ -265,7 +265,7 @@ void main() {
         when(mockImportExportService.previewExport(
           nodeIds: anyNamed('nodeIds'),
           rule: anyNamed('rule'),
-        )).thenThrow(Exception('Export failed'));
+        )).thenThrow(Exception('导出失败'));
 
         converterBloc.add(
           const ExportPreviewEvent(
@@ -286,7 +286,7 @@ void main() {
     });
 
     group('ExportExecuteEvent', () {
-      test('should handle ExportExecuteEvent successfully', () async {
+      test('成功处理导出执行事件', () async {
         const rule = MergeRule(
           strategy: MergeStrategy.sequence,
           sequenceRule: SequenceMergeRule(),
@@ -324,7 +324,7 @@ void main() {
         );
       });
 
-      test('should handle ExportExecuteEvent with error', () async {
+      test('处理导出执行事件出错', () async {
         const rule = MergeRule(
           strategy: MergeStrategy.sequence,
           sequenceRule: SequenceMergeRule(),
@@ -339,7 +339,7 @@ void main() {
           nodeIds: anyNamed('nodeIds'),
           rule: anyNamed('rule'),
           outputPath: anyNamed('outputPath'),
-        )).thenThrow(Exception('Write failed'));
+        )).thenThrow(Exception('写入失败'));
 
         converterBloc.add(
           const ExportExecuteEvent(
@@ -361,7 +361,7 @@ void main() {
     });
 
     group('BatchImportEvent', () {
-      test('should handle BatchImportEvent successfully', () async {
+      test('成功处理批量导入事件', () async {
         const mockResult = ConversionResult(
           successCount: 3,
           failureCount: 0,
@@ -407,7 +407,7 @@ void main() {
         );
       });
 
-      test('should handle BatchImportEvent with error', () async {
+      test('处理批量导入事件出错', () async {
         const config = ConversionConfig(
           rule: ConversionRule(
             splitStrategy: SplitStrategy.heading,
@@ -419,7 +419,7 @@ void main() {
           filePaths: anyNamed('filePaths'),
           config: anyNamed('config'),
           onProgress: anyNamed('onProgress'),
-        )).thenThrow(Exception('Batch import failed'));
+        )).thenThrow(Exception('批量导入失败'));
 
         converterBloc.add(
           const BatchImportEvent(
@@ -446,7 +446,7 @@ void main() {
     });
 
     group('ClearPreviewEvent', () {
-      test('should reset state to initial', () async {
+      test('重置状态为初始状态', () async {
         const rule = ConversionRule(
           splitStrategy: SplitStrategy.heading,
           headingRule: HeadingSplitRule(level: 2),
@@ -479,15 +479,15 @@ void main() {
     });
 
     group('State getters', () {
-      test('hasError returns true when error is not null', () {
+      test('当错误不为空时hasError返回true', () {
         converterBloc.emit(
-          converterBloc.state.copyWith(error: 'Test error'),
+          converterBloc.state.copyWith(error: '测试错误'),
         );
 
         expect(converterBloc.state.hasError, true);
       });
 
-      test('hasImportPreview returns true when nodes are present', () {
+      test('当节点存在时hasImportPreview返回true', () {
         final mockNodes = [
           Node(
             id: 'node_1',
@@ -510,7 +510,7 @@ void main() {
         expect(converterBloc.state.hasImportPreview, true);
       });
 
-      test('hasExportPreview returns true when markdown is present', () {
+      test('当markdown存在时hasExportPreview返回true', () {
         converterBloc.emit(
           converterBloc.state.copyWith(exportPreviewMarkdown: '# Test'),
         );
@@ -518,7 +518,7 @@ void main() {
         expect(converterBloc.state.hasExportPreview, true);
       });
 
-      test('isProcessing returns true when progress is set', () {
+      test('当进度设置时isProcessing返回true', () {
         converterBloc.emit(
           converterBloc.state.copyWith(
             currentProgress: 1,
@@ -529,7 +529,7 @@ void main() {
         expect(converterBloc.state.isProcessing, true);
       });
 
-      test('hasResult returns true when conversionResult is not null', () {
+      test('当conversionResult不为空时hasResult返回true', () {
         const mockResult = ConversionResult(
           successCount: 1,
           failureCount: 0,
@@ -545,7 +545,7 @@ void main() {
         expect(converterBloc.state.hasResult, true);
       });
 
-      test('wasSuccessful returns true when no failures', () {
+      test('当没有失败时wasSuccessful返回true', () {
         const mockResult = ConversionResult(
           successCount: 1,
           failureCount: 0,
@@ -561,7 +561,7 @@ void main() {
         expect(converterBloc.state.wasSuccessful, true);
       });
 
-      test('wasSuccessful returns false when there are failures', () {
+      test('当有失败时wasSuccessful返回false', () {
         const mockResult = ConversionResult(
           successCount: 1,
           failureCount: 1,

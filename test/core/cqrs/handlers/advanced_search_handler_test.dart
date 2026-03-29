@@ -41,7 +41,7 @@ void main() {
         metadata: metadata,
       );
 
-    test('should filter nodes by title', () async {
+    test('应该按标题过滤节点', () async {
       // 准备测试数据
       final nodes = [
         createTestNode(id: '1', title: 'Test Node 1', content: 'Content 1'),
@@ -62,7 +62,7 @@ void main() {
       expect(result.data?[1].id, '3');
     });
 
-    test('should filter nodes by content', () async {
+    test('应该按内容过滤节点', () async {
       final nodes = [
         createTestNode(
           id: '1',
@@ -86,7 +86,7 @@ void main() {
       expect(result.data?[0].id, '1');
     });
 
-    test('should filter nodes by searchText in title or content', () async {
+    test('应该按搜索文本在标题或内容中过滤节点', () async {
       final nodes = [
         createTestNode(
           id: '1',
@@ -114,7 +114,7 @@ void main() {
       expect(result.data?.length, 2);
     });
 
-    test('should filter nodes by tags', () async {
+    test('应该按标签过滤节点', () async {
       final nodes = [
         createTestNode(
           id: '1',
@@ -142,7 +142,7 @@ void main() {
       expect(result.data?.length, 2);
     });
 
-    test('should filter nodes by multiple tags (AND logic)', () async {
+    test('应该按多个标签过滤节点（AND逻辑）', () async {
       final nodes = [
         createTestNode(
           id: '1',
@@ -166,7 +166,7 @@ void main() {
       expect(result.data?[0].id, '1');
     });
 
-    test('should filter nodes by folder status', () async {
+    test('应该按文件夹状态过滤节点', () async {
       final nodes = [
         createTestNode(id: '1', title: 'Folder 1', metadata: {'isFolder': true}),
         createTestNode(id: '2', title: 'Node 2', metadata: {'isFolder': false}),
@@ -182,7 +182,7 @@ void main() {
       expect(result.data?[0].isFolder, true);
     });
 
-    test('should filter nodes by creation date range', () async {
+    test('应该按创建日期范围过滤节点', () async {
       final now = DateTime.now();
       final nodes = [
         Node(
@@ -234,7 +234,7 @@ void main() {
       expect(result.data?.length, 2);
     });
 
-    test('should apply limit to results', () async {
+    test('应该对结果应用限制', () async {
       final nodes = List.generate(
         20,
         (i) => createTestNode(
@@ -252,7 +252,7 @@ void main() {
       expect(result.data?.length, 5);
     });
 
-    test('should handle empty results', () async {
+    test('应该处理空结果', () async {
       final nodes = [
         createTestNode(id: '1', title: 'Node 1'),
       ];
@@ -266,7 +266,7 @@ void main() {
       expect(result.data?.isEmpty, true);
     });
 
-    test('should handle repository errors', () async {
+    test('应该处理仓库错误', () async {
       when(mockRepository.queryAll()).thenThrow(Exception('Database error'));
 
       const query = AdvancedSearchQuery(titleQuery: 'Test');
@@ -276,7 +276,7 @@ void main() {
       expect(result.error, contains('Failed to perform advanced search'));
     });
 
-    test('should handle multiple filters combined', () async {
+    test('应该处理多个组合过滤器', () async {
       final nodes = [
         createTestNode(
           id: '1',

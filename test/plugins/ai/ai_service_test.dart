@@ -16,25 +16,25 @@ void main() {
       aiService = AIServiceImpl(mockProvider);
     });
 
-    test('should have correct initial state', () {
+    test('应该具有正确的初始状态', () {
       expect(aiService.isAvailable, true);
       expect(aiService.serviceName, 'Mock AI Provider');
     });
 
-    test('should be unavailable when provider is null', () {
+    test('当provider为空时应该不可用', () {
       final service = AIServiceImpl();
       expect(service.isAvailable, false);
       expect(service.serviceName, 'No Provider');
     });
 
-    test('should set provider correctly', () {
+    test('应该正确设置provider', () {
       final newProvider = MockAIProvider();
       aiService.setProvider(newProvider);
       expect(aiService.isAvailable, true);
       expect(aiService.serviceName, 'Mock AI Provider');
     });
 
-    test('should generate node correctly', () async {
+    test('应该正确生成节点', () async {
       mockProvider.response = 'Generated Title\nGenerated content here';
       final node = await aiService.generateNode(prompt: 'Test prompt');
 
@@ -45,7 +45,7 @@ void main() {
       expect(node.size, const Size(300, 400));
     });
 
-    test('should handle empty response in generateNode', () async {
+    test('应该处理generateNode中的空响应', () async {
       mockProvider.response = '';
       final node = await aiService.generateNode(prompt: 'Test prompt');
 
@@ -53,7 +53,7 @@ void main() {
       expect(node.content, isEmpty);
     });
 
-    test('should summarize node correctly', () async {
+    test('应该正确总结节点', () async {
       mockProvider.response = 'This is a summary';
       final node = Node(
         id: '1',
@@ -72,7 +72,7 @@ void main() {
       expect(summary, 'This is a summary');
     });
 
-    test('should throw exception when provider not set for generateNode', () async {
+    test('当未设置provider时generateNode应该抛出异常', () async {
       final service = AIServiceImpl();
       expect(
         () => service.generateNode(prompt: 'test'),
@@ -80,7 +80,7 @@ void main() {
       );
     });
 
-    test('should throw exception when provider not set for summarizeNode', () async {
+    test('当未设置provider时summarizeNode应该抛出异常', () async {
       final service = AIServiceImpl();
       final node = Node(
         id: '1',
@@ -100,7 +100,7 @@ void main() {
       );
     });
 
-    test('should suggest connections based on similarity', () async {
+    test('应该基于相似性建议连接', () async {
       final nodes = [
         Node(
           id: '1',
@@ -133,7 +133,7 @@ void main() {
       expect(suggestions[0].relationType, 'relatesTo');
     });
 
-    test('should limit suggestions by maxSuggestions', () async {
+    test('应该通过maxSuggestions限制建议数量', () async {
       final nodes = List.generate(
         15,
         (i) => Node(
@@ -156,7 +156,7 @@ void main() {
       expect(suggestions.length, lessThanOrEqualTo(5));
     });
 
-    test('should analyze node correctly', () async {
+    test('应该正确分析节点', () async {
       mockProvider.response = 'Analysis result';
       final node = Node(
         id: '1',
@@ -178,7 +178,7 @@ void main() {
       expect(analysis.sentiment, 'neutral');
     });
 
-    test('should generate graph summary correctly', () async {
+    test('应该正确生成图谱摘要', () async {
       mockProvider.response = 'Graph summary text';
       final nodes = [
         Node(
@@ -222,7 +222,7 @@ void main() {
       expect(summary.connectionCount, 1);
     });
 
-    test('should suggest node topics correctly', () async {
+    test('应该正确建议节点主题', () async {
       mockProvider.response = 'Topic 1\nTopic 2\nTopic 3\nTopic 4\nTopic 5';
       final nodes = [
         Node(
@@ -244,7 +244,7 @@ void main() {
       expect(topics, contains('Topic 5'));
     });
 
-    test('should throw exception when provider not set for analyzeNode', () async {
+    test('当未设置provider时analyzeNode应该抛出异常', () async {
       final service = AIServiceImpl();
       final node = Node(
         id: '1',
@@ -264,7 +264,7 @@ void main() {
       );
     });
 
-    test('should throw exception when provider not set for suggestConnections', () async {
+    test('当未设置provider时suggestConnections应该抛出异常', () async {
       final service = AIServiceImpl();
       final nodes = [
         Node(
@@ -286,7 +286,7 @@ void main() {
       );
     });
 
-    test('should calculate similarity correctly for identical titles', () {
+    test('对于相同标题应该正确计算相似度', () {
       final node1 = Node(
         id: '1',
         title: 'Test Node',
@@ -323,17 +323,17 @@ void main() {
       mockService = MockAIService();
     });
 
-    test('should have correct initial state', () {
+    test('应该具有正确的初始状态', () {
       expect(mockService.isAvailable, true);
       expect(mockService.serviceName, 'Mock AI Service');
     });
 
-    test('should be unavailable when configured', () {
+    test('当配置为不可用时应该不可用', () {
       final unavailableService = MockAIService(available: false);
       expect(unavailableService.isAvailable, false);
     });
 
-    test('should generate mock node', () async {
+    test('应该生成模拟节点', () async {
       final node = await mockService.generateNode(prompt: 'Test prompt');
 
       expect(node.title, 'Mock Node');
@@ -341,7 +341,7 @@ void main() {
       expect(node.id, isNotEmpty);
     });
 
-    test('should summarize mock node', () async {
+    test('应该总结模拟节点', () async {
       final node = Node(
         id: '1',
         title: 'Test Node',
@@ -358,7 +358,7 @@ void main() {
       expect(summary, 'Mock summary for Test Node');
     });
 
-    test('should suggest mock connections', () async {
+    test('应该建议模拟连接', () async {
       final nodes = [
         Node(
           id: '1',
@@ -391,7 +391,7 @@ void main() {
       expect(suggestions[0].confidence, 0.8);
     });
 
-    test('should analyze mock node', () async {
+    test('应该分析模拟节点', () async {
       final node = Node(
         id: '1',
         title: 'Test Node Title',
@@ -411,7 +411,7 @@ void main() {
       expect(analysis.topics, ['Topic 1', 'Topic 2']);
     });
 
-    test('should generate mock graph summary', () async {
+    test('应该生成模拟图谱摘要', () async {
       final nodes = [
         Node(
           id: '1',
@@ -433,7 +433,7 @@ void main() {
       expect(summary.connectionCount, 0);
     });
 
-    test('should suggest mock node topics', () async {
+    test('应该建议模拟节点主题', () async {
       final nodes = [
         Node(
           id: '1',
@@ -454,7 +454,7 @@ void main() {
       expect(topics, contains('New Topic 3'));
     });
 
-    test('should return empty list for extract concepts', () async {
+    test('extractConcepts应该返回空列表', () async {
       final concepts = await mockService.extractConcepts(
         nodes: [],
         connections: [],
@@ -462,12 +462,12 @@ void main() {
       expect(concepts, isEmpty);
     });
 
-    test('should return empty list for intelligent split', () async {
+    test('intelligentSplit应该返回空列表', () async {
       final nodes = await mockService.intelligentSplit(markdown: 'Test markdown');
       expect(nodes, isEmpty);
     });
 
-    test('should answer mock question', () async {
+    test('应该回答模拟问题', () async {
       final nodes = [
         Node(
           id: '1',
@@ -489,7 +489,7 @@ void main() {
       expect(answer, 'Mock answer to: What is this?');
     });
 
-    test('should limit mock suggestions', () async {
+    test('应该限制模拟建议数量', () async {
       final nodes = List.generate(
         5,
         (i) => Node(

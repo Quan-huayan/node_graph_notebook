@@ -43,7 +43,7 @@ void main() {
       );
     });
 
-    test('should validate successfully when all directories exist', () async {
+    test('当所有目录存在时应该成功验证', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -69,7 +69,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect missing storage directory', () async {
+    test('应该检测到缺失的存储目录', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -94,7 +94,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect missing nodes directory', () async {
+    test('应该检测到缺失的节点目录', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/graphs').createSync();
@@ -119,7 +119,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect missing graphs directory', () async {
+    test('应该检测到缺失的图目录', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -144,7 +144,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect index mismatch', () async {
+    test('应该检测到索引不匹配', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -192,7 +192,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect node validation failure', () async {
+    test('应该检测到节点验证失败', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -216,7 +216,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect invalid current graph setting', () async {
+    test('应该检测到无效的当前图设置', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -244,7 +244,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect graph validation failure', () async {
+    test('应该检测到图验证失败', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -269,7 +269,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should detect multiple issues', () async {
+    test('应该检测到多个问题', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/graphs').createSync();
@@ -307,7 +307,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should return failure when validation fails', () async {
+    test('验证失败时应该返回失败结果', () async {
       when(mockStoragePathService.getStoragePath()).thenThrow(Exception('Storage path error'));
 
       final command = ValidateDataCommand();
@@ -317,7 +317,7 @@ void main() {
       expect(result.error, contains('验证失败'));
     });
 
-    test('should include issues list in result', () async {
+    test('结果中应该包含问题列表', () async {
       final tempDir = Directory.systemTemp.createTempSync('validate_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/graphs').createSync();

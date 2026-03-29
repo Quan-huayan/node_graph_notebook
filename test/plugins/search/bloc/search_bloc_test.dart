@@ -79,7 +79,7 @@ void main() {
       }
     });
 
-    test('initial state is correct', () {
+    test('初始状态正确', () {
       expect(searchBloc.state.results, isEmpty);
       expect(searchBloc.state.presets, isEmpty);
       expect(searchBloc.state.isLoading, false);
@@ -88,7 +88,7 @@ void main() {
       expect(searchBloc.state.error, null);
     });
 
-    test('should load presets on initialization', () async {
+    test('初始化时应加载预设', () async {
       final presets = [
         SearchPreset(
           id: '1',
@@ -111,7 +111,7 @@ void main() {
       expect(searchBloc.state.presets, equals(presets));
     });
 
-    test('should handle SearchPerformEvent with empty query', () async {
+    test('处理空查询的 SearchPerformEvent', () async {
       const query = SearchQuery(searchText: '');
 
       await Future.delayed(const Duration(milliseconds: 100));
@@ -125,7 +125,7 @@ void main() {
       expect(searchBloc.state.isLoading, false);
     });
 
-    test('should handle SearchPerformEvent with searchText', () async {
+    test('处理带 searchText 的 SearchPerformEvent', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -165,7 +165,7 @@ void main() {
       expect(searchBloc.state.results.any((n) => n.title.toLowerCase().contains('test')), true);
     });
 
-    test('should handle SearchPerformEvent with titleQuery', () async {
+    test('处理带 titleQuery 的 SearchPerformEvent', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -174,7 +174,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -199,7 +199,7 @@ void main() {
       expect(searchBloc.state.results.first.title.toLowerCase().contains('test'), true);
     });
 
-    test('should handle SearchPerformEvent with contentQuery', () async {
+    test('处理带 contentQuery 的 SearchPerformEvent', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -208,7 +208,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -233,7 +233,7 @@ void main() {
       expect(searchBloc.state.results.first.content!.toLowerCase().contains('test'), true);
     });
 
-    test('should handle SearchPerformEvent with tags', () async {
+    test('处理带 tags 的 SearchPerformEvent', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -242,7 +242,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -267,7 +267,7 @@ void main() {
       expect(searchBloc.state.results.first.content!.contains('#important'), true);
     });
 
-    test('should handle SearchPerformEvent with isFolder filter', () async {
+    test('处理带 isFolder 过滤器的 SearchPerformEvent', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -276,7 +276,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -301,7 +301,7 @@ void main() {
       expect(searchBloc.state.results.first.isFolder, true);
     });
 
-    test('should handle SearchPerformEvent with date filters', () async {
+    test('处理带日期过滤器的 SearchPerformEvent', () async {
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
 
@@ -312,7 +312,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -337,7 +337,7 @@ void main() {
       expect(searchBloc.state.results.first.id, '2');
     });
 
-    test('should handle SearchPerformEvent with error', () async {
+    test('处理出错的 SearchPerformEvent', () async {
       when(mockNodeService.getAllNodes()).thenThrow(Exception('Test error'));
 
       await Future.delayed(const Duration(milliseconds: 100));
@@ -351,7 +351,7 @@ void main() {
       expect(searchBloc.state.error, isNotNull);
     });
 
-    test('should handle SearchLoadPresetsEvent', () async {
+    test('处理 SearchLoadPresetsEvent', () async {
       final presets = [
         SearchPreset(
           id: '1',
@@ -377,7 +377,7 @@ void main() {
       expect(searchBloc.state.error, null);
     });
 
-    test('should handle SearchSavePresetEvent successfully', () async {
+    test('成功处理 SearchSavePresetEvent', () async {
       const query = SearchQuery(
         titleQuery: 'test',
         contentQuery: 'content',
@@ -426,7 +426,7 @@ void main() {
       expect(searchBloc.state.error, null);
     });
 
-    test('should handle SearchSavePresetEvent with failure', () async {
+    test('处理失败的 SearchSavePresetEvent', () async {
       const query = SearchQuery(searchText: 'test');
 
       when(mockCommandBus.dispatch(any)).thenAnswer(
@@ -443,7 +443,7 @@ void main() {
       expect(searchBloc.state.error, 'Save failed');
     });
 
-    test('should handle SearchLoadPresetEvent', () async {
+    test('处理 SearchLoadPresetEvent', () async {
       final preset = SearchPreset(
         id: '1',
         name: 'Test Preset',
@@ -459,7 +459,7 @@ void main() {
       ];
 
       when(mockPresetService.updateLastUsed('1')).thenAnswer((_) async {});
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -484,7 +484,7 @@ void main() {
       verify(mockPresetService.updateLastUsed('1')).called(1);
     });
 
-    test('should handle SearchDeletePresetEvent successfully', () async {
+    test('成功处理 SearchDeletePresetEvent', () async {
       final preset = SearchPreset(
         id: '1',
         name: 'Test Preset',
@@ -522,7 +522,7 @@ void main() {
       expect(searchBloc.state.error, null);
     });
 
-    test('should handle SearchDeletePresetEvent with failure', () async {
+    test('处理失败的 SearchDeletePresetEvent', () async {
       final preset = SearchPreset(
         id: '1',
         name: 'Test Preset',
@@ -543,7 +543,7 @@ void main() {
       expect(searchBloc.state.error, 'Delete failed');
     });
 
-    test('should handle SearchClearEvent', () async {
+    test('处理 SearchClearEvent', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -551,7 +551,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -580,7 +580,7 @@ void main() {
       expect(searchBloc.state.error, null);
     });
 
-    test('should handle case-insensitive search', () async {
+    test('处理不区分大小写的搜索', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -589,7 +589,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );
@@ -613,7 +613,7 @@ void main() {
       expect(searchBloc.state.results.isNotEmpty, true);
     });
 
-    test('should handle multiple tag filtering', () async {
+    test('处理多标签过滤', () async {
       final nodes = <Node>[
         createTestNode(
           id: '1',
@@ -622,7 +622,7 @@ void main() {
         ),
       ];
 
-      // Mock QueryBus to return filtered results
+      // 模拟 QueryBus 返回过滤后的结果
       when(mockQueryBus.dispatch<List<Node>, AdvancedSearchQuery>(any)).thenAnswer(
         (_) async => QueryResult<List<Node>>.success(nodes),
       );

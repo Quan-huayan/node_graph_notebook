@@ -13,10 +13,10 @@ class CounterCommand extends Command<int> {
   final int delayMs;
 
   @override
-  String get name => 'CounterCommand';
+  String get name => '计数命令';
 
   @override
-  String get description => 'Increments a counter';
+  String get description => '递增计数器';
 
   @override
   Future<CommandResult<int>> execute(CommandContext context) async {
@@ -53,15 +53,15 @@ class SlowCommand extends Command<String> {
   final int durationMs;
 
   @override
-  String get name => 'SlowCommand';
+  String get name => '慢速命令';
 
   @override
-  String get description => 'A slow command';
+  String get description => '一个慢速命令';
 
   @override
   Future<CommandResult<String>> execute(CommandContext context) async {
     await Future.delayed(Duration(milliseconds: durationMs));
-    return CommandResult.success('Completed after ${durationMs}ms');
+    return CommandResult.success('在 ${durationMs}ms 后完成');
   }
 }
 
@@ -73,21 +73,21 @@ class SlowCommandHandler extends CommandHandler<SlowCommand> {
     CommandContext context,
   ) async {
     await Future.delayed(Duration(milliseconds: command.durationMs));
-    return CommandResult.success('Completed');
+    return CommandResult.success('已完成');
   }
 }
 
 /// 错误命令 - 用于测试错误处理
 class ErrorCommand extends Command<void> {
-  ErrorCommand({this.errorMessage = 'Error'});
+  ErrorCommand({this.errorMessage = '错误'});
 
   final String errorMessage;
 
   @override
-  String get name => 'ErrorCommand';
+  String get name => '错误命令';
 
   @override
-  String get description => 'A command that throws error';
+  String get description => '一个抛出错误的命令';
 
   @override
   Future<CommandResult<void>> execute(CommandContext context) async {
@@ -171,7 +171,7 @@ void main() {
     });
 
     group('高并发命令分发测试', () {
-      test('should handle many concurrent commands', () async {
+      test('应该处理大量并发命令', () async {
         commandBus.registerHandler(CounterCommandHandler(), CounterCommand);
 
         const commandCount = 100;
@@ -187,7 +187,7 @@ void main() {
         expect(results.every((r) => r.isSuccess), true);
       });
 
-      test('should handle rapid sequential dispatch', () async {
+      test('应该处理快速顺序分发', () async {
         commandBus.registerHandler(CounterCommandHandler(), CounterCommand);
 
         const iterations = 200;
@@ -198,7 +198,7 @@ void main() {
         }
       });
 
-      test('should handle mixed fast and slow commands', () async {
+      test('应该处理混合的快慢命令', () async {
         commandBus
           ..registerHandler(CounterCommandHandler(), CounterCommand)
           ..registerHandler(SlowCommandHandler(), SlowCommand);
@@ -219,7 +219,7 @@ void main() {
     });
 
     group('并发错误处理测试', () {
-      test('should handle errors in concurrent commands', () async {
+      test('应该处理并发命令中的错误', () async {
         commandBus
           ..registerHandler(CounterCommandHandler(), CounterCommand)
           ..registerHandler(ErrorCommandHandler(), ErrorCommand);
@@ -241,7 +241,7 @@ void main() {
         expect(results[4].isSuccess, true);
       });
 
-      test('should continue operating after command failure', () async {
+      test('应该在命令失败后继续运行', () async {
         commandBus.registerHandler(ErrorCommandHandler(), ErrorCommand);
 
         // 第一个命令失败
@@ -255,7 +255,7 @@ void main() {
         expect(result2.data, 5);
       });
 
-      test('should handle all failing commands gracefully', () async {
+      test('应该优雅地处理所有失败的命令', () async {
         commandBus.registerHandler(ErrorCommandHandler(), ErrorCommand);
 
         const failureCount = 50;
@@ -275,7 +275,7 @@ void main() {
     });
 
     group('中间件并发测试', () {
-      test('should execute middleware correctly under concurrency', () async {
+      test('应该在并发下正确执行中间件', () async {
         final middleware = ConcurrentCountingMiddleware();
         commandBus
           ..addMiddleware(middleware)
@@ -294,7 +294,7 @@ void main() {
         expect(middleware.afterCount, commandCount);
       });
 
-      test('should maintain middleware execution order', () async {
+      test('应该保持中间件执行顺序', () async {
         final middleware = DelayMiddleware(delayMs: 5);
         commandBus
           ..addMiddleware(middleware)
@@ -311,7 +311,7 @@ void main() {
         expect(middleware.executionOrder[5], contains('after'));
       });
 
-      test('should handle multiple middlewares under concurrency', () async {
+      test('应该在并发下处理多个中间件', () async {
         final middleware1 = ConcurrentCountingMiddleware();
         final middleware2 = ConcurrentCountingMiddleware();
 
@@ -337,7 +337,7 @@ void main() {
     });
 
     group('事件流并发测试', () {
-      test('should emit events for concurrent commands', () async {
+      test('应该为并发命令发出事件', () async {
         commandBus.registerHandler(CounterCommandHandler(), CounterCommand);
 
         final events = <CommandEvent>[];
@@ -363,7 +363,7 @@ void main() {
         expect(succeededCount, commandCount);
       });
 
-      test('should handle multiple subscribers', () async {
+      test('应该处理多个订阅者', () async {
         commandBus.registerHandler(CounterCommandHandler(), CounterCommand);
 
         final events1 = <CommandEvent>[];
@@ -386,17 +386,20 @@ void main() {
     });
 
     group('资源管理边界测试', () {
-      test('should handle disposal during command execution', () async {
+      test('应该在命令执行期间处理释放', () async {
         commandBus.registerHandler(SlowCommandHandler(), SlowCommand);
 
-        // 启动一个慢速命令
-        await commandBus.dispatch(SlowCommand(durationMs: 500));
+        // 启动一个慢速命令（不等待完成）
+        final future = commandBus.dispatch(SlowCommand(durationMs: 500));
 
         // 等待命令开始执行
         await Future.delayed(const Duration(milliseconds: 50));
 
         // 释放命令总线
         commandBus.dispose();
+
+        // 等待命令完成（应该正常完成或抛出异常）
+        await expectLater(future, throwsA(anything));
 
         // 验证后续操作会失败
         expect(
@@ -405,7 +408,7 @@ void main() {
         );
       });
 
-      test('should reject commands after disposal', () async {
+      test('应该在释放后拒绝命令', () async {
         commandBus.dispose();
 
         expect(
@@ -414,7 +417,7 @@ void main() {
         );
       });
 
-      test('should handle multiple disposals gracefully', () {
+      test('应该优雅地处理多次释放', () {
         commandBus.dispose();
         commandBus.dispose(); // 第二次不应该抛出错误
 
@@ -426,7 +429,7 @@ void main() {
     });
 
     group('处理器注册边界测试', () {
-      test('should handle handler override', () async {
+      test('应该处理处理器覆盖', () async {
         // 注册第一个处理器
         commandBus.registerHandler(CounterCommandHandler(), CounterCommand);
 
@@ -437,7 +440,7 @@ void main() {
         expect(result.isSuccess, true);
       });
 
-      test('should handle many handler registrations', () async {
+      test('应该处理大量处理器注册', () async {
         // 注册大量处理器
         for (var i = 0; i < 100; i++) {
           // 创建不同的命令类型

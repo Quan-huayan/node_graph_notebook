@@ -2,15 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:node_graph_notebook/core/repositories/metadata_index.dart';
 
 void main() {
-  group('PositionInfo', () {
-    test('should create PositionInfo with correct properties', () {
+  group('PositionInfo - 位置信息', () {
+    test('应该使用正确的属性创建PositionInfo', () {
       const position = PositionInfo(dx: 100, dy: 200);
 
       expect(position.dx, 100.0);
       expect(position.dy, 200.0);
     });
 
-    test('should serialize to JSON', () {
+    test('应该序列化为JSON', () {
       const position = PositionInfo(dx: 100, dy: 200);
       final json = position.toJson();
 
@@ -18,7 +18,7 @@ void main() {
       expect(json['dy'], 200.0);
     });
 
-    test('should deserialize from JSON', () {
+    test('应该从JSON反序列化', () {
       final json = {'dx': 100.0, 'dy': 200.0};
       final position = PositionInfo.fromJson(json);
 
@@ -26,7 +26,7 @@ void main() {
       expect(position.dy, 200.0);
     });
 
-    test('should have correct equality', () {
+    test('应该具有正确的相等性', () {
       const position1 = PositionInfo(dx: 100, dy: 200);
       const position2 = PositionInfo(dx: 100, dy: 200);
       const position3 = PositionInfo(dx: 300, dy: 400);
@@ -35,7 +35,7 @@ void main() {
       expect(position1 == position3, false);
     });
 
-    test('should have correct hashCode', () {
+    test('应该具有正确的hashCode', () {
       const position1 = PositionInfo(dx: 100, dy: 200);
       const position2 = PositionInfo(dx: 100, dy: 200);
 
@@ -43,15 +43,15 @@ void main() {
     });
   });
 
-  group('SizeInfo', () {
-    test('should create SizeInfo with correct properties', () {
+  group('SizeInfo - 尺寸信息', () {
+    test('应该使用正确的属性创建SizeInfo', () {
       const size = SizeInfo(width: 300, height: 400);
 
       expect(size.width, 300.0);
       expect(size.height, 400.0);
     });
 
-    test('should serialize to JSON', () {
+    test('应该序列化为JSON', () {
       const size = SizeInfo(width: 300, height: 400);
       final json = size.toJson();
 
@@ -59,7 +59,7 @@ void main() {
       expect(json['height'], 400.0);
     });
 
-    test('should deserialize from JSON', () {
+    test('应该从JSON反序列化', () {
       final json = {'width': 300.0, 'height': 400.0};
       final size = SizeInfo.fromJson(json);
 
@@ -67,7 +67,7 @@ void main() {
       expect(size.height, 400.0);
     });
 
-    test('should have correct equality', () {
+    test('应该具有正确的相等性', () {
       const size1 = SizeInfo(width: 300, height: 400);
       const size2 = SizeInfo(width: 300, height: 400);
       const size3 = SizeInfo(width: 500, height: 600);
@@ -76,7 +76,7 @@ void main() {
       expect(size1 == size3, false);
     });
 
-    test('should have correct hashCode', () {
+    test('应该具有正确的hashCode', () {
       const size1 = SizeInfo(width: 300, height: 400);
       const size2 = SizeInfo(width: 300, height: 400);
 
@@ -84,14 +84,14 @@ void main() {
     });
   });
 
-  group('NodeMetadata', () {
+  group('NodeMetadata - 节点元数据', () {
     late DateTime now;
 
     setUp(() {
       now = DateTime.now();
     });
 
-    test('should create NodeMetadata with correct properties', () {
+    test('应该使用正确的属性创建NodeMetadata', () {
       const position = PositionInfo(dx: 100, dy: 200);
       const size = SizeInfo(width: 300, height: 400);
 
@@ -116,7 +116,7 @@ void main() {
       expect(metadata.updatedAt, now);
     });
 
-    test('should serialize to JSON', () {
+    test('应该序列化为JSON', () {
       const position = PositionInfo(dx: 100, dy: 200);
       const size = SizeInfo(width: 300, height: 400);
 
@@ -143,7 +143,7 @@ void main() {
       expect(json['updatedAt'], isNotNull);
     });
 
-    test('should deserialize from JSON', () {
+    test('应该从JSON反序列化', () {
       final json = {
         'id': 'node_1',
         'title': 'Test Node',
@@ -167,7 +167,7 @@ void main() {
       expect(metadata.referencedNodeIds, ['node_2', 'node_3']);
     });
 
-    test('should have correct equality based on id', () {
+    test('应该基于id具有正确的相等性', () {
       const position = PositionInfo(dx: 100, dy: 200);
       const size = SizeInfo(width: 300, height: 400);
 
@@ -208,7 +208,7 @@ void main() {
       expect(metadata1 == metadata3, false);
     });
 
-    test('should have correct hashCode based on id', () {
+    test('应该基于id具有正确的hashCode', () {
       const position = PositionInfo(dx: 100, dy: 200);
       const size = SizeInfo(width: 300, height: 400);
 
@@ -237,7 +237,7 @@ void main() {
       expect(metadata1.hashCode, metadata2.hashCode);
     });
 
-    test('should handle empty referencedNodeIds', () {
+    test('应该处理空的referencedNodeIds', () {
       const position = PositionInfo(dx: 100, dy: 200);
       const size = SizeInfo(width: 300, height: 400);
 
@@ -256,14 +256,14 @@ void main() {
     });
   });
 
-  group('MetadataIndex', () {
+  group('MetadataIndex - 元数据索引', () {
     late DateTime now;
 
     setUp(() {
       now = DateTime.now();
     });
 
-    test('should create MetadataIndex with correct properties', () {
+    test('应该使用正确的属性创建MetadataIndex', () {
       const position1 = PositionInfo(dx: 100, dy: 200);
       const size1 = SizeInfo(width: 300, height: 400);
 
@@ -302,7 +302,7 @@ void main() {
       expect(index.lastUpdated, now);
     });
 
-    test('should create empty MetadataIndex', () {
+    test('应该创建空的MetadataIndex', () {
       final index = MetadataIndex(
         nodes: [],
         lastUpdated: now,
@@ -312,7 +312,7 @@ void main() {
       expect(index.lastUpdated, now);
     });
 
-    test('should serialize to JSON', () {
+    test('应该序列化为JSON', () {
       const position = PositionInfo(dx: 100, dy: 200);
       const size = SizeInfo(width: 300, height: 400);
 
@@ -341,7 +341,7 @@ void main() {
       expect(json['lastUpdated'], isNotNull);
     });
 
-    test('should deserialize from JSON', () {
+    test('应该从JSON反序列化', () {
       final json = {
         'nodes': [
           {
@@ -365,7 +365,7 @@ void main() {
       expect(index.lastUpdated, isNotNull);
     });
 
-    test('should handle multiple nodes in index', () {
+    test('应该处理索引中的多个节点', () {
       const position1 = PositionInfo(dx: 100, dy: 200);
       const size1 = SizeInfo(width: 300, height: 400);
 
@@ -418,7 +418,7 @@ void main() {
       expect(index.nodes[1].referencedNodeIds.isEmpty, true);
     });
 
-    test('should round-trip serialization', () {
+    test('应该完成序列化往返', () {
       const position = PositionInfo(dx: 100, dy: 200);
       const size = SizeInfo(width: 300, height: 400);
 

@@ -70,13 +70,13 @@ void main() {
     });
 
     group('registerService - 服务注册', () {
-      test('should register service successfully', () {
+      test('应该成功注册服务', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         expect(registry.isRegistered<TestService>(), true);
       });
 
-      test('should throw exception when registering same service twice', () {
+      test('当重复注册相同服务时应该抛出异常', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         expect(
@@ -85,14 +85,14 @@ void main() {
         );
       });
 
-      test('should instantiate service immediately by default', () {
+      test('默认应该立即实例化服务', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         final service = registry.getServiceDirect<TestService>();
         expect(service.name, 'test');
       });
 
-      test('should track plugin services', () {
+      test('应该跟踪插件服务', () {
         registry.registerService('plugin_a', TestServiceBinding('service_a'));
 
         final services = registry.getPluginServices('plugin_a');
@@ -101,7 +101,7 @@ void main() {
     });
 
     group('unregisterPluginServices - 服务注销', () {
-      test('should unregister all plugin services', () {
+      test('应该注销所有插件服务', () {
         registry
           ..registerService('test_plugin', TestServiceBinding('test'))
           ..unregisterPluginServices('test_plugin');
@@ -109,7 +109,7 @@ void main() {
         expect(registry.isRegistered<TestService>(), false);
       });
 
-      test('should dispose services when unregistering', () {
+      test('注销时应该处置服务', () {
         registry
           ..registerService('test_plugin', TestDisposableServiceBinding())
           ..unregisterPluginServices('test_plugin');
@@ -117,7 +117,7 @@ void main() {
         expect(registry.isRegistered<TestDisposableService>(), false);
       });
 
-      test('should handle non-existent plugin gracefully', () {
+      test('应该优雅地处理不存在的插件', () {
         expect(
           () => registry.unregisterPluginServices('non_existent'),
           returnsNormally,
@@ -126,13 +126,13 @@ void main() {
     });
 
     group('lazy loading - 懒加载', () {
-      test('should not instantiate lazy service on registration', () {
+      test('注册时不应该实例化懒加载服务', () {
         registry.registerService('test_plugin', TestLazyServiceBinding('lazy'));
 
         expect(registry.isRegistered<TestLazyService>(), true);
       });
 
-      test('should instantiate lazy service on first request', () {
+      test('第一次请求时应该实例化懒加载服务', () {
         registry.registerService('test_plugin', TestLazyServiceBinding('lazy'));
 
         final service = registry.getServiceDirect<TestLazyService>();
@@ -141,12 +141,12 @@ void main() {
     });
 
     group('getService - 服务获取', () {
-      test('should return null for non-existent service', () {
+      test('对于不存在的服务应该返回null', () {
         final service = registry.getService<TestService>();
         expect(service, isNull);
       });
 
-      test('should return service instance', () {
+      test('应该返回服务实例', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         final service = registry.getService<TestService>();
@@ -154,7 +154,7 @@ void main() {
         expect(service!.name, 'test');
       });
 
-      test('should return same instance for singleton', () {
+      test('对于单例应该返回相同的实例', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         final service1 = registry.getService<TestService>();
@@ -165,14 +165,14 @@ void main() {
     });
 
     group('getServiceDirect - 直接服务获取', () {
-      test('should throw exception for non-existent service', () {
+      test('对于不存在的服务应该抛出异常', () {
         expect(
           () => registry.getServiceDirect<TestService>(),
           throwsA(isA<ServiceNotFoundException>()),
         );
       });
 
-      test('should return service instance', () {
+      test('应该返回服务实例', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         final service = registry.getServiceDirect<TestService>();
@@ -181,17 +181,17 @@ void main() {
     });
 
     group('hasService - 服务可用性检查', () {
-      test('should return false for non-existent service', () {
+      test('对于不存在的服务应该返回false', () {
         expect(registry.hasService<TestService>(), false);
       });
 
-      test('should return true for registered service', () {
+      test('对于已注册的服务应该返回true', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         expect(registry.hasService<TestService>(), true);
       });
 
-      test('should return true for lazy service', () {
+      test('对于懒加载服务应该返回true', () {
         registry.registerService('test_plugin', TestLazyServiceBinding('lazy'));
 
         expect(registry.hasService<TestLazyService>(), true);
@@ -199,12 +199,12 @@ void main() {
     });
 
     group('generateProviders - Provider 生成', () {
-      test('should return empty list when no services registered', () {
+      test('当没有服务注册时应该返回空列表', () {
         final providers = registry.generateProviders();
         expect(providers, isEmpty);
       });
 
-      test('should return providers for registered services', () {
+      test('应该为已注册的服务返回providers', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
 
         final providers = registry.generateProviders();
@@ -213,7 +213,7 @@ void main() {
     });
 
     group('core dependencies - 核心依赖', () {
-      test('should provide core dependencies to services', () {
+      test('应该向服务提供核心依赖', () {
         final coreDeps = <Type, dynamic>{
           String: 'core_value',
         };
@@ -224,7 +224,7 @@ void main() {
     });
 
     group('change notification - 变更通知', () {
-      test('should notify listeners on service registration', () {
+      test('服务注册时应该通知监听器', () {
         var notified = false;
         registry
           ..addListener(() {
@@ -235,7 +235,7 @@ void main() {
         expect(notified, true);
       });
 
-      test('should notify listeners on service unregistration', () {
+      test('服务注销时应该通知监听器', () {
         registry.registerService('test_plugin', TestServiceBinding('test'));
         var notified = false;
         registry
@@ -249,7 +249,7 @@ void main() {
     });
 
     group('clear - 清空', () {
-      test('should clear all services', () {
+      test('应该清空所有服务', () {
         registry
           ..registerService('test_plugin', TestServiceBinding('test'))
           ..clear();

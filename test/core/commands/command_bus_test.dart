@@ -5,25 +5,25 @@ import 'package:node_graph_notebook/core/commands/models/command_context.dart';
 import 'package:node_graph_notebook/core/commands/models/command_handler.dart';
 import 'package:node_graph_notebook/core/commands/models/middleware.dart';
 
-// Mock command class
+// 模拟命令类
 class MockCommand extends Command<dynamic> {
   @override
   Future<CommandResult<dynamic>> execute(CommandContext context) async => CommandResult.success();
 
   @override
-  String get name => 'MockCommand';
+  String get name => '模拟命令';
 
   @override
-  String get description => 'Mock command for testing';
+  String get description => '用于测试的模拟命令';
 }
 
-// Mock command handler
+// 模拟命令处理器
 class MockCommandHandler extends CommandHandler<MockCommand> {
   @override
   Future<CommandResult> execute(MockCommand command, CommandContext context) async => CommandResult.success();
 }
 
-// Mock middleware
+// 模拟中间件
 class MockMiddleware extends CommandMiddleware {
   int beforeCount = 0;
   int afterCount = 0;
@@ -35,25 +35,25 @@ class MockMiddleware extends CommandMiddleware {
   Future<void> processAfter(Command command, CommandContext context, CommandResult result) async => afterCount++;
 }
 
-// Error command for testing
+// 用于测试的错误命令
 class ErrorCommand extends Command<dynamic> {
   @override
   Future<CommandResult<dynamic>> execute(CommandContext context) async => throw Exception('Command error');
 
   @override
-  String get name => 'ErrorCommand';
+  String get name => '错误命令';
 
   @override
-  String get description => 'Command that throws error';
+  String get description => '抛出错误的命令';
 }
 
-// Error command handler
+// 错误命令处理器
 class ErrorCommandHandler extends CommandHandler<ErrorCommand> {
   @override
   Future<CommandResult> execute(ErrorCommand command, CommandContext context) async => command.execute(context);
 }
 
-// Undoable command
+// 可撤销命令
 class UndoableCommand extends Command<dynamic> {
   bool undone = false;
 
@@ -64,13 +64,13 @@ class UndoableCommand extends Command<dynamic> {
   Future<void> undo(CommandContext context) async => undone = true;
 
   @override
-  String get name => 'UndoableCommand';
+  String get name => '可撤销命令';
 
   @override
-  String get description => 'Command that can be undone';
+  String get description => '可以撤销的命令';
 }
 
-// Non-undoable command
+// 不可撤销命令
 class NonUndoableCommand extends Command<dynamic> {
   @override
   Future<CommandResult<dynamic>> execute(CommandContext context) async => CommandResult.success();
@@ -79,13 +79,13 @@ class NonUndoableCommand extends Command<dynamic> {
   bool get isUndoable => false;
 
   @override
-  String get name => 'NonUndoableCommand';
+  String get name => '不可撤销命令';
 
   @override
-  String get description => 'Command that cannot be undone';
+  String get description => '不能撤销的命令';
 }
 
-// Undo error command
+// 撤销错误命令
 class UndoErrorCommand extends Command<dynamic> {
   @override
   Future<CommandResult<dynamic>> execute(CommandContext context) async => CommandResult.success();
@@ -94,10 +94,10 @@ class UndoErrorCommand extends Command<dynamic> {
   Future<void> undo(CommandContext context) async => throw Exception('Undo error');
 
   @override
-  String get name => 'UndoErrorCommand';
+  String get name => '撤销错误命令';
 
   @override
-  String get description => 'Command that throws error on undo';
+  String get description => '在撤销时抛出错误的命令';
 }
 
 void main() {
@@ -112,23 +112,23 @@ void main() {
       commandBus.dispose();
     });
 
-    test('should register and dispatch command successfully', () async {
-      // Register handler
+    test('应该成功注册和分发命令', () async {
+      // 注册处理器
       commandBus.registerHandler(MockCommandHandler(), MockCommand);
 
-      // Dispatch command
+      // 分发命令
       final result = await commandBus.dispatch(MockCommand());
 
       expect(result.isSuccess, true);
     });
 
-    test('should throw error when no handler registered', () async {
+    test('应该在未注册处理器时抛出错误', () async {
       final result = await commandBus.dispatch(MockCommand());
       expect(result.isSuccess, false);
       expect(result.error, contains('CommandHandlerNotFoundException'));
     });
 
-    test('should execute middleware', () async {
+    test('应该执行中间件', () async {
       final middleware = MockMiddleware();
       commandBus
         ..addMiddleware(middleware)
@@ -140,7 +140,7 @@ void main() {
       expect(middleware.afterCount, 1);
     });
 
-    test('should handle command execution error', () async {
+    test('应该处理命令执行错误', () async {
       commandBus.registerHandler(ErrorCommandHandler(), ErrorCommand);
 
       final result = await commandBus.dispatch(ErrorCommand());
@@ -148,7 +148,7 @@ void main() {
       expect(result.error, contains('Command error'));
     });
 
-    test('should undo command if undoable', () async {
+    test('如果可撤销应该撤销命令', () async {
       final command = UndoableCommand();
       commandBus.registerHandler(MockCommandHandler(), UndoableCommand);
 
@@ -158,7 +158,7 @@ void main() {
       expect(command.undone, true);
     });
 
-    test('should throw error when undoing non-undoable command', () async {
+    test('在撤销不可撤销命令时应该抛出错误', () async {
       final command = NonUndoableCommand();
       commandBus.registerHandler(MockCommandHandler(), NonUndoableCommand);
 
@@ -166,7 +166,7 @@ void main() {
       expect(() => commandBus.undo(command), throwsA(isA<UnsupportedError>()));
     });
 
-    test('should handle undo error', () async {
+    test('应该处理撤销错误', () async {
       final command = UndoErrorCommand();
       commandBus.registerHandler(MockCommandHandler(), UndoErrorCommand);
 
@@ -174,21 +174,21 @@ void main() {
       expect(() => commandBus.undo(command), throwsA(isA<Exception>()));
     });
 
-    test('should dispose resources', () {
+    test('应该释放资源', () {
       commandBus.dispose();
       expect(() => commandBus.registerHandler(MockCommandHandler(), MockCommand), throwsA(isA<StateError>()));
     });
 
-    test('should emit command events', () async {
+    test('应该发出命令事件', () async {
       final events = <CommandEvent>[];
       commandBus.commandStream.listen(events.add);
 
       commandBus.registerHandler(MockCommandHandler(), MockCommand);
       await commandBus.dispatch(MockCommand());
 
-      expect(events.length, greaterThanOrEqualTo(1)); // At least CommandStarted
+      expect(events.length, greaterThanOrEqualTo(1)); // 至少应该有 CommandStarted
       expect(events[0], isA<CommandStarted>());
-      // Check if we have CommandSucceeded or CommandFailed
+      // 检查是否有 CommandSucceeded 或 CommandFailed
       if (events.length > 1) {
         expect(events[1], isA<CommandSucceeded>());
       }

@@ -7,7 +7,7 @@ import 'package:node_graph_notebook/plugins/graph/bloc/graph_bloc.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_event.dart';
 import 'package:node_graph_notebook/plugins/graph/bloc/graph_state.dart';
 
-// Mock implementations for integration testing
+// 用于集成测试的 Mock 实现
 class MockGraphRepository implements GraphRepository {
   Graph? _currentGraph;
 
@@ -73,7 +73,7 @@ class MockNodeRepository implements NodeRepository {
 }
 
 void main() {
-  group('Graph Integration Tests', () {
+  group('图集成测试', () {
     late CommandBus commandBus;
     late GraphRepository graphRepository;
     late NodeRepository nodeRepository;
@@ -96,9 +96,9 @@ void main() {
       commandBus.dispose();
     });
 
-    test('should create and initialize a graph', () async {
+    test('应该能够创建并初始化图', () async {
       // 测试创建图
-      graphBloc.add(const GraphCreateEvent('Test Graph'));
+      graphBloc.add(const GraphCreateEvent('测试图'));
       await Future.delayed(const Duration(milliseconds: 100));
 
       // 测试初始化图
@@ -110,9 +110,9 @@ void main() {
       expect(graphBloc.state.loadingState, LoadingState.loaded);
     });
 
-    test('should add and select a node', () async {
+    test('应该能够添加并选择节点', () async {
       // 初始化图
-      graphBloc.add(const GraphCreateEvent('Test Graph'));
+      graphBloc.add(const GraphCreateEvent('测试图'));
       await Future.delayed(const Duration(milliseconds: 100));
 
       // 添加节点
@@ -127,7 +127,7 @@ void main() {
       expect(graphBloc.state.selectionState.selectedNodeIds, contains('test_node'));
     });
 
-    test('should handle view state changes', () async {
+    test('应该能够处理视图状态变化', () async {
       // 切换连接显示
       graphBloc.add(const ViewToggleConnectionsEvent());
       await Future.delayed(const Duration(milliseconds: 50));
@@ -144,7 +144,7 @@ void main() {
       expect(graphBloc.state.viewState.showConnections, true);
     });
 
-    test('should clear selection', () async {
+    test('应该能够清除选择', () async {
       // 选择节点
       graphBloc.add(const NodeSelectEvent('test_node', addToSelection: false));
       await Future.delayed(const Duration(milliseconds: 50));

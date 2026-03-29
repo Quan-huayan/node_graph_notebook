@@ -115,7 +115,7 @@ void main() {
       });
     });
 
-    testWidgets('should display empty state when no nodes or folders', (WidgetTester tester) async {
+    testWidgets('当没有节点或文件夹时应显示空状态', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MultiBlocProvider(
@@ -145,7 +145,7 @@ void main() {
       expect(find.text('No nodes yet'), findsOneWidget);
     });
 
-    testWidgets('should display root nodes', (WidgetTester tester) async {
+    testWidgets('应显示根节点', (WidgetTester tester) async {
       final testState = NodeState.initial().copyWith(nodes: nodes);
       when(mockNodeBloc.state).thenReturn(testState);
 
@@ -179,7 +179,7 @@ void main() {
       expect(find.text('Node 2'), findsOneWidget);
     });
 
-    testWidgets('should display top level folders', (WidgetTester tester) async {
+    testWidgets('应显示顶级文件夹', (WidgetTester tester) async {
       final testState = NodeState.initial().copyWith(nodes: folders);
       when(mockNodeBloc.state).thenReturn(testState);
 
@@ -215,7 +215,7 @@ void main() {
       expect(find.text('Folder 2'), findsOneWidget);
     });
 
-    testWidgets('should display both folders and nodes', (WidgetTester tester) async {
+    testWidgets('应同时显示文件夹和节点', (WidgetTester tester) async {
       final testState = NodeState.initial().copyWith(nodes: [...nodes, ...folders]);
       when(mockNodeBloc.state).thenReturn(testState);
 
@@ -253,7 +253,7 @@ void main() {
       expect(find.text('Node 2'), findsOneWidget);
     });
 
-    testWidgets('should filter out AI nodes', (WidgetTester tester) async {
+    testWidgets('应过滤掉AI节点', (WidgetTester tester) async {
       final aiNode = Node(
         id: 'ai_node',
         title: 'AI Node',
@@ -303,12 +303,12 @@ void main() {
       expect(find.text('AI Node'), findsNothing);
     });
 
-    // Note: Skipping tap callback test due to Draggable/InkWell gesture conflict
-    // The widget structure is correct with InkWell properly configured
-    // Real-world tap behavior works correctly but is difficult to test in isolation
-    // This is better tested as an integration test
+    // 注意：由于Draggable/InkWell手势冲突，跳过点击回调测试
+    // 小部件结构配置正确，InkWell已正确配置
+    // 实际点击行为工作正常，但难以单独测试
+    // 这更适合作为集成测试
 
-    testWidgets('should be draggable', (WidgetTester tester) async {
+    testWidgets('应支持拖拽', (WidgetTester tester) async {
       final testState = NodeState.initial().copyWith(nodes: [...nodes, ...folders]);
       when(mockNodeBloc.state).thenReturn(testState);
 
@@ -342,7 +342,7 @@ void main() {
       expect(draggableFinder, findsWidgets);
     });
 
-    testWidgets('should accept drag target', (WidgetTester tester) async {
+    testWidgets('应接受拖放目标', (WidgetTester tester) async {
       final testState = NodeState.initial().copyWith(nodes: [...nodes, ...folders]);
       when(mockNodeBloc.state).thenReturn(testState);
 
@@ -376,7 +376,7 @@ void main() {
       expect(dragTargetFinder, findsNothing);
     });
 
-    testWidgets('should show divider between folders and nodes', (WidgetTester tester) async {
+    testWidgets('应在文件夹和节点之间显示分隔线', (WidgetTester tester) async {
       final testState = NodeState.initial().copyWith(nodes: [...nodes, ...folders]);
       when(mockNodeBloc.state).thenReturn(testState);
 
@@ -412,7 +412,7 @@ void main() {
   });
 
   group('FolderTreeView - Node Extension', () {
-    test('should identify folder nodes', () {
+    test('应识别文件夹节点', () {
       final folder = Node(
         id: 'folder_1',
         title: 'Folder',
@@ -430,7 +430,7 @@ void main() {
       expect(folder.isFolder, true);
     });
 
-    test('should identify non-folder nodes', () {
+    test('应识别非文件夹节点', () {
       final node = Node(
         id: 'node_1',
         title: 'Node',
@@ -448,7 +448,7 @@ void main() {
       expect(node.isFolder, false);
     });
 
-    test('should handle string boolean for isFolder', () {
+    test('应处理isFolder的字符串布尔值', () {
       final folder = Node(
         id: 'folder_1',
         title: 'Folder',
@@ -501,7 +501,7 @@ void main() {
       );
     });
 
-    test('should get folder children', () {
+    test('应获取文件夹子项', () {
       folder = folder.copyWith(
         references: {
           'node_1': const NodeReference(nodeId: 'node_1', properties: {'type': 'relatesTo'}),
@@ -514,7 +514,7 @@ void main() {
       expect(children.first.id, 'node_1');
     });
 
-    test('should return empty list when folder has no children', () {
+    test('当文件夹没有子项时应返回空列表', () {
       final allNodes = [folder, childNode];
       final children = allNodes.where((node) => folder.references.containsKey(node.id)).toList();
       expect(children, isEmpty);
@@ -575,7 +575,7 @@ void main() {
       folders = [folder];
     });
 
-    test('should get root nodes not in any folder', () {
+    test('应获取不在任何文件夹中的根节点', () {
       final folderContainedIds = folders.expand((folder) => folder.references.keys).toSet();
       final rootNodes = nodes.where((node) => !folderContainedIds.contains(node.id)).toList();
 
@@ -583,7 +583,7 @@ void main() {
       expect(rootNodes.map((n) => n.id).toSet(), {'node_1', 'node_2'});
     });
 
-    test('should exclude nodes in folder from root nodes', () {
+    test('应从根节点中排除文件夹中的节点', () {
       folder = folder.copyWith(
         references: {
           'node_1': const NodeReference(nodeId: 'node_1', properties: {'type': 'relatesTo'}),
@@ -648,12 +648,12 @@ void main() {
       );
     });
 
-    test('should detect circular contains when dragging folder to itself', () {
+    test('当拖拽文件夹到自身时应检测到循环包含', () {
       final hasCircular = folder.id == folder.id;
       expect(hasCircular, true);
     });
 
-    test('should detect circular contains when dragging parent to child', () {
+    test('当拖拽父文件夹到子文件夹时应检测到循环包含', () {
       folder = folder.copyWith(
         references: {
           'subfolder_1': const NodeReference(nodeId: 'subfolder_1', properties: {'type': 'relatesTo'}),
@@ -664,7 +664,7 @@ void main() {
       expect(parentContainsChild, true);
     });
 
-    test('should not detect circular contains for unrelated nodes', () {
+    test('对于不相关的节点不应检测到循环包含', () {
       final hasCircular = node.id == folder.id;
       expect(hasCircular, false);
     });

@@ -108,26 +108,26 @@ void main() {
       await engine.shutdown();
     });
 
-    test('should initialize successfully', () {
+    test('应该成功初始化', () {
       expect(engine.isInitialized, isTrue);
       expect(engine.stats, isA<Map<String, dynamic>>());
     });
 
-    test('should execute CPU task and return result', () async {
+    test('应该执行CPU任务并返回结果', () async {
       final task = TestTask(value: 42);
       final result = await engine.executeCPU(task);
 
       expect(result, equals(42000));
     });
 
-    test('should execute async CPU task', () async {
+    test('应该执行异步CPU任务', () async {
       final task = AsyncTestTask(message: 'Hello');
       final result = await engine.executeCPU(task);
 
       expect(result, equals('Processed: Hello'));
     });
 
-    test('should handle multiple concurrent tasks', () async {
+    test('应该处理多个并发任务', () async {
       final tasks = List.generate(
         10,
         (i) => TestTask(value: i),
@@ -143,7 +143,7 @@ void main() {
       expect(results[9], equals(9000));
     });
 
-    test('should track job statistics', () async {
+    test('应该跟踪任务统计信息', () async {
       final task = TestTask(value: 1);
       await engine.executeCPU(task);
 
@@ -151,7 +151,7 @@ void main() {
       expect(stats, isNotEmpty);
     });
 
-    test('should throw error when executing before initialization', () async {
+    test('在初始化之前执行应该抛出错误', () async {
       final uninitializedEngine = ExecutionEngine();
 
       expect(
@@ -160,7 +160,7 @@ void main() {
       );
     });
 
-    test('should shutdown cleanly', () async {
+    test('应该干净地关闭', () async {
       await engine.shutdown();
 
       expect(
@@ -169,7 +169,7 @@ void main() {
       );
     });
 
-    test('should handle task exceptions gracefully', () async {
+    test('应该优雅地处理任务异常', () async {
       final errors = <Object>[];
       await runZonedGuarded(() async {
         final task = FailingTask();
@@ -189,7 +189,7 @@ void main() {
   });
 
   group('ExecutionEngine with default workers', () {
-    test('should use platform processor count minus 1', () async {
+    test('应该使用平台处理器数量减1', () async {
       final engine = ExecutionEngine();
       final taskRegistry = TaskRegistry()
 

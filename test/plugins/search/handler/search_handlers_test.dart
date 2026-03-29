@@ -26,7 +26,7 @@ void main() {
       handler = SaveSearchPresetHandler(mockService);
     });
 
-    test('should save new preset successfully', () async {
+    test('应成功保存新预设', () async {
       final command = SaveSearchPresetCommand(
         presetName: 'Test Preset',
         titleQuery: 'test',
@@ -54,7 +54,7 @@ void main() {
       verify(mockService.savePreset(any)).called(1);
     });
 
-    test('should update existing preset when id is provided', () async {
+    test('提供 id 时应更新现有预设', () async {
       final command = SaveSearchPresetCommand(
         id: '1',
         presetName: 'Updated Preset',
@@ -78,7 +78,7 @@ void main() {
       expect(result.data!.name, 'Updated Preset');
     });
 
-    test('should fail when preset name is empty', () async {
+    test('预设名称为空时应失败', () async {
       final command = SaveSearchPresetCommand(
         presetName: '   ',
         titleQuery: 'test',
@@ -91,7 +91,7 @@ void main() {
       verifyNever(mockService.savePreset(any));
     });
 
-    test('should fail when preset name is null', () async {
+    test('预设名称为 null 时应失败', () async {
       final command = SaveSearchPresetCommand(
         presetName: '',
         titleQuery: 'test',
@@ -104,7 +104,7 @@ void main() {
       verifyNever(mockService.savePreset(any));
     });
 
-    test('should handle service errors', () async {
+    test('应处理服务错误', () async {
       final command = SaveSearchPresetCommand(
         presetName: 'Test Preset',
         titleQuery: 'test',
@@ -118,7 +118,7 @@ void main() {
       expect(result.error, contains('Exception: Service error'));
     });
 
-    test('should create preset with all parameters', () async {
+    test('应使用所有参数创建预设', () async {
       final command = SaveSearchPresetCommand(
         presetName: 'Complete Preset',
         titleQuery: 'title',
@@ -146,7 +146,7 @@ void main() {
       expect(result.data!.tags, ['tag1', 'tag2', 'tag3']);
     });
 
-    test('should create preset with minimal parameters', () async {
+    test('应使用最少参数创建预设', () async {
       final command = SaveSearchPresetCommand(
         presetName: 'Minimal Preset',
       );
@@ -168,7 +168,7 @@ void main() {
       expect(result.data!.tags, null);
     });
 
-    test('should set createdAt and lastUsed to current time', () async {
+    test('应将 createdAt 和 lastUsed 设置为当前时间', () async {
       final command = SaveSearchPresetCommand(
         presetName: 'Test Preset',
       );
@@ -202,7 +202,7 @@ void main() {
       handler = DeleteSearchPresetHandler(mockService);
     });
 
-    test('should delete existing preset successfully', () async {
+    test('应成功删除现有预设', () async {
       final command = DeleteSearchPresetCommand(id: '1');
 
       final existingPreset = SearchPreset(
@@ -221,7 +221,7 @@ void main() {
       verify(mockService.deletePreset('1')).called(1);
     });
 
-    test('should fail when preset id is empty', () async {
+    test('预设 id 为空时应失败', () async {
       final command = DeleteSearchPresetCommand(id: '   ');
 
       final result = await handler.execute(command, mockContext);
@@ -232,7 +232,7 @@ void main() {
       verifyNever(mockService.deletePreset(any));
     });
 
-    test('should fail when preset id is null', () async {
+    test('预设 id 为 null 时应失败', () async {
       final command = DeleteSearchPresetCommand(id: '');
 
       final result = await handler.execute(command, mockContext);
@@ -243,7 +243,7 @@ void main() {
       verifyNever(mockService.deletePreset(any));
     });
 
-    test('should fail when preset does not exist', () async {
+    test('预设不存在时应失败', () async {
       final command = DeleteSearchPresetCommand(id: '999');
 
       when(mockService.getPreset('999')).thenAnswer((_) async => null);
@@ -256,7 +256,7 @@ void main() {
       verifyNever(mockService.deletePreset(any));
     });
 
-    test('should handle service errors during getPreset', () async {
+    test('应处理 getPreset 期间的服务错误', () async {
       final command = DeleteSearchPresetCommand(id: '1');
 
       when(mockService.getPreset('1')).thenThrow(Exception('Service error'));
@@ -267,7 +267,7 @@ void main() {
       expect(result.error, contains('Exception: Service error'));
     });
 
-    test('should handle service errors during deletePreset', () async {
+    test('应处理 deletePreset 期间的服务错误', () async {
       final command = DeleteSearchPresetCommand(id: '1');
 
       final existingPreset = SearchPreset(
@@ -285,7 +285,7 @@ void main() {
       expect(result.error, contains('Exception: Delete error'));
     });
 
-    test('should handle preset with complex id', () async {
+    test('应处理复杂 id 的预设', () async {
       final command = DeleteSearchPresetCommand(id: 'preset-123-abc');
 
       final existingPreset = SearchPreset(
@@ -304,7 +304,7 @@ void main() {
       verify(mockService.deletePreset('preset-123-abc')).called(1);
     });
 
-    test('should handle deletion of preset with special characters in id', () async {
+    test('应处理删除 id 中包含特殊字符的预设', () async {
       final command = DeleteSearchPresetCommand(id: 'preset_with_underscores');
 
       final existingPreset = SearchPreset(
@@ -335,7 +335,7 @@ void main() {
       deleteHandler = DeleteSearchPresetHandler(mockService);
     });
 
-    test('should handle save and delete workflow', () async {
+    test('应处理保存和删除的工作流程', () async {
       final saveCommand = SaveSearchPresetCommand(
         presetName: 'Workflow Preset',
         titleQuery: 'test',
@@ -365,7 +365,7 @@ void main() {
       verify(mockService.deletePreset('1')).called(1);
     });
 
-    test('should handle update and delete workflow', () async {
+    test('应处理更新和删除的工作流程', () async {
       final saveCommand = SaveSearchPresetCommand(
         id: '1',
         presetName: 'Original Preset',

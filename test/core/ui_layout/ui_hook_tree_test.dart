@@ -7,7 +7,7 @@ import 'package:node_graph_notebook/core/ui_layout/ui_hook_tree.dart';
 
 void main() {
   group('UIHookNode', () {
-    test('creates root Hook', () {
+    test('创建根Hook', () {
       final root = UIHookNode.root();
 
       expect(root.id, 'root');
@@ -19,7 +19,7 @@ void main() {
       expect(root.attachedNodes, isEmpty);
     });
 
-    test('creates Hook with properties', () {
+    test('创建带属性的Hook', () {
       final hook = UIHookNode(
         id: 'test-hook',
         hookPointId: 'sidebar',
@@ -38,7 +38,7 @@ void main() {
       expect(hook.parent, isNull);
     });
 
-    test('adds child Hook', () {
+    test('添加子Hook', () {
       final parent = UIHookNode.root();
       final child = UIHookNode(
         id: 'child',
@@ -55,7 +55,7 @@ void main() {
       expect(child.parent, parent);
     });
 
-    test('removes child Hook', () {
+    test('移除子Hook', () {
       final parent = UIHookNode.root();
       final child = UIHookNode(
         id: 'child',
@@ -73,7 +73,7 @@ void main() {
       expect(child.parent, isNull);
     });
 
-    test('removes non-existent child returns null', () {
+    test('移除不存在的子节点返回null', () {
       final parent = UIHookNode.root();
 
       final removed = parent.removeChild('non-existent');
@@ -81,7 +81,7 @@ void main() {
       expect(removed, isNull);
     });
 
-    test('finds child by ID', () {
+    test('通过ID查找子节点', () {
       final parent = UIHookNode.root();
       final child = UIHookNode(
         id: 'child-1',
@@ -97,7 +97,7 @@ void main() {
       expect(found, child);
     });
 
-    test('finds descendant child by ID', () {
+    test('通过ID查找后代节点', () {
       final root = UIHookNode.root();
       final child = UIHookNode(
         id: 'child',
@@ -121,7 +121,7 @@ void main() {
       expect(found, grandchild);
     });
 
-    test('finds non-existent child returns null', () {
+    test('查找不存在的子节点返回null', () {
       final parent = UIHookNode.root();
 
       final found = parent.findChild('non-existent');
@@ -129,7 +129,7 @@ void main() {
       expect(found, isNull);
     });
 
-    test('finds by hook point ID', () {
+    test('通过hook点ID查找', () {
       final root = UIHookNode.root();
       final sidebar = UIHookNode(
         id: 'sidebar-hook',
@@ -145,7 +145,7 @@ void main() {
       expect(found, sidebar);
     });
 
-    test('attaches node to Hook', () {
+    test('将节点附加到Hook', () {
       final hook = UIHookNode.root();
       const attachment = NodeAttachment(
         nodeId: 'node-1',
@@ -159,7 +159,7 @@ void main() {
       expect(hook.attachedNodes['node-1'], attachment);
     });
 
-    test('detaches node from Hook', () {
+    test('从Hook分离节点', () {
       final hook = UIHookNode.root();
       const attachment = NodeAttachment(
         nodeId: 'node-1',
@@ -174,7 +174,7 @@ void main() {
       expect(hook.attachedNodes, isEmpty);
     });
 
-    test('detaches non-existent node returns null', () {
+    test('分离不存在的节点返回null', () {
       final hook = UIHookNode.root();
 
       final detached = hook.detachNode('non-existent');
@@ -182,7 +182,7 @@ void main() {
       expect(detached, isNull);
     });
 
-    test('throws when attaching duplicate node', () {
+    test('附加重复节点时抛出异常', () {
       final hook = UIHookNode.root();
       const attachment1 = NodeAttachment(
         nodeId: 'node-1',
@@ -203,7 +203,7 @@ void main() {
       );
     });
 
-    test('updates node position', () {
+    test('更新节点位置', () {
       final hook = UIHookNode.root();
       const attachment = NodeAttachment(
         nodeId: 'node-1',
@@ -219,7 +219,7 @@ void main() {
       expect(updated?.localPosition, newPosition);
     });
 
-    test('throws when updating non-existent node position', () {
+    test('更新不存在节点位置时抛出异常', () {
       final hook = UIHookNode.root();
 
       expect(
@@ -231,7 +231,7 @@ void main() {
       );
     });
 
-    test('gets attached node', () {
+    test('获取已附加的节点', () {
       final hook = UIHookNode.root();
       const attachment = NodeAttachment(
         nodeId: 'node-1',
@@ -245,7 +245,7 @@ void main() {
       expect(retrieved, attachment);
     });
 
-    test('checks if node is attached', () {
+    test('检查节点是否已附加', () {
       final hook = UIHookNode.root();
       const attachment = NodeAttachment(
         nodeId: 'node-1',
@@ -260,7 +260,7 @@ void main() {
       expect(hook.hasNodeAttached('node-1'), isTrue);
     });
 
-    test('gets path from root', () {
+    test('获取从根节点开始的路径', () {
       final root = UIHookNode.root();
       final child = UIHookNode(
         id: 'child',
@@ -284,7 +284,7 @@ void main() {
       expect(path, ['root', 'child', 'grandchild']);
     });
 
-    test('calculates depth', () {
+    test('计算深度', () {
       final root = UIHookNode.root();
       final child = UIHookNode(
         id: 'child',
@@ -308,7 +308,7 @@ void main() {
       expect(grandchild.getDepth(), 2);
     });
 
-    test('gets all descendants', () {
+    test('获取所有后代节点', () {
       final root = UIHookNode.root();
       final child1 = UIHookNode(
         id: 'child-1',
@@ -341,7 +341,7 @@ void main() {
       expect(descendants, containsAll([child1, child2, grandchild]));
     });
 
-    test('counts total attached nodes', () {
+    test('统计总附加节点数', () {
       final root = UIHookNode.root();
       root.attachNode(const NodeAttachment(
         nodeId: 'root-node',
@@ -369,7 +369,7 @@ void main() {
       expect(child.getTotalAttachedNodeCount(), 2);
     });
 
-    test('toString contains relevant info', () {
+    test('toString包含相关信息', () {
       final root = UIHookNode.root();
       final child = UIHookNode(
         id: 'child',
@@ -393,7 +393,7 @@ void main() {
       expect(str, contains('nodes: 1'));
     });
 
-    test('throws when adding child with existing parent', () {
+    test('添加已有父节点的子节点时抛出异常', () {
       final parent1 = UIHookNode.root();
       final parent2 = UIHookNode(
         id: 'parent2',
@@ -419,7 +419,7 @@ void main() {
   });
 
   group('LayoutConfig', () {
-    test('creates config with default values', () {
+    test('使用默认值创建配置', () {
       const config = LayoutConfig(strategy: LayoutStrategy.absolute);
 
       expect(config.strategy, LayoutStrategy.absolute);
@@ -431,7 +431,7 @@ void main() {
       expect(config.customCalculator, isNull);
     });
 
-    test('creates config with values', () {
+    test('使用指定值创建配置', () {
       const config = LayoutConfig(
         strategy: LayoutStrategy.grid,
         direction: Axis.horizontal,
@@ -449,7 +449,7 @@ void main() {
       expect(config.columns, 3);
     });
 
-    test('copyWith creates new config', () {
+    test('copyWith创建新配置', () {
       const config = LayoutConfig(
         strategy: LayoutStrategy.sequential,
         direction: Axis.vertical,
@@ -464,10 +464,10 @@ void main() {
       expect(copied.strategy, LayoutStrategy.sequential);
       expect(copied.direction, Axis.horizontal);
       expect(copied.spacing, 16.0);
-      expect(config.spacing, 8.0); // Original unchanged
+      expect(config.spacing, 8.0); // 原配置未改变
     });
 
-    test('throws on custom strategy without calculator', () {
+    test('自定义策略无计算器时抛出异常', () {
       expect(
         () => LayoutConfig(strategy: LayoutStrategy.custom),
         throwsA(isA<AssertionError>()),
@@ -476,7 +476,7 @@ void main() {
   });
 
   group('NodeAttachment', () {
-    test('creates attachment', () {
+    test('创建附件', () {
       const attachment = NodeAttachment(
         nodeId: 'node-1',
         localPosition: LocalPosition.absolute(10, 20),
@@ -490,7 +490,7 @@ void main() {
       expect(attachment.size, const Size(100, 50));
     });
 
-    test('creates attachment with defaults', () {
+    test('使用默认值创建附件', () {
       const attachment = NodeAttachment(
         nodeId: 'node-1',
         localPosition: LocalPosition.absolute(10, 20),
@@ -501,7 +501,7 @@ void main() {
       expect(attachment.metadata, isNull);
     });
 
-    test('copyWith creates new attachment', () {
+    test('copyWith创建新附件', () {
       const attachment = NodeAttachment(
         nodeId: 'node-1',
         localPosition: LocalPosition.absolute(10, 20),
@@ -516,10 +516,10 @@ void main() {
       expect(copied.nodeId, 'node-1');
       expect(copied.zIndex, 5);
       expect(copied.localPosition, const LocalPosition.absolute(30, 40));
-      expect(attachment.zIndex, 0); // Original unchanged
+      expect(attachment.zIndex, 0); // 原附件未改变
     });
 
-    test('equality works correctly', () {
+    test('相等性判断正常工作', () {
       const attachment1 = NodeAttachment(
         nodeId: 'node-1',
         localPosition: LocalPosition.absolute(10, 20),

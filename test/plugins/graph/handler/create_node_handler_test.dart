@@ -25,7 +25,7 @@ void main() {
       handler = CreateNodeHandler(mockService);
     });
 
-    test('should create node successfully', () async {
+    test('应该成功创建节点', () async {
       final command = CreateNodeCommand(
         title: 'Test Node',
         content: 'Test Content',
@@ -63,7 +63,7 @@ void main() {
       verify(mockContext.publishSingleNodeEvent(testNode, DataChangeAction.create)).called(1);
     });
 
-    test('should validate empty title', () async {
+    test('应该验证空标题', () async {
       final command = CreateNodeCommand(title: '');
 
       final result = await handler.execute(command, mockContext);
@@ -78,7 +78,7 @@ void main() {
       verifyNever(mockContext.publishSingleNodeEvent(any, any));
     });
 
-    test('should validate whitespace only title', () async {
+    test('应该验证仅包含空白字符的标题', () async {
       final command = CreateNodeCommand(title: '   ');
 
       final result = await handler.execute(command, mockContext);
@@ -93,7 +93,7 @@ void main() {
       verifyNever(mockContext.publishSingleNodeEvent(any, any));
     });
 
-    test('should handle service errors', () async {
+    test('应该处理服务错误', () async {
       final command = CreateNodeCommand(
         title: 'Test Node',
         content: 'Test Content',
@@ -112,7 +112,7 @@ void main() {
       verifyNever(mockContext.publishSingleNodeEvent(any, any));
     });
 
-    test('should create node with position', () async {
+    test('应该创建带位置的节点', () async {
       final command = CreateNodeCommand(
         title: 'Test Node',
         content: 'Test Content',
@@ -149,7 +149,7 @@ void main() {
       )).called(1);
     });
 
-    test('should create node with null content', () async {
+    test('应该创建内容为空的新节点', () async {
       final command = CreateNodeCommand(
         title: 'Test Node',
         content: null,

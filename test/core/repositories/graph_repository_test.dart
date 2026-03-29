@@ -8,7 +8,7 @@ import 'package:node_graph_notebook/core/repositories/graph_repository.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  group('FileSystemGraphRepository', () {
+  group('FileSystemGraphRepository - 文件系统图谱仓库', () {
     late FileSystemGraphRepository repository;
     late String testDir;
 
@@ -25,8 +25,8 @@ void main() {
       }
     });
 
-    group('init', () {
-      test('should create directory if it does not exist', () async {
+    group('init - 初始化', () {
+      test('如果目录不存在应该创建目录', () async {
         final newDir = Directory.systemTemp.createTempSync('test_new_graphs_').path;
         final newRepo = FileSystemGraphRepository(graphsDir: newDir);
 
@@ -38,8 +38,8 @@ void main() {
       });
     });
 
-    group('save', () {
-      test('should save a graph successfully', () async {
+    group('save - 保存', () {
+      test('应该成功保存图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -59,7 +59,7 @@ void main() {
         expect(file.existsSync(), true);
       });
 
-      test('should update existing graph', () async {
+      test('应该更新已存在的图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -88,7 +88,7 @@ void main() {
         expect(loaded?.nodeIds.length, 2);
       });
 
-      test('should create directory if it does not exist when saving', () async {
+      test('保存时如果目录不存在应该创建目录', () async {
         final newDir = Directory.systemTemp.createTempSync('test_save_dir_').path;
         final newRepo = FileSystemGraphRepository(graphsDir: path.join(newDir, 'graphs'));
 
@@ -110,8 +110,8 @@ void main() {
       });
     });
 
-    group('load', () {
-      test('should load a graph successfully', () async {
+    group('load - 加载', () {
+      test('应该成功加载图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -134,12 +134,12 @@ void main() {
         expect(loaded.nodeIds, ['node_1', 'node_2']);
       });
 
-      test('should return null if graph does not exist', () async {
+      test('如果图谱不存在应该返回null', () async {
         final loaded = await repository.load('non_existent');
         expect(loaded, isNull);
       });
 
-      test('should return null for empty file', () async {
+      test('对于空文件应该返回null', () async {
         final file = File(path.join(testDir, 'empty_graph.json'));
         await file.writeAsString('');
 
@@ -147,7 +147,7 @@ void main() {
         expect(loaded, isNull);
       });
 
-      test('should return null for whitespace-only file', () async {
+      test('对于仅包含空白字符的文件应该返回null', () async {
         final file = File(path.join(testDir, 'whitespace_graph.json'));
         await file.writeAsString('   \n   \t   ');
 
@@ -155,7 +155,7 @@ void main() {
         expect(loaded, isNull);
       });
 
-      test('should throw RepositoryException for corrupted file', () async {
+      test('对于损坏的文件应该抛出RepositoryException', () async {
         final file = File(path.join(testDir, 'corrupted_graph.json'));
         await file.writeAsString('invalid json {{{');
 
@@ -163,8 +163,8 @@ void main() {
       });
     });
 
-    group('delete', () {
-      test('should delete a graph successfully', () async {
+    group('delete - 删除', () {
+      test('应该成功删除图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -182,11 +182,11 @@ void main() {
         expect(loaded, isNull);
       });
 
-      test('should not throw error when deleting non-existent graph', () async {
+      test('删除不存在的图谱时不应该抛出错误', () async {
         await repository.delete('non_existent');
       });
 
-      test('should clear current graph if deleted graph is current', () async {
+      test('如果删除的是当前图谱应该清空当前图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -206,13 +206,13 @@ void main() {
       });
     });
 
-    group('getAll', () {
-      test('should return empty list when no graphs exist', () async {
+    group('getAll - 获取全部', () {
+      test('当没有图谱存在时应该返回空列表', () async {
         final graphs = await repository.getAll();
         expect(graphs, isEmpty);
       });
 
-      test('should return all graphs', () async {
+      test('应该返回所有图谱', () async {
         final graph1 = Graph(
           id: 'graph_1',
           name: 'Graph 1',
@@ -242,7 +242,7 @@ void main() {
         expect(graphs.any((g) => g.id == 'graph_2'), true);
       });
 
-      test('should skip current.json file', () async {
+      test('应该跳过current.json文件', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -261,7 +261,7 @@ void main() {
         expect(graphs[0].id, 'graph_1');
       });
 
-      test('should handle corrupted files gracefully', () async {
+      test('应该优雅地处理损坏的文件', () async {
         final validGraph = Graph(
           id: 'graph_1',
           name: 'Valid Graph',
@@ -282,7 +282,7 @@ void main() {
         expect(graphs[0].id, 'graph_1');
       });
 
-      test('should create directory if it does not exist', () async {
+      test('如果目录不存在应该创建目录', () async {
         final newDir = Directory.systemTemp.createTempSync('test_getall_dir_').path;
         final newRepo = FileSystemGraphRepository(graphsDir: path.join(newDir, 'graphs'));
 
@@ -294,13 +294,13 @@ void main() {
       });
     });
 
-    group('getCurrent', () {
-      test('should return null when no current graph is set', () async {
+    group('getCurrent - 获取当前图谱', () {
+      test('当没有设置当前图谱时应该返回null', () async {
         final current = await repository.getCurrent();
         expect(current, isNull);
       });
 
-      test('should return current graph', () async {
+      test('应该返回当前图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -319,7 +319,7 @@ void main() {
         expect(current!.id, 'graph_1');
       });
 
-      test('should return first graph as default if no current is set', () async {
+      test('如果没有设置当前图谱应该默认返回第一个图谱', () async {
         final graph1 = Graph(
           id: 'graph_1',
           name: 'Graph 1',
@@ -348,7 +348,7 @@ void main() {
         expect(current!.id, 'graph_1');
       });
 
-      test('should clear current graph if it is deleted', () async {
+      test('如果当前图谱被删除应该清空当前图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -367,7 +367,7 @@ void main() {
         expect(current, isNull);
       });
 
-      test('should handle corrupted current.json gracefully', () async {
+      test('应该优雅地处理损坏的current.json', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -389,8 +389,8 @@ void main() {
       });
     });
 
-    group('setCurrent', () {
-      test('should set current graph successfully', () async {
+    group('setCurrent - 设置当前图谱', () {
+      test('应该成功设置当前图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -409,7 +409,7 @@ void main() {
         expect(current!.id, 'graph_1');
       });
 
-      test('should create current.json file', () async {
+      test('应该创建current.json文件', () async {
         await repository.setCurrent('graph_1');
 
         final currentFile = File(path.join(testDir, 'current.json'));
@@ -417,8 +417,8 @@ void main() {
       });
     });
 
-    group('export', () {
-      test('should export graph to file successfully', () async {
+    group('export - 导出', () {
+      test('应该成功导出图谱到文件', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -440,15 +440,15 @@ void main() {
         await exportFile.delete();
       });
 
-      test('should throw RepositoryException if graph does not exist', () async {
+      test('如果图谱不存在应该抛出RepositoryException', () async {
         final exportPath = path.join(Directory.systemTemp.path, 'exported_graph.json');
 
         expect(() async => repository.export('non_existent', exportPath), throwsA(isA<RepositoryException>()));
       });
     });
 
-    group('import', () {
-      test('should import graph from file successfully', () async {
+    group('import - 导入', () {
+      test('应该成功从文件导入图谱', () async {
         final graph = Graph(
           id: 'graph_1',
           name: 'Test Graph',
@@ -472,13 +472,13 @@ void main() {
         await importFile.delete();
       });
 
-      test('should throw RepositoryException if file does not exist', () async {
+      test('如果文件不存在应该抛出RepositoryException', () async {
         final importPath = path.join(Directory.systemTemp.path, 'non_existent.json');
 
         expect(() async => repository.import(importPath), throwsA(isA<RepositoryException>()));
       });
 
-      test('should throw RepositoryException for corrupted file', () async {
+      test('对于损坏的文件应该抛出RepositoryException', () async {
         final importPath = path.join(Directory.systemTemp.path, 'corrupted_${DateTime.now().millisecondsSinceEpoch}.json');
         final importFile = File(importPath);
         await importFile.writeAsString('invalid json {{{');
@@ -491,8 +491,8 @@ void main() {
       });
     });
 
-    group('createDefaultGraph', () {
-      test('should create a default graph', () async {
+    group('createDefaultGraph - 创建默认图谱', () {
+      test('应该创建默认图谱', () async {
         final defaultGraph = await repository.createDefaultGraph();
 
         expect(defaultGraph, isNotNull);
@@ -501,7 +501,7 @@ void main() {
         expect(defaultGraph.nodePositions, isEmpty);
       });
 
-      test('should set default graph as current', () async {
+      test('应该将默认图谱设置为当前图谱', () async {
         final defaultGraph = await repository.createDefaultGraph();
 
         final current = await repository.getCurrent();
@@ -509,7 +509,7 @@ void main() {
         expect(current!.id, defaultGraph.id);
       });
 
-      test('should save default graph to storage', () async {
+      test('应该将默认图谱保存到存储', () async {
         final defaultGraph = await repository.createDefaultGraph();
 
         final loaded = await repository.load(defaultGraph.id);
@@ -518,8 +518,8 @@ void main() {
       });
     });
 
-    group('integration tests', () {
-      test('should handle complete workflow', () async {
+    group('integration tests - 集成测试', () {
+      test('应该处理完整的工作流', () async {
         final graph1 = Graph(
           id: 'graph_1',
           name: 'Graph 1',

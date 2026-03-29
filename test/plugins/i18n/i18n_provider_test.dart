@@ -4,7 +4,7 @@ import 'package:node_graph_notebook/core/services/i18n.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  group('I18n Provider Integration', () {
+  group('I18n Provider 集成测试', () {
     testWidgets('应该能正确创建 ChangeNotifierProvider', (tester) async {
       final i18n = I18n();
 
@@ -26,7 +26,7 @@ void main() {
       expect(find.byType(_TestWidget), findsOneWidget);
 
       // 验证翻译功能正常
-      expect(i18n.t('Settings'), 'Settings'); // 英文
+      expect(i18n.t('Settings'), 'Settings'); // 验证英文翻译
     });
 
     testWidgets('应该能正确监听语言变化', (tester) async {

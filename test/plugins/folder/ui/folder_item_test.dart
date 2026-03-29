@@ -62,7 +62,7 @@ void main() {
       when(mockNodeBloc.stream).thenAnswer((_) => const Stream.empty());
     });
 
-    testWidgets('should display folder title', (WidgetTester tester) async {
+    testWidgets('应显示文件夹标题', (WidgetTester tester) async {
       final testExpandedFolders = <String>{};
       await tester.pumpWidget(
         MaterialApp(
@@ -97,7 +97,7 @@ void main() {
       expect(find.text('Test Folder'), findsOneWidget);
     });
 
-    testWidgets('should display child count', (WidgetTester tester) async {
+    testWidgets('应显示子项数量', (WidgetTester tester) async {
       folder = folder.copyWith(
         references: {'node_1': const NodeReference(nodeId: 'node_1', properties: {'type': 'relatesTo'})},
       );
@@ -136,7 +136,7 @@ void main() {
       expect(find.text('(1)'), findsOneWidget);
     });
 
-    testWidgets('should toggle expand/collapse on tap', (WidgetTester tester) async {
+    testWidgets('点击时应切换展开/折叠状态', (WidgetTester tester) async {
       folder = folder.copyWith(
         references: {'node_1': const NodeReference(nodeId: 'node_1', properties: {'type': 'relatesTo'})},
       );
@@ -183,7 +183,7 @@ void main() {
       expect(expandedFoldersChanged.first.contains('folder_1'), true);
     });
 
-    testWidgets('should be draggable', (WidgetTester tester) async {
+    testWidgets('应支持拖拽', (WidgetTester tester) async {
       final testExpandedFolders = <String>{};
       await tester.pumpWidget(
         MaterialApp(
@@ -219,7 +219,7 @@ void main() {
       expect(draggableFinder, findsOneWidget);
     });
 
-    testWidgets('should accept drag target', (WidgetTester tester) async {
+    testWidgets('应接受拖放目标', (WidgetTester tester) async {
       folder = folder.copyWith(
         references: {},
       );
@@ -259,7 +259,7 @@ void main() {
       expect(dragTargetFinder, findsOneWidget);
     });
 
-    testWidgets('should display children when expanded', (WidgetTester tester) async {
+    testWidgets('展开时应显示子项', (WidgetTester tester) async {
       folder = folder.copyWith(
         references: {'node_1': const NodeReference(nodeId: 'node_1', properties: {'type': 'relatesTo'})},
       );
@@ -299,7 +299,7 @@ void main() {
       expect(find.text('Child Node'), findsOneWidget);
     });
 
-    testWidgets('should handle nested folders', (WidgetTester tester) async {
+    testWidgets('应处理嵌套文件夹', (WidgetTester tester) async {
       final subFolder = Node(
         id: 'subfolder_1',
         title: 'Sub Folder',
@@ -321,7 +321,7 @@ void main() {
       );
 
       allNodes = [folder, subFolder];
-      // 使用空的 expandedFolders，不展开任何文件夹
+      // 使用空的expandedFolders，不展开任何文件夹
       final testExpandedFolders = <String>{};
 
       await tester.pumpWidget(
@@ -356,7 +356,7 @@ void main() {
 
       // 验证主文件夹被渲染
       expect(find.text('Test Folder'), findsOneWidget);
-      // 子文件夹未展开，不应该显示
+      // 子文件夹未展开，不显示
       expect(find.text('Sub Folder'), findsNothing);
     });
   });
@@ -410,7 +410,7 @@ void main() {
       );
     });
 
-    test('should detect circular contains when dragging folder to itself', () {
+    test('当拖拽文件夹到自身时应检测到循环包含', () {
       folder = folder.copyWith(
         references: {},
       );
@@ -419,7 +419,7 @@ void main() {
       expect(hasCircular, true);
     });
 
-    test('should detect circular contains when dragging parent to child', () {
+    test('当拖拽父文件夹到子文件夹时应检测到循环包含', () {
       folder = folder.copyWith(
         references: {
           'subfolder_1': const NodeReference(nodeId: 'subfolder_1', properties: {'type': 'relatesTo'}),
@@ -430,7 +430,7 @@ void main() {
       expect(parentContainsChild, true);
     });
 
-    test('should not detect circular contains for unrelated nodes', () {
+    test('对于不相关的节点不应检测到循环包含', () {
       folder = folder.copyWith(
         references: {},
       );

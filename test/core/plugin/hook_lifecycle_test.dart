@@ -35,11 +35,11 @@ void main() {
     });
 
     group('initial state', () {
-      test('should start in uninitialized state', () {
+      test('应该以未初始化状态开始', () {
         expect(lifecycle.state, HookState.uninitialized);
       });
 
-      test('should report correct initial flags', () {
+      test('应该报告正确的初始标志', () {
         expect(lifecycle.isInitialized, false);
         expect(lifecycle.isEnabled, false);
         expect(lifecycle.isDisabled, false);
@@ -48,11 +48,11 @@ void main() {
     });
 
     group('canTransitionTo - 状态转换验证', () {
-      test('should allow transition from uninitialized to initialized', () {
+      test('应该允许从未初始化状态转换到已初始化状态', () {
         expect(lifecycle.canTransitionTo(HookState.initialized), true);
       });
 
-      test('should not allow other transitions from uninitialized', () {
+      test('不应该允许从未初始化状态进行其他转换', () {
         expect(lifecycle.canTransitionTo(HookState.enabled), false);
         expect(lifecycle.canTransitionTo(HookState.disabled), false);
         expect(lifecycle.canTransitionTo(HookState.disposed), false);
@@ -64,19 +64,19 @@ void main() {
         await lifecycle.transitionTo(HookState.initialized, () async {});
       });
 
-      test('should allow transition from initialized to enabled', () {
+      test('应该允许从已初始化状态转换到已启用状态', () {
         expect(lifecycle.canTransitionTo(HookState.enabled), true);
       });
 
-      test('should allow transition from initialized to disposed', () {
+      test('应该允许从已初始化状态转换到已处置状态', () {
         expect(lifecycle.canTransitionTo(HookState.disposed), true);
       });
 
-      test('should not allow transition from initialized to disabled', () {
+      test('不应该允许从已初始化状态转换到已禁用状态', () {
         expect(lifecycle.canTransitionTo(HookState.disabled), false);
       });
 
-      test('should not allow transition from initialized to uninitialized', () {
+      test('不应该允许从已初始化状态转换到未初始化状态', () {
         expect(lifecycle.canTransitionTo(HookState.uninitialized), false);
       });
     });
@@ -87,15 +87,15 @@ void main() {
         await lifecycle.transitionTo(HookState.enabled, () async {});
       });
 
-      test('should allow transition from enabled to disabled', () {
+      test('应该允许从已启用状态转换到已禁用状态', () {
         expect(lifecycle.canTransitionTo(HookState.disabled), true);
       });
 
-      test('should allow transition from enabled to disposed', () {
+      test('应该允许从已启用状态转换到已处置状态', () {
         expect(lifecycle.canTransitionTo(HookState.disposed), true);
       });
 
-      test('should not allow transition from enabled to initialized', () {
+      test('不应该允许从已启用状态转换到已初始化状态', () {
         expect(lifecycle.canTransitionTo(HookState.initialized), false);
       });
     });
@@ -107,15 +107,15 @@ void main() {
         await lifecycle.transitionTo(HookState.disabled, () async {});
       });
 
-      test('should allow transition from disabled to enabled', () {
+      test('应该允许从已禁用状态转换到已启用状态', () {
         expect(lifecycle.canTransitionTo(HookState.enabled), true);
       });
 
-      test('should allow transition from disabled to disposed', () {
+      test('应该允许从已禁用状态转换到已处置状态', () {
         expect(lifecycle.canTransitionTo(HookState.disposed), true);
       });
 
-      test('should not allow transition from disabled to initialized', () {
+      test('不应该允许从已禁用状态转换到已初始化状态', () {
         expect(lifecycle.canTransitionTo(HookState.initialized), false);
       });
     });
@@ -126,7 +126,7 @@ void main() {
         await lifecycle.transitionTo(HookState.disposed, () async {});
       });
 
-      test('should not allow any transition from disposed', () {
+      test('不应该允许从已处置状态进行任何转换', () {
         expect(lifecycle.canTransitionTo(HookState.uninitialized), false);
         expect(lifecycle.canTransitionTo(HookState.initialized), false);
         expect(lifecycle.canTransitionTo(HookState.enabled), false);
@@ -136,24 +136,24 @@ void main() {
     });
 
     group('transitionTo - 状态转换执行', () {
-      test('should update state on successful transition', () async {
+      test('应该在成功转换时更新状态', () async {
         await lifecycle.transitionTo(HookState.initialized, () async {});
 
         expect(lifecycle.state, HookState.initialized);
         expect(lifecycle.isInitialized, true);
       });
 
-      test('should throw on invalid transition', () {
+      test('应该在无效转换时抛出异常', () {
         expect(
           () => lifecycle.transitionTo(HookState.enabled, () async {}),
           throwsA(isA<StateError>()),
         );
       });
 
-      test('should preserve state on action failure', () async {
+      test('应该在操作失败时保留状态', () async {
         try {
           await lifecycle.transitionTo(HookState.initialized, () async {
-            throw Exception('Init failed');
+            throw Exception('初始化失败');
           });
         } catch (e) {
           // 预期内的异常
@@ -162,7 +162,7 @@ void main() {
         expect(lifecycle.state, HookState.uninitialized);
       });
 
-      test('should allow enable/disable cycle', () async {
+      test('应该允许启用/禁用循环', () async {
         await lifecycle.transitionTo(HookState.initialized, () async {});
         expect(lifecycle.state, HookState.initialized);
 
@@ -180,7 +180,7 @@ void main() {
     });
 
     group('toString', () {
-      test('should return readable string representation', () {
+      test('应该返回可读的字符串表示', () {
         expect(
           lifecycle.toString(),
           'HookLifecycleManager(test_hook, state: HookState.uninitialized)',
@@ -200,14 +200,14 @@ void main() {
       wrapper = HookWrapper(hook, lifecycle, 0); // 添加注册顺序参数
     });
 
-    test('should report isInitialized correctly', () async {
+    test('应该正确报告isInitialized状态', () async {
       expect(wrapper.isInitialized, false);
 
       await lifecycle.transitionTo(HookState.initialized, () async {});
       expect(wrapper.isInitialized, true);
     });
 
-    test('should report isEnabled correctly', () async {
+    test('应该正确报告isEnabled状态', () async {
       expect(wrapper.isEnabled, false);
 
       await lifecycle.transitionTo(HookState.initialized, () async {});
@@ -217,7 +217,7 @@ void main() {
       expect(wrapper.isEnabled, true);
     });
 
-    test('should report isDisposed correctly', () async {
+    test('应该正确报告isDisposed状态', () async {
       expect(wrapper.isDisposed, false);
 
       await lifecycle.transitionTo(HookState.initialized, () async {});
@@ -226,7 +226,7 @@ void main() {
     });
 
     group('with parent plugin', () {
-      test('should check parent plugin enabled state', () async {
+      test('应该检查父插件的启用状态', () async {
         final parentPlugin = _createMockPluginWrapper('parent_plugin');
         wrapper = HookWrapper(hook, lifecycle, 0, parentPlugin: parentPlugin); // 添加注册顺序参数
 
@@ -236,7 +236,7 @@ void main() {
         expect(wrapper.isEnabled, false);
       });
 
-      test('should be enabled when both hook and parent are enabled', () async {
+      test('当hook和父插件都启用时应该处于启用状态', () async {
         final parentPlugin = await _createMockEnabledPluginWrapper('parent_plugin');
         wrapper = HookWrapper(hook, lifecycle, 0, parentPlugin: parentPlugin); // 添加注册顺序参数
 
@@ -248,7 +248,7 @@ void main() {
     });
 
     group('toString', () {
-      test('should return readable string representation', () {
+      test('应该返回可读的字符串表示', () {
         expect(
           wrapper.toString(),
           contains('HookWrapper'),
@@ -258,7 +258,7 @@ void main() {
   });
 
   group('HookWrapperFactory', () {
-    test('should create wrapper for new hook', () {
+    test('应该为新hook创建包装器', () {
       final hook = TestHook();
       final wrapper = HookWrapperFactory.wrapNewHook(hook);
 
@@ -267,7 +267,7 @@ void main() {
       expect(wrapper.parentPlugin, isNull);
     });
 
-    test('should create wrapper with parent plugin', () {
+    test('应该创建带有父插件的包装器', () {
       final hook = TestHook();
       final parentPlugin = _createMockPluginWrapper('parent_plugin');
       final wrapper = HookWrapperFactory.wrapNewHook(hook, parentPlugin: parentPlugin);

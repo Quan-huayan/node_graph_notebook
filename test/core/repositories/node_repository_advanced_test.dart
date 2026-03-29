@@ -9,7 +9,7 @@ import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  group('FileSystemNodeRepository Advanced Tests', () {
+  group('FileSystemNodeRepository Advanced Tests - 文件系统节点仓库高级测试', () {
     late FileSystemNodeRepository repository;
     late String testDir;
 
@@ -26,8 +26,8 @@ void main() {
       }
     });
 
-    group('concurrent operations', () {
-      test('should handle concurrent saves to same node', () async {
+    group('concurrent operations - 并发操作', () {
+      test('应该处理对同一节点的并发保存', () async {
         final node = Node(
           id: 'concurrent_node',
           title: 'Original',
@@ -58,7 +58,7 @@ void main() {
         expect(loaded!.id, 'concurrent_node');
       });
 
-      test('should handle concurrent saves to different nodes', () async {
+      test('应该处理对不同节点的并发保存', () async {
         final nodes = List.generate(10, (i) => Node(
           id: 'node_$i',
           title: 'Node $i',
@@ -78,7 +78,7 @@ void main() {
         expect(allNodes.length, 10);
       });
 
-      test('should maintain index consistency during concurrent operations', () async {
+      test('应该在并发操作期间保持索引一致性', () async {
         final nodes = List.generate(5, (i) => Node(
           id: 'index_node_$i',
           title: 'Index Node $i',
@@ -106,8 +106,8 @@ void main() {
       });
     });
 
-    group('reference integrity', () {
-      test('should preserve node references after save and load', () async {
+    group('reference integrity - 引用完整性', () {
+      test('应该在保存和加载后保留节点引用', () async {
         final node1 = Node(
           id: 'node_1',
           title: 'Source Node',
@@ -140,7 +140,7 @@ void main() {
         expect(loaded.references['node_3']?.type, 'dependsOn');
       });
 
-      test('should handle circular references', () async {
+      test('应该处理循环引用', () async {
         final node1 = Node(
           id: 'circular_1',
           title: 'Node 1',
@@ -187,7 +187,7 @@ void main() {
         expect(loaded2?.references['circular_1'], isNotNull);
       });
 
-      test('should handle references with metadata', () async {
+      test('应该处理带有元数据的引用', () async {
         final node = Node(
           id: 'ref_with_meta',
           title: 'Node with reference metadata',
@@ -220,8 +220,8 @@ void main() {
       });
     });
 
-    group('data recovery scenarios', () {
-      test('should recover from corrupted index file', () async {
+    group('data recovery scenarios - 数据恢复场景', () {
+      test('应该从损坏的索引文件中恢复', () async {
         final node = Node(
           id: 'recovery_node',
           title: 'Recovery Test',
@@ -248,7 +248,7 @@ void main() {
         expect(newIndex.nodes, isEmpty);
       });
 
-      test('should handle partial file corruption gracefully', () async {
+      test('应该优雅地处理部分文件损坏', () async {
         final validNode = Node(
           id: 'valid_node',
           title: 'Valid Node',
@@ -272,7 +272,7 @@ void main() {
         expect(allNodes.any((n) => n.id == 'valid_node'), true);
       });
 
-      test('should handle missing frontmatter gracefully', () async {
+      test('应该优雅地处理缺少frontmatter的情况', () async {
         final noFrontmatterFile = File(path.join(testDir, 'no_frontmatter.md'));
         await noFrontmatterFile.writeAsString('''
 Just some content without frontmatter.
@@ -284,7 +284,7 @@ No YAML headers at all.
         expect(allNodes, isNotEmpty);
       });
 
-      test('should rebuild index after manual file operations', () async {
+      test('应该在手动文件操作后重建索引', () async {
         final node = Node(
           id: 'manual_node',
           title: 'Manual Node',
@@ -311,8 +311,8 @@ No YAML headers at all.
       });
     });
 
-    group('special content handling', () {
-      test('should handle unicode content correctly', () async {
+    group('special content handling - 特殊内容处理', () {
+      test('应该正确处理Unicode内容', () async {
         final node = Node(
           id: 'unicode_node',
           title: '中文标题 日本語 한국어',
@@ -342,7 +342,7 @@ No YAML headers at all.
         expect(loaded.content, contains('😀'));
       });
 
-      test('should handle markdown with code blocks', () async {
+      test('应该处理带有代码块的Markdown', () async {
         final node = Node(
           id: 'markdown_node',
           title: 'Markdown Node',
@@ -384,7 +384,7 @@ void main() {
         expect(loaded.content, contains('[Link]'));
       });
 
-      test('should handle very long content', () async {
+      test('应该处理非常长的内容', () async {
         final longContent = 'A' * 100000;
 
         final node = Node(
@@ -407,7 +407,7 @@ void main() {
         expect(loaded!.content?.length, 100000);
       });
 
-      test('should handle special characters in metadata values', () async {
+      test('应该处理元数据值中的特殊字符', () async {
         final node = Node(
           id: 'special_meta_node',
           title: 'Special Metadata',
@@ -434,8 +434,8 @@ void main() {
       });
     });
 
-    group('index operations', () {
-      test('should remove stale entries from index', () async {
+    group('index operations - 索引操作', () {
+      test('应该从索引中移除过期条目', () async {
         final node1 = Node(
           id: 'stale_node_1',
           title: 'Node 1',
@@ -473,7 +473,7 @@ void main() {
         expect(allNodes[0].id, 'stale_node_2');
       });
 
-      test('should update index when node is updated', () async {
+      test('当节点更新时应该更新索引', () async {
         final node = Node(
           id: 'update_index_node',
           title: 'Original Title',

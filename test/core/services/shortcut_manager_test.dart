@@ -14,7 +14,7 @@ void main() {
     });
 
     group('Registration', () {
-      test('should register shortcut', () {
+      test('应该注册快捷键', () {
         var callbackCalled = false;
         const activator = SingleActivator(LogicalKeyboardKey.keyA);
 
@@ -25,7 +25,7 @@ void main() {
         expect(callbackCalled, false);
       });
 
-      test('should unregister shortcut', () {
+      test('应该注销快捷键', () {
         const activator = SingleActivator(LogicalKeyboardKey.keyA);
 
         manager..register(activator, () {})
@@ -34,7 +34,7 @@ void main() {
         expect(true, true);
       });
 
-      test('should register multiple shortcuts', () {
+      test('应该注册多个快捷键', () {
         const activator1 = SingleActivator(LogicalKeyboardKey.keyA);
         const activator2 = SingleActivator(LogicalKeyboardKey.keyB);
 
@@ -44,7 +44,7 @@ void main() {
         expect(true, true);
       });
 
-      test('should overwrite existing shortcut', () {
+      test('应该覆盖已存在的快捷键', () {
         const activator = SingleActivator(LogicalKeyboardKey.keyA);
 
         var firstCallbackCalled = false;
@@ -64,7 +64,7 @@ void main() {
     });
 
     group('Key Handling', () {
-      test('should handle registered key press', () {
+      test('应该处理已注册的按键', () {
         var callbackCalled = false;
         const activator = SingleActivator(LogicalKeyboardKey.keyA);
 
@@ -84,7 +84,7 @@ void main() {
         expect(callbackCalled, true);
       });
 
-      test('should not handle unregistered key press', () {
+      test('不应该处理未注册的按键', () {
         var callbackCalled = false;
         const activator = SingleActivator(LogicalKeyboardKey.keyA);
 
@@ -107,31 +107,31 @@ void main() {
   });
 
   group('AppShortcuts', () {
-    test('should have create node shortcut', () {
+    test('应该具有创建节点快捷键', () {
       expect(app.AppShortcuts.createNode, isA<SingleActivator>());
     });
 
-    test('should have save shortcut', () {
+    test('应该具有保存快捷键', () {
       expect(app.AppShortcuts.save, isA<SingleActivator>());
     });
 
-    test('should have undo shortcut', () {
+    test('应该具有撤销快捷键', () {
       expect(app.AppShortcuts.undo, isA<SingleActivator>());
     });
 
-    test('should have redo shortcut', () {
+    test('应该具有重做快捷键', () {
       expect(app.AppShortcuts.redo, isA<SingleActivator>());
     });
 
-    test('should have delete shortcut', () {
+    test('应该具有删除快捷键', () {
       expect(app.AppShortcuts.delete, isA<SingleActivator>());
     });
 
-    test('should have search shortcut', () {
+    test('应该具有搜索快捷键', () {
       expect(app.AppShortcuts.search, isA<SingleActivator>());
     });
 
-    test('should have export shortcut', () {
+    test('应该具有导出快捷键', () {
       expect(app.AppShortcuts.export, isA<SingleActivator>());
     });
   });

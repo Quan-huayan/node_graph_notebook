@@ -81,7 +81,7 @@ void main() {
     });
 
     group('并发边界测试', () {
-      test('should handle many concurrent tasks without deadlock', () async {
+      test('应该处理大量并发任务而不死锁', () async {
         const taskCount = 20;
         final tasks = List.generate(
           taskCount,
@@ -100,7 +100,7 @@ void main() {
         expect(stopwatch.elapsedMilliseconds, lessThan(5000));
       });
 
-      test('should handle rapid sequential task submission', () async {
+      test('应该处理快速连续任务提交', () async {
         const iterations = 50;
         final results = <int>[];
 
@@ -113,7 +113,7 @@ void main() {
         expect(results.every((r) => r == 55), true); // fib(10) = 55
       });
 
-      test('should handle mixed task types concurrently', () async {
+      test('应该并发处理混合任务类型', () async {
         final futures = <Future<dynamic>>[
           engine.executeCPU(TestTask(value: 1)),
           engine.executeCPU(RecursiveTask(n: 15)),
@@ -133,7 +133,7 @@ void main() {
     });
 
     group('资源限制边界测试', () {
-      test('should handle deep recursion without stack overflow', () async {
+      test('应该处理深度递归而不栈溢出', () async {
         // fib(20) = 6765, 需要大量递归调用
         final task = RecursiveTask(n: 20);
         final result = await engine.executeCPU(task);
@@ -141,7 +141,7 @@ void main() {
         expect(result, equals(6765));
       });
 
-      test('should handle tasks with varying execution times', () async {
+      test('应该处理执行时间不同的任务', () async {
         final tasks = [
           TestTask(value: 1),
           RecursiveTask(n: 15),
@@ -163,7 +163,7 @@ void main() {
     });
 
     group('引擎状态边界测试', () {
-      test('should handle re-initialization after shutdown', () async {
+      test('应该支持关闭后重新初始化', () async {
         await engine.shutdown();
 
         // 重新初始化
@@ -173,14 +173,14 @@ void main() {
         expect(result, equals(55));
       });
 
-      test('should handle multiple shutdown calls gracefully', () async {
+      test('应该优雅地处理多次关闭调用', () async {
         await engine.shutdown();
         await engine.shutdown(); // 第二次调用不应该抛出错误
 
         expect(engine.isInitialized, false);
       });
 
-      test('should reject tasks after shutdown', () async {
+      test('关闭后应该拒绝任务', () async {
         await engine.shutdown();
 
         expect(
@@ -189,7 +189,7 @@ void main() {
         );
       });
 
-      test('should throw error when executing before initialization', () {
+      test('初始化之前执行应该抛出错误', () {
         final uninitializedEngine = ExecutionEngine();
 
         expect(
@@ -200,7 +200,7 @@ void main() {
     });
 
     group('TaskRegistry边界测试', () {
-      test('should handle task type override', () {
+      test('应该处理任务类型覆盖', () {
         final registry = TaskRegistry();
 
         // 注册任务类型
@@ -222,7 +222,7 @@ void main() {
         expect(factory, isNotNull);
       });
 
-      test('should return correct statistics', () {
+      test('应该返回正确的统计信息', () {
         final stats = taskRegistry.statistics;
 
         expect(stats['totalTaskTypes'], equals(2));
@@ -230,14 +230,14 @@ void main() {
         expect(stats['taskTypes'], contains('Recursive'));
       });
 
-      test('should handle empty registry', () {
+      test('应该处理空注册表', () {
         final emptyRegistry = TaskRegistry();
 
         expect(emptyRegistry.taskTypes, isEmpty);
         expect(emptyRegistry.statistics['totalTaskTypes'], equals(0));
       });
 
-      test('should handle unregister task type', () {
+      test('应该处理注销任务类型', () {
         final registry = TaskRegistry();
 
         registry.registerTaskType(
@@ -253,7 +253,7 @@ void main() {
         expect(registry.isRegistered('TempTask'), false);
       });
 
-      test('should handle clear registry', () {
+      test('应该处理清空注册表', () {
         final registry = TaskRegistry();
 
         registry.registerTaskType(
@@ -276,7 +276,7 @@ void main() {
     });
 
     group('Worker配置边界测试', () {
-      test('should handle single worker configuration', () async {
+      test('应该支持单Worker配置', () async {
         await engine.shutdown();
 
         await engine.initialize(maxWorkers: 1, taskRegistry: taskRegistry);
@@ -290,7 +290,7 @@ void main() {
         expect(results, [55, 55, 55]);
       });
 
-      test('should clamp workers to valid range', () async {
+      test('应该将Worker限制在有效范围内', () async {
         await engine.shutdown();
 
         // 测试最小值限制
@@ -305,7 +305,7 @@ void main() {
     });
 
     group('统计信息测试', () {
-      test('should track job statistics', () async {
+      test('应该跟踪任务统计信息', () async {
         final task = TestTask(value: 1);
         await engine.executeCPU(task);
 
@@ -313,7 +313,7 @@ void main() {
         expect(stats, isNotEmpty);
       });
 
-      test('should return consistent stats after multiple tasks', () async {
+      test('多个任务后应该返回一致的统计信息', () async {
         for (var i = 0; i < 10; i++) {
           await engine.executeCPU(TestTask(value: i));
         }

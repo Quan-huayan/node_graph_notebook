@@ -4,7 +4,7 @@ import '../events/app_events.dart';
 import '../models/node.dart';
 import '../utils/logger.dart';
 
-/// Logger for EventAggregationMiddleware
+/// EventAggregationMiddleware的日志记录器
 const _log = AppLogger('EventAggregationMiddleware');
 
 /// 事件聚合中间件

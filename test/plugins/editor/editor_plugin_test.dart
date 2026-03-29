@@ -11,7 +11,7 @@ void main() {
       editorPlugin = EditorPlugin();
     });
 
-    test('should have correct metadata', () {
+    test('应该具有正确的元数据', () {
       expect(editorPlugin.metadata.id, 'editor_plugin');
       expect(editorPlugin.metadata.name, 'Editor Plugin');
       expect(editorPlugin.metadata.version, '1.0.0');
@@ -19,11 +19,11 @@ void main() {
       expect(editorPlugin.metadata.author, 'Node Graph Notebook');
     });
 
-    test('should start in unloaded state', () {
+    test('初始状态应该为未加载', () {
       expect(editorPlugin.state, PluginState.unloaded);
     });
 
-    test('should allow state changes', () {
+    test('应该允许状态变更', () {
       editorPlugin.state = PluginState.loaded;
       expect(editorPlugin.state, PluginState.loaded);
 
@@ -34,7 +34,7 @@ void main() {
       expect(editorPlugin.state, PluginState.disabled);
     });
 
-    test('onLoad should complete without errors', () async {
+    test('onLoad 应该无错误完成', () async {
       final mockContext = MockPluginContext();
       await expectLater(
         editorPlugin.onLoad(mockContext),
@@ -42,28 +42,28 @@ void main() {
       );
     });
 
-    test('onEnable should complete without errors', () async {
+    test('onEnable 应该无错误完成', () async {
       await expectLater(
         editorPlugin.onEnable(),
         completes,
       );
     });
 
-    test('onDisable should complete without errors', () async {
+    test('onDisable 应该无错误完成', () async {
       await expectLater(
         editorPlugin.onDisable(),
         completes,
       );
     });
 
-    test('onUnload should complete without errors', () async {
+    test('onUnload 应该无错误完成', () async {
       await expectLater(
         editorPlugin.onUnload(),
         completes,
       );
     });
 
-    test('should handle full lifecycle', () async {
+    test('应该处理完整的生命周期', () async {
       final mockContext = MockPluginContext();
 
       expect(editorPlugin.state, PluginState.unloaded);

@@ -4,7 +4,7 @@ import 'package:node_graph_notebook/core/services/infrastructure/theme_registry.
 
 void main() {
   group('ThemeExtension', () {
-    test('should create ThemeExtension with all properties', () {
+    test('应该创建包含所有属性的 ThemeExtension', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -29,7 +29,7 @@ void main() {
       expect(extension.customData.length, 2);
     });
 
-    test('should create ThemeExtension with empty colors', () {
+    test('应该创建包含空颜色的 ThemeExtension', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -40,7 +40,7 @@ void main() {
       expect(extension.customData.isEmpty, true);
     });
 
-    test('should convert ThemeExtension to JSON', () {
+    test('应该将 ThemeExtension 转换为 JSON', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -62,7 +62,7 @@ void main() {
       expect(darkColors['primary'], 4278190335);
     });
 
-    test('should get light color', () {
+    test('应该获取亮色模式颜色', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -76,7 +76,7 @@ void main() {
       expect(color, const Color(0xFFFF0000));
     });
 
-    test('should return null for non-existent light color', () {
+    test('对于不存在的亮色模式颜色应该返回 null', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -87,7 +87,7 @@ void main() {
       expect(color, null);
     });
 
-    test('should get dark color', () {
+    test('应该获取暗色模式颜色', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -101,7 +101,7 @@ void main() {
       expect(color, const Color(0xFF0000FF));
     });
 
-    test('should return null for non-existent dark color', () {
+    test('对于不存在的暗色模式颜色应该返回 null', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -112,7 +112,7 @@ void main() {
       expect(color, null);
     });
 
-    test('should get color based on brightness', () {
+    test('应该根据亮度获取颜色', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -131,7 +131,7 @@ void main() {
       expect(darkColor, const Color(0xFF0000FF));
     });
 
-    test('should get custom data', () {
+    test('应该获取自定义数据', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -145,7 +145,7 @@ void main() {
       expect(extension.getCustomData<int>('key2'), 42);
     });
 
-    test('should return null for non-existent custom data', () {
+    test('对于不存在的自定义数据应该返回 null', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -154,7 +154,7 @@ void main() {
       expect(extension.getCustomData<String>('nonexistent'), null);
     });
 
-    test('should copy with new properties', () {
+    test('应该复制并更新属性', () {
       const extension = theme.ThemeExtension(
         id: 'test',
         displayName: 'Test Extension',
@@ -182,7 +182,7 @@ void main() {
     });
 
     group('Registration', () {
-      test('should register theme extension', () {
+      test('应该注册主题扩展', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -194,7 +194,7 @@ void main() {
         expect(registry.extensions.length, 1);
       });
 
-      test('should overwrite existing extension', () {
+      test('应该覆盖已存在的扩展', () {
         const extension1 = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension 1',
@@ -212,7 +212,7 @@ void main() {
         expect(registry.getExtension('test')?.displayName, 'Test Extension 2');
       });
 
-      test('should register multiple extensions', () {
+      test('应该注册多个扩展', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'test1',
@@ -238,7 +238,7 @@ void main() {
     });
 
     group('Unregistration', () {
-      test('should unregister theme extension', () {
+      test('应该注销主题扩展', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -251,7 +251,7 @@ void main() {
         expect(registry.extensions.length, 0);
       });
 
-      test('should not throw error when unregistering non-existent extension', () {
+      test('注销不存在的扩展时不应该抛出错误', () {
         registry.unregister('nonexistent');
 
         expect(registry.extensions.length, 0);
@@ -259,7 +259,7 @@ void main() {
     });
 
     group('Get Extensions', () {
-      test('should get extension by id', () {
+      test('应该通过 id 获取扩展', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -273,13 +273,13 @@ void main() {
         expect(retrieved?.id, 'test');
       });
 
-      test('should return null for non-existent extension', () {
+      test('对于不存在的扩展应该返回 null', () {
         final retrieved = registry.getExtension('nonexistent');
 
         expect(retrieved, null);
       });
 
-      test('should get all extensions', () {
+      test('应该获取所有扩展', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'test1',
@@ -298,7 +298,7 @@ void main() {
         expect(allExtensions.length, 2);
       });
 
-      test('should get all extension IDs', () {
+      test('应该获取所有扩展 ID', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'test1',
@@ -321,7 +321,7 @@ void main() {
     });
 
     group('Colors', () {
-      test('should get all light colors', () {
+      test('应该获取所有亮色模式颜色', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'test1',
@@ -348,7 +348,7 @@ void main() {
         expect(colors['secondary'], const Color(0xFF00FF00));
       });
 
-      test('should get all dark colors', () {
+      test('应该获取所有暗色模式颜色', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'test1',
@@ -375,7 +375,7 @@ void main() {
         expect(colors['secondary'], const Color(0xFFFFFF00));
       });
 
-      test('should get all colors based on brightness', () {
+      test('应该根据亮度获取所有颜色', () {
         const extension1 = theme.ThemeExtension(
           id: 'test1',
           displayName: 'Test Extension 1',
@@ -396,7 +396,7 @@ void main() {
         expect(darkColors['primary'], const Color(0xFF0000FF));
       });
 
-      test('should get specific color', () {
+      test('应该获取特定颜色', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -417,7 +417,7 @@ void main() {
         expect(darkColor, const Color(0xFF0000FF));
       });
 
-      test('should return null for non-existent color', () {
+      test('对于不存在的颜色应该返回 null', () {
         final color = registry.getColor('nonexistent', isDark: false);
 
         expect(color, null);
@@ -425,7 +425,7 @@ void main() {
     });
 
     group('Merge Extensions', () {
-      test('should merge extensions into ThemeData', () {
+      test('应该将扩展合并到 ThemeData', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -444,7 +444,7 @@ void main() {
     });
 
     group('Export and Import', () {
-      test('should export extensions to JSON', () {
+      test('应该将扩展导出为 JSON', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -465,7 +465,7 @@ void main() {
     });
 
     group('Clear', () {
-      test('should clear all extensions', () {
+      test('应该清除所有扩展', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'test1',
@@ -485,7 +485,7 @@ void main() {
     });
 
     group('Statistics', () {
-      test('should return correct statistics', () {
+      test('应该返回正确的统计信息', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'test1',
@@ -520,7 +520,7 @@ void main() {
     });
 
     group('Plugin Extensions', () {
-      test('should get extensions by plugin', () {
+      test('应该按插件获取扩展', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'ai.primary',
@@ -545,7 +545,7 @@ void main() {
         expect(graphExtensions.length, 1);
       });
 
-      test('should remove plugin extensions', () {
+      test('应该移除插件扩展', () {
         final extensions = [
           const theme.ThemeExtension(
             id: 'ai.primary',
@@ -571,7 +571,7 @@ void main() {
     });
 
     group('ChangeNotifier', () {
-      test('should notify listeners when registering extension', () {
+      test('注册扩展时应该通知监听器', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -587,7 +587,7 @@ void main() {
         expect(notified, true);
       });
 
-      test('should notify listeners when unregistering extension', () {
+      test('注销扩展时应该通知监听器', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',
@@ -605,7 +605,7 @@ void main() {
         expect(notified, true);
       });
 
-      test('should notify listeners when clearing extensions', () {
+      test('清除扩展时应该通知监听器', () {
         const extension = theme.ThemeExtension(
           id: 'test',
           displayName: 'Test Extension',

@@ -5,7 +5,7 @@ import 'package:node_graph_notebook/core/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/events/app_events.dart';
 
 void main() {
-  group('CommandBus EventStream Integration', () {
+  group('CommandBus 事件流集成测试', () {
     late CommandBus commandBus;
 
     setUp(() {
@@ -16,24 +16,24 @@ void main() {
       commandBus.dispose();
     });
 
-    test('should have eventStream', () {
+    test('应该有事件流', () {
       expect(commandBus.eventStream, isNotNull);
       expect(commandBus.eventStream, isA<Stream<AppEvent>>());
     });
 
-    test('should allow direct event publishing', () async {
+    test('应该允许直接发布事件', () async {
       final receivedEvents = <AppEvent>[];
       final subscription = commandBus.eventStream.listen(receivedEvents.add);
 
-      // Publish event directly without command
+      // 直接发布事件，不通过命令
       const event = NodeDataChangedEvent(
-        changedNodes: [],  // Empty list for testing
+        changedNodes: [],  // 测试用的空列表
         action: DataChangeAction.create,
       );
 
       commandBus.publishEvent(event);
 
-      // Wait for event to be published
+      // 等待事件发布
       await Future.delayed(const Duration(milliseconds: 10));
 
       expect(receivedEvents.length, equals(1));
@@ -45,7 +45,7 @@ void main() {
       await subscription.cancel();
     });
 
-    test('should publish batch of events', () async {
+    test('应该批量发布事件', () async {
       final receivedEvents = <AppEvent>[];
       final subscription = commandBus.eventStream.listen(receivedEvents.add);
 
@@ -62,7 +62,7 @@ void main() {
 
       commandBus.publishEvents(events);
 
-      // Wait for events to be published
+      // 等待事件发布
       await Future.delayed(const Duration(milliseconds: 10));
 
       expect(receivedEvents.length, equals(2));
@@ -75,14 +75,14 @@ void main() {
       await subscription.cancel();
     });
 
-    test('should not publish events after disposal', () async {
+    test('应该在释放后不发布事件', () async {
       final receivedEvents = <AppEvent>[];
       final subscription = commandBus.eventStream.listen(receivedEvents.add);
 
-      // Dispose command bus
+      // 释放命令总线
       commandBus.dispose();
 
-      // Try to publish event
+      // 尝试发布事件
       expect(
         () => commandBus.publishEvent(const NodeDataChangedEvent(
           changedNodes: [],
@@ -94,7 +94,7 @@ void main() {
       await subscription.cancel();
     });
 
-    test('should support multiple subscribers', () async {
+    test('应该支持多个订阅者', () async {
       final subscriber1Events = <AppEvent>[];
       final subscriber2Events = <AppEvent>[];
 
@@ -108,10 +108,10 @@ void main() {
 
       commandBus.publishEvent(event);
 
-      // Wait for event to be published
+      // 等待事件发布
       await Future.delayed(const Duration(milliseconds: 10));
 
-      // Both subscribers should receive the event
+      // 两个订阅者都应该收到事件
       expect(subscriber1Events.length, equals(1));
       expect(subscriber2Events.length, equals(1));
       expect(subscriber1Events.first, equals(subscriber2Events.first));
@@ -120,7 +120,7 @@ void main() {
       await subscription2.cancel();
     });
 
-    test('should stream events in order', () async {
+    test('应该按顺序流式传输事件', () async {
       final receivedEvents = <AppEvent>[];
       final subscription = commandBus.eventStream.listen(receivedEvents.add);
 
@@ -141,7 +141,7 @@ void main() {
 
       events.forEach(commandBus.publishEvent);
 
-      // Wait for events to be published
+      // 等待事件发布
       await Future.delayed(const Duration(milliseconds: 50));
 
       expect(receivedEvents.length, equals(3));

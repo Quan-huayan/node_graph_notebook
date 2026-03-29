@@ -37,7 +37,7 @@ void main() {
       );
     });
 
-    test('should repair missing storage directory', () async {
+    test('应该修复缺失的存储目录', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
       final storageDir = Directory(storagePath)..deleteSync();
@@ -60,7 +60,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should repair missing nodes directory', () async {
+    test('应该修复缺失的节点目录', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
       final nodesPath = '$storagePath/nodes';
@@ -83,7 +83,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should repair missing graphs directory', () async {
+    test('应该修复缺失的图目录', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
       final graphsPath = '$storagePath/graphs';
@@ -106,7 +106,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should rebuild index', () async {
+    test('应该重建索引', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -129,7 +129,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should repair current graph setting', () async {
+    test('应该修复当前图设置', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();
@@ -152,7 +152,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should create backup when createBackup is true', () async {
+    test('当createBackup为true时应该创建备份', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
       final nodesDir = Directory('$storagePath/nodes')..createSync();
@@ -178,7 +178,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should not create backup when createBackup is false', () async {
+    test('当createBackup为false时不应该创建备份', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
 
@@ -198,7 +198,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should return failure when storage path fails', () async {
+    test('存储路径获取失败时应该返回失败结果', () async {
       when(mockStoragePathService.getStoragePath()).thenThrow(Exception('Storage path error'));
 
       final command = RepairDataCommand(createBackup: false);
@@ -208,7 +208,7 @@ void main() {
       expect(result.error, contains('修复失败'));
     });
 
-    test('should include success message in result', () async {
+    test('结果中应该包含成功消息', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
 
@@ -228,7 +228,7 @@ void main() {
       tempDir.deleteSync(recursive: true);
     });
 
-    test('should handle no issues to repair', () async {
+    test('应该处理没有需要修复的问题的情况', () async {
       final tempDir = Directory.systemTemp.createTempSync('repair_test_');
       final storagePath = tempDir.path;
       Directory('$storagePath/nodes').createSync();

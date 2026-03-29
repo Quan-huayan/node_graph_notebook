@@ -14,7 +14,7 @@ void main() {
       manager.dispose();
     });
 
-    test('should track subscription', () {
+    test('应该跟踪订阅', () {
       final controller = StreamController<int>();
       final subscription = controller.stream.listen((_) {});
 
@@ -26,7 +26,7 @@ void main() {
       controller.close();
     });
 
-    test('should cancel existing subscription when tracking same key', () {
+    test('跟踪相同键时应该取消现有订阅', () {
       final controller1 = StreamController<int>();
       final controller2 = StreamController<int>();
 
@@ -39,14 +39,14 @@ void main() {
       manager.track('test', sub2);
       expect(manager.has('test'), true);
 
-      // Both subscriptions should be tracked
+      // 两个订阅都应该被跟踪
       expect(manager.count, 1);
 
       controller1.close();
       controller2.close();
     });
 
-    test('should cancel specific subscription', () async {
+    test('应该取消特定订阅', () async {
       final controller = StreamController<int>();
       final subscription = controller.stream.listen((_) {});
 
@@ -59,7 +59,7 @@ void main() {
       await controller.close();
     });
 
-    test('should cancel all subscriptions on dispose', () {
+    test('应该在dispose时取消所有订阅', () {
       final controller1 = StreamController<int>();
       final controller2 = StreamController<int>();
 
@@ -78,22 +78,22 @@ void main() {
       controller2.close();
     });
 
-    test('should handle cancellation errors gracefully', () {
+    test('应该优雅地处理取消错误', () {
       final controller = StreamController<int>();
       final subscription = controller.stream.listen((_) {});
 
       manager.track('test', subscription);
 
-      // Manually cancel the subscription to simulate error
+      // 手动取消订阅以模拟错误
       subscription.cancel();
 
-      // dispose should not throw even though subscription is already cancelled
+      // dispose不应该抛出异常，即使订阅已经被取消
       expect(() => manager.dispose(), returnsNormally);
 
       controller.close();
     });
 
-    test('should return all keys', () {
+    test('应该返回所有键', () {
       final controller1 = StreamController<int>();
       final controller2 = StreamController<int>();
       final controller3 = StreamController<int>();
@@ -113,7 +113,7 @@ void main() {
       controller3.close();
     });
 
-    test('should assert non-empty key', () {
+    test('应该断言非空键', () {
       final controller = StreamController<int>();
       final subscription = controller.stream.listen((_) {});
 
@@ -125,14 +125,14 @@ void main() {
       controller.close();
     });
 
-    test('should assert non-empty ownerId', () {
+    test('应该断言非空ownerId', () {
       expect(
         () => EventSubscriptionManager(''),
         throwsAssertionError,
       );
     });
 
-    test('should handle subscription errors', () async {
+    test('应该处理订阅错误', () async {
       final controller = StreamController<int>();
 
       manager.track(
@@ -140,16 +140,16 @@ void main() {
         controller.stream.listen(
           (_) {},
           onError: (error) {
-            // Error handler prevents uncaught exceptions
+            // 错误处理程序防止未捕获的异常
             expect(error.toString(), contains('Test error'));
           },
         ),
       );
 
-      // Trigger error - should be caught by onError handler
+      // 触发错误 - 应该被onError处理程序捕获
       controller.addError(Exception('Test error'));
 
-      // Give time for error to be processed
+      // 给错误处理一些时间
       await Future.delayed(const Duration(milliseconds: 50));
 
       await controller.close();
@@ -157,7 +157,7 @@ void main() {
   });
 
   group('EventSubscriptionManager.toString', () {
-    test('should return formatted string', () {
+    test('应该返回格式化字符串', () {
       final manager = EventSubscriptionManager('TestManager');
       final str = manager.toString();
 
@@ -167,7 +167,7 @@ void main() {
       manager.dispose();
     });
 
-    test('should include subscription keys in toString', () {
+    test('toString应该包含订阅键', () {
       final manager = EventSubscriptionManager('TestManager');
       final controller1 = StreamController<int>();
       final controller2 = StreamController<int>();

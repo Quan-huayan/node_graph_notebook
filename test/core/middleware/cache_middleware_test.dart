@@ -11,13 +11,13 @@ class TestCacheableCommand extends Command<dynamic> implements CacheableCommand 
 
   @override
   Future<CommandResult<dynamic>> execute(CommandContext context) async =>
-      CommandResult.success('cached_result');
+      CommandResult.success('缓存结果');
 
   @override
-  String get name => 'TestCacheableCommand';
+  String get name => '可缓存测试命令';
 
   @override
-  String get description => 'Cacheable test command';
+  String get description => '可缓存的测试命令';
 }
 
 class TestNonCacheableCommand extends Command<dynamic> {
@@ -25,13 +25,13 @@ class TestNonCacheableCommand extends Command<dynamic> {
 
   @override
   Future<CommandResult<dynamic>> execute(CommandContext context) async =>
-      CommandResult.success('non_cached_result');
+      CommandResult.success('非缓存结果');
 
   @override
-  String get name => 'TestNonCacheableCommand';
+  String get name => '不可缓存测试命令';
 
   @override
-  String get description => 'Non-cacheable test command';
+  String get description => '不可缓存的测试命令';
 }
 
 void main() {
@@ -49,70 +49,70 @@ void main() {
     });
 
     group('metadata', () {
-      test('should have correct metadata', () {
+      test('应该有正确的元数据', () {
         expect(middleware.metadata.id, 'cache_middleware');
         expect(middleware.metadata.name, 'Cache Middleware');
         expect(middleware.metadata.version, '1.0.0');
       });
 
-      test('should have correct priority', () {
+      test('应该有正确的优先级', () {
         expect(middleware.priority, 50);
       });
     });
 
     group('canHandle', () {
-      test('should handle cacheable commands', () {
+      test('应该处理可缓存的命令', () {
         final command = TestCacheableCommand();
         expect(middleware.canHandle(command), true);
       });
 
-      test('should not handle non-cacheable commands', () {
+      test('不应该处理不可缓存的命令', () {
         final command = TestNonCacheableCommand();
         expect(middleware.canHandle(command), false);
       });
     });
 
     group('handle', () {
-      test('should execute command and cache result', () async {
+      test('应该执行命令并缓存结果', () async {
         final command = TestCacheableCommand();
         var executed = false;
 
         Future<CommandResult?> next(Command cmd, CommandContext ctx) async {
           executed = true;
-          return CommandResult.success('result');
+          return CommandResult.success('结果');
         }
 
         final result = await middleware.handle(command, context, next);
 
         expect(executed, true);
         expect(result?.isSuccess, true);
-        expect(result?.data, 'result');
+        expect(result?.data, '结果');
       });
 
-      test('should return cached result on second call', () async {
+      test('第二次调用应该返回缓存的结果', () async {
         final command = TestCacheableCommand();
         var executionCount = 0;
 
         Future<CommandResult?> next(Command cmd, CommandContext ctx) async {
           executionCount++;
-          return CommandResult.success('result_$executionCount');
+          return CommandResult.success('结果_$executionCount');
         }
 
         final result1 = await middleware.handle(command, context, next);
         final result2 = await middleware.handle(command, context, next);
 
-        expect(result1?.data, 'result_1');
-        expect(result2?.data, 'result_1');
+        expect(result1?.data, '结果_1');
+        expect(result2?.data, '结果_1');
         expect(executionCount, 1);
       });
 
-      test('should not cache non-cacheable commands', () async {
+      test('不应该缓存不可缓存的命令', () async {
         final command = TestNonCacheableCommand();
         var executionCount = 0;
 
         Future<CommandResult?> next(Command cmd, CommandContext ctx) async {
           executionCount++;
-          return CommandResult.success('result_$executionCount');
+          return CommandResult.success('结果_$executionCount');
         }
 
         await middleware.handle(command, context, next);
@@ -123,13 +123,13 @@ void main() {
     });
 
     group('clearCache', () {
-      test('should clear all cache', () async {
+      test('应该清除所有缓存', () async {
         final command = TestCacheableCommand();
         var executionCount = 0;
 
         Future<CommandResult?> next(Command cmd, CommandContext ctx) async {
           executionCount++;
-          return CommandResult.success('result_$executionCount');
+          return CommandResult.success('结果_$executionCount');
         }
 
         await middleware.handle(command, context, next);
@@ -141,14 +141,14 @@ void main() {
     });
 
     group('clearCacheForCommand', () {
-      test('should clear cache for specific command', () async {
+      test('应该清除特定命令的缓存', () async {
         final command1 = TestCacheableCommand();
         final command2 = TestCacheableCommand();
         var executionCount = 0;
 
         Future<CommandResult?> next(Command cmd, CommandContext ctx) async {
           executionCount++;
-          return CommandResult.success('result_$executionCount');
+          return CommandResult.success('结果_$executionCount');
         }
 
         await middleware.handle(command1, context, next);
@@ -160,13 +160,13 @@ void main() {
     });
 
     group('lifecycle', () {
-      test('should dispose correctly', () async {
+      test('应该正确释放', () async {
         final command = TestCacheableCommand();
         var executionCount = 0;
 
         Future<CommandResult?> next(Command cmd, CommandContext ctx) async {
           executionCount++;
-          return CommandResult.success('result_$executionCount');
+          return CommandResult.success('结果_$executionCount');
         }
 
         await middleware.handle(command, context, next);
@@ -181,12 +181,12 @@ void main() {
   });
 
   group('CacheableCommand', () {
-    test('should allow null cacheTtl', () {
+    test('应该允许null缓存过期时间', () {
       final command = TestCacheableCommand(cacheTtl: null);
       expect(command.cacheTtl, isNull);
     });
 
-    test('should allow custom cacheTtl', () {
+    test('应该允许自定义缓存过期时间', () {
       final command = TestCacheableCommand(
         cacheTtl: const Duration(minutes: 10),
       );

@@ -9,7 +9,7 @@ import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  group('FileSystemNodeRepository', () {
+  group('FileSystemNodeRepository - 文件系统节点仓库', () {
     late FileSystemNodeRepository repository;
     late String testDir;
 
@@ -26,8 +26,8 @@ void main() {
       }
     });
 
-    group('init', () {
-      test('should create directory if it does not exist', () async {
+    group('init - 初始化', () {
+      test('如果目录不存在应该创建目录', () async {
         final newDir = Directory.systemTemp.createTempSync('test_new_nodes_').path;
         final newRepo = FileSystemNodeRepository(nodesDir: newDir);
 
@@ -39,8 +39,8 @@ void main() {
       });
     });
 
-    group('save', () {
-      test('should save a node successfully', () async {
+    group('save - 保存', () {
+      test('应该成功保存节点', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -60,7 +60,7 @@ void main() {
         expect(file.existsSync(), true);
       });
 
-      test('should update existing node', () async {
+      test('应该更新已存在的节点', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -88,7 +88,7 @@ void main() {
         expect(loaded?.content, 'Updated content');
       });
 
-      test('should update metadata index when saving node', () async {
+      test('保存节点时应该更新元数据索引', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -110,8 +110,8 @@ void main() {
       });
     });
 
-    group('load', () {
-      test('should load a node successfully', () async {
+    group('load - 加载', () {
+      test('应该成功加载节点', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -134,14 +134,14 @@ void main() {
         expect(loaded.content, 'Test content');
       });
 
-      test('should return null if node does not exist', () async {
+      test('如果节点不存在应该返回null', () async {
         final loaded = await repository.load('non_existent');
         expect(loaded, isNull);
       });
     });
 
-    group('delete', () {
-      test('should delete a node successfully', () async {
+    group('delete - 删除', () {
+      test('应该成功删除节点', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -162,13 +162,13 @@ void main() {
         expect(loaded, isNull);
       });
 
-      test('should not throw error when deleting non-existent node', () async {
+      test('删除不存在的节点时不应该抛出错误', () async {
         expect(() async => repository.delete('non_existent'), returnsNormally);
       });
     });
 
-    group('saveAll', () {
-      test('should save multiple nodes successfully', () async {
+    group('saveAll - 批量保存', () {
+      test('应该成功保存多个节点', () async {
         final nodes = [
           Node(
             id: 'node_1',
@@ -205,7 +205,7 @@ void main() {
         expect(loaded2, isNotNull);
       });
 
-      test('should update metadata index for all nodes', () async {
+      test('应该为所有节点更新元数据索引', () async {
         final nodes = [
           Node(
             id: 'node_1',
@@ -240,8 +240,8 @@ void main() {
       });
     });
 
-    group('loadAll', () {
-      test('should load multiple nodes successfully', () async {
+    group('loadAll - 批量加载', () {
+      test('应该成功加载多个节点', () async {
         final nodes = [
           Node(
             id: 'node_1',
@@ -278,7 +278,7 @@ void main() {
         expect(loaded.any((n) => n.id == 'node_2'), true);
       });
 
-      test('should skip non-existent nodes', () async {
+      test('应该跳过不存在的节点', () async {
         final node = Node(
           id: 'node_1',
           title: 'Node 1',
@@ -301,13 +301,13 @@ void main() {
       });
     });
 
-    group('queryAll', () {
-      test('should return empty list when no nodes exist', () async {
+    group('queryAll - 查询全部', () {
+      test('当没有节点存在时应该返回空列表', () async {
         final nodes = await repository.queryAll();
         expect(nodes, isEmpty);
       });
 
-      test('should return all nodes', () async {
+      test('应该返回所有节点', () async {
         final nodes = [
           Node(
             id: 'node_1',
@@ -341,7 +341,7 @@ void main() {
         expect(queried.length, 2);
       });
 
-      test('should handle corrupted files gracefully', () async {
+      test('应该优雅地处理损坏的文件', () async {
         final validNode = Node(
           id: 'node_1',
           title: 'Valid Node',
@@ -365,7 +365,7 @@ void main() {
         expect(queried.any((n) => n.id == 'node_1'), true);
       });
 
-      test('should create directory if it does not exist', () async {
+      test('如果目录不存在应该创建目录', () async {
         final newDir = Directory.systemTemp.createTempSync('test_queryall_dir_').path;
         final newRepo = FileSystemNodeRepository(nodesDir: path.join(newDir, 'nodes'));
 
@@ -377,7 +377,7 @@ void main() {
       });
     });
 
-    group('search', () {
+    group('search - 搜索', () {
       setUp(() async {
         final nodes = [
           Node(
@@ -421,34 +421,34 @@ void main() {
         await repository.saveAll(nodes);
       });
 
-      test('should search by title', () async {
+      test('应该按标题搜索', () async {
         final results = await repository.search(title: 'Python');
         expect(results.length, 1);
         expect(results[0].title, 'Python Programming');
       });
 
-      test('should search by content', () async {
+      test('应该按内容搜索', () async {
         final results = await repository.search(content: 'Flutter');
         expect(results.length, 1);
         expect(results[0].title, 'Dart Language');
       });
 
-      test('should search by title OR content', () async {
+      test('应该按标题或内容搜索', () async {
         final results = await repository.search(title: 'Python', content: 'Flutter');
         expect(results.length, 2);
       });
 
-      test('should search by tags', () async {
+      test('应该按标签搜索', () async {
         final results = await repository.search(tags: ['programming']);
         expect(results.length, 2);
       });
 
-      test('should search by multiple tags', () async {
+      test('应该按多个标签搜索', () async {
         final results = await repository.search(tags: ['programming', 'dart']);
         expect(results.length, 2);
       });
 
-      test('should search by date range', () async {
+      test('应该按日期范围搜索', () async {
         final results = await repository.search(
           startDate: DateTime(2024, 1, 15),
           endDate: DateTime(2024, 2, 15),
@@ -457,7 +457,7 @@ void main() {
         expect(results[0].title, 'Dart Language');
       });
 
-      test('should combine multiple search criteria', () async {
+      test('应该组合多个搜索条件', () async {
         final results = await repository.search(
           title: 'Python',
           tags: ['programming'],
@@ -466,12 +466,12 @@ void main() {
         expect(results[0].title, 'Python Programming');
       });
 
-      test('should return all nodes when no criteria provided', () async {
+      test('当没有提供搜索条件时应该返回所有节点', () async {
         final results = await repository.search();
         expect(results.length, 3);
       });
 
-      test('should be case insensitive', () async {
+      test('应该不区分大小写', () async {
         final results1 = await repository.search(title: 'python');
         final results2 = await repository.search(title: 'PYTHON');
         expect(results1.length, 1);
@@ -479,20 +479,20 @@ void main() {
       });
     });
 
-    group('getNodeFilePath', () {
-      test('should return correct file path', () {
+    group('getNodeFilePath - 获取节点文件路径', () {
+      test('应该返回正确的文件路径', () {
         final filePath = repository.getNodeFilePath('node_1');
         expect(filePath, path.join(testDir, 'node_1.md'));
       });
     });
 
-    group('getMetadataIndex', () {
-      test('should return empty index when no nodes exist', () async {
+    group('getMetadataIndex - 获取元数据索引', () {
+      test('当没有节点存在时应该返回空索引', () async {
         final index = await repository.getMetadataIndex();
         expect(index.nodes, isEmpty);
       });
 
-      test('should return index with all nodes', () async {
+      test('应该返回包含所有节点的索引', () async {
         final nodes = [
           Node(
             id: 'node_1',
@@ -528,7 +528,7 @@ void main() {
         expect(index.nodes.any((n) => n.id == 'node_2'), true);
       });
 
-      test('should return empty index for corrupted index file', () async {
+      test('对于损坏的索引文件应该返回空索引', () async {
         final indexFile = File(path.join(testDir, 'index.json'));
         await indexFile.writeAsString('corrupted data');
 
@@ -537,8 +537,8 @@ void main() {
       });
     });
 
-    group('updateIndex', () {
-      test('should update metadata index for node', () async {
+    group('updateIndex - 更新索引', () {
+      test('应该更新节点的元数据索引', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -560,7 +560,7 @@ void main() {
         expect(index.nodes[0].title, 'Test Node');
       });
 
-      test('should replace existing node in index', () async {
+      test('应该在索引中替换已存在的节点', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -585,8 +585,8 @@ void main() {
       });
     });
 
-    group('markdown parsing', () {
-      test('should parse node with frontmatter and content', () async {
+    group('markdown parsing - Markdown解析', () {
+      test('应该解析带有frontmatter和内容的节点', () async {
         const markdown = '''
 ---
 id: node_1
@@ -613,7 +613,7 @@ Test content''';
         expect(node.size, const Size(300, 400));
       });
 
-      test('should parse node with references', () async {
+      test('应该解析带有引用的节点', () async {
         const markdown = '''
 ---
 id: node_1
@@ -646,7 +646,7 @@ Test content''';
         expect(node.references['node_3']?.role, 'dependency');
       });
 
-      test('should parse node with metadata', () async {
+      test('应该解析带有元数据的节点', () async {
         const markdown = '''
 ---
 id: node_1
@@ -676,7 +676,7 @@ Test content''';
         expect(node.metadata['priority'], 'high');
       });
 
-      test('should parse node with h1 title in content', () async {
+      test('应该解析内容中包含h1标题的节点', () async {
         const markdown = '''
 ---
 id: node_1
@@ -703,7 +703,7 @@ This is actual content.''';
         expect(node.content, 'This is actual content.');
       });
 
-      test('should parse node with color', () async {
+      test('应该解析带有颜色的节点', () async {
         const markdown = '''
 ---
 id: node_1
@@ -729,8 +729,8 @@ Test content''';
       });
     });
 
-    group('markdown generation', () {
-      test('should generate valid markdown for node', () async {
+    group('markdown generation - Markdown生成', () {
+      test('应该为节点生成有效的Markdown', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -755,7 +755,7 @@ Test content''';
         expect(content, contains('Test content'));
       });
 
-      test('should generate markdown with references', () async {
+      test('应该生成带有引用的Markdown', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -794,7 +794,7 @@ Test content''';
         expect(content, contains('role: "dependency"'));
       });
 
-      test('should generate markdown with metadata', () async {
+      test('应该生成带有元数据的Markdown', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -820,7 +820,7 @@ Test content''';
         expect(content, contains('tags:'));
       });
 
-      test('should generate markdown with color', () async {
+      test('应该生成带有颜色的Markdown', () async {
         final node = Node(
           id: 'node_1',
           title: 'Test Node',
@@ -844,8 +844,8 @@ Test content''';
       });
     });
 
-    group('integration tests', () {
-      test('should handle complete workflow', () async {
+    group('integration tests - 集成测试', () {
+      test('应该处理完整的工作流', () async {
         final nodes = [
           Node(
             id: 'node_1',

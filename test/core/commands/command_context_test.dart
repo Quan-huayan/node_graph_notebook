@@ -14,7 +14,7 @@ import 'package:node_graph_notebook/plugins/graph/service/node_service.dart';
 
 Node _createTestNode({
   required String id,
-  String title = 'Test Node',
+  String title = '测试节点',
   String? content,
 }) => Node(
     id: id,
@@ -96,7 +96,7 @@ class MockGraphService implements GraphService {
 
 void main() {
   group('CommandContext', () {
-    test('should create context with services', () {
+    test('应该创建带有服务的上下文', () {
       final nodeRepository = MockNodeRepository();
       final graphRepository = MockGraphRepository();
       final nodeService = MockNodeService();
@@ -117,21 +117,21 @@ void main() {
       expect(context.read<MockGraphService>(), equals(graphService));
     });
 
-    test('should throw ServiceNotFoundException for missing service', () {
+    test('应该为缺失的服务抛出ServiceNotFoundException', () {
       final context = CommandContext();
 
       expect(() => context.nodeRepository, throwsA(isA<ServiceNotFoundException>()));
       expect(() => context.graphRepository, throwsA(isA<ServiceNotFoundException>()));
     });
 
-    test('should return null for optional missing services', () {
+    test('应该为可选的缺失服务返回null', () {
       final context = CommandContext();
 
       expect(context.tryRead<MockNodeService>(), isNull);
       expect(context.tryRead<MockGraphService>(), isNull);
     });
 
-    test('should register and read custom services', () {
+    test('应该注册和读取自定义服务', () {
       final context = CommandContext();
       final customService = MockNodeService();
 
@@ -140,13 +140,13 @@ void main() {
       expect(context.read<MockNodeService>(), equals(customService));
     });
 
-    test('should tryRead returns null for missing service', () {
+    test('应该为缺失的服务返回null', () {
       final context = CommandContext();
 
       expect(context.tryRead<MockNodeService>(), isNull);
     });
 
-    test('should set and get metadata', () {
+    test('应该设置和获取元数据', () {
       final context = CommandContext()
 
       ..setMetadata('key1', 'value1')
@@ -157,7 +157,7 @@ void main() {
       expect(context.getMetadata('nonexistent'), isNull);
     });
 
-    test('should check metadata existence', () {
+    test('应该检查元数据是否存在', () {
       final context = CommandContext()
 
       ..setMetadata('key1', 'value1');
@@ -166,7 +166,7 @@ void main() {
       expect(context.hasMetadata('nonexistent'), isFalse);
     });
 
-    test('should clear metadata', () {
+    test('应该清除元数据', () {
       final context = CommandContext()
 
       ..setMetadata('key1', 'value1')
@@ -177,7 +177,7 @@ void main() {
       expect(context.hasMetadata('key2'), isFalse);
     });
 
-    test('should create child context with inherited services', () {
+    test('应该创建带有继承服务的子上下文', () {
       final nodeRepository = MockNodeRepository();
       final graphRepository = MockGraphRepository();
 
@@ -195,7 +195,7 @@ void main() {
       expect(child.getMetadata('parentKey'), equals('parentValue'));
     });
 
-    test('child context should have independent metadata', () {
+    test('子上下文应该有独立的元数据', () {
       final parent = CommandContext()
       ..setMetadata('key', 'parentValue');
 
@@ -206,13 +206,13 @@ void main() {
       expect(child.getMetadata('key'), equals('childValue'));
     });
 
-    test('should publish node event', () async {
+    test('应该发布节点事件', () async {
       final context = CommandContext();
       final node = _createTestNode(id: 'test-id');
 
       context.publishSingleNodeEvent(node, DataChangeAction.create);
 
-      // Check pending events instead of subscribing to eventBus
+      // 检查待处理事件而不是订阅 eventBus
       final pendingEvents = context.getPendingEvents();
       expect(pendingEvents.length, equals(1));
       expect(pendingEvents.first, isA<NodeDataChangedEvent>());
@@ -223,16 +223,16 @@ void main() {
       expect(event.action, equals(DataChangeAction.create));
     });
 
-    test('should publish multiple nodes event', () async {
+    test('应该发布多个节点事件', () async {
       final context = CommandContext();
       final nodes = <Node>[
-        _createTestNode(id: 'node-1', title: 'Node 1'),
-        _createTestNode(id: 'node-2', title: 'Node 2'),
+        _createTestNode(id: 'node-1', title: '节点 1'),
+        _createTestNode(id: 'node-2', title: '节点 2'),
       ];
 
       context.publishNodeEvent(nodes, DataChangeAction.update);
 
-      // Check pending events instead of subscribing to eventBus
+      // 检查待处理事件而不是订阅 eventBus
       final pendingEvents = context.getPendingEvents();
       expect(pendingEvents.length, equals(1));
       expect(pendingEvents.first, isA<NodeDataChangedEvent>());
@@ -242,7 +242,7 @@ void main() {
       expect(event.action, equals(DataChangeAction.update));
     });
 
-    test('should publish graph relation event', () async {
+    test('应该发布图谱关系事件', () async {
       final context = CommandContext();
 
       context.publishGraphRelationEvent(
@@ -251,7 +251,7 @@ void main() {
         RelationChangeAction.addedToGraph,
       );
 
-      // Check pending events instead of subscribing to eventBus
+      // 检查待处理事件而不是订阅 eventBus
       final pendingEvents = context.getPendingEvents();
       expect(pendingEvents.length, equals(1));
       expect(pendingEvents.first, isA<GraphNodeRelationChangedEvent>());
@@ -262,7 +262,7 @@ void main() {
       expect(event.action, equals(RelationChangeAction.addedToGraph));
     });
 
-    test('should track transaction state', () async {
+    test('应该跟踪事务状态', () async {
       final context = CommandContext();
 
       expect(context.isInTransaction, isFalse);
@@ -276,7 +276,7 @@ void main() {
       expect(context.isInTransaction, isFalse);
     });
 
-    test('should mark transaction as rolled back on error', () async {
+    test('应该在错误时将事务标记为已回滚', () async {
       final context = CommandContext();
 
       expect(context.isInTransaction, isFalse);
@@ -296,7 +296,7 @@ void main() {
   });
 
   group('ServiceNotFoundException', () {
-    test('should create exception with message', () {
+    test('应该使用消息创建异常', () {
       const message = 'Service not found: TestService';
       const exception = ServiceNotFoundException(message);
 

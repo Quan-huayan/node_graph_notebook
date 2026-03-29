@@ -14,7 +14,7 @@ import 'data_recovery_service_test.mocks.dart';
 ])
 void main() {
   group('DataRecoveryResult', () {
-    test('should create DataRecoveryResult with correct properties', () {
+    test('应该创建具有正确属性的 DataRecoveryResult', () {
       const result = DataRecoveryResult(
         success: true,
         repairedIssues: 5,
@@ -28,7 +28,7 @@ void main() {
       expect(result.message, 'Test message');
     });
 
-    test('should create DataRecoveryResult without message', () {
+    test('应该创建不带消息的 DataRecoveryResult', () {
       const result = DataRecoveryResult(
         success: false,
         repairedIssues: 0,
@@ -42,7 +42,7 @@ void main() {
     });
   });
 
-  group('DataRecoveryService', () {
+  group('数据恢复服务', () {
     late DataRecoveryService service;
     late MockNodeRepository mockNodeRepository;
     late MockGraphRepository mockGraphRepository;
@@ -61,21 +61,21 @@ void main() {
     });
 
     group('getRecoveryMessage', () {
-      test('should return correct message for missing file error', () {
+      test('对于文件丢失错误应该返回正确的消息', () {
         const error = FileSystemException('Cannot find file', '/test/path');
         final message = service.getRecoveryMessage(error);
 
         expect(message, contains('数据文件丢失'));
       });
 
-      test('should return correct message for permission error', () {
+      test('对于权限错误应该返回正确的消息', () {
         const error = FileSystemException('Permission denied', '/test/path');
         final message = service.getRecoveryMessage(error);
 
         expect(message, contains('没有访问权限'));
       });
 
-      test('should return generic message for unknown errors', () {
+      test('对于未知错误应该返回通用消息', () {
         final error = Exception('Unknown error');
         final message = service.getRecoveryMessage(error);
 
@@ -84,17 +84,17 @@ void main() {
     });
 
     group('isRecoverableError', () {
-      test('should return true for missing file errors', () {
+      test('对于文件丢失错误应该返回 true', () {
         const error = FileSystemException('Cannot find file', '/test/path');
         expect(service.isRecoverableError(error), true);
       });
 
-      test('should return true for directory errors', () {
+      test('对于目录错误应该返回 true', () {
         const error = FileSystemException('Directory not found', '/test/path');
         expect(service.isRecoverableError(error), true);
       });
 
-      test('should return false for non-recoverable errors', () {
+      test('对于不可恢复的错误应该返回 false', () {
         final error = Exception('Unknown error');
         expect(service.isRecoverableError(error), false);
       });

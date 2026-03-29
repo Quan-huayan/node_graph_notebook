@@ -43,7 +43,7 @@ void main() {
       );
     });
 
-    test('should analyze node successfully', () async {
+    test('应该成功分析节点', () async {
       final command = AnalyzeNodeCommand(node: testNode);
       mockAIService.analysisResult = const NodeAnalysis(
         nodeId: 'node-1',
@@ -64,7 +64,7 @@ void main() {
       expect(mockContext.publishedEvents.first, isA<NodeAnalyzedEvent>());
     });
 
-    test('should publish NodeAnalyzedEvent with correct data', () async {
+    test('应该发布包含正确数据的NodeAnalyzedEvent', () async {
       final command = AnalyzeNodeCommand(node: testNode);
       mockAIService.analysisResult = const NodeAnalysis(
         nodeId: 'node-1',
@@ -83,7 +83,7 @@ void main() {
       expect(event.topics, ['topic1']);
     });
 
-    test('should handle AI service errors', () async {
+    test('应该处理AI服务错误', () async {
       final command = AnalyzeNodeCommand(node: testNode);
       mockAIService.shouldThrowError = true;
 
@@ -93,7 +93,7 @@ void main() {
       expect(result.error, contains('Failed to analyze node'));
     });
 
-    test('should handle node with empty content', () async {
+    test('应该处理内容为空节点', () async {
       final emptyNode = Node(
         id: 'node-2',
         title: 'Empty Node',
@@ -159,7 +159,7 @@ void main() {
       ];
     });
 
-    test('should suggest connections successfully', () async {
+    test('应该成功建议连接', () async {
       final command = SuggestConnectionsCommand(nodes: testNodes);
       mockAIService.suggestions = [
         const ConnectionSuggestion(
@@ -181,7 +181,7 @@ void main() {
       expect(mockContext.publishedEvents.first, isA<ConnectionsSuggestedEvent>());
     });
 
-    test('should filter suggestions by minConfidence', () async {
+    test('应该通过minConfidence过滤建议', () async {
       final command = SuggestConnectionsCommand(
         nodes: testNodes,
         minConfidence: 0.7,
@@ -209,7 +209,7 @@ void main() {
       expect(suggestions.first.confidence, 0.9);
     });
 
-    test('should return failure when AI service unavailable', () async {
+    test('当AI服务不可用时应该返回失败', () async {
       final command = SuggestConnectionsCommand(nodes: testNodes);
       mockAIService.isAvailableFlag = false;
 
@@ -219,7 +219,7 @@ void main() {
       expect(result.error, contains('AI service is not available'));
     });
 
-    test('should handle empty nodes list', () async {
+    test('应该处理空节点列表', () async {
       final command = SuggestConnectionsCommand(nodes: []);
       mockAIService.suggestions = [];
 
@@ -230,7 +230,7 @@ void main() {
       expect(suggestions.length, 0);
     });
 
-    test('should publish ConnectionsSuggestedEvent with correct data', () async {
+    test('应该发布包含正确数据的ConnectionsSuggestedEvent', () async {
       final command = SuggestConnectionsCommand(nodes: testNodes);
       mockAIService.suggestions = [
         const ConnectionSuggestion(
@@ -275,7 +275,7 @@ void main() {
       mockContext._nodeRepository.nodes = testNodes;
     });
 
-    test('should generate graph summary successfully', () async {
+    test('应该成功生成图谱摘要', () async {
       final command = GenerateGraphSummaryCommand();
       mockAIService.graphSummary = const GraphSummary(
         title: 'Test Summary',
@@ -295,7 +295,7 @@ void main() {
       expect(mockContext.publishedEvents.first, isA<GraphSummaryGeneratedEvent>());
     });
 
-    test('should return failure when AI service unavailable', () async {
+    test('当AI服务不可用时应该返回失败', () async {
       final command = GenerateGraphSummaryCommand();
       mockAIService.isAvailableFlag = false;
 
@@ -305,7 +305,7 @@ void main() {
       expect(result.error, contains('AI service is not available'));
     });
 
-    test('should publish GraphSummaryGeneratedEvent with correct data', () async {
+    test('应该发布包含正确数据的GraphSummaryGeneratedEvent', () async {
       final command = GenerateGraphSummaryCommand();
       mockAIService.graphSummary = const GraphSummary(
         title: 'Graph Title',
@@ -322,7 +322,7 @@ void main() {
       expect(event.summary.nodeCount, 2);
     });
 
-    test('should handle empty graph', () async {
+    test('应该处理空图谱', () async {
       final command = GenerateGraphSummaryCommand();
       mockContext._nodeRepository.nodes = [];
       mockAIService.graphSummary = const GraphSummary(
@@ -367,7 +367,7 @@ void main() {
       );
     });
 
-    test('should generate node successfully', () async {
+    test('应该成功生成节点', () async {
       final command = GenerateNodeCommand(prompt: 'Generate a test node');
       mockAIService.generatedNode = Node(
         id: 'ai-node-1',
@@ -393,7 +393,7 @@ void main() {
       expect(mockContext.publishedEvents.first, isA<NodeGeneratedEvent>());
     });
 
-    test('should use custom position if provided', () async {
+    test('如果提供了自定义位置应该使用它', () async {
       final command = GenerateNodeCommand(
         prompt: 'Test',
         position: const Offset(200, 300),
@@ -415,7 +415,7 @@ void main() {
       expect(mockNodeService.lastPosition, const Offset(200, 300));
     });
 
-    test('should return failure when AI service unavailable', () async {
+    test('当AI服务不可用时应该返回失败', () async {
       final command = GenerateNodeCommand(prompt: 'Test');
       mockAIService.isAvailableFlag = false;
 
@@ -425,7 +425,7 @@ void main() {
       expect(result.error, contains('AI service is not available'));
     });
 
-    test('should publish NodeGeneratedEvent with correct data', () async {
+    test('应该发布包含正确数据的NodeGeneratedEvent', () async {
       final command = GenerateNodeCommand(prompt: 'Test prompt');
       mockAIService.generatedNode = Node(
         id: 'ai-node-1',
@@ -446,7 +446,7 @@ void main() {
       expect(event.prompt, 'Test prompt');
     });
 
-    test('should pass options to AI service', () async {
+    test('应该传递选项给AI服务', () async {
       final command = GenerateNodeCommand(
         prompt: 'Test',
         options: {'style': 'formal', 'length': 'short'},

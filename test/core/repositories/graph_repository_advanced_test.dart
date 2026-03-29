@@ -13,7 +13,7 @@ import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  group('FileSystemGraphRepository Advanced Tests', () {
+  group('FileSystemGraphRepository Advanced Tests - 文件系统图谱仓库高级测试', () {
     late FileSystemGraphRepository repository;
     late String testDir;
 
@@ -30,8 +30,8 @@ void main() {
       }
     });
 
-    group('concurrent operations', () {
-      test('should handle concurrent saves to same graph', () async {
+    group('concurrent operations - 并发操作', () {
+      test('应该处理对同一图谱的并发保存', () async {
         final graph = Graph(
           id: 'concurrent_graph',
           name: 'Original',
@@ -60,7 +60,7 @@ void main() {
         expect(loaded!.id, 'concurrent_graph');
       });
 
-      test('should handle concurrent saves to different graphs', () async {
+      test('应该处理对不同图谱的并发保存', () async {
         final graphs = List.generate(10, (i) => Graph(
           id: 'graph_$i',
           name: 'Graph $i',
@@ -77,7 +77,7 @@ void main() {
         expect(allGraphs.length, 10);
       });
 
-      test('should handle concurrent current graph updates', () async {
+      test('应该处理并发当前图谱更新', () async {
         final graphs = List.generate(3, (i) => Graph(
           id: 'current_graph_$i',
           name: 'Graph $i',
@@ -107,8 +107,8 @@ void main() {
       });
     });
 
-    group('data recovery scenarios', () {
-      test('should recover from corrupted current.json', () async {
+    group('data recovery scenarios - 数据恢复场景', () {
+      test('应该从损坏的current.json中恢复', () async {
         final graph = Graph(
           id: 'recovery_graph',
           name: 'Recovery Test',
@@ -130,7 +130,7 @@ void main() {
         expect(current!.id, 'recovery_graph');
       });
 
-      test('should handle missing current.json gracefully', () async {
+      test('应该优雅地处理缺少current.json的情况', () async {
         final graph1 = Graph(
           id: 'graph_1',
           name: 'Graph 1',
@@ -159,7 +159,7 @@ void main() {
         expect(['graph_1', 'graph_2'].contains(current!.id), true);
       });
 
-      test('should handle graph file deleted while current', () async {
+      test('应该处理当前图谱文件被删除的情况', () async {
         final graph = Graph(
           id: 'deleted_graph',
           name: 'Deleted Graph',
@@ -180,7 +180,7 @@ void main() {
         expect(current, isNull);
       });
 
-      test('should handle partially written graph file', () async {
+      test('应该处理部分写入的图谱文件', () async {
         final graph = Graph(
           id: 'partial_graph',
           name: 'Partial Graph',
@@ -203,8 +203,8 @@ void main() {
       });
     });
 
-    group('import export scenarios', () {
-      test('should import graph with different ID', () async {
+    group('import export scenarios - 导入导出场景', () {
+      test('应该导入具有不同ID的图谱', () async {
         final originalGraph = Graph(
           id: 'original_id',
           name: 'Original Graph',
@@ -232,7 +232,7 @@ void main() {
         expect(loaded, isNotNull);
       });
 
-      test('should export and re-import graph maintaining data integrity', () async {
+      test('应该导出并重新导入图谱保持数据完整性', () async {
         final graph = Graph(
           id: 'export_test',
           name: 'Export Test',
@@ -261,7 +261,7 @@ void main() {
         await File(exportPath).delete();
       });
 
-      test('should throw RepositoryException for non-existent export', () async {
+      test('对于不存在的图谱导出应该抛出RepositoryException', () async {
         final exportPath = path.join(testDir, 'non_existent_export.json');
 
         expect(
@@ -270,7 +270,7 @@ void main() {
         );
       });
 
-      test('should throw RepositoryException for non-existent import file', () async {
+      test('对于不存在的导入文件应该抛出RepositoryException', () async {
         expect(
           () async => repository.import('/non/existent/path.json'),
           throwsA(isA<RepositoryException>()),
@@ -278,8 +278,8 @@ void main() {
       });
     });
 
-    group('view config handling', () {
-      test('should preserve view config after save and load', () async {
+    group('view config handling - 视图配置处理', () {
+      test('应该在保存和加载后保留视图配置', () async {
         final graph = Graph(
           id: 'view_config_graph',
           name: 'View Config Test',
@@ -301,7 +301,7 @@ void main() {
         expect(loaded.viewConfig.camera.y, 200.0);
       });
 
-      test('should handle default view config', () async {
+      test('应该处理默认视图配置', () async {
         final graph = Graph(
           id: 'default_view_config',
           name: 'Default View Config',
@@ -320,8 +320,8 @@ void main() {
       });
     });
 
-    group('node positions handling', () {
-      test('should handle large number of node positions', () async {
+    group('node positions handling - 节点位置处理', () {
+      test('应该处理大量节点位置', () async {
         final nodePositions = <String, Offset>{};
         for (var i = 0; i < 1000; i++) {
           nodePositions['node_$i'] = Offset(i * 10.0, i * 20.0);
@@ -345,7 +345,7 @@ void main() {
         expect(loaded.nodePositions['node_500']?.dx, 5000.0);
       });
 
-      test('should handle negative positions', () async {
+      test('应该处理负坐标位置', () async {
         final graph = Graph(
           id: 'negative_positions',
           name: 'Negative Positions',
@@ -369,7 +369,7 @@ void main() {
     });
   });
 
-  group('GraphRepository and NodeRepository Integration Tests', () {
+  group('GraphRepository and NodeRepository Integration Tests - 图谱仓库和节点仓库集成测试', () {
     late FileSystemGraphRepository graphRepository;
     late FileSystemNodeRepository nodeRepository;
     late String testDir;
@@ -389,7 +389,7 @@ void main() {
       }
     });
 
-    test('should maintain consistency between graph nodeIds and actual nodes', () async {
+    test('应该保持图谱nodeIds与实际节点之间的一致性', () async {
       final node1 = Node(
         id: 'integration_node_1',
         title: 'Node 1',
@@ -449,7 +449,7 @@ void main() {
       expect(loadedNodes.any((n) => n.id == 'integration_node_2'), true);
     });
 
-    test('should handle node deletion while referenced in graph', () async {
+    test('应该处理节点在图谱中被引用时的删除情况', () async {
       final node = Node(
         id: 'deletable_node',
         title: 'Deletable Node',
@@ -487,7 +487,7 @@ void main() {
       expect(loadedNodes, isEmpty);
     });
 
-    test('should handle graph with nodes having cross-references', () async {
+    test('应该处理节点具有交叉引用的图谱', () async {
       final node1 = Node(
         id: 'cross_ref_1',
         title: 'Node 1',
@@ -551,7 +551,7 @@ void main() {
       expect(node2Loaded.references['cross_ref_1'], isNotNull);
     });
 
-    test('should handle complete workflow: create nodes, create graph, update, delete', () async {
+    test('应该处理完整工作流：创建节点、创建图谱、更新、删除', () async {
       final nodes = List.generate(5, (i) => Node(
         id: 'workflow_node_$i',
         title: 'Workflow Node $i',

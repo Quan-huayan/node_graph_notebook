@@ -25,7 +25,7 @@ void main() {
       handler = ConnectNodesHandler(mockRepository);
     });
 
-    test('should connect nodes successfully', () async {
+    test('应该成功连接节点', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',
@@ -72,7 +72,7 @@ void main() {
       verify(mockContext.publishSingleNodeEvent(any, DataChangeAction.update)).called(1);
     });
 
-    test('should fail when source node does not exist', () async {
+    test('源节点不存在时应该失败', () async {
       final targetNode = Node(
         id: 'target-id',
         title: 'Target Node',
@@ -103,7 +103,7 @@ void main() {
       verifyNever(mockContext.publishSingleNodeEvent(any, any));
     });
 
-    test('should fail when target node does not exist', () async {
+    test('目标节点不存在时应该失败', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',
@@ -134,7 +134,7 @@ void main() {
       verifyNever(mockContext.publishSingleNodeEvent(any, any));
     });
 
-    test('should fail when connection already exists', () async {
+    test('连接已存在时应该失败', () async {
       const existingReference = NodeReference(
         nodeId: 'target-id',
         properties: {},
@@ -184,7 +184,7 @@ void main() {
       verifyNever(mockContext.publishSingleNodeEvent(any, any));
     });
 
-    test('should connect nodes with properties', () async {
+    test('应该使用属性连接节点', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',
@@ -230,7 +230,7 @@ void main() {
       verify(mockContext.publishSingleNodeEvent(any, DataChangeAction.update)).called(1);
     });
 
-    test('should handle repository errors', () async {
+    test('应该处理仓库错误', () async {
       final sourceNode = Node(
         id: 'source-id',
         title: 'Source Node',

@@ -313,7 +313,7 @@ void main() {
     });
 
     group('loadPlugin - 基础加载', () {
-      test('should load plugin successfully', () async {
+      test('应该成功加载插件', () async {
         discoverer.registerPlugin('mock_plugin', MockPlugin());
         await pluginManager.loadPlugin('mock_plugin');
         final plugin = pluginManager.getPlugin('mock_plugin');
@@ -321,14 +321,14 @@ void main() {
         expect(plugin!.metadata.id, 'mock_plugin');
       });
 
-      test('should throw error when loading non-existent plugin', () async {
+      test('加载不存在的插件时应该抛出错误', () async {
         expect(
           () => pluginManager.loadPlugin('non_existent'),
           throwsA(isA<PluginNotFoundException>()),
         );
       });
 
-      test('should throw error when loading already loaded plugin', () async {
+      test('加载已加载的插件时应该抛出错误', () async {
         discoverer.registerPlugin('mock_plugin', MockPlugin());
         await pluginManager.loadPlugin('mock_plugin');
         expect(
@@ -337,7 +337,7 @@ void main() {
         );
       });
 
-      test('should call onLoad lifecycle method', () async {
+      test('应该调用onLoad生命周期方法', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         await pluginManager.loadPlugin('mock_plugin');
@@ -346,7 +346,7 @@ void main() {
     });
 
     group('unloadPlugin - 卸载', () {
-      test('should unload plugin successfully', () async {
+      test('应该成功卸载插件', () async {
         discoverer.registerPlugin('mock_plugin', MockPlugin());
         await pluginManager.loadPlugin('mock_plugin');
         await pluginManager.unloadPlugin('mock_plugin');
@@ -354,7 +354,7 @@ void main() {
         expect(plugin, isNull);
       });
 
-      test('should call onUnload lifecycle method', () async {
+      test('应该调用onUnload生命周期方法', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         await pluginManager.loadPlugin('mock_plugin');
@@ -362,14 +362,14 @@ void main() {
         expect(mockPlugin.onUnloadCalled, true);
       });
 
-      test('should throw error when unloading non-existent plugin', () async {
+      test('卸载不存在的插件时应该抛出错误', () async {
         expect(
           () => pluginManager.unloadPlugin('non_existent'),
           throwsA(isA<PluginNotFoundException>()),
         );
       });
 
-      test('should disable plugin before unloading if enabled', () async {
+      test('如果插件已启用，卸载前应该先禁用', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         await pluginManager.loadPlugin('mock_plugin');
@@ -381,7 +381,7 @@ void main() {
     });
 
     group('enablePlugin/disablePlugin - 启用/禁用', () {
-      test('should enable plugin successfully', () async {
+      test('应该成功启用插件', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         await pluginManager.loadPlugin('mock_plugin');
@@ -390,7 +390,7 @@ void main() {
         expect(pluginManager.getPlugin('mock_plugin')!.isEnabled, true);
       });
 
-      test('should disable plugin successfully', () async {
+      test('应该成功禁用插件', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         await pluginManager.loadPlugin('mock_plugin');
@@ -400,14 +400,14 @@ void main() {
         expect(pluginManager.getPlugin('mock_plugin')!.isEnabled, false);
       });
 
-      test('should throw error when enabling non-existent plugin', () async {
+      test('启用不存在的插件时应该抛出错误', () async {
         expect(
           () => pluginManager.enablePlugin('non_existent'),
           throwsA(isA<PluginNotFoundException>()),
         );
       });
 
-      test('should not call onEnable twice if already enabled', () async {
+      test('如果已经启用，不应该重复调用onEnable', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         await pluginManager.loadPlugin('mock_plugin');
@@ -418,7 +418,7 @@ void main() {
     });
 
     group('discoverAndLoadPlugins - 发现并加载', () {
-      test('should discover and load all plugins', () async {
+      test('应该发现并加载所有插件', () async {
         discoverer.registerPlugin('mock_plugin', MockPlugin());
         await pluginManager.discoverAndLoadPlugins();
         final plugins = pluginManager.getAllPlugins();
@@ -428,14 +428,14 @@ void main() {
     });
 
     group('generateBlocProviders - BLoC 生成', () {
-      test('should generate bloc providers', () {
+      test('应该生成bloc providers', () {
         final blocs = pluginManager.generateBlocProviders();
         expect(blocs, isEmpty);
       });
     });
 
     group('lifecycle methods - 生命周期方法', () {
-      test('should call plugin lifecycle methods in correct order', () async {
+      test('应该按正确顺序调用插件生命周期方法', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         await pluginManager.loadPlugin('mock_plugin');
@@ -454,7 +454,7 @@ void main() {
     });
 
     group('dependency resolution - 依赖解析', () {
-      test('should throw error when enabling plugin with missing dependency', () async {
+      test('启用带有缺失依赖的插件时应该抛出错误', () async {
         final dependentPlugin = MockPluginWithDependency();
         discoverer.registerPlugin('dependent_plugin', dependentPlugin);
         await pluginManager.loadPlugin('dependent_plugin');
@@ -465,7 +465,7 @@ void main() {
         );
       });
 
-      test('should auto-enable dependency when enabling dependent plugin', () async {
+      test('启用依赖插件时应该自动启用依赖', () async {
         final mockPlugin = MockPlugin();
         final dependentPlugin = MockPluginWithDependency();
         discoverer..registerPlugin('mock_plugin', mockPlugin)
@@ -481,7 +481,7 @@ void main() {
     });
 
     group('API export/import - API 导出/导入', () {
-      test('should register plugin APIs on load', () async {
+      test('加载时应该注册插件API', () async {
         final apiPlugin = MockPluginWithAPI();
         discoverer.registerPlugin('api_plugin', apiPlugin);
         await pluginManager.loadPlugin('api_plugin');
@@ -489,7 +489,7 @@ void main() {
         expect(pluginManager.apiRegistry.hasAPI('test_api'), true);
       });
 
-      test('should unregister plugin APIs on unload', () async {
+      test('卸载时应该注销插件API', () async {
         final apiPlugin = MockPluginWithAPI();
         discoverer.registerPlugin('api_plugin', apiPlugin);
         await pluginManager.loadPlugin('api_plugin');
@@ -498,7 +498,7 @@ void main() {
         expect(pluginManager.apiRegistry.hasAPI('test_api'), false);
       });
 
-      test('should throw error when loading plugin with missing API dependency', () async {
+      test('加载带有缺失API依赖的插件时应该抛出错误', () async {
         final apiDependentPlugin = MockPluginWithAPIDependency();
         discoverer.registerPlugin('api_dependent_plugin', apiDependentPlugin);
 
@@ -508,7 +508,7 @@ void main() {
         );
       });
 
-      test('should load plugin with API dependency after API provider', () async {
+      test('在API提供者之后加载带有API依赖的插件', () async {
         final apiPlugin = MockPluginWithAPI();
         final apiDependentPlugin = MockPluginWithAPIDependency();
         discoverer..registerPlugin('api_plugin', apiPlugin)
@@ -522,7 +522,7 @@ void main() {
     });
 
     group('service registration - 服务注册', () {
-      test('should register plugin services on load', () async {
+      test('加载时应该注册插件服务', () async {
         final servicePlugin = MockPluginWithService();
         discoverer.registerPlugin('service_plugin', servicePlugin);
         await pluginManager.loadPlugin('service_plugin');
@@ -530,7 +530,7 @@ void main() {
         expect(pluginManager.serviceRegistry.isRegistered<TestService>(), true);
       });
 
-      test('should unregister plugin services on unload', () async {
+      test('卸载时应该注销插件服务', () async {
         final servicePlugin = MockPluginWithService();
         discoverer.registerPlugin('service_plugin', servicePlugin);
         await pluginManager.loadPlugin('service_plugin');
@@ -541,7 +541,7 @@ void main() {
     });
 
     group('hook registration - Hook 注册', () {
-      test('should register plugin hooks on load', () async {
+      test('加载时应该注册插件hooks', () async {
         final hookRegistry = HookRegistry();
         pluginManager = PluginManager(
           commandBus: commandBus,
@@ -556,7 +556,7 @@ void main() {
         expect(hookRegistry.hasHooks('test.hook'), true);
       });
 
-      test('should unregister plugin hooks on unload', () async {
+      test('卸载时应该注销插件hooks', () async {
         final hookRegistry = HookRegistry();
         pluginManager = PluginManager(
           commandBus: commandBus,
@@ -572,7 +572,7 @@ void main() {
         expect(hookRegistry.hasHooks('test.hook'), false);
       });
 
-      test('should enable hooks when plugin is enabled', () async {
+      test('插件启用时应该启用hooks', () async {
         final hookRegistry = HookRegistry();
         pluginManager = PluginManager(
           commandBus: commandBus,
@@ -590,7 +590,7 @@ void main() {
         expect(wrappers.first.isEnabled, true);
       });
 
-      test('should disable hooks when plugin is disabled', () async {
+      test('插件禁用时应该禁用hooks', () async {
         final hookRegistry = HookRegistry();
         pluginManager = PluginManager(
           commandBus: commandBus,
@@ -611,7 +611,7 @@ void main() {
     });
 
     group('version compatibility - 版本兼容性', () {
-      test('should throw error when plugin version incompatible', () async {
+      test('插件版本不兼容时应该抛出错误', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         pluginManager.appVersion = '0.5.0';
@@ -622,7 +622,7 @@ void main() {
         );
       });
 
-      test('should load plugin when version compatible', () async {
+      test('版本兼容时应该加载插件', () async {
         final mockPlugin = MockPlugin();
         discoverer.registerPlugin('mock_plugin', mockPlugin);
         pluginManager.appVersion = '1.0.0';

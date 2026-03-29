@@ -6,7 +6,7 @@ import 'package:node_graph_notebook/core/utils/logger.dart';
 
 /// 测试用的简单命令
 class TestCommand extends Command<String> {
-  TestCommand({this.name = 'TestCommand', this.description = 'Test description'});
+  TestCommand({this.name = '测试命令', this.description = '测试描述'});
 
   @override
   final String name;
@@ -15,16 +15,16 @@ class TestCommand extends Command<String> {
   final String description;
 
   @override
-  Future<CommandResult<String>> execute(CommandContext context) async => CommandResult.success('test result');
+  Future<CommandResult<String>> execute(CommandContext context) async => CommandResult.success('测试结果');
 }
 
 /// 另一个测试命令
 class AnotherCommand extends Command<int> {
   @override
-  String get name => 'AnotherCommand';
+  String get name => '另一个命令';
 
   @override
-  String get description => 'Another test command';
+  String get description => '另一个测试命令';
 
   @override
   Future<CommandResult<int>> execute(CommandContext context) async => CommandResult.success(42);
@@ -53,7 +53,7 @@ void main() {
 
       test('应该在命令成功后记录成功日志', () async {
         final command = TestCommand();
-        final result = CommandResult<String>.success('test data');
+        final result = CommandResult<String>.success('测试数据');
 
         // 验证方法可以正常调用，不抛出异常
         await expectLater(
@@ -64,7 +64,7 @@ void main() {
 
       test('应该在命令失败后记录错误日志', () async {
         final command = TestCommand();
-        final result = CommandResult<String>.failure('Test error occurred');
+        final result = CommandResult<String>.failure('发生测试错误');
 
         // 验证方法可以正常调用，不抛出异常
         await expectLater(
@@ -75,7 +75,7 @@ void main() {
 
       test('应该记录命令执行时长', () async {
         final command = TestCommand();
-        final result = CommandResult<String>.success('test data');
+        final result = CommandResult<String>.success('测试数据');
 
         // 开始执行
         await middleware.processBefore(command, context);
@@ -93,7 +93,7 @@ void main() {
       test('应该处理多个命令', () async {
         final command1 = TestCommand();
         final command2 = AnotherCommand();
-        final result1 = CommandResult<String>.success('result1');
+        final result1 = CommandResult<String>.success('结果1');
         final result2 = CommandResult<int>.success(42);
 
         await middleware.processBefore(command1, context);
@@ -108,7 +108,7 @@ void main() {
 
       test('应该清理已完成的命令的计时器', () async {
         final command = TestCommand();
-        final result = CommandResult<String>.success('test data');
+        final result = CommandResult<String>.success('测试数据');
 
         await middleware.processBefore(command, context);
         await middleware.processAfter(command, context, result);
@@ -127,8 +127,8 @@ void main() {
       test('应该在 LogLevel.error 时只记录错误', () async {
         final errorOnlyMiddleware = LoggingMiddleware(logLevel: LogLevel.error);
         final command = TestCommand();
-        final successResult = CommandResult<String>.success('data');
-        final failureResult = CommandResult<String>.failure('Error');
+        final successResult = CommandResult<String>.success('数据');
+        final failureResult = CommandResult<String>.failure('错误');
 
         // 开始执行（info 级别，不会被记录）
         await errorOnlyMiddleware.processBefore(command, context);
@@ -146,7 +146,7 @@ void main() {
       test('应该在 LogLevel.warning 时记录警告和错误', () async {
         final warningMiddleware = LoggingMiddleware(logLevel: LogLevel.warning);
         final command = TestCommand();
-        final failureResult = CommandResult<String>.failure('Error');
+        final failureResult = CommandResult<String>.failure('错误');
 
         // 开始执行（info 级别，不会被记录）
         await warningMiddleware.processBefore(command, context);
@@ -161,7 +161,7 @@ void main() {
       test('应该在 LogLevel.debug 时记录所有日志', () async {
         final debugMiddleware = LoggingMiddleware(logLevel: LogLevel.debug);
         final command = TestCommand();
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
 
         await debugMiddleware.processBefore(command, context);
         await debugMiddleware.processAfter(command, context, result);
@@ -173,7 +173,7 @@ void main() {
       test('应该在 LogLevel.none 时禁用所有日志', () async {
         final noLogMiddleware = LoggingMiddleware(logLevel: LogLevel.none);
         final command = TestCommand();
-        final failureResult = CommandResult<String>.failure('Critical error');
+        final failureResult = CommandResult<String>.failure('严重错误');
 
         await noLogMiddleware.processBefore(command, context);
         await noLogMiddleware.processAfter(command, context, failureResult);
@@ -189,7 +189,7 @@ void main() {
           includeTimestamp: false,
         );
         final command = TestCommand();
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
 
         await noTimestampMiddleware.processBefore(command, context);
         await noTimestampMiddleware.processAfter(command, context, result);
@@ -203,7 +203,7 @@ void main() {
           includeDuration: false,
         );
         final command = TestCommand();
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
 
         await noDurationMiddleware.processBefore(command, context);
         await Future.delayed(const Duration(milliseconds: 10));
@@ -219,7 +219,7 @@ void main() {
           includeDuration: false,
         );
         final command = TestCommand();
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
 
         await minimalMiddleware.processBefore(command, context);
         await minimalMiddleware.processAfter(command, context, result);
@@ -243,7 +243,7 @@ void main() {
             includeDuration: true,
           );
           final command = TestCommand();
-          final result = CommandResult<String>.success('data');
+          final result = CommandResult<String>.success('数据');
 
           await customMiddleware.processBefore(command, context);
           await customMiddleware.processAfter(command, context, result);
@@ -257,10 +257,10 @@ void main() {
     group('边界情况', () {
       test('应该处理空描述的命令', () async {
         final emptyDescCommand = TestCommand(
-          name: 'EmptyDescCommand',
+          name: '空描述命令',
           description: '',
         );
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
 
         await middleware.processBefore(emptyDescCommand, context);
         await middleware.processAfter(emptyDescCommand, context, result);
@@ -271,7 +271,7 @@ void main() {
 
       test('应该处理长错误消息', () async {
         final command = TestCommand();
-        final longErrorMessage = 'Error: ' * 100; // 700+ 字符的错误消息
+        final longErrorMessage = '错误: ' * 100; // 700+ 字符的错误消息
         final result = CommandResult<String>.failure(longErrorMessage);
 
         await middleware.processBefore(command, context);
@@ -285,8 +285,8 @@ void main() {
         final commands = List.generate(
           10,
           (i) => TestCommand(
-            name: 'Command$i',
-            description: 'Test command $i',
+            name: '命令$i',
+            description: '测试命令 $i',
           ),
         );
 
@@ -297,7 +297,7 @@ void main() {
 
         // 快速完成所有命令
         for (final command in commands) {
-          final result = CommandResult<String>.success('result');
+          final result = CommandResult<String>.success('结果');
           await middleware.processAfter(command, context, result);
         }
 
@@ -307,7 +307,7 @@ void main() {
 
       test('应该处理在 processBefore 之前调用 processAfter', () async {
         final command = TestCommand();
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
 
         // 直接调用 processAfter，没有调用 processBefore
         // 这种情况下 startTime 为 null，应该正常处理
@@ -322,7 +322,7 @@ void main() {
           name: '命令@#\$%',
           description: '描述 with 特殊 chars: 🎉 <script>alert(1)</script>',
         );
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
 
         await middleware.processBefore(specialCommand, context);
         await middleware.processAfter(specialCommand, context, result);
@@ -337,9 +337,9 @@ void main() {
         final stopwatch = Stopwatch()..start();
 
         for (var i = 0; i < 100; i++) {
-          final command = TestCommand(name: 'Command$i');
+          final command = TestCommand(name: '命令$i');
           await middleware.processBefore(command, context);
-          final result = CommandResult<String>.success('result$i');
+          final result = CommandResult<String>.success('结果$i');
           await middleware.processAfter(command, context, result);
         }
 
@@ -357,7 +357,7 @@ void main() {
         // 精确延迟 50ms
         await Future.delayed(const Duration(milliseconds: 50));
 
-        final result = CommandResult<String>.success('data');
+        final result = CommandResult<String>.success('数据');
         await middleware.processAfter(command, context, result);
 
         // 验证完成，不抛出异常

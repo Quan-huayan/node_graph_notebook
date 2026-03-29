@@ -76,7 +76,7 @@ void main() {
       when(mockNodeBloc.stream).thenAnswer((_) => const Stream.empty());
     });
 
-    testWidgets('should show folder selector dialog', (WidgetTester tester) async {
+    testWidgets('应显示文件夹选择对话框', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MultiBlocProvider(
@@ -108,7 +108,7 @@ void main() {
       expect(find.text('Folder 2'), findsOneWidget);
     });
 
-    testWidgets('should display all folders in list', (WidgetTester tester) async {
+    testWidgets('应在列表中显示所有文件夹', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MultiBlocProvider(
@@ -139,7 +139,7 @@ void main() {
       expect(find.text('Folder 2'), findsOneWidget);
     });
 
-    testWidgets('should close dialog on cancel', (WidgetTester tester) async {
+    testWidgets('点击取消时应关闭对话框', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MultiBlocProvider(
@@ -172,7 +172,7 @@ void main() {
       expect(find.text('Select Folder'), findsNothing);
     });
 
-    testWidgets('should select folder and close dialog', (WidgetTester tester) async {
+    testWidgets('选择文件夹后应关闭对话框', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MultiBlocProvider(
@@ -205,7 +205,7 @@ void main() {
       expect(find.text('Select Folder'), findsNothing);
     });
 
-    testWidgets('should handle empty folder list', (WidgetTester tester) async {
+    testWidgets('应处理空文件夹列表', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MultiBlocProvider(
@@ -286,12 +286,12 @@ void main() {
       );
     });
 
-    test('should detect circular contains when dragging folder to itself', () {
+    test('当拖拽文件夹到自身时应检测到循环包含', () {
       final hasCircular = node.id == folder.id;
       expect(hasCircular, false);
     });
 
-    test('should detect circular contains when dragging parent to child', () {
+    test('当拖拽父文件夹到子文件夹时应检测到循环包含', () {
       folder = folder.copyWith(
         references: {
           'subfolder_1': const NodeReference(nodeId: 'subfolder_1', properties: {'type': 'relatesTo'}),
@@ -302,12 +302,12 @@ void main() {
       expect(parentContainsChild, true);
     });
 
-    test('should not detect circular contains for unrelated nodes', () {
+    test('对于不相关的节点不应检测到循环包含', () {
       final hasCircular = node.id == folder.id;
       expect(hasCircular, false);
     });
 
-    test('should check if folder is child folder', () {
+    test('应检查文件夹是否为子文件夹', () {
       folder = folder.copyWith(
         references: {
           'subfolder_1': const NodeReference(nodeId: 'subfolder_1', properties: {'type': 'relatesTo'}),
@@ -356,7 +356,7 @@ void main() {
       allNodes = [folder, node];
     });
 
-    test('should find parent folder when node is in folder', () {
+    test('当节点在文件夹中时应找到父文件夹', () {
       folder = folder.copyWith(
         references: {
           'node_1': const NodeReference(nodeId: 'node_1', properties: {'type': 'relatesTo'}),
@@ -371,7 +371,7 @@ void main() {
       expect(parentFolder.id, 'folder_1');
     });
 
-    test('should return null when node has no parent folder', () {
+    test('当节点没有父文件夹时应返回null', () {
       final parentFolder = allNodes.firstWhere(
         (n) => n.isFolder && n.references.containsKey(node.id),
         orElse: () => folder,

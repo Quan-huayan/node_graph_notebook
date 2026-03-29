@@ -51,10 +51,10 @@ void main() {
 
     group('节点操作 API 测试', () {
       test('createNode - 创建节点并异步回调', () async {
-        // Arrange
+        // 准备
         when(mockNodeRepo.save(any)).thenAnswer((_) async => {});
 
-        // Act
+        // 执行
         const script = '''
           debugPrint("开始创建节点...")
 
@@ -79,7 +79,7 @@ void main() {
 
         final result = await engineService.executeString(script);
 
-        // Assert
+        // 验证
         expect(result.success, true);
         expect(result.output, contains('节点创建成功'));
         verify(mockNodeRepo.save(argThat(
@@ -90,7 +90,7 @@ void main() {
       });
 
       test('updateNode - 更新节点内容', () async {
-        // Arrange
+        // 准备
         final existingNode = Node(
           id: 'node-123',
           title: 'Old Title',
@@ -108,7 +108,7 @@ void main() {
         when(mockNodeRepo.load('node-123')).thenAnswer((_) async => existingNode);
         when(mockNodeRepo.save(any)).thenAnswer((_) async => {});
 
-        // Act
+        // 执行
         const script = '''
           onUpdateComplete = function(success, result)
             if success then
@@ -125,7 +125,7 @@ void main() {
 
         final result = await engineService.executeString(script);
 
-        // Assert
+        // 验证
         expect(result.success, true);
         verify(mockNodeRepo.load('node-123')).called(1);
         verify(mockNodeRepo.save(argThat(
@@ -137,10 +137,10 @@ void main() {
       });
 
       test('deleteNode - 删除节点', () async {
-        // Arrange
+        // 准备
         when(mockNodeRepo.delete('node-123')).thenAnswer((_) async => {});
 
-        // Act
+        // 执行
         const script = '''
           onDeleteComplete = function(success, result)
             if success then
@@ -157,13 +157,13 @@ void main() {
 
         final result = await engineService.executeString(script);
 
-        // Assert
+        // 验证
         expect(result.success, true);
         verify(mockNodeRepo.delete('node-123')).called(1);
       });
 
       test('getNode - 获取单个节点', () async {
-        // Arrange
+        // 准备
         final testNode = Node(
           id: 'node-456',
           title: 'Test Node',
@@ -180,7 +180,7 @@ void main() {
 
         when(mockNodeRepo.load('node-456')).thenAnswer((_) async => testNode);
 
-        // Act
+        // 执行
         const script = '''
           onGetComplete = function(success, result)
             if success then
@@ -199,13 +199,13 @@ void main() {
 
         final result = await engineService.executeString(script);
 
-        // Assert
+        // 验证
         expect(result.success, true);
         verify(mockNodeRepo.load('node-456')).called(1);
       });
 
       test('getAllNodes - 获取所有节点', () async {
-        // Arrange
+        // 准备
         final testNodes = [
           Node(
             id: 'node-1',
@@ -237,7 +237,7 @@ void main() {
 
         when(mockNodeRepo.queryAll()).thenAnswer((_) async => testNodes);
 
-        // Act
+        // 执行
         const script = '''
           onGetAllComplete = function(success, result)
             if success then
@@ -257,7 +257,7 @@ void main() {
 
         final result = await engineService.executeString(script);
 
-        // Assert
+        // 验证
         expect(result.success, true);
         expect(result.output, contains('共 2 个节点'));
         expect(result.output, contains('1: Node 1'));

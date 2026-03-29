@@ -1,27 +1,26 @@
-/// Node rendering capabilities for dual rendering system.
+/// 双重渲染系统的节点渲染能力。
 ///
-/// This module defines the rendering interface that allows Nodes to render
-/// in both Flutter (Widget tree) and Flame (component tree) contexts.
+/// 此模块定义了允许节点在Flutter（Widget树）和Flame（组件树）上下文中渲染的接口。
 ///
-/// ## Architecture
+/// ## 架构
 ///
 /// ```
 /// Node
 ///   ├─ buildFlutterWidget() → Flutter Widget
 ///   └─ buildFlameComponent() → Flame Component
 ///
-/// Position (stored in UILayoutService, not in Node)
-///   └─ LocalPosition in NodeAttachment
+/// Position (存储在UILayoutService中，不在Node中)
+///   └─ NodeAttachment中的LocalPosition
 /// ```
 ///
-/// ## Design Philosophy
+/// ## 设计理念
 ///
-/// - **Nodes are autonomous**: They don't know where they are positioned
-/// - **Position is external**: Managed by UILayoutService via NodeAttachment
-/// - **Dual rendering**: Same Node can render in Flutter or Flame contexts
-/// - **State preservation**: Node state independent of rendering context
+/// - **节点是自治的**：它们不知道自己的位置
+/// - **位置是外部的**：由UILayoutService通过NodeAttachment管理
+/// - **双重渲染**：同一个节点可以在Flutter或Flame上下文中渲染
+/// - **状态保持**：节点状态独立于渲染上下文
 ///
-/// ## Usage
+/// ## 使用方式
 ///
 /// ```dart
 /// class MyNode extends Node with NodeRendering {
@@ -44,14 +43,13 @@ import 'package:flutter/widgets.dart';
 
 import 'node.dart';
 
-/// Mixin that adds dual rendering capabilities to Node.
+/// 为Node添加双重渲染能力的混入。
 ///
-/// This mixin provides the interface for Nodes to render themselves
-/// in both Flutter and Flame contexts.
+/// 此混入提供了节点在Flutter和Flame上下文中渲染自己的接口。
 ///
-/// ## Implementation Guide
+/// ## 实现指南
 ///
-/// When mixing this into Node, implement both rendering methods:
+/// 当混入到Node时，实现两个渲染方法：
 ///
 /// ```dart
 /// class TextNode extends Node with NodeRendering {
@@ -61,7 +59,7 @@ import 'node.dart';
 ///     super.content,
 ///   }) : super(
 ///           references: const {},
-///           position: Offset.zero, // Will be removed in Phase 6
+///           position: Offset.zero, // 将在第6阶段移除
 ///           size: const Size(200, 100),
 ///           viewMode: NodeViewMode.compact,
 ///           createdAt: DateTime.now(),
@@ -84,38 +82,38 @@ import 'node.dart';
 /// }
 /// ```
 ///
-/// ## Flutter Widget Rendering
+/// ## Flutter Widget渲染
 ///
-/// The `buildFlutterWidget()` method should return a Flutter Widget that
-/// represents this Node in a Flutter context (e.g., in Sidebar, Toolbar).
+/// `buildFlutterWidget()`方法应返回一个Flutter Widget，
+/// 在Flutter上下文中表示此节点（例如，在侧边栏、工具栏中）。
 ///
-/// Guidelines:
-/// - Use `this` to access Node properties (title, content, metadata)
-/// - Don't assume any position (position is managed by UILayoutService)
-/// - Keep widgets simple and efficient
-/// - Use const constructors where possible
+/// 指南：
+/// - 使用`this`访问节点属性（标题、内容、元数据）
+/// - 不要假设任何位置（位置由UILayoutService管理）
+/// - 保持widget简单高效
+/// - 尽可能使用const构造函数
 ///
-/// ## Flame Component Rendering
+/// ## Flame组件渲染
 ///
-/// The `buildFlameComponent()` method should return a Flame Component that
-/// represents this Node in a Flame context (e.g., in Graph).
+/// `buildFlameComponent()`方法应返回一个Flame组件，
+/// 在Flame上下文中表示此节点（例如，在图中）。
 ///
-/// Guidelines:
-/// - Use `this` to access Node properties
-/// - Components will be positioned by UILayoutService
-/// - Implement interaction handling (tap, drag, etc.)
-/// - Cache resources (Paint, TextPainter) for performance
+/// 指南：
+/// - 使用`this`访问节点属性
+/// - 组件将由UILayoutService定位
+/// - 实现交互处理（点击、拖动等）
+/// - 缓存资源（Paint、TextPainter）以提高性能
 mixin NodeRendering on Node {
-  /// Builds a Flutter Widget representation of this Node.
+  /// 构建此节点的Flutter Widget表示。
   ///
-  /// This method is called when the Node needs to be rendered in a
-  /// Flutter context (e.g., Sidebar, Toolbar, Settings).
+  /// 当节点需要在Flutter上下文中渲染时调用此方法
+  /// （例如，侧边栏、工具栏、设置）。
   ///
-  /// [context] is the Flutter BuildContext.
+  /// [context] 是Flutter BuildContext。
   ///
-  /// Returns a Widget that represents this Node.
+  /// 返回表示此节点的Widget。
   ///
-  /// ## Example
+  /// ## 示例
   ///
   /// ```dart
   /// @override
@@ -144,16 +142,16 @@ mixin NodeRendering on Node {
   /// ```
   Widget buildFlutterWidget(BuildContext context);
 
-  /// Builds a Flame Component representation of this Node.
+  /// 构建此节点的Flame组件表示。
   ///
-  /// This method is called when the Node needs to be rendered in a
-  /// Flame context (e.g., in Graph visualization).
+  /// 当节点需要在Flame上下文中渲染时调用此方法
+  /// （例如，在图可视化中）。
   ///
-  /// [world] is the GraphWorld (Flame game world) instance.
+  /// [world] 是GraphWorld（Flame游戏世界）实例。
   ///
-  /// Returns a Component that represents this Node.
+  /// 返回表示此节点的组件。
   ///
-  /// ## Example
+  /// ## 示例
   ///
   /// ```dart
   /// @override
@@ -164,71 +162,70 @@ mixin NodeRendering on Node {
   /// }
   /// ```
   ///
-  /// ## Performance Tips
+  /// ## 性能提示
   ///
-  /// - Cache Paint objects (don't create in render method)
-  /// - Cache TextPainter objects for text rendering
-  /// - Use PositionComponent with size for hit testing
-  /// - Implement onTap, onDrag, etc. for interactions
+  /// - 缓存Paint对象（不要在渲染方法中创建）
+  /// - 缓存TextPainter对象用于文本渲染
+  /// - 使用带有大小的PositionComponent进行命中测试
+  /// - 实现onTap、onDrag等交互方法
   Component buildFlameComponent(dynamic world);
 
-  /// Gets the preferred size for rendering in Flutter.
+  /// 获取在Flutter中渲染的首选大小。
   ///
-  /// This is a hint for the layout system. The actual size may be
-  /// adjusted by the Hook's layout strategy.
+  /// 这是对布局系统的提示。实际大小可能由
+  /// Hook的布局策略调整。
   ///
-  /// Returns the preferred size, or null if no preference.
+  /// 返回首选大小，如果没有偏好则返回null。
   Size get preferredFlutterSize => size;
 
-  /// Gets the preferred size for rendering in Flame.
+  /// 获取在Flame中渲染的首选大小。
   ///
-  /// This is a hint for the layout system. The actual size may be
-  /// adjusted by the Hook's layout strategy.
+  /// 这是对布局系统的提示。实际大小可能由
+  /// Hook的布局策略调整。
   ///
-  /// Returns the preferred size, or null if no preference.
+  /// 返回首选大小，如果没有偏好则返回null。
   Size get preferredFlameSize => size;
 
-  /// Checks if this Node can render in Flutter context.
+  /// 检查此节点是否可以在Flutter上下文中渲染。
   ///
-  /// Returns true if the Node has a Flutter widget representation.
-  /// Override this to return false if the Node only supports Flame.
+  /// 如果节点有Flutter widget表示则返回true。
+  /// 如果节点仅支持Flame，则覆盖此方法返回false。
   bool get canRenderInFlutter => true;
 
-  /// Checks if this Node can render in Flame context.
+  /// 检查此节点是否可以在Flame上下文中渲染。
   ///
-  /// Returns true if the Node has a Flame component representation.
-  /// Override this to return false if the Node only supports Flutter.
+  /// 如果节点有Flame组件表示则返回true。
+  /// 如果节点仅支持Flutter，则覆盖此方法返回false。
   bool get canRenderInFlame => true;
 
-  /// Validates that this Node can render in the given context.
+  /// 验证此节点是否可以在给定上下文中渲染。
   ///
-  /// Throws [StateError] if the Node cannot render in the requested context.
+  /// 如果节点无法在请求的上下文中渲染，则抛出[StateError]。
   ///
-  /// [isFlutter] is true for Flutter context, false for Flame.
+  /// [isFlutter] 为true表示Flutter上下文，false表示Flame。
   void validateRendering(bool isFlutter) {
     if (isFlutter && !canRenderInFlutter) {
       throw StateError(
-        'Node $id cannot render in Flutter context. '
-        'Implement buildFlutterWidget() or set canRenderInFlutter to true.',
+        '节点 $id 无法在Flutter上下文中渲染。'
+        '实现buildFlutterWidget()或将canRenderInFlutter设置为true。',
       );
     }
     if (!isFlutter && !canRenderInFlame) {
       throw StateError(
-        'Node $id cannot render in Flame context. '
-        'Implement buildFlameComponent() or set canRenderInFlame to true.',
+        '节点 $id 无法在Flame上下文中渲染。'
+        '实现buildFlameComponent()或将canRenderInFlame设置为true。',
       );
     }
   }
 }
 
-/// Default implementation of NodeRendering for basic Nodes.
+/// 基本节点的NodeRendering默认实现。
 ///
-/// This provides simple placeholder widgets/components for Nodes
-/// that don't have custom rendering logic.
+/// 这为没有自定义渲染逻辑的节点提供简单的占位widget/组件。
 ///
-/// Plugins can mix this into their Node classes for a quick start.
+/// 插件可以将其混入到它们的节点类中以快速开始。
 ///
-/// ## Example
+/// ## 示例
 ///
 /// ```dart
 /// class SimpleNode extends Node with DefaultNodeRendering {
@@ -285,11 +282,11 @@ mixin DefaultNodeRendering on Node implements NodeRendering {
 
   @override
   Component buildFlameComponent(dynamic world) => _PlaceholderNodeComponent(node: this);
-  // TODO: Return a basic placeholder component
-  // In a real implementation, this would return a proper Flame component
+  // TODO: 返回一个基本的占位组件
+  // 在实际实现中，这将返回一个适当的Flame组件
 }
 
-/// Placeholder Flame component for Nodes without custom rendering.
+/// 没有自定义渲染的节点的占位Flame组件。
 class _PlaceholderNodeComponent extends Component {
   _PlaceholderNodeComponent({required this.node});
 
@@ -299,8 +296,8 @@ class _PlaceholderNodeComponent extends Component {
   String toString() => 'PlaceholderNodeComponent(${node.id})';
 }
 
-/// Extension to convert Flutter Size to Flame Vector2.
+/// 将Flutter Size转换为Flame Vector2的扩展。
 extension SizeToVector2 on Size {
-  /// Converts this Size to a Flame Vector2.
+  /// 将此Size转换为Flame Vector2。
   Vector2 toVector2() => Vector2(width, height);
 }

@@ -23,7 +23,7 @@ void main() {
     });
 
     group('getAllPresets', () {
-      test('should return empty list when no presets stored', () async {
+      test('没有存储预设时应返回空列表', () async {
         when(mockPrefs.getString(any)).thenAnswer((_) async => null);
 
         final result = await service.getAllPresets();
@@ -32,7 +32,7 @@ void main() {
         verify(mockPrefs.getString('search_presets')).called(1);
       });
 
-      test('should return list of presets', () async {
+      test('应返回预设列表', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -57,7 +57,7 @@ void main() {
         expect(result[1].id, '2');
       });
 
-      test('should sort presets by lastUsed then createdAt', () async {
+      test('应按 lastUsed 然后 createdAt 排序预设', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -89,7 +89,7 @@ void main() {
         expect(result[2].id, '3');
       });
 
-      test('should handle invalid JSON gracefully', () async {
+      test('应优雅地处理无效 JSON', () async {
         when(mockPrefs.getString(any)).thenAnswer((_) async => 'invalid json');
 
         final result = await service.getAllPresets();
@@ -97,7 +97,7 @@ void main() {
         expect(result, isEmpty);
       });
 
-      test('should handle JSON decode error gracefully', () async {
+      test('应优雅地处理 JSON 解码错误', () async {
         when(mockPrefs.getString(any)).thenAnswer((_) async => '{invalid}');
 
         final result = await service.getAllPresets();
@@ -107,7 +107,7 @@ void main() {
     });
 
     group('getPreset', () {
-      test('should return preset when found', () async {
+      test('找到预设时应返回预设', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -132,7 +132,7 @@ void main() {
         expect(result.name, 'Preset 1');
       });
 
-      test('should return null when preset not found', () async {
+      test('未找到预设时应返回 null', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -150,7 +150,7 @@ void main() {
         expect(result, isNull);
       });
 
-      test('should return null when no presets stored', () async {
+      test('没有存储预设时应返回 null', () async {
         when(mockPrefs.getString(any)).thenAnswer((_) async => null);
 
         final result = await service.getPreset('1');
@@ -160,7 +160,7 @@ void main() {
     });
 
     group('savePreset', () {
-      test('should save new preset', () async {
+      test('应保存新预设', () async {
         final now = DateTime.now();
         final preset = SearchPreset(
           id: '1',
@@ -178,7 +178,7 @@ void main() {
         verify(mockPrefs.setString('search_presets', any)).called(1);
       });
 
-      test('should update existing preset', () async {
+      test('应更新现有预设', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -204,7 +204,7 @@ void main() {
         verify(mockPrefs.setString('search_presets', any)).called(1);
       });
 
-      test('should set lastUsed to current time', () async {
+      test('应将 lastUsed 设置为当前时间', () async {
         final now = DateTime.now();
         final preset = SearchPreset(
           id: '1',
@@ -221,7 +221,7 @@ void main() {
         expect(result.lastUsed!.isAfter(now.subtract(const Duration(seconds: 1))), true);
       });
 
-      test('should preserve other presets when adding new one', () async {
+      test('添加新预设时应保留其他预设', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -251,7 +251,7 @@ void main() {
     });
 
     group('deletePreset', () {
-      test('should delete existing preset', () async {
+      test('应删除现有预设', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -281,7 +281,7 @@ void main() {
         expect(firstPreset['id'], '2');
       });
 
-      test('should handle deleting non-existent preset', () async {
+      test('应处理删除不存在的预设', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -304,7 +304,7 @@ void main() {
         expect(savedList.length, 1);
       });
 
-      test('should handle deleting when no presets exist', () async {
+      test('应处理没有预设时的删除操作', () async {
         when(mockPrefs.getString(any)).thenAnswer((_) async => null);
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
 
@@ -319,7 +319,7 @@ void main() {
     });
 
     group('updateLastUsed', () {
-      test('should update lastUsed time for existing preset', () async {
+      test('应更新现有预设的 lastUsed 时间', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -351,7 +351,7 @@ void main() {
         expect(lastUsed.isAfter(now.subtract(const Duration(seconds: 1))), true);
       });
 
-      test('should handle updating non-existent preset', () async {
+      test('应处理更新不存在的预设', () async {
         final now = DateTime.now();
         final preset1 = SearchPreset(
           id: '1',
@@ -370,7 +370,7 @@ void main() {
         verifyNever(mockPrefs.setString('search_presets', any));
       });
 
-      test('should handle updating when no presets exist', () async {
+      test('应处理没有预设时的更新操作', () async {
         when(mockPrefs.getString(any)).thenAnswer((_) async => null);
         when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
 
@@ -381,7 +381,7 @@ void main() {
     });
 
     group('integration tests', () {
-      test('should handle complete workflow', () async {
+      test('应处理完整的工作流程', () async {
         final now = DateTime.now();
 
         final preset1 = SearchPreset(

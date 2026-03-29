@@ -6,10 +6,10 @@ class TestPlugin extends Plugin {
   @override
   PluginMetadata get metadata => const PluginMetadata(
         id: 'test_plugin',
-        name: 'Test Plugin',
+        name: '测试插件',
         version: '1.0.0',
-        description: 'Test plugin for lifecycle testing',
-        author: 'Test Author',
+        description: '用于生命周期测试的测试插件',
+        author: '测试作者',
         dependencies: [],
         apiDependencies: [],
       );
@@ -41,10 +41,10 @@ class FailingOnLoadPlugin extends Plugin {
   @override
   PluginMetadata get metadata => const PluginMetadata(
         id: 'failing_plugin',
-        name: 'Failing Plugin',
+        name: '加载失败插件',
         version: '1.0.0',
-        description: 'Plugin that fails on load',
-        author: 'Test Author',
+        description: '在加载时失败的插件',
+        author: '测试作者',
         dependencies: [],
         apiDependencies: [],
       );
@@ -80,10 +80,10 @@ class FailingOnEnablePlugin extends Plugin {
   @override
   PluginMetadata get metadata => const PluginMetadata(
         id: 'failing_enable_plugin',
-        name: 'Failing Enable Plugin',
+        name: '启用失败插件',
         version: '1.0.0',
-        description: 'Plugin that fails on enable',
-        author: 'Test Author',
+        description: '在启用时失败的插件',
+        author: '测试作者',
         dependencies: [],
         apiDependencies: [],
       );
@@ -124,25 +124,25 @@ void main() {
     });
 
     group('initial state', () {
-      test('should start in unloaded state', () {
+      test('应该以未加载状态开始', () {
         expect(lifecycle.state, PluginState.unloaded);
       });
     });
 
     group('canTransitionTo - 状态转换验证', () {
-      test('should allow transition from unloaded to loaded', () {
+      test('应该允许从未加载状态转换到已加载状态', () {
         expect(lifecycle.canTransitionTo(PluginState.loaded), true);
       });
 
-      test('should allow transition from unloaded to loadFailed', () {
+      test('应该允许从未加载状态转换到加载失败状态', () {
         expect(lifecycle.canTransitionTo(PluginState.loadFailed), true);
       });
 
-      test('should not allow transition from unloaded to enabled', () {
+      test('不应该允许从未加载状态转换到已启用状态', () {
         expect(lifecycle.canTransitionTo(PluginState.enabled), false);
       });
 
-      test('should not allow transition from unloaded to disabled', () {
+      test('不应该允许从未加载状态转换到已禁用状态', () {
         expect(lifecycle.canTransitionTo(PluginState.disabled), false);
       });
     });
@@ -152,19 +152,19 @@ void main() {
         await lifecycle.transitionTo(PluginState.loaded, () async {});
       });
 
-      test('should allow transition from loaded to enabled', () {
+      test('应该允许从已加载状态转换到已启用状态', () {
         expect(lifecycle.canTransitionTo(PluginState.enabled), true);
       });
 
-      test('should allow transition from loaded to disabled', () {
+      test('应该允许从已加载状态转换到已禁用状态', () {
         expect(lifecycle.canTransitionTo(PluginState.disabled), true);
       });
 
-      test('should allow transition from loaded to unloaded', () {
+      test('应该允许从已加载状态转换到未加载状态', () {
         expect(lifecycle.canTransitionTo(PluginState.unloaded), true);
       });
 
-      test('should not allow transition from loaded to loaded', () {
+      test('不应该允许从已加载状态转换到已加载状态', () {
         expect(lifecycle.canTransitionTo(PluginState.loaded), false);
       });
     });
@@ -175,15 +175,15 @@ void main() {
         await lifecycle.transitionTo(PluginState.enabled, () async {});
       });
 
-      test('should allow transition from enabled to disabled', () {
+      test('应该允许从已启用状态转换到已禁用状态', () {
         expect(lifecycle.canTransitionTo(PluginState.disabled), true);
       });
 
-      test('should allow transition from enabled to unloaded', () {
+      test('应该允许从已启用状态转换到未加载状态', () {
         expect(lifecycle.canTransitionTo(PluginState.unloaded), true);
       });
 
-      test('should not allow transition from enabled to loaded', () {
+      test('不应该允许从已启用状态转换到已加载状态', () {
         expect(lifecycle.canTransitionTo(PluginState.loaded), false);
       });
     });
@@ -195,17 +195,17 @@ void main() {
         await lifecycle.transitionTo(PluginState.disabled, () async {});
       });
 
-      test('should allow transition from disabled to enabled', () {
+      test('应该允许从已禁用状态转换到已启用状态', () {
         expect(lifecycle.canTransitionTo(PluginState.enabled), true);
       });
 
-      test('should allow transition from disabled to unloaded', () {
+      test('应该允许从已禁用状态转换到未加载状态', () {
         expect(lifecycle.canTransitionTo(PluginState.unloaded), true);
       });
     });
 
     group('canTransitionTo - failed states', () {
-      test('should allow transition from loadFailed to unloaded', () async {
+      test('应该允许从加载失败状态转换到未加载状态', () async {
         final failingPlugin = FailingOnLoadPlugin();
         final failingLifecycle = PluginLifecycleManager(failingPlugin);
 
@@ -222,14 +222,14 @@ void main() {
             },
           );
         } catch (e) {
-          // Expected
+          // 预期内的异常
         }
 
         expect(failingLifecycle.state, PluginState.loadFailed);
         expect(failingLifecycle.canTransitionTo(PluginState.unloaded), true);
       });
 
-      test('should allow transition from enableFailed to unloaded', () async {
+      test('应该允许从启用失败状态转换到未加载状态', () async {
         final failingPlugin = FailingOnEnablePlugin();
         final failingLifecycle = PluginLifecycleManager(failingPlugin);
 
@@ -241,7 +241,7 @@ void main() {
             failingPlugin.onEnable,
           );
         } catch (e) {
-          // Expected
+          // 预期内的异常
         }
 
         expect(failingLifecycle.state, PluginState.enableFailed);
@@ -250,21 +250,21 @@ void main() {
     });
 
     group('transitionTo - 状态转换执行', () {
-      test('should update state on successful transition', () async {
+      test('应该在成功转换时更新状态', () async {
         await lifecycle.transitionTo(PluginState.loaded, () async {});
 
         expect(lifecycle.state, PluginState.loaded);
         expect(plugin.state, PluginState.loaded);
       });
 
-      test('should throw on invalid transition', () async {
+      test('应该在无效转换时抛出异常', () async {
         expect(
           () => lifecycle.transitionTo(PluginState.enabled, () async {}),
           throwsA(isA<PluginStateException>()),
         );
       });
 
-      test('should set loadFailed on load failure', () async {
+      test('应该在加载失败时设置为加载失败状态', () async {
         final failingPlugin = FailingOnLoadPlugin();
         final failingLifecycle = PluginLifecycleManager(failingPlugin);
 
@@ -281,16 +281,16 @@ void main() {
               await failingPlugin.onLoad(mockContext);
             },
           );
-          fail('Expected exception to be thrown');
+          fail('预期会抛出异常');
         } catch (e) {
-          // Expected
+          // 预期内的异常
         }
 
         expect(failingLifecycle.state, PluginState.loadFailed);
         expect(failingPlugin.state, PluginState.loadFailed);
       });
 
-      test('should set enableFailed on enable failure', () async {
+      test('应该在启用失败时设置为启用失败状态', () async {
         final failingPlugin = FailingOnEnablePlugin();
         final failingLifecycle = PluginLifecycleManager(failingPlugin);
 
@@ -302,9 +302,9 @@ void main() {
             PluginState.enabled,
             failingPlugin.onEnable,
           );
-          fail('Expected exception to be thrown');
+          fail('预期会抛出异常');
         } catch (e) {
-          // Expected
+          // 预期内的异常
         }
 
         expect(failingLifecycle.state, PluginState.enableFailed);
@@ -313,7 +313,7 @@ void main() {
     });
 
     group('listeners - 状态监听', () {
-      test('should notify listeners on state change', () async {
+      test('应该在状态变化时通知监听器', () async {
         PluginState? oldState;
         PluginState? newState;
         Plugin? notifiedPlugin;
@@ -331,7 +331,7 @@ void main() {
         expect(newState, PluginState.loaded);
       });
 
-      test('should notify listeners on failure', () async {
+      test('应该在失败时通知监听器', () async {
         final failingPlugin = FailingOnLoadPlugin();
         final failingLifecycle = PluginLifecycleManager(failingPlugin);
 
@@ -354,15 +354,15 @@ void main() {
             },
           );
         } catch (e) {
-          // Expected
+          // 预期内的异常
         }
 
         expect(notifiedState, PluginState.loadFailed);
       });
 
-      test('should handle listener exceptions gracefully', () async {
+      test('应该优雅地处理监听器异常', () async {
         lifecycle.addListener((plugin, old, newS) {
-          throw Exception('Listener error');
+          throw Exception('监听器错误');
         });
 
         var secondListenerCalled = false;
@@ -394,18 +394,18 @@ void main() {
       wrapper = PluginWrapper(plugin, context, lifecycle);
     });
 
-    test('should provide metadata shortcut', () {
+    test('应该提供元数据快捷访问', () {
       expect(wrapper.metadata.id, 'test_plugin');
-      expect(wrapper.metadata.name, 'Test Plugin');
+      expect(wrapper.metadata.name, '测试插件');
     });
 
-    test('should provide state shortcut', () async {
+    test('应该提供状态快捷访问', () async {
       await lifecycle.transitionTo(PluginState.loaded, () async {});
 
       expect(wrapper.state, PluginState.loaded);
     });
 
-    test('should report isLoaded correctly', () async {
+    test('应该正确报告isLoaded状态', () async {
       expect(wrapper.isLoaded, false);
 
       await lifecycle.transitionTo(PluginState.loaded, () async {});
@@ -415,7 +415,7 @@ void main() {
       expect(wrapper.isLoaded, true);
     });
 
-    test('should report isEnabled correctly', () async {
+    test('应该正确报告isEnabled状态', () async {
       expect(wrapper.isEnabled, false);
 
       await lifecycle.transitionTo(PluginState.loaded, () async {});

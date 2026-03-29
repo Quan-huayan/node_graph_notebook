@@ -31,7 +31,7 @@ void main() {
       mockNodeBloc.close();
     });
 
-    testWidgets('should display editor page with empty fields', (WidgetTester tester) async {
+    testWidgets('应该显示带空字段的编辑器页面', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -49,7 +49,7 @@ void main() {
       expect(find.text('Write your content in Markdown...'), findsOneWidget);
     });
 
-    testWidgets('should display editor page with existing node', (WidgetTester tester) async {
+    testWidgets('应该显示带现有节点的编辑器页面', (WidgetTester tester) async {
       final testNode = Node(
         id: 'test_node_1',
         title: 'Test Title',
@@ -80,7 +80,7 @@ void main() {
       expect(find.text('Test Content'), findsOneWidget);
     });
 
-    testWidgets('should toggle between edit and preview mode', (WidgetTester tester) async {
+    testWidgets('应该在编辑和预览模式之间切换', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -107,7 +107,7 @@ void main() {
       expect(find.byTooltip('Preview'), findsOneWidget);
     });
 
-    testWidgets('should display markdown toolbar in edit mode', (WidgetTester tester) async {
+    testWidgets('应该在编辑模式下显示 Markdown 工具栏', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -130,7 +130,7 @@ void main() {
       expect(find.byTooltip('Image'), findsOneWidget);
     });
 
-    testWidgets('should insert bold markdown', (WidgetTester tester) async {
+    testWidgets('应该插入粗体 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -153,7 +153,7 @@ void main() {
       expect(textField.controller?.text, 'test text****');
     });
 
-    testWidgets('should insert italic markdown', (WidgetTester tester) async {
+    testWidgets('应该插入斜体 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -176,7 +176,7 @@ void main() {
       expect(textField.controller?.text, 'test text**');
     });
 
-    testWidgets('should insert H1 markdown', (WidgetTester tester) async {
+    testWidgets('应该插入 H1 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -199,7 +199,7 @@ void main() {
       expect(textField.controller?.text, 'test text# ');
     });
 
-    testWidgets('should insert H2 markdown', (WidgetTester tester) async {
+    testWidgets('应该插入 H2 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -222,7 +222,7 @@ void main() {
       expect(textField.controller?.text, 'test text## ');
     });
 
-    testWidgets('should insert list markdown', (WidgetTester tester) async {
+    testWidgets('应该插入列表 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -245,7 +245,7 @@ void main() {
       expect(textField.controller?.text, 'test text- ');
     });
 
-    testWidgets('should insert code markdown', (WidgetTester tester) async {
+    testWidgets('应该插入代码 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -268,7 +268,7 @@ void main() {
       expect(textField.controller?.text, 'test text``');
     });
 
-    testWidgets('should insert link markdown', (WidgetTester tester) async {
+    testWidgets('应该插入链接 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -291,7 +291,7 @@ void main() {
       expect(textField.controller?.text, 'test text[](url)');
     });
 
-    testWidgets('should insert image markdown', (WidgetTester tester) async {
+    testWidgets('应该插入图片 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -314,7 +314,7 @@ void main() {
       expect(textField.controller?.text, 'test text![alt]()');
     });
 
-    testWidgets('should show error when saving with empty title', (WidgetTester tester) async {
+    testWidgets('当标题为空时保存应该显示错误', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -333,7 +333,7 @@ void main() {
       expect(find.text('Title cannot be empty'), findsOneWidget);
     });
 
-    testWidgets('should create new node when saving without existing node', (WidgetTester tester) async {
+    testWidgets('当没有现有节点时保存应该创建新节点', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -359,7 +359,7 @@ void main() {
       verify(mockNodeBloc.add(argThat(isA<NodeCreateContentEvent>()))).called(1);
     });
 
-    testWidgets('should update existing node when saving with existing node', (WidgetTester tester) async {
+    testWidgets('当有现有节点时保存应该更新节点', (WidgetTester tester) async {
       final testNode = Node(
         id: 'test_node_1',
         title: 'Old Title',
@@ -398,7 +398,7 @@ void main() {
       verify(mockNodeBloc.add(argThat(isA<NodeUpdateEvent>()))).called(1);
     });
 
-    testWidgets('should disable save button while saving', (WidgetTester tester) async {
+    testWidgets('保存时应该禁用保存按钮', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -424,7 +424,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 200));
     });
 
-    testWidgets('should show preview mode content', (WidgetTester tester) async {
+    testWidgets('应该显示预览模式内容', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -450,7 +450,7 @@ void main() {
       expect(find.text('Bold Text'), findsOneWidget);
     });
 
-    testWidgets('should show nothing to preview when content is empty', (WidgetTester tester) async {
+    testWidgets('当内容为空时应该显示无内容可预览', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -469,7 +469,7 @@ void main() {
       expect(find.text('Nothing to preview'), findsOneWidget);
     });
 
-    testWidgets('should dispose controllers when widget is disposed', (WidgetTester tester) async {
+    testWidgets('当组件被销毁时应该销毁控制器', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -487,7 +487,7 @@ void main() {
       expect(find.byType(MarkdownEditorPage), findsNothing);
     });
 
-    testWidgets('should handle markdown with selected text', (WidgetTester tester) async {
+    testWidgets('应该处理带选中文本的 Markdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -517,7 +517,7 @@ void main() {
       expect(textField.controller?.text, '**selected text**');
     });
 
-    testWidgets('should handle markdown insertion at cursor position', (WidgetTester tester) async {
+    testWidgets('应该在光标位置处理 Markdown 插入', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -545,7 +545,7 @@ void main() {
       expect(textField.controller?.text, 'test****');
     });
 
-    testWidgets('should display toolbar buttons with correct icons', (WidgetTester tester) async {
+    testWidgets('应该显示带有正确图标的工具栏按钮', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -567,7 +567,7 @@ void main() {
       expect(find.byIcon(Icons.image), findsOneWidget);
     });
 
-    testWidgets('should handle title field changes', (WidgetTester tester) async {
+    testWidgets('应该处理标题字段变更', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -587,7 +587,7 @@ void main() {
       expect(textField.controller?.text, 'Test Title');
     });
 
-    testWidgets('should handle content field changes', (WidgetTester tester) async {
+    testWidgets('应该处理内容字段变更', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -607,7 +607,7 @@ void main() {
       expect(textField.controller?.text, 'Test Content');
     });
 
-    testWidgets('should display app bar with correct title', (WidgetTester tester) async {
+    testWidgets('应该显示带有正确标题的应用栏', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -623,7 +623,7 @@ void main() {
       expect(find.text('Markdown Editor'), findsOneWidget);
     });
 
-    testWidgets('should have save and preview buttons in app bar', (WidgetTester tester) async {
+    testWidgets('应该在应用栏中有保存和预览按钮', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -640,7 +640,7 @@ void main() {
       expect(find.byIcon(Icons.preview), findsOneWidget);
     });
 
-    testWidgets('should handle long content in editor', (WidgetTester tester) async {
+    testWidgets('应该处理编辑器中的长内容', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -661,7 +661,7 @@ void main() {
       expect(textField.controller?.text, longContent);
     });
 
-    testWidgets('should handle special characters in content', (WidgetTester tester) async {
+    testWidgets('应该处理内容中的特殊字符', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -682,7 +682,7 @@ void main() {
       expect(textField.controller?.text, specialContent);
     });
 
-    testWidgets('should handle unicode characters in content', (WidgetTester tester) async {
+    testWidgets('应该处理内容中的 Unicode 字符', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -703,7 +703,7 @@ void main() {
       expect(textField.controller?.text, unicodeContent);
     });
 
-    testWidgets('should handle multiline content', (WidgetTester tester) async {
+    testWidgets('应该处理多行内容', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ChangeNotifierProvider<I18n>.value(
@@ -724,7 +724,7 @@ void main() {
       expect(textField.controller?.text, multilineContent);
     });
 
-    testWidgets('should handle empty node with null values', (WidgetTester tester) async {
+    testWidgets('应该处理带有空值的空节点', (WidgetTester tester) async {
       final testNode = Node(
         id: 'test_node_1',
         title: '',
@@ -754,7 +754,7 @@ void main() {
       expect(find.text('Write your content in Markdown...'), findsOneWidget);
     });
 
-    testWidgets('should handle node with very long title', (WidgetTester tester) async {
+    testWidgets('应该处理带有超长标题的节点', (WidgetTester tester) async {
       final longTitle = 'A' * 200;
       final testNode = Node(
         id: 'test_node_1',

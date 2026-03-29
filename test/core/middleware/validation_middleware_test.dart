@@ -13,10 +13,10 @@ class TestCommand extends Command<dynamic> {
       CommandResult.success();
 
   @override
-  String get name => 'TestCommand';
+  String get name => '测试命令';
 
   @override
-  String get description => 'Test command for validation';
+  String get description => '用于验证中间件测试的命令';
 }
 
 class AnotherCommand extends Command<dynamic> {
@@ -25,10 +25,10 @@ class AnotherCommand extends Command<dynamic> {
       CommandResult.success();
 
   @override
-  String get name => 'AnotherCommand';
+  String get name => '另一个命令';
 
   @override
-  String get description => 'Another test command';
+  String get description => '另一个测试命令';
 }
 
 class TestCommandValidator extends CommandValidator<TestCommand> {
@@ -71,13 +71,13 @@ void main() {
       context = CommandContext();
     });
 
-    test('should pass command without validator', () async {
+    test('应该通过没有验证器的命令', () async {
       final command = TestCommand();
 
       await middleware.processBefore(command, context);
     });
 
-    test('should pass command with passing validator', () async {
+    test('应该通过带有通过验证器的命令', () async {
       final command = TestCommand();
       middleware.registerValidator<TestCommand>(
         TestCommandValidator(shouldPass: true),
@@ -86,7 +86,7 @@ void main() {
       await middleware.processBefore(command, context);
     });
 
-    test('should throw exception when validation fails', () async {
+    test('当验证失败时应该抛出异常', () async {
       final command = TestCommand();
       middleware.registerValidator<TestCommand>(
         TestCommandValidator(shouldPass: false),
@@ -98,7 +98,7 @@ void main() {
       );
     });
 
-    test('should validate command value', () async {
+    test('应该验证命令值', () async {
       final emptyCommand = TestCommand(value: '');
       final validCommand = TestCommand(value: 'test');
       middleware.registerValidator<TestCommand>(ValueValidator());
@@ -111,7 +111,7 @@ void main() {
       await middleware.processBefore(validCommand, context);
     });
 
-    test('should only validate registered command types', () async {
+    test('应该只验证已注册的命令类型', () async {
       final testCommand = TestCommand();
       final anotherCommand = AnotherCommand();
 
@@ -127,7 +127,7 @@ void main() {
       await middleware.processBefore(anotherCommand, context);
     });
 
-    test('should allow multiple validators for different types', () async {
+    test('应该允许不同类型有多个验证器', () async {
       final testCommand = TestCommand();
       final anotherCommand = AnotherCommand();
 
@@ -141,35 +141,35 @@ void main() {
   });
 
   group('ValidationResult', () {
-    test('should create success result', () {
+    test('应该创建成功结果', () {
       final result = ValidationResult.success();
 
       expect(result.isValid, true);
       expect(result.errors, isEmpty);
     });
 
-    test('should create failure result with multiple errors', () {
-      final result = ValidationResult.failure(['Error 1', 'Error 2']);
+    test('应该创建带有多个错误的失败结果', () {
+      final result = ValidationResult.failure(['错误 1', '错误 2']);
 
       expect(result.isValid, false);
       expect(result.errors.length, 2);
-      expect(result.errors, contains('Error 1'));
-      expect(result.errors, contains('Error 2'));
+      expect(result.errors, contains('错误 1'));
+      expect(result.errors, contains('错误 2'));
     });
 
-    test('should create single error result', () {
-      final result = ValidationResult.singleError('Single error');
+    test('应该创建单个错误结果', () {
+      final result = ValidationResult.singleError('单个错误');
 
       expect(result.isValid, false);
       expect(result.errors.length, 1);
-      expect(result.errors.first, 'Single error');
+      expect(result.errors.first, '单个错误');
     });
   });
 
   group('CommandValidationException', () {
-    test('should contain command and errors', () {
+    test('应该包含命令和错误', () {
       final command = TestCommand();
-      final errors = ['Error 1', 'Error 2'];
+      final errors = ['错误 1', '错误 2'];
       final exception = CommandValidationException(
         command: command,
         errors: errors,
@@ -179,16 +179,16 @@ void main() {
       expect(exception.errors, errors);
     });
 
-    test('should format toString correctly', () {
+    test('应该正确格式化toString', () {
       final command = TestCommand();
       final exception = CommandValidationException(
         command: command,
-        errors: ['Error 1', 'Error 2'],
+        errors: ['错误 1', '错误 2'],
       );
 
-      expect(exception.toString(), contains('TestCommand'));
-      expect(exception.toString(), contains('Error 1'));
-      expect(exception.toString(), contains('Error 2'));
+      expect(exception.toString(), contains('测试命令'));
+      expect(exception.toString(), contains('错误 1'));
+      expect(exception.toString(), contains('错误 2'));
     });
   });
 }

@@ -27,7 +27,7 @@ void main() {
       await pluginManager.dispose();
     });
 
-    test('Plugin should be able to register custom hook points', () async {
+    test('插件应该能够注册自定义hook点', () async {
       final testPlugin = TestPluginWithHookPoints();
       pluginManager.discoverer.registerFactory(testPlugin.metadata.id, () => testPlugin);
 
@@ -40,7 +40,7 @@ void main() {
       expect(hookPoint.category, 'custom');
     });
 
-    test('Plugin hook points should be unregistered on unload', () async {
+    test('插件hook点应该在卸载时被注销', () async {
       final testPlugin = TestPluginWithHookPoints();
       pluginManager.discoverer.registerFactory(testPlugin.metadata.id, () => testPlugin);
 
@@ -51,7 +51,7 @@ void main() {
       expect(hookRegistry.hasHookPoint('test_plugin.custom_hook'), isFalse);
     });
 
-    test('Plugin without hook points should work normally', () async {
+    test('没有hook点的插件应该正常工作', () async {
       final testPlugin = TestPluginWithoutHookPoints();
       pluginManager.discoverer.registerFactory(testPlugin.metadata.id, () => testPlugin);
 
@@ -59,7 +59,7 @@ void main() {
       expect(pluginManager.getPlugin(testPlugin.metadata.id), isNotNull);
     });
 
-    test('Multiple plugins can register hook points', () async {
+    test('多个插件可以注册hook点', () async {
       final plugin1 = TestPluginWithHookPoints();
       final plugin2 = AnotherTestPluginWithHookPoints();
       pluginManager.discoverer.registerFactory(plugin1.metadata.id, () => plugin1);

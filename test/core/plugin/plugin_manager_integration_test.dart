@@ -480,7 +480,7 @@ void main() {
     });
 
     group('Plugin Lifecycle Integration', () {
-      test('should call lifecycle methods in correct order', () async {
+      test('应该按正确顺序调用生命周期方法', () async {
         final pluginA = TestPluginA();
         discoverer.registerPlugin('plugin_a', pluginA);
 
@@ -497,7 +497,7 @@ void main() {
         expect(pluginA.lifecycleCalls, ['onLoad', 'onEnable', 'onDisable', 'onUnload']);
       });
 
-      test('should handle multiple plugins with dependencies', () async {
+      test('应该处理带有依赖的多个插件', () async {
         final pluginA = TestPluginA();
         final pluginB = TestPluginB();
         discoverer..registerPlugin('plugin_a', pluginA)
@@ -514,7 +514,7 @@ void main() {
     });
 
     group('Service Registration Integration', () {
-      test('should register and unregister services correctly', () async {
+      test('应该正确注册和注销服务', () async {
         final servicePlugin = TestPluginWithService();
         discoverer.registerPlugin('service_plugin', servicePlugin);
 
@@ -525,7 +525,7 @@ void main() {
         expect(serviceRegistry.isRegistered<TestIntegrationService>(), false);
       });
 
-      test('should allow plugins to access services from other plugins', () async {
+      test('应该允许插件访问其他插件的服务', () async {
         final servicePlugin = TestPluginWithService();
         discoverer.registerPlugin('service_plugin', servicePlugin);
 
@@ -538,7 +538,7 @@ void main() {
     });
 
     group('Command Handler Registration Integration', () {
-      test('should register command handlers on plugin load', () async {
+      test('应该在插件加载时注册命令处理器', () async {
         final commandPlugin = TestPluginWithCommandHandler();
         discoverer.registerPlugin('command_plugin', commandPlugin);
 
@@ -548,7 +548,7 @@ void main() {
     });
 
     group('Hook Registration Integration', () {
-      test('should register and unregister hooks correctly', () async {
+      test('应该正确注册和注销hooks', () async {
         final hookPlugin = TestPluginWithHook();
         discoverer.registerPlugin('hook_plugin', hookPlugin);
 
@@ -559,7 +559,7 @@ void main() {
         expect(hookRegistry.hasHooks('test.integration'), false);
       });
 
-      test('should enable and disable hooks with plugin', () async {
+      test('应该随插件启用和禁用hooks', () async {
         final hookPlugin = TestPluginWithHook();
         discoverer.registerPlugin('hook_plugin', hookPlugin);
 
@@ -578,7 +578,7 @@ void main() {
     });
 
     group('API Export/Import Integration', () {
-      test('should export and import APIs correctly', () async {
+      test('应该正确导出和导入API', () async {
         final apiPlugin = TestPluginWithAPI();
         discoverer.registerPlugin('api_provider_plugin', apiPlugin);
 
@@ -589,7 +589,7 @@ void main() {
         expect(pluginManager.apiRegistry.hasAPI('test_api'), false);
       });
 
-      test('should allow plugin to depend on API from another plugin', () async {
+      test('应该允许插件依赖另一个插件的API', () async {
         final apiPlugin = TestPluginWithAPI();
         final consumerPlugin = TestPluginWithAPIDependency();
         discoverer..registerPlugin('api_provider_plugin', apiPlugin)
@@ -601,7 +601,7 @@ void main() {
         expect(pluginManager.getPlugin('api_consumer_plugin'), isNotNull);
       });
 
-      test('should fail to load plugin when API dependency is missing', () async {
+      test('当API依赖缺失时应该加载失败', () async {
         final consumerPlugin = TestPluginWithAPIDependency();
         discoverer.registerPlugin('api_consumer_plugin', consumerPlugin);
 
@@ -613,7 +613,7 @@ void main() {
     });
 
     group('Error Handling Integration', () {
-      test('should handle plugin load failure gracefully', () async {
+      test('应该优雅地处理插件加载失败', () async {
         expect(
           () => pluginManager.loadPlugin('non_existent_plugin'),
           throwsA(isA<PluginNotFoundException>()),
@@ -622,7 +622,7 @@ void main() {
         expect(pluginManager.getPlugin('non_existent_plugin'), isNull);
       });
 
-      test('should handle duplicate plugin load', () async {
+      test('应该处理重复插件加载', () async {
         final pluginA = TestPluginA();
         discoverer.registerPlugin('plugin_a', pluginA);
 
@@ -634,7 +634,7 @@ void main() {
         );
       });
 
-      test('should handle missing dependency on enable', () async {
+      test('应该在启用时处理缺失的依赖', () async {
         final pluginB = TestPluginB();
         discoverer.registerPlugin('plugin_b', pluginB);
 
@@ -648,7 +648,7 @@ void main() {
     });
 
     group('Event Bus Integration', () {
-      test('should publish plugin lifecycle events', () async {
+      test('应该发布插件生命周期事件', () async {
         final pluginA = TestPluginA();
         discoverer.registerPlugin('plugin_a', pluginA);
 
@@ -669,7 +669,7 @@ void main() {
     });
 
     group('Multiple Plugin Interaction', () {
-      test('should handle multiple plugins loading and unloading', () async {
+      test('应该处理多个插件的加载和卸载', () async {
         final pluginA = TestPluginA();
         final servicePlugin = TestPluginWithService();
         final hookPlugin = TestPluginWithHook();

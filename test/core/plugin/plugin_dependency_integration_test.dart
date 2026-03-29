@@ -13,7 +13,7 @@ void main() {
     });
 
     group('复杂依赖图测试', () {
-      test('should resolve diamond dependency pattern', () {
+      test('应该解析菱形依赖模式', () {
         // 菱形依赖: A -> B -> D, A -> C -> D
         final plugins = {
           'A': const PluginMetadata(
@@ -68,7 +68,7 @@ void main() {
         expect(dIndex, lessThan(cIndex));
       });
 
-      test('should resolve deep dependency chain', () {
+      test('应该解析深层依赖链', () {
         // 长链: A -> B -> C -> D -> E
         final plugins = {
           'A': const PluginMetadata(
@@ -124,7 +124,7 @@ void main() {
         expect(result.loadOrder, ['E', 'D', 'C', 'B', 'A']);
       });
 
-      test('should resolve multiple independent trees', () {
+      test('应该解析多个独立的树', () {
         // 两个独立的树
         final plugins = {
           'A1': const PluginMetadata(
@@ -180,7 +180,7 @@ void main() {
     });
 
     group('循环依赖检测测试', () {
-      test('should detect simple two-node cycle', () {
+      test('应该检测简单的两节点循环', () {
         final plugins = {
           'A': const PluginMetadata(
             id: 'A',
@@ -209,7 +209,7 @@ void main() {
         expect(result.errors[0], contains('Circular dependency'));
       });
 
-      test('should detect long cycle', () {
+      test('应该检测长循环', () {
         // 长循环: A -> B -> C -> D -> E -> A
         final plugins = {
           'A': const PluginMetadata(
@@ -265,7 +265,7 @@ void main() {
         expect(result.errors.any((e) => e.contains('Circular dependency')), true);
       });
 
-      test('should detect self-dependency', () {
+      test('应该检测自依赖', () {
         final plugins = {
           'A': const PluginMetadata(
             id: 'A',
@@ -284,7 +284,7 @@ void main() {
         expect(result.errors.any((e) => e.contains('Circular dependency')), true);
       });
 
-      test('should detect all cycles in complex graph', () {
+      test('应该检测复杂图中的所有循环', () {
         // 复杂图包含多个循环
         final plugins = {
           'A': const PluginMetadata(
@@ -341,7 +341,7 @@ void main() {
     });
 
     group('传递依赖测试', () {
-      test('should calculate transitive dependencies', () {
+      test('应该计算传递依赖', () {
         // A -> B -> C -> D
         final plugins = {
           'A': const PluginMetadata(
@@ -390,7 +390,7 @@ void main() {
         expect(transitiveDeps.length, 3);
       });
 
-      test('should find all dependents', () {
+      test('应该找到所有依赖者', () {
         // D 被 C 和 E 依赖，C 被 B 依赖，B 被 A 依赖
         final plugins = {
           'A': const PluginMetadata(
@@ -450,7 +450,7 @@ void main() {
     });
 
     group('缺失依赖处理测试', () {
-      test('should report missing dependencies', () {
+      test('应该报告缺失的依赖', () {
         final plugins = {
           'A': const PluginMetadata(
             id: 'A',
@@ -478,7 +478,7 @@ void main() {
         expect(result.errors.any((e) => e.contains('missing dependency')), true);
       });
 
-      test('should handle empty dependency list', () {
+      test('应该处理空依赖列表', () {
         final plugins = {
           'A': const PluginMetadata(
             id: 'A',
@@ -499,7 +499,7 @@ void main() {
     });
 
     group('加载顺序测试', () {
-      test('should resolve load order for plugin instances', () {
+      test('应该解析插件实例的加载顺序', () {
         final plugins = [
           _TestPlugin(id: 'A', dependencies: ['B']),
           _TestPlugin(id: 'B', dependencies: ['C']),
@@ -514,7 +514,7 @@ void main() {
         expect(ordered[2].metadata.id, 'A');
       });
 
-      test('should resolve unload order (reverse of load)', () {
+      test('应该解析卸载顺序（加载顺序的逆序）', () {
         final plugins = [
           _TestPlugin(id: 'A', dependencies: ['B']),
           _TestPlugin(id: 'B', dependencies: ['C']),
@@ -531,7 +531,7 @@ void main() {
     });
 
     group('版本兼容性测试', () {
-      test('should check version compatibility', () {
+      test('应该检查版本兼容性', () {
         // 使用 PluginMetadata 的 isCompatibleWith 方法测试兼容性
         const compatiblePlugin = PluginMetadata(
           id: 'compatible',

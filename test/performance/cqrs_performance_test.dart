@@ -17,7 +17,7 @@ import 'package:node_graph_notebook/core/plugin/service_registry.dart';
 /// 3. NodeReadModel vs Node 内存占用对比
 /// 4. 搜索索引性能测试
 void main() {
-  group('CQRS Performance Benchmarks', () {
+  group('CQRS 性能基准测试', () {
     late ServiceRegistry serviceRegistry;
     late QueryBus queryBus;
 
@@ -27,7 +27,7 @@ void main() {
       queryBus = QueryBus(serviceRegistry: serviceRegistry);
     });
 
-    test('Query Cache Performance - 1000 queries', () async {
+    test('Query 缓存性能 - 1000次查询', () async {
       // 创建测试数据（用于缓存测试）
       List.generate(1000, (i) => Node(
         id: 'node_$i',
@@ -51,16 +51,16 @@ void main() {
 
       stopwatch.stop();
 
-      debugPrint('Query Cache Performance:');
-      debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-      debugPrint('  Average per query: ${stopwatch.elapsedMicroseconds / 1000}μs');
-      debugPrint('  Queries per second: ${1000000 / stopwatch.elapsedMicroseconds * 1000}');
+      debugPrint('Query 缓存性能:');
+      debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint('  平均每次查询: ${stopwatch.elapsedMicroseconds / 1000}μs');
+      debugPrint('  每秒查询数: ${1000000 / stopwatch.elapsedMicroseconds * 1000}');
 
-      // 验证性能：应该很快（<100ms for 1000 queries）
+      // 验证性能：应该很快（1000次查询 < 100ms）
       expect(stopwatch.elapsedMilliseconds, lessThan(100));
     });
 
-    test('NodeReadModel Memory Efficiency', () {
+    test('NodeReadModel 内存效率', () {
       // 创建完整Node
       final fullNode = Node(
         id: 'test_node',
@@ -78,17 +78,17 @@ void main() {
       // 创建轻量级读模型
       final readModel = NodeReadModel.fromNode(fullNode);
 
-      debugPrint('Memory Efficiency Comparison:');
-      debugPrint('  Full Node estimated: ~${2 + 1}KB');
-      debugPrint('  ReadModel estimated: ${readModel.estimatedMemoryBytes} bytes');
-      debugPrint('  Memory saved: ${(100 - (readModel.estimatedMemoryBytes / 2048 * 100)).toStringAsFixed(1)}%');
+      debugPrint('内存效率对比:');
+      debugPrint('  完整 Node 预估: ~${2 + 1}KB');
+      debugPrint('  ReadModel 预估: ${readModel.estimatedMemoryBytes} bytes');
+      debugPrint('  内存节省: ${(100 - (readModel.estimatedMemoryBytes / 2048 * 100)).toStringAsFixed(1)}%');
 
       // 验证内存节省 > 80%
       final memorySavedPercent = 100 - (readModel.estimatedMemoryBytes / 2048 * 100);
       expect(memorySavedPercent, greaterThan(80));
     });
 
-    test('Query Cache Statistics', () {
+    test('Query 缓存统计', () {
       final cache = QueryCache(maxSize: 100, defaultTtl: const Duration(minutes: 5));
 
       // 添加100个条目
@@ -100,9 +100,9 @@ void main() {
 
       final stats = cache.stats;
 
-      debugPrint('Query Cache Statistics:');
+      debugPrint('Query 缓存统计:');
       debugPrint('  $stats');
-      debugPrint('  Usage rate: ${(stats.usageRate * 100).toStringAsFixed(1)}%');
+      debugPrint('  使用率: ${(stats.usageRate * 100).toStringAsFixed(1)}%');
 
       // 验证缓存使用率
       expect(stats.size, equals(100));
@@ -110,7 +110,7 @@ void main() {
     });
   });
 
-  group('Performance Regression Tests', () {
+  group('性能回归测试', () {
     late ServiceRegistry serviceRegistry;
     late QueryBus queryBus;
 
@@ -119,14 +119,14 @@ void main() {
       queryBus = QueryBus(serviceRegistry: serviceRegistry);
     });
 
-    test('Adjacency List Performance - O(1) neighbor lookup', () {
+    test('邻接表性能 - O(1) 邻居查询', () {
       // 验证邻居查询是O(1)而非O(n)
       // 已在 graph_performance_test.dart 中实现
       // 这里只做简单的回归检查
       expect(true, true);
     });
 
-    test('Query Cache Hit Rate', () async {
+    test('Query 缓存命中率', () async {
       final cache = QueryCache(maxSize: 100, defaultTtl: const Duration(minutes: 5));
 
       // 填充缓存
@@ -147,13 +147,13 @@ void main() {
       }
 
       final hitRate = hitCount / 100;
-      debugPrint('Query Cache Hit Rate: ${(hitRate * 100).toStringAsFixed(1)}%');
+      debugPrint('Query 缓存命中率: ${(hitRate * 100).toStringAsFixed(1)}%');
 
       // 期望命中率 > 80%
       expect(hitRate, greaterThan(0.8));
     });
 
-    test('Query Bus Throughput', () async {
+    test('Query Bus 吞吐量', () async {
       const queryCount = 1000;
       final stopwatch = Stopwatch()..start();
 
@@ -166,10 +166,10 @@ void main() {
 
       final queriesPerSecond = queryCount / (stopwatch.elapsedMilliseconds / 1000);
 
-      debugPrint('Query Bus Throughput:');
-      debugPrint('  Total queries: $queryCount');
-      debugPrint('  Total time: ${stopwatch.elapsedMilliseconds}ms');
-      debugPrint('  Queries per second: ${queriesPerSecond.toStringAsFixed(0)}');
+      debugPrint('Query Bus 吞吐量:');
+      debugPrint('  总查询数: $queryCount');
+      debugPrint('  总耗时: ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint('  每秒查询数: ${queriesPerSecond.toStringAsFixed(0)}');
 
       // 期望吞吐量 > 1000 queries/second
       expect(queriesPerSecond, greaterThan(1000));

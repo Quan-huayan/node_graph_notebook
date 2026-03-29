@@ -9,7 +9,7 @@ import 'package:node_graph_notebook/core/models/node_reference.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  group('AdjacencyList Boundary Tests', () {
+  group('邻接表边界测试', () {
     late AdjacencyList adjacencyList;
     late String testDir;
 
@@ -27,7 +27,7 @@ void main() {
     });
 
     group('大规模图操作边界测试', () {
-      test('should handle graph with many nodes', () {
+      test('应该能处理包含大量节点的图', () {
         const nodeCount = 10000;
 
         // 添加大量节点和边
@@ -39,7 +39,7 @@ void main() {
         expect(adjacencyList.edgeCount, nodeCount);
       });
 
-      test('should handle high degree nodes', () {
+      test('应该能处理高度连接的节点', () {
         const hubNode = 'hub';
         const connectionCount = 1000;
 
@@ -52,7 +52,7 @@ void main() {
         expect(adjacencyList.getOutgoingNeighbors(hubNode).length, connectionCount);
       });
 
-      test('should handle dense graph', () {
+      test('应该能处理稠密图', () {
         const nodeCount = 100;
 
         // 创建完全连接图（每个节点连接到所有其他节点）
@@ -73,7 +73,7 @@ void main() {
         }
       });
 
-      test('should handle rapid add and remove operations', () {
+      test('应该能处理快速的添加和删除操作', () {
         const operations = 1000;
 
         // 快速添加
@@ -91,7 +91,7 @@ void main() {
     });
 
     group('循环引用检测边界测试', () {
-      test('should detect self-loop', () {
+      test('应该能检测自环', () {
         adjacencyList.addEdge('node_a', 'node_a');
 
         expect(adjacencyList.hasEdge('node_a', 'node_a'), true);
@@ -99,7 +99,7 @@ void main() {
         expect(adjacencyList.getInDegree('node_a'), 1);
       });
 
-      test('should handle two-node cycle', () {
+      test('应该能处理两节点循环', () {
         adjacencyList.addEdge('node_a', 'node_b');
         adjacencyList.addEdge('node_b', 'node_a');
 
@@ -113,7 +113,7 @@ void main() {
         expect(adjacencyList.getInDegree('node_b'), 1);
       });
 
-      test('should handle long cycle', () {
+      test('应该能处理长循环', () {
         const cycleLength = 100;
 
         // 创建长循环: 0 -> 1 -> 2 -> ... -> 99 -> 0
@@ -131,7 +131,7 @@ void main() {
         }
       });
 
-      test('should handle complex graph with multiple cycles', () {
+      test('应该能处理包含多个循环的复杂图', () {
         // 创建多个重叠的循环
         // 循环1: A -> B -> C -> A
         adjacencyList.addEdge('A', 'B');
@@ -164,7 +164,7 @@ void main() {
     });
 
     group('节点删除边界测试', () {
-      test('should handle removal of node with many connections', () {
+      test('应该能处理删除具有大量连接的节点', () {
         const hubNode = 'hub';
 
         // 创建高度连接的节点
@@ -183,7 +183,7 @@ void main() {
         expect(adjacencyList.getInDegree(hubNode), 0);
       });
 
-      test('should handle removal of non-existent node gracefully', () {
+      test('应该能优雅地处理删除不存在的节点', () {
         // 添加一些边
         adjacencyList.addEdge('A', 'B');
         adjacencyList.addEdge('B', 'C');
@@ -196,7 +196,7 @@ void main() {
         expect(adjacencyList.hasEdge('B', 'C'), true);
       });
 
-      test('should handle removal of all nodes one by one', () {
+      test('应该能逐个删除所有节点', () {
         const nodeCount = 50;
 
         // 创建完全连接图
@@ -221,7 +221,7 @@ void main() {
     });
 
     group('序列化和持久化边界测试', () {
-      test('should persist and load large graph', () async {
+      test('应该能持久化和加载大图', () async {
         const nodeCount = 1000;
 
         // 创建大图
@@ -245,7 +245,7 @@ void main() {
         }
       });
 
-      test('should handle corrupted file gracefully', () async {
+      test('应该能优雅地处理损坏的文件', () async {
         // 创建一些数据
         adjacencyList.addEdge('A', 'B');
         await adjacencyList.save();
@@ -263,7 +263,7 @@ void main() {
         expect(loadedList.isLoaded, true);
       });
 
-      test('should handle missing file directory', () async {
+      test('应该能处理缺失的文件目录', () async {
         final newDir = path.join(testDir, 'non_existent', 'subdir');
         final newList = AdjacencyList(storageDir: newDir);
 
@@ -278,7 +278,7 @@ void main() {
     });
 
     group('从节点构建边界测试', () {
-      test('should build from nodes with many references', () {
+      test('应该能从具有大量引用的节点构建', () {
         final nodes = <Node>[];
 
         // 创建节点，每个节点引用其他所有节点
@@ -312,7 +312,7 @@ void main() {
         expect(adjacencyList.edgeCount, 50 * 49);
       });
 
-      test('should handle nodes with no references', () {
+      test('应该能处理没有引用的节点', () {
         final nodes = [
           Node(
             id: 'isolated_1',
@@ -344,7 +344,7 @@ void main() {
         expect(adjacencyList.edgeCount, 0);
       });
 
-      test('should handle empty node list', () {
+      test('应该能处理空节点列表', () {
         adjacencyList.buildFromNodes([]);
 
         expect(adjacencyList.nodeCount, 0);
@@ -353,7 +353,7 @@ void main() {
     });
 
     group('统计信息边界测试', () {
-      test('should calculate stats for empty graph', () {
+      test('应该能计算空图的统计信息', () {
         final stats = adjacencyList.stats;
 
         expect(stats.nodeCount, 0);
@@ -362,7 +362,7 @@ void main() {
         expect(stats.maxOutDegree, 0);
       });
 
-      test('should calculate stats for graph with varying degrees', () {
+      test('应该能计算具有不同度数的图的统计信息', () {
         // 创建不同度数的节点
         // 节点0: 0条出边
         // 节点1-5: 各1条出边
@@ -384,7 +384,7 @@ void main() {
     });
 
     group('邻居查询边界测试', () {
-      test('should handle query for non-existent node', () {
+      test('应该能处理对不存在节点的查询', () {
         final outgoing = adjacencyList.getOutgoingNeighbors('non_existent');
         final incoming = adjacencyList.getIncomingNeighbors('non_existent');
         final all = adjacencyList.getAllNeighbors('non_existent');
@@ -394,7 +394,7 @@ void main() {
         expect(all, isEmpty);
       });
 
-      test('should return unmodifiable neighbor sets', () {
+      test('应该返回不可修改的邻居集合', () {
         adjacencyList.addEdge('A', 'B');
         adjacencyList.addEdge('A', 'C');
 

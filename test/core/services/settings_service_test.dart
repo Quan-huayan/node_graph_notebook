@@ -13,7 +13,7 @@ void main() {
     });
 
     group('Initialization', () {
-      test('should have default values', () {
+      test('应该具有默认值', () {
         expect(service.themeMode, ThemeMode.system);
         expect(service.defaultViewMode, null);
         expect(service.aiProvider, 'openai');
@@ -24,31 +24,31 @@ void main() {
     });
 
     group('Theme Mode', () {
-      test('should have theme mode property', () {
+      test('应该具有主题模式属性', () {
         expect(service.themeMode, ThemeMode.system);
       });
     });
 
     group('Default View Mode', () {
-      test('should have default view mode property', () {
+      test('应该具有默认视图模式属性', () {
         expect(service.defaultViewMode, null);
       });
     });
 
     group('AI Configuration', () {
-      test('should have AI provider property', () {
+      test('应该具有 AI 提供商属性', () {
         expect(service.aiProvider, 'openai');
       });
 
-      test('should have AI base URL property', () {
+      test('应该具有 AI 基础 URL 属性', () {
         expect(service.aiBaseUrl, 'https://api.openai.com/v1');
       });
 
-      test('should have AI model property', () {
+      test('应该具有 AI 模型属性', () {
         expect(service.aiModel, 'gpt-4');
       });
 
-      test('should have AI API key property', () {
+      test('应该具有 AI API 密钥属性', () {
         expect(service.aiApiKey, null);
       });
     });
