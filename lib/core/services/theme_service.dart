@@ -102,6 +102,7 @@ class ThemeService extends ChangeNotifier {
     BackgroundThemeColors? backgrounds,
     StatusThemeColors? status,
     FlameThemeColors? flame,
+    String? fontFamily,
   }) async {
     final currentTheme = _customTheme ?? AppThemeData.lightTheme;
 
@@ -113,6 +114,7 @@ class ThemeService extends ChangeNotifier {
       backgrounds: backgrounds,
       status: status,
       flame: flame,
+      fontFamily: fontFamily,
     );
 
     await setCustomTheme(updatedTheme);

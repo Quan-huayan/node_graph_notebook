@@ -400,6 +400,7 @@ class AppThemeData {
     required this.backgrounds,
     required this.status,
     required this.flame,
+    this.fontFamily,
   });
 
   /// 从JSON创建AppThemeData
@@ -417,6 +418,7 @@ class AppThemeData {
           json['status'] as Map<String, dynamic>,
         ),
         flame: FlameThemeColors.fromJson(json['flame'] as Map<String, dynamic>),
+        fontFamily: json['fontFamily'] as String?,
       );
 
   /// 节点主题颜色
@@ -433,6 +435,8 @@ class AppThemeData {
   final StatusThemeColors status;
   /// Flame特定主题颜色
   final FlameThemeColors flame;
+  /// 字体族（null 表示使用系统默认字体）
+  final String? fontFamily;
 
   /// 复制并修改属性
   AppThemeData copyWith({
@@ -443,6 +447,7 @@ class AppThemeData {
     BackgroundThemeColors? backgrounds,
     StatusThemeColors? status,
     FlameThemeColors? flame,
+    String? fontFamily,
   }) => AppThemeData(
         nodes: nodes ?? this.nodes,
         connections: connections ?? this.connections,
@@ -451,6 +456,7 @@ class AppThemeData {
         backgrounds: backgrounds ?? this.backgrounds,
         status: status ?? this.status,
         flame: flame ?? this.flame,
+        fontFamily: fontFamily ?? this.fontFamily,
       );
 
   /// 转换为JSON
@@ -462,6 +468,7 @@ class AppThemeData {
         'backgrounds': backgrounds.toJson(),
         'status': status.toJson(),
         'flame': flame.toJson(),
+        if (fontFamily != null) 'fontFamily': fontFamily,
       };
 
   /// 亮色主题
@@ -575,38 +582,44 @@ class AppTheme {
   static ThemeData getMaterialTheme(
     AppThemeData appTheme,
     Brightness brightness,
-  ) => ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: appTheme.nodes.nodePrimary,
-          brightness: brightness,
-          primary: appTheme.nodes.nodePrimary,
-          secondary: appTheme.nodes.folderPrimary,
-          error: appTheme.status.error,
-          surface: appTheme.backgrounds.primary,
-          onPrimary: appTheme.text.onDark,
-          onSecondary: appTheme.text.onDark,
-          onError: appTheme.text.onDark,
-          onSurface: appTheme.text.primary,
-        ),
-        scaffoldBackgroundColor: appTheme.backgrounds.canvas,
-        cardColor: appTheme.ui.card,
-        dividerColor: appTheme.ui.divider,
-        textTheme: TextTheme(
-          displayLarge: TextStyle(color: appTheme.text.primary, fontSize: 57),
-          displayMedium: TextStyle(color: appTheme.text.primary, fontSize: 45),
-          displaySmall: TextStyle(color: appTheme.text.primary, fontSize: 36),
-          headlineMedium: TextStyle(color: appTheme.text.primary, fontSize: 28),
-          headlineSmall: TextStyle(color: appTheme.text.primary, fontSize: 24),
-          titleLarge: TextStyle(color: appTheme.text.primary, fontSize: 22),
-          titleMedium: TextStyle(color: appTheme.text.primary, fontSize: 16),
-          titleSmall: TextStyle(color: appTheme.text.secondary, fontSize: 14),
-          bodyLarge: TextStyle(color: appTheme.text.primary, fontSize: 16),
-          bodyMedium: TextStyle(color: appTheme.text.primary, fontSize: 14),
-          bodySmall: TextStyle(color: appTheme.text.secondary, fontSize: 12),
-          labelLarge: TextStyle(color: appTheme.text.primary, fontSize: 14),
-          labelMedium: TextStyle(color: appTheme.text.secondary, fontSize: 12),
-          labelSmall: TextStyle(color: appTheme.text.secondary, fontSize: 11),
-        ),
-        useMaterial3: true,
-      );
+  ) {
+    // 获取字体族，如果未设置则使用系统默认字体
+    final fontFamily = appTheme.fontFamily;
+
+    return ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: appTheme.nodes.nodePrimary,
+        brightness: brightness,
+        primary: appTheme.nodes.nodePrimary,
+        secondary: appTheme.nodes.folderPrimary,
+        error: appTheme.status.error,
+        surface: appTheme.backgrounds.primary,
+        onPrimary: appTheme.text.onDark,
+        onSecondary: appTheme.text.onDark,
+        onError: appTheme.text.onDark,
+        onSurface: appTheme.text.primary,
+      ),
+      scaffoldBackgroundColor: appTheme.backgrounds.canvas,
+      cardColor: appTheme.ui.card,
+      dividerColor: appTheme.ui.divider,
+      fontFamily: fontFamily,
+      textTheme: TextTheme(
+        displayLarge: TextStyle(color: appTheme.text.primary, fontSize: 57, fontFamily: fontFamily),
+        displayMedium: TextStyle(color: appTheme.text.primary, fontSize: 45, fontFamily: fontFamily),
+        displaySmall: TextStyle(color: appTheme.text.primary, fontSize: 36, fontFamily: fontFamily),
+        headlineMedium: TextStyle(color: appTheme.text.primary, fontSize: 28, fontFamily: fontFamily),
+        headlineSmall: TextStyle(color: appTheme.text.primary, fontSize: 24, fontFamily: fontFamily),
+        titleLarge: TextStyle(color: appTheme.text.primary, fontSize: 22, fontFamily: fontFamily),
+        titleMedium: TextStyle(color: appTheme.text.primary, fontSize: 16, fontFamily: fontFamily),
+        titleSmall: TextStyle(color: appTheme.text.secondary, fontSize: 14, fontFamily: fontFamily),
+        bodyLarge: TextStyle(color: appTheme.text.primary, fontSize: 16, fontFamily: fontFamily),
+        bodyMedium: TextStyle(color: appTheme.text.primary, fontSize: 14, fontFamily: fontFamily),
+        bodySmall: TextStyle(color: appTheme.text.secondary, fontSize: 12, fontFamily: fontFamily),
+        labelLarge: TextStyle(color: appTheme.text.primary, fontSize: 14, fontFamily: fontFamily),
+        labelMedium: TextStyle(color: appTheme.text.secondary, fontSize: 12, fontFamily: fontFamily),
+        labelSmall: TextStyle(color: appTheme.text.secondary, fontSize: 11, fontFamily: fontFamily),
+      ),
+      useMaterial3: true,
+    );
+  }
 }

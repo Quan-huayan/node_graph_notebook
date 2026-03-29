@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:node_graph_notebook/core/graph/adjacency_list.dart';
+import 'package:node_graph_notebook/core/models/enums.dart';
 import 'package:node_graph_notebook/core/models/node.dart';
 import 'package:node_graph_notebook/core/models/node_reference.dart';
-import 'package:node_graph_notebook/core/models/enums.dart';
 import 'package:path/path.dart' as path;
 
 void main() {

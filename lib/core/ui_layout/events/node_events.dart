@@ -339,11 +339,10 @@ class FlutterGestureAdapter extends EventAdapter {
   }
 
   @override
-  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent) {
+  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent) 
     // This is a convenience method for bulk event adaptation
     // Most usage will be direct method calls (adaptTap, adaptDragStart, etc.)
-    return const Stream.empty();
-  }
+    => const Stream.empty();
 
   void _publish(NodeInteractionEvent event) {
     _commandBus.publishEvent(event);
@@ -442,11 +441,10 @@ class FlameInteractionAdapter extends EventAdapter {
   }
 
   @override
-  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent) {
-    // This is a convenience method for bulk event adaptation
+  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent) 
+    // TODO: This is a convenience method for bulk event adaptation
     // Most usage will be direct method calls (adaptTap, adaptDragStart, etc.)
-    return const Stream.empty();
-  }
+    => const Stream.empty();
 
   void _publish(NodeInteractionEvent event) {
     _commandBus.publishEvent(event);

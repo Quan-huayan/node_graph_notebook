@@ -13,7 +13,7 @@ import '../../models/node.dart';
 ///
 /// 与完整 Node 的区别：
 /// - content: 完整Node有，NodeReadModel没有（最重的字段）
-/// - references: 完整Node是Map，NodeReadModel简化为List<String>（只存ID）
+/// - references: 完整Node是Map，NodeReadModel简化为List&lt;String&gt;（只存ID）
 /// - metadata: 完整Node有，NodeReadModel没有（减少复杂度）
 ///
 /// 内存占用对比：

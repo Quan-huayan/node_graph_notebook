@@ -197,9 +197,7 @@ class CommandBus {
 
       // 发布应用事件（如果有）
       if (allEvents.isNotEmpty) {
-        for (final event in allEvents) {
-          _eventStreamController.add(event);
-        }
+        allEvents.forEach(_eventStreamController.add);
       }
 
       // 清空 CommandContext 中的待发布事件
@@ -296,9 +294,7 @@ class CommandBus {
     if (_disposed) {
       throw StateError('CommandBus 已释放，无法发布事件');
     }
-    for (final event in events) {
-      _eventStreamController.add(event);
-    }
+    events.forEach(_eventStreamController.add);
   }
 }
 

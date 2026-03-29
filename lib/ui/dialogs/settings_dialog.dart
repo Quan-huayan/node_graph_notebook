@@ -86,6 +86,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showThemeSelector(context, settingsService),
             ),
+            ListTile(
+              leading: const Icon(Icons.font_download_outlined),
+              title: Text(i18n.t('Font')),
+              subtitle: Text(_getFontFamilyLabel(context)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showFontSelector(context),
+            ),
 
             const Divider(height: 32),
 
@@ -541,5 +548,95 @@ class _SettingsDialogState extends State<SettingsDialog> {
       case ThemeMode.system:
         return i18n.t('System');
     }
+  }
+
+  /// 获取当前字体族标签
+  String _getFontFamilyLabel(BuildContext context) {
+    final themeService = context.read<ThemeService>();
+    final fontFamily = themeService.themeData.fontFamily;
+    if (fontFamily == null || fontFamily.isEmpty) {
+      return 'System Default';
+    }
+    return fontFamily;
+  }
+
+  /// 显示字体选择器
+  void _showFontSelector(BuildContext context) {
+    final themeService = context.read<ThemeService>();
+    final i18n = I18n.of(context);
+
+    // 预定义字体列表（Windows 常见字体）
+    final fonts = [
+      null, // 系统默认
+      'Microsoft YaHei', // 微软雅黑
+      'SimSun', // 宋体
+      'KaiTi', // 楷体
+      'SimHei', // 黑体
+      'FangSong', // 仿宋
+      'Arial',
+      'Calibri',
+      'Cambria',
+      'Consolas',
+      'Segoe UI',
+      'Times New Roman',
+      'Courier New',
+      'Verdana',
+      'Georgia',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final theme = ctx.read<ThemeService>().themeData;
+        final currentFont = themeService.themeData.fontFamily;
+
+        return AlertDialog(
+          backgroundColor: theme.backgrounds.primary,
+          title: Text(i18n.t('Select Font')),
+          content: SizedBox(
+            width: 400,
+            height: 300,
+            child: RadioGroup<String?>(
+              groupValue: currentFont,
+              onChanged: (value) async {
+                if (value != null) {
+                  await themeService.updateCustomTheme(fontFamily: value);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                }
+              },
+              child: ListView.builder(
+                itemCount: fonts.length,
+                itemBuilder: (context, index) {
+                  final font = fonts[index];
+                  final fontName = font ?? 'System Default';
+
+                  return RadioListTile<String?>(
+                    title: Text(
+                      fontName,
+                      style: TextStyle(fontFamily: font),
+                    ),
+                    subtitle: font != null
+                        ? Text(
+                            'Sample Text 示例文字',
+                            style: TextStyle(fontFamily: font, fontSize: 12),
+                          )
+                        : null,
+                    value: font,
+                  );
+                },
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(i18n.t('Close')),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

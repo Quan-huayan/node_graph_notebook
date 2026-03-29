@@ -655,9 +655,7 @@ void main() {
         final events = <AppEvent>[];
 
         // 订阅 CommandBus 的事件流
-        final subscription = commandBus.eventStream.listen((event) {
-          events.add(event);
-        });
+        final subscription = commandBus.eventStream.listen(events.add);
 
         await pluginManager.loadPlugin('plugin_a');
         await pluginManager.enablePlugin('plugin_a');

@@ -27,7 +27,6 @@ class PluginContext {
   ///
   /// [pluginId] 插件的唯一标识符
   /// [commandBus] 命令总线，用于执行写操作
-  /// [eventBus] 事件总线，用于订阅数据变化
   /// [logger] 插件日志记录器
   /// [apiRegistry] API 注册表，用于获取其他插件导出的 API
   /// [nodeRepository] 节点仓库，用于读取节点数据

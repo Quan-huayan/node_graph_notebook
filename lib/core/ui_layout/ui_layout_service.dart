@@ -267,9 +267,7 @@ class UILayoutService {
   void _indexHooks(UIHookNode hook) {
     _hookIndex[hook.id] = hook;
 
-    for (final child in hook.children) {
-      _indexHooks(child);
-    }
+    hook.children.forEach(_indexHooks);
   }
 
   /// Registers the default layout calculators.

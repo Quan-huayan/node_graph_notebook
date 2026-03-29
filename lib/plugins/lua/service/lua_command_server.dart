@@ -156,9 +156,7 @@ class LuaCommandServer {
       // 输出结果
       _log.info('执行结果:');
       _log.info('---');
-      for (final line in result.output) {
-        _log.info(line);
-      }
+      result.output.forEach(_log.info);
       _log.info('---');
 
       if (result.success) {

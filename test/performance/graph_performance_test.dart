@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:node_graph_notebook/core/graph/adjacency_list.dart';
-import 'package:node_graph_notebook/core/models/node.dart';
 import 'package:node_graph_notebook/core/models/enums.dart';
+import 'package:node_graph_notebook/core/models/node.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 import 'package:path/path.dart' as path;
 
@@ -332,7 +332,7 @@ void main() {
 
         stopwatch.stop();
 
-        final expectedEdges = nodeCount * (nodeCount - 1);
+        const expectedEdges = nodeCount * (nodeCount - 1);
 
         debugPrint('Dense Graph Performance:');
         debugPrint('  Nodes: $nodeCount');

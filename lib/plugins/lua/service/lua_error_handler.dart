@@ -341,7 +341,7 @@ class LuaErrorHandler {
   /// 提取列号
   static int? _extractColumnNumber(String message) {
     // TODO: Lua错误通常不包含列号，但如果有，可以尝试提取
-    //final match = RegExp(r':(\d+):').firstMatch(message);
+    // final match = RegExp(r':(\d+):').firstMatch(message);
     // 简化处理，通常Lua错误格式为 行:列
     return null; // 实际实现可以根据具体格式解析
   }

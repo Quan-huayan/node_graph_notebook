@@ -1,12 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:node_graph_notebook/core/cqrs/handlers/advanced_search_handler.dart';
 import 'package:node_graph_notebook/core/cqrs/queries/advanced_search_query.dart';
-import 'package:node_graph_notebook/core/models/node.dart';
 import 'package:node_graph_notebook/core/models/enums.dart';
+import 'package:node_graph_notebook/core/models/node.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 
 import 'advanced_search_handler_test.mocks.dart';
@@ -27,8 +27,7 @@ void main() {
       required String title,
       String content = '',
       Map<String, dynamic> metadata = const {},
-    }) {
-      return Node(
+    }) => Node(
         id: id,
         title: title,
         content: content,
@@ -41,7 +40,6 @@ void main() {
         updatedAt: DateTime.now(),
         metadata: metadata,
       );
-    }
 
     test('should filter nodes by title', () async {
       // 准备测试数据
@@ -54,7 +52,7 @@ void main() {
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
       // 执行查询
-      final query = const AdvancedSearchQuery(titleQuery: 'Test');
+      const query = AdvancedSearchQuery(titleQuery: 'Test');
       final result = await handler.handle(query);
 
       // 验证结果
@@ -80,7 +78,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(contentQuery: 'Important');
+      const query = AdvancedSearchQuery(contentQuery: 'Important');
       final result = await handler.handle(query);
 
       expect(result.isSuccess, true);
@@ -109,7 +107,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(searchText: 'search keyword');
+      const query = AdvancedSearchQuery(searchText: 'search keyword');
       final result = await handler.handle(query);
 
       expect(result.isSuccess, true);
@@ -137,7 +135,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(tags: ['important']);
+      const query = AdvancedSearchQuery(tags: ['important']);
       final result = await handler.handle(query);
 
       expect(result.isSuccess, true);
@@ -160,7 +158,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(tags: ['important', 'work']);
+      const query = AdvancedSearchQuery(tags: ['important', 'work']);
       final result = await handler.handle(query);
 
       expect(result.isSuccess, true);
@@ -176,7 +174,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(isFolder: true);
+      const query = AdvancedSearchQuery(isFolder: true);
       final result = await handler.handle(query);
 
       expect(result.isSuccess, true);
@@ -247,7 +245,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(limit: 5);
+      const query = AdvancedSearchQuery(limit: 5);
       final result = await handler.handle(query);
 
       expect(result.isSuccess, true);
@@ -261,7 +259,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(titleQuery: 'NonExistent');
+      const query = AdvancedSearchQuery(titleQuery: 'NonExistent');
       final result = await handler.handle(query);
 
       expect(result.isSuccess, true);
@@ -271,7 +269,7 @@ void main() {
     test('should handle repository errors', () async {
       when(mockRepository.queryAll()).thenThrow(Exception('Database error'));
 
-      final query = const AdvancedSearchQuery(titleQuery: 'Test');
+      const query = AdvancedSearchQuery(titleQuery: 'Test');
       final result = await handler.handle(query);
 
       expect(result.isSuccess, false);
@@ -296,7 +294,7 @@ void main() {
 
       when(mockRepository.queryAll()).thenAnswer((_) async => nodes);
 
-      final query = const AdvancedSearchQuery(
+      const query = AdvancedSearchQuery(
         titleQuery: 'Important',
         tags: ['work'],
       );

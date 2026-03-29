@@ -284,11 +284,9 @@ mixin DefaultNodeRendering on Node implements NodeRendering {
     );
 
   @override
-  Component buildFlameComponent(dynamic world) {
-    // Return a basic placeholder component
-    // In a real implementation, this would return a proper Flame component
-    return _PlaceholderNodeComponent(node: this);
-  }
+  Component buildFlameComponent(dynamic world) => _PlaceholderNodeComponent(node: this);
+  // TODO: Return a basic placeholder component
+  // In a real implementation, this would return a proper Flame component
 }
 
 /// Placeholder Flame component for Nodes without custom rendering.

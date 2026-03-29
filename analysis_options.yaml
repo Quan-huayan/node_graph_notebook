@@ -29,6 +29,9 @@ analyzer:
     # Avoid unused local variables
     unused_local_variable: error
     avoid_dynamic_calls: error
+    # Avoid deprecated uses
+    deprecated_factory_method: error
+    deprecated_member_use: error
 
     # === Warnings (not blocking) ===
     # Documentation requirements
@@ -41,6 +44,8 @@ analyzer:
     unnecessary_lambdas: info
     # Unnamed constructor ordering
     sort_unnamed_constructors_first: info
+    
+    cascade_invocations: include
 
 linter:
   rules:
@@ -136,7 +141,6 @@ linter:
     - sort_unnamed_constructors_first
 
     # Modern Dart Features
-    - cascade_invocations
     - use_enums
     - use_if_null_to_convert_nulls_to_bools
     - use_is_even_rather_than_modulo

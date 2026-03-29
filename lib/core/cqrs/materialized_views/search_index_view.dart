@@ -218,9 +218,7 @@ class SearchIndexMaterializedView {
         ).toList();
 
         // 添加单个中文字符
-        for (final char in chineseChars) {
-          tokens.add(char);
-        }
+        chineseChars.forEach(tokens.add);
 
         // 添加中文词语（简单的2-3字组合）
         for (var i = 0; i < chineseChars.length - 1; i++) {

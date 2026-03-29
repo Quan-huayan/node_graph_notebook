@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:node_graph_notebook/core/execution/cpu_task.dart';
 import 'package:node_graph_notebook/core/execution/execution_engine.dart';
@@ -24,9 +23,7 @@ class TestTask extends CPUTask<int> {
     };
 
   @override
-  Future<int> execute() async {
-    return value * 1000;
-  }
+  Future<int> execute() async => value * 1000;
 }
 
 /// 递归计算任务 - 用于测试CPU密集
@@ -54,9 +51,7 @@ class RecursiveTask extends CPUTask<int> {
   }
 
   @override
-  Future<int> execute() async {
-    return _fibonacci(n);
-  }
+  Future<int> execute() async => _fibonacci(n);
 }
 
 void main() {

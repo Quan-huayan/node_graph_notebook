@@ -35,7 +35,7 @@ class EventAggregationMiddleware {
   /// 最大待处理事件数
   final int maxPendingEvents;
 
-  /// 待处理的事件: eventType -> List<AppEvent>
+  /// 待处理的事件: eventType -> List&lt;AppEvent&gt;
   final Map<Type, List<AppEvent>> _pendingEvents = {};
 
   /// 定时器

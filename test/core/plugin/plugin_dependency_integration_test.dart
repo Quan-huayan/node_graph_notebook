@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/plugin/dependency_resolver.dart';
 import 'package:node_graph_notebook/core/plugin/plugin.dart';
 
 /// 插件依赖集成测试
@@ -534,14 +533,14 @@ void main() {
     group('版本兼容性测试', () {
       test('should check version compatibility', () {
         // 使用 PluginMetadata 的 isCompatibleWith 方法测试兼容性
-        final compatiblePlugin = const PluginMetadata(
+        const compatiblePlugin = PluginMetadata(
           id: 'compatible',
           name: 'Compatible',
           version: '1.0.0',
           minimumAppVersion: '1.0.0',
         );
 
-        final incompatiblePlugin = const PluginMetadata(
+        const incompatiblePlugin = PluginMetadata(
           id: 'incompatible',
           name: 'Incompatible',
           version: '1.0.0',

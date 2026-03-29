@@ -139,9 +139,7 @@ void main() {
         ),
       ];
 
-      for (final event in events) {
-        commandBus.publishEvent(event);
-      }
+      events.forEach(commandBus.publishEvent);
 
       // Wait for events to be published
       await Future.delayed(const Duration(milliseconds: 50));

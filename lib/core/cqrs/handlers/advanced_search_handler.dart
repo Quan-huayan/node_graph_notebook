@@ -15,7 +15,7 @@ import '../query/query.dart';
 class AdvancedSearchQueryHandler extends QueryHandler<List<Node>, AdvancedSearchQuery> {
   /// 创建高级搜索查询处理器
   ///
-  /// [nodeRepository] 节点仓储，用于访问节点数据
+  /// [_nodeRepository] 节点仓储，用于访问节点数据
   AdvancedSearchQueryHandler(this._nodeRepository);
 
   final NodeRepository _nodeRepository;

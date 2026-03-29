@@ -212,10 +212,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   }
 
   /// Renders proportional layout.
-  FlameComponent _renderProportional(UIHookNode hook, FlameGame? gameWorld) {
-    // Similar to sequential but with proportional sizing
-    return _renderSequential(hook, gameWorld);
-  }
+  FlameComponent _renderProportional(UIHookNode hook, FlameGame? gameWorld) => _renderSequential(hook, gameWorld); // Similar to sequential but with proportional sizing
 
   /// Renders flow layout.
   FlameComponent _renderFlow(UIHookNode hook, FlameGame? gameWorld) {

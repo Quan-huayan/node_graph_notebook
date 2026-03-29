@@ -33,12 +33,12 @@ class AdjacencyList {
   /// 存储目录
   final String storageDir;
 
-  /// 出边表：nodeId -> Set<referencedNodeId>
+  /// 出边表：nodeId -> Set&lt;referencedNodeId&gt;
   ///
   /// 使用 late 而非 late final，因为加载失败时需要重新初始化
   late Map<String, Set<String>> _outgoingEdges;
 
-  /// 入边表：nodeId -> Set<referencingNodeId>
+  /// 入边表：nodeId -> Set&lt;referencingNodeId&gt;
   ///
   /// 使用 late 而非 late final，因为加载失败时需要重新初始化
   late Map<String, Set<String>> _incomingEdges;

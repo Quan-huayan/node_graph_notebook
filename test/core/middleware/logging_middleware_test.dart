@@ -15,9 +15,7 @@ class TestCommand extends Command<String> {
   final String description;
 
   @override
-  Future<CommandResult<String>> execute(CommandContext context) async {
-    return CommandResult.success('test result');
-  }
+  Future<CommandResult<String>> execute(CommandContext context) async => CommandResult.success('test result');
 }
 
 /// 另一个测试命令
@@ -29,9 +27,7 @@ class AnotherCommand extends Command<int> {
   String get description => 'Another test command';
 
   @override
-  Future<CommandResult<int>> execute(CommandContext context) async {
-    return CommandResult.success(42);
-  }
+  Future<CommandResult<int>> execute(CommandContext context) async => CommandResult.success(42);
 }
 
 void main() {
