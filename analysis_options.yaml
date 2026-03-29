@@ -9,7 +9,7 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "build/**"
-    - "lib/**/*.mocks.dart"
+    - "**/*.mocks.dart"
 
   errors:
     # === Critical Errors ===

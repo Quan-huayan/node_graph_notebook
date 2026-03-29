@@ -1,49 +1,49 @@
-/// Core UI Layout Service for managing Hook tree and Node attachments.
+/// 核心UI布局服务，用于管理Hook树和节点附着。
 ///
-/// UILayoutService is the central coordinator for the new UI layout system.
-/// It manages the hierarchical Hook tree, handles Node attachments/detachments,
-/// and coordinates layout recalculation.
+/// UILayoutService是新UI布局系统的中央协调器。
+/// 它管理分层Hook树，处理节点的附着/分离，
+/// 并协调布局重新计算。
 ///
-/// ## Key Responsibilities
+/// ## 主要职责
 ///
-/// - **Hook Tree Management**: Create and maintain hierarchical Hook structure
-/// - **Node Attachments**: Attach/detach/move Nodes between Hooks
-/// - **Layout Coordination**: Trigger layout recalculation when state changes
-/// - **Persistence**: Save and restore layout state
-/// - **Event Publishing**: Publish events for UI updates
+/// - **Hook树管理**：创建和维护分层Hook结构
+/// - **节点附着**：在Hook之间附着/分离/移动节点
+/// - **布局协调**：状态变化时触发布局重新计算
+/// - **持久化**：保存和恢复布局状态
+/// - **事件发布**：发布UI更新事件
 ///
-/// ## Architecture
+/// ## 架构
 ///
 /// ```
 /// UILayoutService
-///   ├─ Hook Tree (UIHookNode hierarchy)
-///   ├─ Node-to-Hook Index (nodeId → hookId)
-///   ├─ Hook Registry (hookId → UIHookNode)
-///   └─ Layout Calculators (strategy implementations)
+///   ├─ Hook树 (UIHookNode层级)
+///   ├─ 节点到Hook索引 (nodeId → hookId)
+///   ├─ Hook注册表 (hookId → UIHookNode)
+///   └─ 布局计算器 (策略实现)
 /// ```
 ///
-/// ## Usage
+/// ## 使用方式
 ///
 /// ```dart
-/// // Initialize service
+/// // 初始化服务
 /// final layoutService = UILayoutService(eventBus: eventBus);
 /// await layoutService.initialize();
 ///
-/// // Attach a Node to a Hook
+/// // 将节点附着到Hook
 /// await layoutService.attachNode(
 ///   nodeId: 'node-1',
 ///   hookId: 'sidebar',
 ///   position: LocalPosition.absolute(10, 20),
 /// );
 ///
-/// // Move a Node between Hooks
+/// // 在Hook之间移动节点
 /// await layoutService.moveNode(
 ///   nodeId: 'node-1',
 ///   targetHookId: 'graph.view',
 ///   position: LocalPosition.absolute(100, 200),
 /// );
 ///
-/// // Get a Hook for rendering
+/// // 获取Hook用于渲染
 /// final sidebarHook = layoutService.getHook('sidebar');
 /// ```
 library;
@@ -62,15 +62,15 @@ import 'node_attachment.dart';
 import 'node_template.dart';
 import 'ui_hook_tree.dart';
 
-/// Service for managing UI layout with Hook tree and Node attachments.
+/// 用于管理带有Hook树和节点附着的UI布局的服务。
 ///
-/// This service is the central entry point for all layout operations.
-/// It maintains the Hook tree structure and tracks Node attachments.
+/// 此服务是所有布局操作的中央入口点。
+/// 它维护Hook树结构并跟踪节点附着。
 class UILayoutService {
-  /// Creates a UI layout service.
+  /// 创建UI布局服务。
   ///
-  /// [commandBus] is required for publishing layout events.
-  /// [nodeTemplateRegistry] is optional custom template registry.
+  /// [commandBus] 用于发布布局事件。
+  /// [nodeTemplateRegistry] 可选的自定义模板注册表。
   UILayoutService({
     required CommandBus commandBus,
     NodeTemplateRegistry? nodeTemplateRegistry,
@@ -79,34 +79,34 @@ class UILayoutService {
     _registerDefaultCalculators();
   }
 
-  /// CommandBus for publishing layout events.
+  /// 用于发布布局事件的命令总线。
   final CommandBus _commandBus;
 
-  /// Root Hook of the Hook tree.
+  /// Hook树的根Hook。
   late final UIHookNode _rootHook;
 
-  /// Index of all Hooks by ID for fast lookup.
+  /// 所有Hook的ID索引，用于快速查找。
   final Map<String, UIHookNode> _hookIndex = {};
 
-  /// Index of Node-to-Hook attachments (nodeId → hookId).
+  /// 节点到Hook附着的索引 (nodeId → hookId)。
   final Map<String, String> _nodeToHookIndex = {};
 
-  /// Registry of layout calculators by strategy.
+  /// 按策略分类的布局计算器注册表。
   final Map<LayoutStrategy, LayoutCalculator> _calculators = {};
 
-  /// Registry of Node templates.
+  /// 节点模板注册表。
   final NodeTemplateRegistry _nodeTemplateRegistry;
 
-  /// Whether the service has been initialized.
+  /// 服务是否已初始化。
   bool _isInitialized = false;
 
-  /// Persistence key for layout state.
+  /// 布局状态的持久化键。
   static const String _kLayoutPersistenceKey = 'ui_layout_state';
 
-  /// Initializes the layout service.
+  /// 初始化布局服务。
   ///
-  /// Creates the Hook tree structure and restores persisted layout state.
-  /// Must be called before any other operations.
+  /// 创建Hook树结构并恢复持久化的布局状态。
+  /// 必须在执行任何其他操作之前调用。
   Future<void> initialize() async {
     if (_isInitialized) {
       debugPrint('UILayoutService already initialized');
@@ -131,17 +131,17 @@ class UILayoutService {
     debugPrint('UILayoutService initialized with ${_hookIndex.length} Hooks');
   }
 
-  /// Creates the root Hook tree structure.
+  /// 创建根Hook树结构。
   ///
-  /// Sets up the basic Hook hierarchy for the application.
+  /// 为应用程序设置基本的Hook层次结构。
   void createHookTree() {
     _rootHook = UIHookNode.root();
     debugPrint('Created root Hook');
   }
 
-  /// Registers standard Hook points used by the application.
+  /// 注册应用程序使用的标准Hook点。
   ///
-  /// These are the common Hook points that most plugins will use.
+  /// 这些是大多数插件将使用的通用Hook点。
   void _registerStandardHookPoints() {
     // Main toolbar Hook
     final toolbarHook = UIHookNode(
@@ -261,16 +261,16 @@ class UILayoutService {
     debugPrint('Registered standard Hook points');
   }
 
-  /// Indexes all Hooks in the tree for fast lookup.
+  /// 为快速查找索引树中的所有Hook。
   ///
-  /// Traverses the tree recursively and builds a flat index.
+  /// 递归遍历树并构建扁平索引。
   void _indexHooks(UIHookNode hook) {
     _hookIndex[hook.id] = hook;
 
     hook.children.forEach(_indexHooks);
   }
 
-  /// Registers the default layout calculators.
+  /// 注册默认布局计算器。
   void _registerDefaultCalculators() {
     _calculators[LayoutStrategy.absolute] = const AbsoluteLayoutCalculator();
     _calculators[LayoutStrategy.sequential] = const SequentialLayoutCalculator();
@@ -280,27 +280,27 @@ class UILayoutService {
     debugPrint('Registered default layout calculators');
   }
 
-  /// Gets a Hook by ID.
+  /// 通过ID获取Hook。
   ///
-  /// [hookId] is the unique ID of the Hook to retrieve.
+  /// [hookId] 是要检索的Hook的唯一ID。
   ///
-  /// Returns the Hook, or null if not found.
+  /// 返回Hook，如果未找到则返回null。
   UIHookNode? getHook(String hookId) => _hookIndex[hookId];
 
-  /// Gets a Hook by hook point ID (semantic ID).
+  /// 通过Hook点ID（语义ID）获取Hook。
   ///
-  /// [hookPointId] is the semantic ID of the Hook.
+  /// [hookPointId] 是Hook的语义ID。
   ///
-  /// Returns the first matching Hook, or null if not found.
+  /// 返回第一个匹配的Hook，如果未找到则返回null。
   UIHookNode? getHookByPointId(String hookPointId) => _rootHook.findByHookPointId(hookPointId);
 
-  /// Attaches a Node to a Hook.
+  /// 将节点附着到Hook。
   ///
-  /// [nodeId] is the ID of the Node to attach.
-  /// [hookId] is the ID of the target Hook.
-  /// [position] is the local position within the Hook.
-  /// [zIndex] is the rendering order (default: 0).
-  /// [persist] whether to persist this attachment (default: true).
+  /// [nodeId] 是要附着的节点的ID。
+  /// [hookId] 是目标Hook的ID。
+  /// [position] 是Hook内的本地位置。
+  /// [zIndex] 是渲染顺序（默认：0）。
+  /// [persist] 是否持久化此附着（默认：true）。
   Future<void> attachNode({
     required String nodeId,
     required String hookId,
@@ -351,10 +351,10 @@ class UILayoutService {
     }
   }
 
-  /// Detaches a Node from its current Hook.
+  /// 从当前Hook分离节点。
   ///
-  /// [nodeId] is the ID of the Node to detach.
-  /// [persist] whether to persist this change (default: true).
+  /// [nodeId] 是要分离的节点的ID。
+  /// [persist] 是否持久化此更改（默认：true）。
   Future<void> detachNode({
     required String nodeId,
     bool persist = true,
@@ -396,13 +396,13 @@ class UILayoutService {
     }
   }
 
-  /// Moves a Node to a different Hook or position.
+  /// 将节点移动到不同的Hook或位置。
   ///
-  /// [nodeId] is the ID of the Node to move.
-  /// [targetHookId] is the ID of the destination Hook.
-  /// [newPosition] is the position in the destination Hook.
-  /// [newZIndex] is the new rendering order (optional).
-  /// [persist] whether to persist this change (default: true).
+  /// [nodeId] 是要移动的节点的ID。
+  /// [targetHookId] 是目标Hook的ID。
+  /// [newPosition] 是目标Hook中的位置。
+  /// [newZIndex] 是新的渲染顺序（可选）。
+  /// [persist] 是否持久化此更改（默认：true）。
   Future<void> moveNode({
     required String nodeId,
     required String targetHookId,
@@ -491,11 +491,11 @@ class UILayoutService {
     }
   }
 
-  /// Updates a Node's position within its current Hook.
+  /// 更新节点在其当前Hook中的位置。
   ///
-  /// [nodeId] is the ID of the Node to update.
-  /// [newPosition] is the new local position.
-  /// [persist] whether to persist this change (default: true).
+  /// [nodeId] 是要更新的节点的ID。
+  /// [newPosition] 是新的本地位置。
+  /// [persist] 是否持久化此更改（默认：true）。
   Future<void> updateNodePosition({
     required String nodeId,
     required LocalPosition newPosition,
@@ -538,18 +538,18 @@ class UILayoutService {
     }
   }
 
-  /// Gets the Hook a Node is attached to.
+  /// 获取节点所附着的Hook。
   ///
-  /// [nodeId] is the ID of the Node.
+  /// [nodeId] 是节点的ID。
   ///
-  /// Returns the Hook ID, or null if the Node is not attached.
+  /// 返回Hook ID，如果节点未附着则返回null。
   String? getNodeHookId(String nodeId) => _nodeToHookIndex[nodeId];
 
-  /// Gets the attachment for a Node.
+  /// 获取节点的附着信息。
   ///
-  /// [nodeId] is the ID of the Node.
+  /// [nodeId] 是节点的ID。
   ///
-  /// Returns the attachment, or null if the Node is not attached.
+  /// 返回附着信息，如果节点未附着则返回null。
   NodeAttachment? getNodeAttachment(String nodeId) {
     final hookId = _nodeToHookIndex[nodeId];
     if (hookId == null) return null;
@@ -560,9 +560,9 @@ class UILayoutService {
     return hook.getAttachedNode(nodeId);
   }
 
-  /// Recalculates layout for a Hook.
+  /// 重新计算Hook的布局。
   ///
-  /// [hookId] is the ID of the Hook to recalculate.
+  /// [hookId] 是要重新计算的Hook的ID。
   void recalculateLayout(String hookId) {
     final hook = _hookIndex[hookId];
     if (hook == null) {
@@ -605,7 +605,7 @@ class UILayoutService {
     debugPrint('Recalculated layout for Hook $hookId');
   }
 
-  /// Persists the current layout state.
+  /// 持久化当前布局状态。
   Future<void> _persistLayout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -636,7 +636,7 @@ class UILayoutService {
     }
   }
 
-  /// Restores the layout state from persistence.
+  /// 从持久化恢复布局状态。
   Future<void> _restoreLayout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -699,7 +699,7 @@ class UILayoutService {
     }
   }
 
-  /// Clears all persisted layout state.
+  /// 清除所有持久化的布局状态。
   Future<void> clearPersistedLayout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -710,46 +710,46 @@ class UILayoutService {
     }
   }
 
-  /// Gets the root Hook of the tree.
+  /// 获取树的根Hook。
   UIHookNode get rootHook => _rootHook;
 
-  /// Gets all Hooks in the tree.
+  /// 获取树中的所有Hook。
   List<UIHookNode> getAllHooks() => _hookIndex.values.toList();
 
-  /// Gets all Node-to-Hook attachments.
+  /// 获取所有节点到Hook的附着关系。
   Map<String, String> getAllNodeAttachments() => Map.unmodifiable(_nodeToHookIndex);
 
-  // ===== Node Template Methods =====
+  // ===== 节点模板方法 =====
 
-  /// Gets the Node template registry.
+  /// 获取节点模板注册表。
   ///
-  /// Plugins use this registry to register their Node templates.
+  /// 插件使用此注册表注册它们的节点模板。
   NodeTemplateRegistry get nodeTemplateRegistry => _nodeTemplateRegistry;
 
-  /// Registers a Node template.
+  /// 注册节点模板。
   ///
-  /// [template] is the template to register.
+  /// [template] 是要注册的模板。
   ///
-  /// This is a convenience method that delegates to the NodeTemplateRegistry.
-  /// Plugins typically call this during initialization.
+  /// 这是一个便捷方法，委托给NodeTemplateRegistry。
+  /// 插件通常在初始化期间调用此方法。
   void registerNodeTemplate(NodeTemplate template) {
     _nodeTemplateRegistry.register(template);
-    debugPrint('Registered Node template: ${template.id}');
+    debugPrint('已注册节点模板: ${template.id}');
   }
 
-  /// Creates a Node from a template and attaches it to a Hook.
+  /// 从模板创建节点并将其附着到Hook。
   ///
-  /// [templateId] is the ID of the template to use.
-  /// [nodeId] is the unique ID for the new Node.
-  /// [title] is the Node's title.
-  /// [content] is optional Node content.
-  /// [params] are optional additional parameters for the factory.
-  /// [hookId] is the target Hook ID (uses template default if not provided).
-  /// [position] is the position for the Node (uses template default if not provided).
-  /// [zIndex] is the rendering order.
-  /// [persist] whether to persist this attachment.
+  /// [templateId] 是要使用的模板ID。
+  /// [nodeId] 是新节点的唯一ID。
+  /// [title] 是节点的标题。
+  /// [content] 是可选的节点内容。
+  /// [params] 是工厂的可选附加参数。
+  /// [hookId] 是目标Hook ID（如果未提供则使用模板默认值）。
+  /// [position] 是节点的位置（如果未提供则使用模板默认值）。
+  /// [zIndex] 是渲染顺序。
+  /// [persist] 是否持久化此附着。
   ///
-  /// Throws [ArgumentError] if template not found.
+  /// 如果未找到模板则抛出 [ArgumentError]。
   Future<Node> createAndAttachNodeFromTemplate({
     required String templateId,
     required String nodeId,
@@ -803,37 +803,37 @@ class UILayoutService {
     );
 
     debugPrint(
-      'Created and attached Node $nodeId from template $templateId to Hook $targetHookId',
+      '已从模板 $templateId 创建并附着节点 $nodeId 到 Hook $targetHookId',
     );
 
     return node;
   }
 
-  /// Gets a Node template by ID.
+  /// 通过ID获取节点模板。
   ///
-  /// [templateId] is the template ID.
+  /// [templateId] 是模板ID。
   ///
-  /// Returns the template, or null if not found.
+  /// 返回模板，如果未找到则返回null。
   NodeTemplate? getNodeTemplate(String templateId) => _nodeTemplateRegistry.get(templateId);
 
-  /// Gets all Node templates.
+  /// 获取所有节点模板。
   ///
-  /// Returns an unmodifiable list of all registered templates.
+  /// 返回所有已注册模板的不可修改列表。
   List<NodeTemplate> getAllNodeTemplates() => _nodeTemplateRegistry.getAll();
 
-  /// Gets Node templates by category.
+  /// 按类别获取节点模板。
   ///
-  /// [category] is the category to filter by.
+  /// [category] 是要筛选的类别。
   ///
-  /// Returns a list of templates in the category.
+  /// 返回该类别中的模板列表。
   List<NodeTemplate> getNodeTemplatesByCategory(String category) => _nodeTemplateRegistry.getByCategory(category);
 
-  /// Gets all Node template categories.
+  /// 获取所有节点模板类别。
   List<String> getNodeTemplateCategories() => _nodeTemplateRegistry.getCategories();
 
-  /// Debug method to print the Hook tree structure.
+  /// 调试方法，打印Hook树结构。
   void debugPrintTree() {
-    debugPrint('=== Hook Tree Structure ===');
+    debugPrint('=== Hook树结构 ===');
     _rootHook.debugPrintTree();
     debugPrint('=========================');
   }

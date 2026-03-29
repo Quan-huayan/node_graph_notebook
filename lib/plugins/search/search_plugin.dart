@@ -32,7 +32,7 @@ class SearchPlugin extends Plugin {
     id: 'search',
     name: 'Search',
     version: '1.0.0',
-    description: 'Node search and preset management',
+    description: '节点搜索和预设管理',
     author: 'Node Graph Notebook',
     enabledByDefault: true,
     dependencies: ['graph'],

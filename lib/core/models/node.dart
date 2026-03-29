@@ -14,20 +14,20 @@ part 'node.g.dart';
 /// 统一节点模型
 /// 所有元素（内容、关系、概念）都继承自统一的 Node 模型
 ///
-/// ## Design Philosophy (Phase 4 Refactoring)
+/// ## 设计理念（第4阶段重构）
 ///
-/// Nodes are **autonomous components** that:
-/// - Don't store position (managed by UILayoutService)
-/// - Provide dual rendering (Flutter Widget + Flame Component)
-/// - Maintain state independent of location
-/// - Can be attached to any Hook in the layout tree
+/// 节点是**自治组件**，具有以下特点：
+/// - 不存储位置（由UILayoutService管理）
+/// - 提供双重渲染（Flutter Widget + Flame Component）
+/// - 保持独立于位置的状态
+/// - 可以附着到布局树中的任何Hook
 ///
-/// ## Positioning
+/// ## 定位
 ///
-/// **DEPRECATED**: The `position` field is deprecated and will be removed in Phase 6.
-/// Positions are now managed by [UILayoutService] via [NodeAttachment].
+/// **已弃用**：`position`字段已弃用，将在第6阶段移除。
+/// 位置现在通过[NodeAttachment]由[UILayoutService]管理。
 ///
-/// Use `UILayoutService.attachNode()` to position Nodes:
+/// 使用`UILayoutService.attachNode()`来定位节点：
 /// ```dart
 /// await layoutService.attachNode(
 ///   nodeId: node.id,
@@ -36,13 +36,13 @@ part 'node.g.dart';
 /// );
 /// ```
 ///
-/// ## Rendering
+/// ## 渲染
 ///
-/// Nodes support dual rendering via [NodeRendering] mixin:
-/// - `buildFlutterWidget()` - Render in Flutter context (Sidebar, Toolbar)
-/// - `buildFlameComponent()` - Render in Flame context (Graph)
+/// 节点通过[NodeRendering]混入支持双重渲染：
+/// - `buildFlutterWidget()` - 在Flutter上下文中渲染（侧边栏、工具栏）
+/// - `buildFlameComponent()` - 在Flame上下文中渲染（图）
 ///
-/// Mix in [NodeRendering] to add custom rendering:
+/// 混入[NodeRendering]以添加自定义渲染：
 /// ```dart
 /// class MyNode extends Node with NodeRendering {
 ///   @override
@@ -98,15 +98,15 @@ class Node {
 
   /// 位置坐标
   ///
-  /// **DEPRECATED**: This field is deprecated and will be removed in Phase 6.
-  /// Positions are now managed by UILayoutService via NodeAttachment.
+  /// **已弃用**：此字段已弃用，将在第6阶段移除。
+  /// 位置现在通过NodeAttachment由UILayoutService管理。
   ///
-  /// Migration Guide:
+  /// 迁移指南：
   /// ```dart
-  /// // OLD (deprecated):
+  /// // 旧方式（已弃用）：
   /// final node = Node(position: Offset(100, 200), ...);
   ///
-  /// // NEW (correct):
+  /// // 新方式（正确）：
   /// await layoutService.attachNode(
   ///   nodeId: node.id,
   ///   hookId: 'graph',
@@ -114,9 +114,9 @@ class Node {
   /// );
   /// ```
   @Deprecated(
-    'Position is now managed by UILayoutService via NodeAttachment. '
-    'This field will be removed in Phase 6. '
-    'Use layoutService.attachNode() to position Nodes.',
+    '位置现在通过NodeAttachment由UILayoutService管理。'
+    '此字段将在第6阶段移除。'
+    '使用layoutService.attachNode()来定位节点。',
   )
   @OffsetConverter()
   final Offset position;

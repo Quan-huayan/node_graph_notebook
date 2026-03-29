@@ -26,7 +26,7 @@ class ConverterPlugin extends Plugin {
     id: 'converter',
     name: 'Converter',
     version: '1.0.0',
-    description: 'Data import and export functionality',
+    description: '数据导入和导出功能',
     author: 'Node Graph Notebook',
     enabledByDefault: true,
   );

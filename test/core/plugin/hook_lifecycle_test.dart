@@ -156,7 +156,7 @@ void main() {
             throw Exception('Init failed');
           });
         } catch (e) {
-          // Expected
+          // 预期内的异常
         }
 
         expect(lifecycle.state, HookState.uninitialized);

@@ -64,6 +64,7 @@ data/settings/*.json
 *.g.dart
 *.freezed.dart
 /lib/generated/
+*.mocks.dart
 
 # Test coverage
 coverage/

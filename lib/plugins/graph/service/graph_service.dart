@@ -51,7 +51,7 @@ abstract class GraphService {
 class GraphServiceImpl implements GraphService {
   /// 构造函数
   ///
-  /// [_repository] - 图形仓库
+  /// [_repository] - 图仓库
   /// [_nodeRepository] - 节点仓库
   /// [layoutService] - 布局服务，可选
   GraphServiceImpl(
@@ -243,12 +243,12 @@ class GraphServiceImpl implements GraphService {
 class GraphNotFoundException implements Exception {
   /// 构造函数
   ///
-  /// [graphId] - 未找到的图的 ID
+  /// [graphId] - 未找到的图的ID
   const GraphNotFoundException(this.graphId);
 
-  /// 未找到的图的 ID
+  /// 未找到的图的ID
   final String graphId;
 
   @override
-  String toString() => 'Graph not found: $graphId';
+  String toString() => '未找到图: $graphId';
 }
