@@ -524,6 +524,7 @@ class RealLuaEngine {
     _outputBuffer.clear();
     _registeredFunctions.clear();
     _engineFunctionRegistry.remove(this);
+    _currentEngine = null; // 🔥 修复：清理静态引用，防止内存泄漏
 
     if (enableDebugOutput) {
       _output('Lua引擎已释放');

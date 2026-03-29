@@ -195,8 +195,12 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      // 查找旧节点
-      final oldNode = state.nodes.firstWhere((n) => n.id == event.nodeId);
+      // 查找旧节点（使用 O(1) 查找）
+      final oldNode = state.getNode(event.nodeId);
+      if (oldNode == null) {
+        emit(state.copyWith(isLoading: false, error: '节点不存在: ${event.nodeId}'));
+        return;
+      }
 
       // 通过CommandBus执行写操作
       final command = UpdateNodeCommand(
@@ -238,8 +242,12 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      // 查找旧节点
-      final oldNode = state.nodes.firstWhere((n) => n.id == event.node.id);
+      // 查找旧节点（使用 O(1) 查找）
+      final oldNode = state.getNode(event.node.id);
+      if (oldNode == null) {
+        emit(state.copyWith(isLoading: false, error: '节点不存在: ${event.node.id}'));
+        return;
+      }
 
       // 通过CommandBus执行写操作
       final command = UpdateNodeCommand(oldNode: oldNode, newNode: event.node);
@@ -272,8 +280,12 @@ class NodeBloc extends Bloc<NodeEvent, NodeState> {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      // 获取要删除的节点
-      final node = state.nodes.firstWhere((n) => n.id == event.nodeId);
+      // 获取要删除的节点（使用 O(1) 查找）
+      final node = state.getNode(event.nodeId);
+      if (node == null) {
+        emit(state.copyWith(isLoading: false, error: '节点不存在: ${event.nodeId}'));
+        return;
+      }
 
       // 通过CommandBus执行写操作
       final command = DeleteNodeCommand(node: node);

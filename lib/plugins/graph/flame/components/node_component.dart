@@ -700,22 +700,173 @@ class NodeComponent extends PositionComponent
   /// 更新节点数据
   ///
   /// 同步最新的节点数据到组件，包括位置、尺寸和渲染属性
+  /// 🔥 优化：只在必要时重新创建渲染对象，避免不必要的内存分配和性能开销
   void updateNode(Node newNode) {
     // === 架构说明：节点数据同步 ===
     // 设计意图：同步最新的节点数据到组件
     // 实现方式：替换 node 引用，并更新相关的渲染属性
     // 注意：Node 是不可变对象，通过替换引用实现数据更新
+    // 🔥 性能优化：增量更新，只在属性真正改变时重新创建对象
+
+    final oldNode = node;
     node = newNode;
 
-    // 更新位置
-    position = Vector2(
+    // 🔥 优化：只更新位置（最常见的情况，不需要重新创建渲染对象）
+    final newPosition = Vector2(
       newNode.position.dx.toDouble(),
       newNode.position.dy.toDouble(),
     );
-    // 重新计算尺寸（基于新的 viewMode）
-    size = _calculateSize(newNode);
-    // 重新初始化绘制（基于新的颜色、内容等）
-    _initPaints();
-    _initTextPainters();
+
+    if (position != newPosition) {
+      position = newPosition;
+    }
+
+    // 🔥 优化：检查哪些属性真正改变了，只重新创建必要的对象
+    final needsSizeRecalculation = oldNode.viewMode != newNode.viewMode;
+    final needsPaintRefresh = oldNode.color != newNode.color ||
+                             oldNode.isFolder != newNode.isFolder ||
+                             oldNode.metadata['isAI'] != newNode.metadata['isAI'] ||
+                             oldNode.viewMode != newNode.viewMode;
+    final needsTextRefresh = oldNode.title != newNode.title ||
+                            oldNode.content != newNode.content ||
+                            oldNode.viewMode != newNode.viewMode ||
+                            oldNode.isFolder != newNode.isFolder ||
+                            oldNode.references.length != newNode.references.length;
+
+    // 只在需要时重新计算尺寸
+    if (needsSizeRecalculation) {
+      size = _calculateSize(newNode);
+    }
+
+    // 只在需要时重新初始化 Paint 对象
+    if (needsPaintRefresh) {
+      _updatePaints();
+    }
+
+    // 只在需要时重新初始化 TextPainter 对象
+    if (needsTextRefresh) {
+      _updateTextPainters(needsSizeRecalculation);
+    }
+  }
+
+  /// 🔥 优化：增量更新 Paint 对象，只更新改变的属性
+  void _updatePaints() {
+    // 边框颜色或宽度可能改变
+    _borderPaint
+      ..color = _getNodeColor()
+      ..strokeWidth = _getStrokeWidth();
+
+    // 背景颜色可能改变
+    _backgroundPaint.color = _getBackgroundColor();
+
+    // 图标可能改变
+    final icon = node.metadata['icon'] as String?;
+    if (icon != null && icon.isNotEmpty) {
+      if (_iconPainter == null) {
+        _iconPainter = TextPainter(
+          text: TextSpan(text: icon, style: const TextStyle(fontSize: 16)),
+          textDirection: TextDirection.ltr,
+        );
+        _iconPainter!.layout();
+      }
+    } else {
+      _iconPainter = null;
+    }
+  }
+
+  /// 🔥 优化：增量更新 TextPainter 对象，只更新改变的内容
+  void _updateTextPainters(bool needsLayout) {
+    // 标题可能改变
+    final titleFontSize = _getTitleFontSize();
+    if (_titlePainter.text?.toPlainText() != node.title ||
+        _titlePainter.text?.style?.fontSize != titleFontSize) {
+      _titlePainter.text = TextSpan(
+        text: node.title,
+        style: TextStyle(
+          color: theme.text.primary,
+          fontSize: titleFontSize,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+      _titlePainter.layout(maxWidth: width - 16);
+    } else if (needsLayout) {
+      _titlePainter.layout(maxWidth: width - 16);
+    }
+
+    // 内容可能改变
+    _updateContentPainter(needsLayout);
+  }
+
+  /// 🔥 优化：更新内容绘制器
+  void _updateContentPainter(bool needsLayout) {
+    if (node.isFolder) {
+      // 文件夹节点显示引用的节点数量
+      final childCount = node.references.length;
+      final newText = '$childCount item${childCount != 1 ? "s" : ""}';
+      if (_contentPainter.text?.toPlainText() != newText) {
+        _contentPainter.text = TextSpan(
+          text: newText,
+          style: TextStyle(color: theme.text.secondary, fontSize: 11),
+        );
+        _contentPainter.layout();
+      }
+    } else {
+      // 根据视图模式更新内容
+      switch (node.viewMode) {
+        case NodeViewMode.titleOnly:
+          // titleOnly 模式没有内容绘制器
+          break;
+
+        case NodeViewMode.compact:
+          // compact 模式不显示内容
+          break;
+
+        case NodeViewMode.titleWithPreview:
+          final previewText = _getPreviewText();
+          if (_contentPainter.text?.toPlainText() != previewText) {
+            _contentPainter.text = TextSpan(
+              text: previewText,
+              style: TextStyle(
+                color: theme.text.secondary,
+                fontSize: 11,
+                height: 1.4,
+              ),
+            );
+            _contentPainter.layout(maxWidth: width - 16);
+          } else if (needsLayout) {
+            _contentPainter.layout(maxWidth: width - 16);
+          }
+          break;
+
+        case NodeViewMode.fullContent:
+          if (node.content != null && node.content!.isNotEmpty) {
+            final titleHeight = _titlePainter.height;
+            final width = size.x;
+            final availableHeight = size.y -
+                titleHeight -
+                24; // 8(top padding) + 8(title bottom) + 8(bottom padding)
+
+            const lineHeight = 11.0 * 1.4;
+            final maxLines = (availableHeight / lineHeight).floor();
+
+            if (_fullContentPainter.text?.toPlainText() != node.content) {
+              _fullContentPainter.text = TextSpan(
+                text: node.content,
+                style: TextStyle(
+                  color: theme.text.primary,
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              );
+              _fullContentPainter.maxLines = maxLines > 0 ? maxLines : 1;
+              _fullContentPainter.ellipsis = '...';
+              _fullContentPainter.layout(maxWidth: width - 16);
+            } else if (needsLayout) {
+              _fullContentPainter.layout(maxWidth: width - 16);
+            }
+          }
+          break;
+      }
+    }
   }
 }

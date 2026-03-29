@@ -6,16 +6,17 @@ import '../../../../core/models/models.dart';
 @immutable
 class NodeState extends Equatable {
   /// 创建节点状态
-  const NodeState({
+  NodeState({
     required this.nodes,
     required this.isLoading,
     this.error,
     this.selectedNode,
     this.selectedNodeIds = const {},
-  });
+  }) : nodesMap = {for (var node in nodes) node.id: node};
 
-  /// 初始状态
-  factory NodeState.initial() => const NodeState(
+  /// 初始状态 - 缓存以提高性能
+  static final _emptyMap = <String, Node>{};
+  static final _initialState = NodeState(
       nodes: [],
       isLoading: false,
       error: null,
@@ -23,9 +24,15 @@ class NodeState extends Equatable {
       selectedNodeIds: {},
     );
 
+  factory NodeState.initial() => _initialState;
+
   // 核心数据
   /// 节点列表
   final List<Node> nodes;
+
+  /// 🔥 优化：节点ID到节点的映射，提供 O(1) 查找性能
+  final Map<String, Node> nodesMap;
+
   /// 是否正在加载
   final bool isLoading;
   /// 错误信息
@@ -46,13 +53,8 @@ class NodeState extends Equatable {
   List<Node> get selectedNodes =>
       nodes.where((n) => selectedNodeIds.contains(n.id)).toList();
 
-  /// 获取节点
-  Node? getNode(String id) {
-    for (final node in nodes) {
-      if (node.id == id) return node;
-    }
-    return null;
-  }
+  /// 🔥 优化：获取节点 - O(1) 查找性能
+  Node? getNode(String id) => nodesMap[id];
 
   /// 复制并更新部分字段
   NodeState copyWith({
@@ -72,6 +74,7 @@ class NodeState extends Equatable {
   @override
   List<Object?> get props => [
     nodes,
+    nodesMap,
     isLoading,
     error,
     selectedNode,

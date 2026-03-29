@@ -197,6 +197,11 @@ class LayoutServiceImpl implements LayoutService {
 
     final opts = options ?? const ForceDirectedOptions();
 
+    // 🔥 优化：早期终止，小数据集使用更少迭代
+    final adjustedIterations = nodes.length < 20
+        ? opts.iterations ~/ 2
+        : opts.iterations;
+
     // 初始化位置（如果没有位置）
     final positions = <String, Vector2>{};
     for (final node in nodes) {
@@ -213,21 +218,37 @@ class LayoutServiceImpl implements LayoutService {
       }
     }
 
-    // 计算力导向布局
-    for (var i = 0; i < opts.iterations; i++) {
-      final velocities = <String, Vector2>{};
+    // 🔥 优化：提前构建连接关系图，避免重复查找
+    final connections = <String, List<String>>{};
+    for (final node in nodes) {
+      connections[node.id] = node.references.keys.toList();
+    }
 
+    // 🔥 优化：early stopping 变量
+    var maxMovement = 0.0;
+    const earlyStoppingThreshold = 0.1;
+
+    // 计算力导向布局
+    for (var i = 0; i < adjustedIterations; i++) {
+      final velocities = <String, Vector2>{};
+      maxMovement = 0.0;
+
+      // 🔥 优化：批量计算排斥力（使用距离阈值优化）
       for (final node in nodes) {
         final pos = positions[node.id]!;
         var force = Vector2.zero;
 
-        // 计算排斥力（所有节点之间）
+        // 🔥 优化：只计算距离较近的节点之间的排斥力
+        // 对于距离很远的节点，排斥力可以忽略不计
         for (final other in nodes) {
           if (node.id == other.id) continue;
 
           final otherPos = positions[other.id]!;
           final diff = pos - otherPos;
           final distance = diff.length;
+
+          // 🔥 优化：忽略距离超过阈值的节点，减少计算
+          if (distance > 500) continue;
 
           if (distance > 0) {
             final repulsion =
@@ -237,8 +258,8 @@ class LayoutServiceImpl implements LayoutService {
         }
 
         // 计算吸引力（连接的节点之间）
-        for (final entry in node.references.entries) {
-          final otherId = entry.key;
+        final connectedIds = connections[node.id] ?? [];
+        for (final otherId in connectedIds) {
           final otherPos = positions[otherId];
           if (otherPos == null) continue;
 
@@ -257,13 +278,25 @@ class LayoutServiceImpl implements LayoutService {
       // 应用速度和阻尼
       for (final node in nodes) {
         final velocity = velocities[node.id]!;
-        positions[node.id] = positions[node.id]! + velocity * opts.damping;
+        final oldPos = positions[node.id]!;
+        final newPos = oldPos + velocity * opts.damping;
+
+        // 计算移动距离用于early stopping
+        final movement = (newPos - oldPos).length;
+        if (movement > maxMovement) {
+          maxMovement = movement;
+        }
 
         // 边界约束
         positions[node.id] = Vector2(
-          positions[node.id]!.x.clamp(50.0, 1200.0),
-          positions[node.id]!.y.clamp(50.0, 800.0),
+          newPos.x.clamp(50.0, 1200.0),
+          newPos.y.clamp(50.0, 800.0),
         );
+      }
+
+      // 🔥 优化：early stopping，当节点移动很小时提前终止
+      if (maxMovement < earlyStoppingThreshold && i > 10) {
+        break;
       }
     }
 
