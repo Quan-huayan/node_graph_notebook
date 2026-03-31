@@ -1,10 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/commands/command_bus.dart';
+import '../../../../core/cqrs/query/query_bus.dart';
 import '../../../../core/models/models.dart';
+import '../../../../core/plugin/plugin_context.dart';
+import '../../../../core/repositories/graph_repository.dart';
+import '../../../../core/repositories/node_repository.dart';
 import '../../../../core/services/services.dart';
 import '../../graph/bloc/node_bloc.dart';
 import '../../graph/bloc/node_event.dart';
+import '../function_calling/service/ai_function_calling_service.dart';
+import '../function_calling/tool/ai_tool.dart';
 import '../service/ai_service.dart';
 
 /// AI 聊天对话框
@@ -13,16 +22,18 @@ import '../service/ai_service.dart';
 /// - 与 AI 节点进行对话交互
 /// - AI 能理解连接的节点内容
 /// - 支持创建新节点
-/// - 预留扩展接口
+/// - 支持 function calling
 class AIChatDialog extends StatefulWidget {
   /// 创建 AI 聊天对话框
   ///
   /// [aiNode] AI 节点实例
   /// [connectedNodes] 与 AI 节点连接的节点列表
+  /// [enableFunctionCalling] - 是否启用 function calling，默认为 true
   const AIChatDialog({
     super.key,
     required this.aiNode,
     this.connectedNodes = const [],
+    this.enableFunctionCalling = true,
   });
 
   /// AI 节点
@@ -30,6 +41,9 @@ class AIChatDialog extends StatefulWidget {
 
   /// 连接的节点（AI 可以理解这些节点的内容）
   final List<Node> connectedNodes;
+
+  /// 是否启用 function calling
+  final bool enableFunctionCalling;
 
   @override
   State<AIChatDialog> createState() => _AIChatDialogState();
@@ -39,6 +53,10 @@ class _AIChatDialogState extends State<AIChatDialog> {
   late TextEditingController _messageController;
   final List<_ChatMessage> _messages = [];
   bool _isLoading = false;
+
+  // Function Calling 服务
+  AIFunctionCallingService? _functionCallingService;
+  StreamSubscription<ToolCallEvent>? _toolCallSubscription;
 
   // === 扩展点：自定义功能处理器 ===
   /// 功能命令处理器映射
@@ -50,6 +68,16 @@ class _AIChatDialogState extends State<AIChatDialog> {
   void initState() {
     super.initState();
     _messageController = TextEditingController();
+
+    // 初始化 function calling 服务
+    if (widget.enableFunctionCalling) {
+      _functionCallingService = AIFunctionCallingService();
+
+      // 订阅工具调用事件
+      _toolCallSubscription =
+          _functionCallingService!.toolCallStream.listen(_handleToolCallEvent);
+    }
+
     _addSystemMessage(
       '🤖 AI Assistant: ${widget.aiNode.title}\n'
       'I can help you create and understand nodes. '
@@ -57,7 +85,8 @@ class _AIChatDialogState extends State<AIChatDialog> {
       '\nCommands:\n'
       '/create <title> - Create a new node\n'
       '/summarize - Summarize connected nodes\n'
-      '/help - Show all commands',
+      '/help - Show all commands'
+      '${widget.enableFunctionCalling ? '\n\n✨ Function Calling enabled' : ''}',
     );
 
     // 注册默认命令处理器
@@ -66,8 +95,32 @@ class _AIChatDialogState extends State<AIChatDialog> {
 
   @override
   void dispose() {
+    _toolCallSubscription?.cancel();
+    _functionCallingService?.dispose();
     _messageController.dispose();
     super.dispose();
+  }
+
+  /// 处理工具调用事件
+  ///
+  /// 在 UI 中显示工具调用过程
+  void _handleToolCallEvent(ToolCallEvent event) {
+    if (event is ToolCallStarted) {
+      _addSystemMessage(
+        '🔧 Calling tool: ${event.toolId}\n'
+        'Arguments: ${event.arguments}',
+      );
+    } else if (event is ToolCallSucceeded) {
+      _addSystemMessage(
+        '✅ Tool succeeded: ${event.toolId}\n'
+        'Summary: ${event.result.summary ?? "OK"}',
+      );
+    } else if (event is ToolCallFailed) {
+      _addSystemMessage(
+        '❌ Tool failed: ${event.toolId}\n'
+        'Error: ${event.error}',
+      );
+    }
   }
 
   /// === 架构说明：命令系统 ===
@@ -171,7 +224,7 @@ Extension Commands:
 
   /// === 核心功能：发送消息 ===
   Future<void> _sendMessage(String text) async {
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isLoading) return;
 
     // 检查是否是命令
     if (text.startsWith('/')) {
@@ -188,7 +241,29 @@ Extension Commands:
     });
 
     try {
-      final response = await _callAIWithContext(text);
+      String response;
+
+      // 优先使用 function calling
+      if (widget.enableFunctionCalling && _functionCallingService != null) {
+        final provider = _getAIProvider();
+        final toolContext = AIToolContext(
+          commandBus: context.read<CommandBus>(),
+          pluginContext: context.read<PluginContext>(),
+          queryBus: context.read<QueryBus?>(),
+          nodeRepository: context.read<NodeRepository?>(),
+          graphRepository: context.read<GraphRepository?>(),
+        );
+
+        response = await _functionCallingService!.chatWithFunctionCalling(
+          userMessage: text,
+          provider: provider,
+          context: toolContext,
+        );
+      } else {
+        // 回退到传统方式
+        response = await _callAIWithContext(text);
+      }
+
       _addMessage(response, false);
     } catch (e) {
       _addSystemMessage('❌ Error: ${e.toString()}');
@@ -266,8 +341,15 @@ Extension Commands:
   /// 架构说明：这是所有 AI 调用的统一入口点
   /// 扩展方式：子类可以覆盖此方法以修改 AI 行为
   Future<String> _callAI(String prompt) async {
+    final provider = _getAIProvider();
+    return provider.generate(prompt);
+  }
+
+  /// 获取 AI Provider
+  ///
+  /// 根据设置创建相应的 AI Provider
+  AIProvider _getAIProvider() {
     final settingsService = context.read<SettingsService>();
-    final aiService = context.read<AIServiceImpl>();
 
     // 验证配置
     if (!settingsService.isAIConfigured) {
@@ -275,26 +357,25 @@ Extension Commands:
     }
 
     // 创建对应的 Provider
-    final AIProvider provider;
     if (settingsService.aiProvider == 'anthropic') {
-      provider = AnthropicProvider(
+      return AnthropicProvider(
+        apiKey: settingsService.aiApiKey!,
+        model: settingsService.aiModel,
+        baseUrl: settingsService.aiBaseUrl,
+      );
+    } else if (settingsService.aiProvider == 'zhipuai') {
+      return ZhipuAIProvider(
         apiKey: settingsService.aiApiKey!,
         model: settingsService.aiModel,
         baseUrl: settingsService.aiBaseUrl,
       );
     } else {
-      provider = OpenAIProvider(
+      return OpenAIProvider(
         apiKey: settingsService.aiApiKey!,
         model: settingsService.aiModel,
         baseUrl: settingsService.aiBaseUrl,
       );
     }
-
-    // 设置 Provider
-    aiService.setProvider(provider);
-
-    // 调用 AI
-    return provider.generate(prompt);
   }
 
   void _addSystemMessage(String text) {

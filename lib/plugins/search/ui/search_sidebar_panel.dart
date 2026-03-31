@@ -160,7 +160,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
         );
       },
     ).then((name) {
-      if (name != null && name.isNotEmpty) {
+      if (name != null && name.isNotEmpty && mounted) {
         context.read<SearchBloc>().add(SearchSavePresetEvent(name, query));
       }
     });
@@ -171,7 +171,7 @@ class _SearchSidebarPanelState extends State<SearchSidebarPanel> {
       _selectedPreset = preset;
       _titleController.text = preset.titleQuery ?? '';
       _contentController.text = preset.contentQuery ?? '';
-      _selectedTags = List.from(preset.tags ?? []);
+      _selectedTags = List<String>.from(preset.tags ?? []);
     });
     context.read<SearchBloc>().add(SearchLoadPresetEvent(preset));
   }

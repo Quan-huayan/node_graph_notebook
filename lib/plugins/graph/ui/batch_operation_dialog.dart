@@ -72,7 +72,7 @@ class _BatchOperationDialogState extends State<BatchOperationDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedPreset = _presets.first;
+    _selectedPreset = _presets.isNotEmpty ? _presets.first : null;
   }
 
   @override

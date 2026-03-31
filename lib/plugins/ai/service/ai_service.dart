@@ -645,7 +645,10 @@ class OpenAIProvider implements AIProvider {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>;
+        final choices = data['choices'] as List<dynamic>?;
+        if (choices == null || choices.isEmpty) {
+          throw AIServiceException('OpenAI API returned empty choices');
+        }
         final firstChoice = choices.first as Map<String, dynamic>;
         final message = firstChoice['message'] as Map<String, dynamic>;
         return message['content'] as String;
@@ -712,7 +715,10 @@ class AnthropicProvider implements AIProvider {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final content = data['content'] as List<dynamic>;
+        final content = data['content'] as List<dynamic>?;
+        if (content == null || content.isEmpty) {
+          throw AIServiceException('Anthropic API returned empty content');
+        }
         final firstContent = content.first as Map<String, dynamic>;
         return firstContent['text'] as String;
       } else {
@@ -777,7 +783,10 @@ class ZhipuAIProvider implements AIProvider {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>;
+        final choices = data['choices'] as List<dynamic>?;
+        if (choices == null || choices.isEmpty) {
+          throw AIServiceException('智谱AI API returned empty choices');
+        }
         final firstChoice = choices.first as Map<String, dynamic>;
         final message = firstChoice['message'] as Map<String, dynamic>;
         return message['content'] as String;

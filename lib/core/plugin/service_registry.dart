@@ -18,18 +18,31 @@ const _log = AppLogger('ServiceRegistry');
 /// - 管理 Service 生命周期
 /// - 支持立即实例化（解决插件 onLoad() 中无法访问自己注册的服务的问题）
 /// - 支持服务变化通知（触发 Provider 树重建）
+/// - **安全强化**：运行时类型验证防止类型混淆攻击
 class ServiceRegistry with ChangeNotifier {
   /// 创建一个新的 Service 注册表实例。
-  ServiceRegistry({Map<Type, dynamic>? coreDependencies})
-      : _coreDependencies = coreDependencies ?? {},
+  ///
+  /// [coreDependencies] 核心依赖（Repository、CommandBus、EventBus 等）
+  /// [enableRuntimeTypeValidation] 是否启用运行时类型验证（默认启用）
+  ServiceRegistry({
+    Map<Type, dynamic>? coreDependencies,
+    this.enableRuntimeTypeValidation = true,
+  })  : _coreDependencies = coreDependencies ?? {},
         _instantiatedServices = {} {
 
     _log.info('ServiceRegistry 初始化');
 
     _log.info('核心依赖数量: ${_coreDependencies.length}');
     _log.info('核心依赖类型: ${_coreDependencies.keys.join(", ")}');
+    _log.info('运行时类型验证: ${enableRuntimeTypeValidation ? "启用" : "禁用"}');
 
   }
+
+  /// 是否启用运行时类型验证
+  ///
+  /// 启用时会验证服务实例的类型是否与请求的类型匹配
+  /// 防止类型混淆攻击和类型转换错误
+  final bool enableRuntimeTypeValidation;
 
   /// Service 绑定注册表
   ///
@@ -417,22 +430,32 @@ class ServiceRegistry with ChangeNotifier {
 
     // 1. 优先从立即实例化缓存获取
     if (_instantiatedServices.containsKey(serviceType)) {
-      final instance = _instantiatedServices[serviceType] as T;
+      final instance = _instantiatedServices[serviceType];
+
+      // ✅ 类型验证
+      _validateInstanceType(instance, serviceType);
+
+      final typedInstance = instance as T;
       _log.info('[ServiceRegistry] ✓ 从立即实例化缓存获取成功');
 
 
-      return instance;
+      return typedInstance;
     }
 
     _log.info('立即实例化缓存中未找到');
 
     // 2. 检查核心依赖（NodeRepository, GraphRepository, CommandBus 等）
     if (_coreDependencies.containsKey(serviceType)) {
-      final instance = _coreDependencies[serviceType] as T;
+      final instance = _coreDependencies[serviceType];
+
+      // ✅ 类型验证
+      _validateInstanceType(instance, serviceType);
+
+      final typedInstance = instance as T;
       _log.info('[ServiceRegistry] ✓ 从核心依赖获取成功');
 
 
-      return instance;
+      return typedInstance;
     }
 
     _log.info('核心依赖中未找到');
@@ -444,10 +467,14 @@ class ServiceRegistry with ChangeNotifier {
         _log.info('服务标记为懒加载，开始实例化...');
         try {
           final instance = _createServiceInstance(binding);
+
+          // ✅ 类型验证
+          _validateInstanceType(instance, serviceType);
+
           _instantiatedServices[serviceType] = instance;
           _log.info('[ServiceRegistry] ✓ 懒加载实例化成功');
 
-          return instance;
+          return instance as T;
         } catch (e) {
           _log.warning('ServiceRegistry ✗ 懒加载实例化失败: $e');
           throw ServiceNotFoundException(
@@ -486,13 +513,24 @@ class ServiceRegistry with ChangeNotifier {
   /// [T] Service 类型
   /// 返回 true 如果服务已注册并可立即解析
   bool hasService<T>() {
+    final serviceType = T;
+
     // 检查是否在立即实例化缓存中
-    if (_instantiatedServices.containsKey(T)) {
+    if (_instantiatedServices.containsKey(serviceType)) {
       return true;
     }
 
     // 检查是否已注册（包括懒加载服务）
-    return _bindings.containsKey(T);
+    if (_bindings.containsKey(serviceType)) {
+      return true;
+    }
+
+    // 检查核心依赖
+    if (_coreDependencies.containsKey(serviceType)) {
+      return true;
+    }
+
+    return false;
   }
 
   /// 创建服务实例（内部方法）
@@ -503,6 +541,10 @@ class ServiceRegistry with ChangeNotifier {
     // 策略：使用 getService() 方法来处理依赖解析
     // 这会自动使用 ServiceResolver，它包含核心依赖
     final instance = binding.createService(_ServiceResolverAdapter(this));
+
+    // ✅ 类型验证
+    _validateInstanceType(instance, binding.serviceType);
+
     return instance;
   }
 
@@ -539,6 +581,99 @@ class ServiceRegistry with ChangeNotifier {
     _instances.clear();
     _instantiatedServices.clear();
     _pluginServices.clear();
+  }
+
+  /// 验证服务实例类型
+  ///
+  /// [instance] 服务实例
+  /// [expectedType] 期望的类型
+  ///
+  /// 如果类型验证失败，抛出 [ServiceTypeMismatchException]
+  void _validateInstanceType(dynamic instance, Type expectedType) {
+    if (!enableRuntimeTypeValidation) {
+      return;
+    }
+
+    if (instance == null) {
+      return;
+    }
+
+    final instanceType = instance.runtimeType;
+
+    // 1. 直接类型匹配
+    if (instanceType == expectedType) {
+      return;
+    }
+
+    // 2. 检查实现的接口（使用字符串映射作为后备方案）
+    final expectedTypeName = expectedType.toString();
+    final instanceTypeName = instanceType.toString();
+
+    if (_isAssignableTo(instanceTypeName, expectedTypeName)) {
+      return;
+    }
+
+    // 3. 如果都不匹配，抛出异常
+    _log.warning(
+      'ServiceTypeMismatch: 期望 $expectedType ($expectedTypeName), '
+      '实际 $instanceType ($instanceTypeName)',
+    );
+    throw ServiceTypeMismatchException(
+      'Expected $expectedType ($expectedTypeName), got $instanceType ($instanceTypeName)',
+    );
+  }
+
+  /// 接口实现映射表
+  ///
+  /// 定义实现类到接口的映射关系
+  /// Key: 实现类名称
+  /// Value: 该实现类实现的接口列表
+  static const _interfaceImplementations = <String, List<String>>{
+    // Repository 实现
+    'FileSystemNodeRepository': ['NodeRepository'],
+
+    // Graph Service 实现
+    'NodeServiceImpl': ['NodeService'],
+    'GraphServiceImpl': ['GraphService'],
+
+    // Converter Service 实现
+    'ConverterServiceImpl': ['ConverterService'],
+    'ImportExportServiceImpl': ['ImportExportService'],
+
+    // Layout Service 实现
+    'LayoutServiceImpl': ['LayoutService'],
+
+    // AI Service 实现
+    'AIServiceImpl': ['AIService'],
+    'AIFunctionCallingService': ['AIService'],
+
+    // Search Service 实现
+    'SearchPresetServiceImpl': ['SearchPresetService'],
+
+    // Lua Service 实现
+    'LuaEngineService': ['LuaEngine'],
+    'LuaScriptService': ['LuaScriptService'],
+    'GlobalMessageService': ['GlobalMessageService'],
+  };
+
+  /// 检查类型是否可分配
+  ///
+  /// [subtypeName] 子类型名称（实现类）
+  /// [supertypeName] 父类型名称（接口）
+  ///
+  /// 返回 true 如果子类型可以赋值给父类型
+  bool _isAssignableTo(String subtypeName, String supertypeName) {
+    // 1. 相同类型
+    if (subtypeName == supertypeName) return true;
+
+    // 2. 检查映射表
+    final implementations = _interfaceImplementations[subtypeName];
+    if (implementations != null && implementations.contains(supertypeName)) {
+      return true;
+    }
+
+    // 3. 默认不匹配
+    return false;
   }
 }
 
@@ -617,4 +752,20 @@ class ServiceRegistrationException implements Exception {
 
   @override
   String toString() => 'ServiceRegistrationException: $message';
+}
+
+/// Service 类型不匹配异常
+///
+/// 当服务实例的类型与请求的类型不匹配时抛出
+class ServiceTypeMismatchException implements Exception {
+  /// 创建一个新的 Service 类型不匹配异常实例
+  ///
+  /// [message] 错误消息
+  const ServiceTypeMismatchException(this.message);
+
+  /// 错误消息
+  final String message;
+
+  @override
+  String toString() => 'ServiceTypeMismatchException: $message';
 }

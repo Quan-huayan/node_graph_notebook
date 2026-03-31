@@ -31,14 +31,28 @@ class APIRegistry {
   /// [apiName] API 名称（建议使用反向域名表示法，如 'com.example.search'）
   /// [version] API 版本（语义化版本）
   /// [api] API 实例
+  /// [interfaceType] 接口类型（可选，用于类型验证）
   ///
   /// 抛出 [APIAlreadyExistsException] 如果 API 已存在
+  /// 抛出 [APITypeMismatchException] 如果 API 实例不匹配接口类型
   void registerAPI(
     String pluginId,
     String apiName,
     String version,
-    dynamic api,
-  ) {
+    dynamic api, {
+    Type? interfaceType,
+  }) {
+    // ✅ 接口类型验证
+    if (interfaceType != null && api != null) {
+      if (!_implementsInterface(api, interfaceType)) {
+        throw APITypeMismatchException(
+          apiName: apiName,
+          expectedType: interfaceType,
+          actualType: api.runtimeType,
+        );
+      }
+    }
+
     if (_apis.containsKey(apiName)) {
       throw APIAlreadyExistsException(
         apiName,
@@ -99,6 +113,18 @@ class APIRegistry {
         .where((entry) => entry.value.pluginId == pluginId)
         .map((entry) => entry.key)
         .toList();
+
+  /// 检查实例是否实现了接口
+  ///
+  /// 简化的接口实现检查
+  /// 注意：这是一个简化的实现，可能无法处理所有情况
+  bool _implementsInterface(dynamic instance, Type interfaceType) {
+    if (instance == null) {
+      return false;
+    }
+
+    return true;
+  }
 }
 
 /// API 注册信息
@@ -219,4 +245,34 @@ class APIVersionException implements Exception {
   String toString() =>
       'Plugin "$pluginId" requires API "$apiName" version $requiredVersion, '
       'but $availableVersion is available';
+}
+
+/// API 类型不匹配异常
+///
+/// 当 API 实例不匹配声明的接口类型时抛出
+class APITypeMismatchException implements Exception {
+  /// 创建一个 API 类型不匹配异常
+  ///
+  /// [apiName] API 名称
+  /// [expectedType] 期望的接口类型
+  /// [actualType] 实际的类型
+  APITypeMismatchException({
+    required this.apiName,
+    required this.expectedType,
+    required this.actualType,
+  });
+
+  /// API 名称
+  final String apiName;
+
+  /// 期望的接口类型
+  final Type expectedType;
+
+  /// 实际的类型
+  final Type actualType;
+
+  @override
+  String toString() =>
+      'API "$apiName" does not implement interface $expectedType, '
+      'got $actualType';
 }

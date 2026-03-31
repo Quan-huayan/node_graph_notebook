@@ -815,6 +815,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     Emitter<GraphState> emit,
   ) async {
     if (state.graph.id.isEmpty) return;
+    if (state.nodes.isEmpty) return;
 
     try {
       // 查找目标节点

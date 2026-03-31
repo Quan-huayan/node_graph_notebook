@@ -6,7 +6,7 @@ import '../../../../core/services/theme_service.dart';
 import '../../graph/bloc/node_bloc.dart';
 import '../../graph/bloc/node_event.dart';
 import '../../graph/ui/node_menu.dart';
-import '../../sidebarNode/ui/node_item.dart';
+import 'node_item.dart';
 
 /// 文件夹项组件
 ///

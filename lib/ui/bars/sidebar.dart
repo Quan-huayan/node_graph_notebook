@@ -86,6 +86,8 @@ class _SidebarState extends State<Sidebar> {
 
     final nodeBloc = context.read<NodeBloc>();
     final nodeState = nodeBloc.state;
+    if (nodeState.nodes.isEmpty) return;
+
     final node = nodeState.nodes.firstWhere(
       (n) => n.id == _selectedNodeId,
       orElse: () => nodeState.nodes.first,

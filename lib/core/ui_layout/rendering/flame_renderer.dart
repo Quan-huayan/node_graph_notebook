@@ -73,9 +73,10 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   /// If provided, this builder is called for each attached Node
   /// to create the Flame component for that Node.
   ///
-  /// [nodeId] is the ID of the Node to render.
-  /// [attachment] is the Node's attachment info.
-  /// [context] contains the game world instance.
+  /// Parameters:
+  /// - `nodeId`: The ID of the Node to render.
+  /// - `attachment`: The Node's attachment info.
+  /// - `context`: Contains the game world instance.
   final FlameComponent Function(
     String nodeId,
     NodeAttachment attachment,

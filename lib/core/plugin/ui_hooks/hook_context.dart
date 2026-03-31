@@ -1,8 +1,80 @@
 import 'dart:ui' as ui;
 
 import '../../models/node.dart';
+import '../../utils/logger.dart';
 import '../plugin_context.dart';
 import 'hook_api_registry.dart';
+
+/// Hook 数据 Schema
+///
+/// 定义 Hook 上下文数据的类型和验证规则
+class HookDataSchema {
+  /// 创建 Hook 数据 Schema
+  ///
+  /// [type] 数据类型
+  /// [required] 是否必需（默认为 false）
+  /// [defaultValue] 默认值
+  /// [description] 数据描述
+  const HookDataSchema({
+    required this.type,
+    this.required = false,
+    this.defaultValue,
+    this.description,
+  });
+
+  /// 数据类型
+  final Type type;
+
+  /// 是否必需
+  final bool required;
+
+  /// 默认值
+  final dynamic defaultValue;
+
+  /// 数据描述
+  final String? description;
+
+  /// 验证值是否符合 Schema
+  ///
+  /// 返回错误信息，如果验证通过则返回 null
+  String? validate(dynamic value) {
+    // 检查必需值
+    if (required && value == null) {
+      return 'Required value is missing';
+    }
+
+    // 允许 null 值（如果不是必需的）
+    if (value == null) {
+      return null;
+    }
+
+    // 类型检查 - 简化版本
+    // 注意：Dart 的运行时类型检查有限制
+    final valueType = value.runtimeType;
+
+    if (valueType != type) {
+      return 'Expected type $type, got $valueType';
+    }
+
+    return null;
+  }
+}
+
+/// Hook 数据上下文异常
+///
+/// 当 Hook 上下文数据验证失败时抛出
+class HookDataContextException implements Exception {
+  /// 创建 Hook 数据上下文异常
+  ///
+  /// [message] 错误消息
+  const HookDataContextException(this.message);
+
+  /// 错误消息
+  final String message;
+
+  @override
+  String toString() => 'HookDataContextException: $message';
+}
 
 /// Hook 上下文基础类
 abstract class HookContext {
@@ -11,11 +83,13 @@ abstract class HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表（用于访问其他 Hook 导出的 API）
+  /// [enableTypeValidation] 是否启用类型验证（默认为 false）
   HookContext(
     this.data, {
     this.pluginContext,
     this.hookAPIRegistry,
-  });
+    this.enableTypeValidation = false,
+  }) : _dataSchemas = {};
 
   /// 上下文数据
   final Map<String, dynamic> data;
@@ -33,6 +107,23 @@ abstract class HookContext {
   /// - 提供类型安全的 API 访问方法
   final HookAPIRegistry? hookAPIRegistry;
 
+  /// 是否启用类型验证
+  ///
+  /// 启用时会验证 set() 方法的数据类型
+  final bool enableTypeValidation;
+
+  /// 数据 Schema 映射
+  /// key: 数据键名, value: 数据 Schema
+  final Map<String, HookDataSchema> _dataSchemas;
+
+  /// 注册数据 Schema
+  ///
+  /// [key] 数据键名
+  /// [schema] 数据 Schema
+  void registerSchema(String key, HookDataSchema schema) {
+    _dataSchemas[key] = schema;
+  }
+
   /// 获取数据
   T? get<T>(String key) {
     final value = data[key];
@@ -40,7 +131,28 @@ abstract class HookContext {
   }
 
   /// 设置数据
+  ///
+  /// [key] 数据键名
+  /// [value] 数据值
+  ///
+  /// 如果启用了类型验证且注册了 Schema，会验证数据类型
   void set(String key, dynamic value) {
+    // ✅ 类型验证
+    if (enableTypeValidation) {
+      final schema = _dataSchemas[key];
+      if (schema != null) {
+        final error = schema.validate(value);
+        if (error != null) {
+          const AppLogger('HookContext').warning(
+            'Data validation failed for "$key": $error',
+          );
+          throw HookDataContextException(
+            'Data "$key" validation failed: $error',
+          );
+        }
+      }
+    }
+
     data[key] = value;
   }
 
@@ -90,14 +202,17 @@ class BasicHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   BasicHookContext({
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {},
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 }
 
@@ -108,14 +223,17 @@ class MainToolbarHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   MainToolbarHookContext({
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {},
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 是否显示标题
@@ -133,16 +251,19 @@ class NodeContextMenuHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   NodeContextMenuHookContext({
     Node? node,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['node'] = node,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 当前节点
@@ -161,18 +282,21 @@ class GraphContextMenuHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   GraphContextMenuHookContext({
     ui.Offset? mousePosition,
     int? selectedNodeCount,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['mousePosition'] = mousePosition
            ..['selectedNodeCount'] = selectedNodeCount,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 鼠标位置
@@ -191,18 +315,21 @@ class SidebarHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   SidebarHookContext({
     bool? isExpanded,
     double? width,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['isExpanded'] = isExpanded
            ..['width'] = width,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 是否展开
@@ -222,6 +349,7 @@ class StatusBarHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   StatusBarHookContext({
     int? nodeCount,
     int? connectionCount,
@@ -229,6 +357,7 @@ class StatusBarHookContext extends HookContext {
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['nodeCount'] = nodeCount
@@ -236,6 +365,7 @@ class StatusBarHookContext extends HookContext {
            ..['currentMode'] = currentMode,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 节点数量
@@ -257,18 +387,21 @@ class NodeEditorHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   NodeEditorHookContext({
     Node? node,
     bool? isReadOnly,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['node'] = node
            ..['isReadOnly'] = isReadOnly,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 当前节点
@@ -287,18 +420,21 @@ class ImportExportHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   ImportExportHookContext({
     List<String>? importFormats,
     List<String>? exportFormats,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['importFormats'] = importFormats
            ..['exportFormats'] = exportFormats,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 支持的导入格式
@@ -316,16 +452,19 @@ class SettingsHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   SettingsHookContext({
     Map<String, dynamic>? currentSettings,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['currentSettings'] = currentSettings,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 当前设置
@@ -341,16 +480,19 @@ class HelpHookContext extends HookContext {
   /// [data] 上下文数据
   /// [pluginContext] 插件上下文
   /// [hookAPIRegistry] Hook API 注册表
+  /// [enableTypeValidation] 是否启用类型验证
   HelpHookContext({
     List<HelpItem>? helpItems,
     Map<String, dynamic>? data,
     PluginContext? pluginContext,
     HookAPIRegistry? hookAPIRegistry,
+    bool enableTypeValidation = false,
   }) : super(
          data ?? {}
            ..['helpItems'] = helpItems,
          pluginContext: pluginContext,
          hookAPIRegistry: hookAPIRegistry,
+         enableTypeValidation: enableTypeValidation,
        );
 
   /// 帮助文档列表

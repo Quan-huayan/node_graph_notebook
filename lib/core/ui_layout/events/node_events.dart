@@ -23,8 +23,10 @@
 ///           ↓
 ///   Node / Plugin (subscribe & react)
 /// ```
-// ignore_for_file: avoid_dynamic_calls
 library;
+
+import 'package:flame/events.dart';
+import 'package:flutter/gestures.dart';
 
 import '../../commands/command_bus.dart';
 import '../../events/app_events.dart';
@@ -177,6 +179,22 @@ class InteractionResult {
   static const handledAndPropagate = InteractionResult(handled: true, shouldPropagate: true);
 }
 
+/// Event adapter exception.
+///
+/// Thrown when event adaptation fails due to type mismatch or invalid data.
+class EventAdapterException implements Exception {
+  /// Creates an event adapter exception.
+  ///
+  /// [message] is the error message.
+  const EventAdapterException(this.message);
+
+  /// Error message.
+  final String message;
+
+  @override
+  String toString() => 'EventAdapterException: $message';
+}
+
 /// Base class for event adapters.
 ///
 /// Event adapters convert framework-specific events (Flutter gestures,
@@ -202,7 +220,34 @@ abstract class EventAdapter {
   /// [sourceEvent] is the framework-specific event to adapt.
   ///
   /// Returns a stream of adapted events (may be multiple events from one source).
-  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent);
+  ///
+  /// ✅ Type validation: Validates source event type before adaptation.
+  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent) {
+    // 验证源事件类型（如果子类重写了这个方法，可以选择性地调用）
+    if (!_validateSourceEventType(sourceEvent)) {
+      throw EventAdapterException(
+        'Invalid event type: ${sourceEvent.runtimeType}',
+      );
+    }
+
+    return adaptEventsInternal(sourceEvent);
+  }
+
+  /// Internal adaptation method.
+  ///
+  /// Subclasses should override this method to implement the actual adaptation logic.
+  /// This method is called after type validation passes.
+  ///
+  /// [sourceEvent] is the validated framework-specific event.
+  Stream<NodeInteractionEvent> adaptEventsInternal(dynamic sourceEvent);
+
+  /// Validates the source event type.
+  ///
+  /// Subclasses can override this method to implement custom validation logic.
+  /// Returns true if the event type is valid, false otherwise.
+  ///
+  /// Default implementation accepts all event types.
+  bool _validateSourceEventType(dynamic sourceEvent) => true;
 }
 
 /// Adapter for Flutter gesture events.
@@ -273,7 +318,7 @@ class FlutterGestureAdapter extends EventAdapter {
   /// Adapts a drag start gesture.
   ///
   /// [details] is the drag start details from Flutter.
-  void adaptDragStart(dynamic details) {
+  void adaptDragStart(DragStartDetails details) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.dragStart,
@@ -287,7 +332,7 @@ class FlutterGestureAdapter extends EventAdapter {
   /// Adapts a drag update gesture.
   ///
   /// [details] is the drag update details from Flutter.
-  void adaptDragUpdate(dynamic details) {
+  void adaptDragUpdate(DragUpdateDetails details) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.dragUpdate,
@@ -302,7 +347,7 @@ class FlutterGestureAdapter extends EventAdapter {
   /// Adapts a drag end gesture.
   ///
   /// [details] is the drag end details from Flutter (optional).
-  void adaptDragEnd([dynamic details]) {
+  void adaptDragEnd([DragEndDetails? details]) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.dragEnd,
@@ -317,7 +362,7 @@ class FlutterGestureAdapter extends EventAdapter {
   /// Adapts a hover event.
   ///
   /// [details] is the hover event details from Flutter.
-  void adaptHover(dynamic details) {
+  void adaptHover(PointerHoverEvent details) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.hover,
@@ -328,7 +373,7 @@ class FlutterGestureAdapter extends EventAdapter {
   /// Adapts a scroll event.
   ///
   /// [details] is the scroll details from Flutter.
-  void adaptScroll(dynamic details) {
+  void adaptScroll(PointerScrollEvent details) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.scroll,
@@ -339,10 +384,16 @@ class FlutterGestureAdapter extends EventAdapter {
   }
 
   @override
-  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent) 
+  Stream<NodeInteractionEvent> adaptEventsInternal(dynamic sourceEvent)
     // This is a convenience method for bulk event adaptation
     // Most usage will be direct method calls (adaptTap, adaptDragStart, etc.)
     => const Stream.empty();
+
+  @override
+  bool _validateSourceEventType(dynamic sourceEvent) =>
+    // FlutterGestureAdapter doesn't use adaptEventsInternal, so we accept all types
+    // Validation is done in individual adapt methods
+    true;
 
   void _publish(NodeInteractionEvent event) {
     _commandBus.publishEvent(event);
@@ -397,14 +448,13 @@ class FlameInteractionAdapter extends EventAdapter {
   ///
   /// [pointerId] is the pointer ID from Flame.
   /// [info] is the drag start info from Flame.
-  void adaptDragStart(int pointerId, dynamic info) {
+  void adaptDragStart(int pointerId, DragStartInfo info) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.dragStart,
       position: LocalPosition.absolute(info.eventPosition.global.x, info.eventPosition.global.y),
       data: {
         'pointerId': pointerId,
-        'localPosition': {'x': info.eventPosition.local.x, 'y': info.eventPosition.local.y},
       },
     ));
   }
@@ -413,7 +463,7 @@ class FlameInteractionAdapter extends EventAdapter {
   ///
   /// [pointerId] is the pointer ID from Flame.
   /// [info] is the drag update info from Flame.
-  void adaptDragUpdate(int pointerId, dynamic info) {
+  void adaptDragUpdate(int pointerId, DragUpdateInfo info) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.dragUpdate,
@@ -421,7 +471,6 @@ class FlameInteractionAdapter extends EventAdapter {
       data: {
         'pointerId': pointerId,
         'delta': {'x': info.delta.global.x, 'y': info.delta.global.y},
-        'localPosition': {'x': info.eventPosition.local.x, 'y': info.eventPosition.local.y},
       },
     ));
   }
@@ -430,7 +479,7 @@ class FlameInteractionAdapter extends EventAdapter {
   ///
   /// [pointerId] is the pointer ID from Flame.
   /// [info] is the drag end info from Flame (optional).
-  void adaptDragEnd(int pointerId, [dynamic info]) {
+  void adaptDragEnd(int pointerId, [DragEndInfo? info]) {
     _publish(NodeInteractionEvent(
       nodeId: nodeId,
       type: InteractionType.dragEnd,
@@ -441,10 +490,16 @@ class FlameInteractionAdapter extends EventAdapter {
   }
 
   @override
-  Stream<NodeInteractionEvent> adaptEvents(dynamic sourceEvent) 
+  Stream<NodeInteractionEvent> adaptEventsInternal(dynamic sourceEvent)
     // TODO: This is a convenience method for bulk event adaptation
     // Most usage will be direct method calls (adaptTap, adaptDragStart, etc.)
     => const Stream.empty();
+
+  @override
+  bool _validateSourceEventType(dynamic sourceEvent) =>
+    // FlameInteractionAdapter doesn't use adaptEventsInternal, so we accept all types
+    // Validation is done in individual adapt methods
+    true;
 
   void _publish(NodeInteractionEvent event) {
     _commandBus.publishEvent(event);

@@ -59,9 +59,10 @@ class FlutterRenderer extends RendererBase<Widget> {
   /// If provided, this builder is called for each attached Node
   /// to create the Flutter Widget for that Node.
   ///
-  /// [nodeId] is the ID of the Node to render.
-  /// [attachment] is the Node's attachment info.
-  /// [context] is the BuildContext from Flutter.
+  /// Parameters:
+  /// - `nodeId`: The ID of the Node to render.
+  /// - `attachment`: The Node's attachment info.
+  /// - `context`: The BuildContext from Flutter.
   final Widget Function(String nodeId, NodeAttachment attachment, BuildContext context)?
       nodeWidgetBuilder;
 
@@ -237,11 +238,10 @@ class FlutterRenderer extends RendererBase<Widget> {
   }
 
   /// Renders proportional layout (Column/Row with Flexible children).
-  Widget _renderProportional(UIHookNode hook, BuildContext? context) {
+  Widget _renderProportional(UIHookNode hook, BuildContext? context) =>
     // Similar to sequential but with Flexible/Expanded
     // Implementation deferred - can be added as needed
-    return _renderSequential(hook, context);
-  }
+    _renderSequential(hook, context);
 
   /// Renders flow layout (Wrap widget).
   Widget _renderFlow(UIHookNode hook, BuildContext? context) {

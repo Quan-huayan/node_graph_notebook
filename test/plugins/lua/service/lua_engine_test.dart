@@ -190,10 +190,7 @@ void main() {
 
     test('getAllNodes返回表并迭代', () async {
       // 模拟getAllNodes API
-      engineService.registerFunction('getAllNodes', (args) {
-        // TODO: 返回模拟的节点表
-        return 0; // 返回值数量（在Lua中设置全局变量）
-      });
+      engineService.registerFunction('getAllNodes', (args) => 0);
 
       final result = await engineService.executeString('''
         -- 模拟getAllNodes设置全局变量

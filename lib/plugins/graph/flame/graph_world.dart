@@ -136,10 +136,13 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
       final renderer = FlameRenderer(
         nodeComponentBuilder: (nodeId, attachment, renderContext) {
           // 从GraphBloc获取Node对象
-          final node = graphBloc.state.nodes.firstWhere(
-            (n) => n.id == nodeId,
-            orElse: () => graphBloc.state.nodes.first,
-          );
+          final nodes = graphBloc.state.nodes;
+          final node = nodes.isNotEmpty
+              ? nodes.firstWhere(
+                  (n) => n.id == nodeId,
+                  orElse: () => nodes.first,
+                )
+              : throw StateError('Cannot build node component: no nodes available');
 
           // 创建NodeComponent
           final component = NodeComponent(
