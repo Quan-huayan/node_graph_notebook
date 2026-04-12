@@ -88,6 +88,10 @@ class UILayoutService {
   /// 所有Hook的ID索引，用于快速查找。
   final Map<String, UIHookNode> _hookIndex = {};
 
+  /// Hook的屏幕边界索引 (hookId → screenBounds)
+  /// 用于快速查找位置下的Hook
+  final Map<String, Rect> _hookBoundsIndex = {};
+
   /// 节点到Hook附着的索引 (nodeId → hookId)。
   final Map<String, String> _nodeToHookIndex = {};
 
@@ -491,11 +495,11 @@ class UILayoutService {
     }
   }
 
-  /// 更新节点在其当前Hook中的位置。
+  /// Updates the position of a Node within its current Hook.
   ///
-  /// [nodeId] 是要更新的节点的ID。
-  /// [newPosition] 是新的本地位置。
-  /// [persist] 是否持久化此更改（默认：true）。
+  /// [nodeId] is the ID of the Node to update.
+  /// [newPosition] is the new local position.
+  /// [persist] Whether to persist this change (default: true).
   Future<void> updateNodePosition({
     required String nodeId,
     required LocalPosition newPosition,
@@ -538,12 +542,189 @@ class UILayoutService {
     }
   }
 
+  /// Updates the render state of a Node.
+  ///
+  /// [nodeId] is the ID of the Node to update.
+  /// [renderState] is the new render state (e.g., 'dragging', 'hovering', 'rendering').
+  ///
+  /// **Architecture:**
+  /// - Stores render state in NodeAttachment metadata
+  /// - Hooks can read this state to adjust visual effects
+  /// - Example: dragging → semi-transparent, hovering → highlighted
+  ///
+  /// **Usage:**
+  /// ```dart
+  /// // Set node to dragging state
+  /// await layoutService.updateNodeRenderState(
+  ///   nodeId: 'node-1',
+  ///   renderState: 'dragging',
+  /// );
+  ///
+  /// // Reset to normal rendering
+  /// await layoutService.updateNodeRenderState(
+  ///   nodeId: 'node-1',
+  ///   renderState: 'rendering',
+  /// );
+  /// ```
+  void updateNodeRenderState({
+    required String nodeId,
+    required String renderState,
+  }) {
+    if (!_isInitialized) {
+      throw StateError('UILayoutService not initialized');
+    }
+
+    final hookId = _nodeToHookIndex[nodeId];
+    if (hookId == null) {
+      debugPrint('Node $nodeId is not attached to any Hook, cannot update render state');
+      return;
+    }
+
+    final hook = _hookIndex[hookId];
+    if (hook == null) {
+      debugPrint('Hook $hookId not found in index, cannot update render state');
+      return;
+    }
+
+    final attachment = hook.getAttachedNode(nodeId);
+    if (attachment == null) {
+      debugPrint('Node $nodeId not found in Hook $hookId, cannot update render state');
+      return;
+    }
+
+    // Update metadata with new render state
+    final updatedMetadata = Map<String, dynamic>.from(attachment.metadata ?? {});
+    updatedMetadata['renderState'] = renderState;
+
+    hook.updateNodeMetadata(nodeId, updatedMetadata);
+
+    debugPrint('Updated Node $nodeId render state to: $renderState');
+  }
+
   /// 获取节点所附着的Hook。
   ///
   /// [nodeId] 是节点的ID。
   ///
   /// 返回Hook ID，如果节点未附着则返回null。
   String? getNodeHookId(String nodeId) => _nodeToHookIndex[nodeId];
+
+  /// 获取节点当前所在的Hook（别名方法，用于Flowing UI）
+  ///
+  /// [nodeId] 是节点的ID。
+  ///
+  /// 返回Hook ID，如果节点未附着则返回null。
+  ///
+  /// **架构说明：**
+  /// - 这是getNodeHookId的别名，提供更语义化的名称
+  /// - 用于NodeDragController检测节点的当前Hook
+  String? getNodeHook(String nodeId) => getNodeHookId(nodeId);
+
+  /// 获取指定屏幕位置下的Hook
+  ///
+  /// [screenPosition] - 屏幕坐标位置
+  ///
+  /// 返回包含该位置的Hook ID，如果位置不在任何Hook内则返回null
+  ///
+  /// **架构说明：**
+  /// - 遍历所有已注册边界的Hook
+  /// - 检查位置是否在Hook边界内
+  /// - 优先返回最具体的Hook（子Hook优先于父Hook）
+  /// - 用于NodeDragController检测拖拽目标
+  ///
+  /// **使用示例：**
+  /// ```dart
+  /// final hookId = layoutService.getHookAtPosition(Offset(100, 200));
+  /// if (hookId == 'sidebar.nodeList') {
+  ///   // 拖拽到sidebar节点列表
+  /// }
+  /// ```
+  String? getHookAtPosition(Offset screenPosition) {
+    String? foundHookId;
+    var foundDepth = -1;
+
+    // 遍历所有Hook，找到包含该位置且最具体的Hook
+    for (final entry in _hookBoundsIndex.entries) {
+      final hookId = entry.key;
+      final bounds = entry.value;
+
+      if (bounds.contains(screenPosition)) {
+        // 计算Hook的深度（根据ID中的点数）
+        // 例如：'sidebar.bottom.nodeList' 深度为2
+        final depth = hookId.split('.').length - 1;
+
+        // 选择最具体的Hook（深度最大的）
+        if (depth > foundDepth) {
+          foundHookId = hookId;
+          foundDepth = depth;
+        }
+      }
+    }
+
+    return foundHookId;
+  }
+
+  /// 获取Hook的屏幕边界
+  ///
+  /// [hookId] - Hook ID
+  ///
+  /// 返回Hook的屏幕边界矩形，如果Hook未注册边界则返回null
+  ///
+  /// **架构说明：**
+  /// - 从边界索引中查找Hook的屏幕边界
+  /// - 用于NodeDragController高亮显示目标区域
+  /// - Hook渲染器负责注册边界（通过registerHookBounds）
+  ///
+  /// **使用示例：**
+  /// ```dart
+  /// final bounds = layoutService.getHookBounds('sidebar');
+  /// if (bounds != null) {
+  ///   print('Sidebar bounds: $bounds');
+  /// }
+  /// ```
+  Rect? getHookBounds(String hookId) => _hookBoundsIndex[hookId];
+
+  /// 注册Hook的屏幕边界
+  ///
+  /// [hookId] - Hook ID
+  /// [bounds] - Hook的屏幕边界（屏幕坐标）
+  ///
+  /// **架构说明：**
+  /// - Hook渲染器调用此方法注册其屏幕边界
+  /// - 边界用于getHookAtPosition快速查找
+  /// - 应在Hook渲染时或窗口大小变化时更新
+  ///
+  /// **使用示例：**
+  /// ```dart
+  /// // 在Sidebar的build方法中
+  /// @override
+  /// Widget build(BuildContext context) {
+  ///   // 渲染后注册边界
+  ///   WidgetsBinding.instance.addPostFrameCallback((_) {
+  ///     final renderBox = context.findRenderObject() as RenderBox;
+  ///     final bounds = renderBox.localToGlobal(Offset.zero) &
+  ///                   renderBox.size;
+  ///     layoutService.registerHookBounds('sidebar', bounds);
+  ///   });
+  ///
+  ///   return Container(...);
+  /// }
+  /// ```
+  void registerHookBounds(String hookId, Rect bounds) {
+    _hookBoundsIndex[hookId] = bounds;
+    debugPrint('Registered bounds for Hook $hookId: $bounds');
+  }
+
+  /// 注销Hook的屏幕边界
+  ///
+  /// [hookId] - Hook ID
+  ///
+  /// **架构说明：**
+  /// - Hook卸载时调用此方法清理边界
+  /// - 避免内存泄漏和错误的边界数据
+  void unregisterHookBounds(String hookId) {
+    _hookBoundsIndex.remove(hookId);
+    debugPrint('Unregistered bounds for Hook $hookId');
+  }
 
   /// 获取节点的附着信息。
   ///

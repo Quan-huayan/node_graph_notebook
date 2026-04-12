@@ -6,7 +6,6 @@ import 'package:flame/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/config/feature_flags.dart';
 import '../../../../core/execution/execution_engine.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/services/theme/app_theme.dart';
@@ -24,13 +23,14 @@ import 'components/connection_renderer.dart';
 import 'components/node_component.dart';
 import 'graph_widget.dart';
 import 'mixins/bloc_consumer.dart';
+import 'node_drag_controller.dart';
 import 'spatial_index_manager.dart';
 import 'view_frustum_culler.dart';
 
 const _log = AppLogger('GraphWorld');
 
 /// 图世界 - Flame 的根组件（BLoC 集成版本）
-class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
+class GraphWorld extends World with HasGameReference, BlocConsumerMixin {
   /// 创建图世界组件
   GraphWorld({
     required this.graphBloc,
@@ -51,11 +51,6 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
   /// 执行引擎
   final ExecutionEngine? executionEngine;
 
-  /// 是否使用新的UI布局系统
-  bool get _useNewLayoutSystem =>
-      LayoutFeatureFlags.useNewLayoutSystem ||
-      LayoutFeatureFlags.useNewLayoutSystemForGraph;
-
   late final ConnectionRenderer _connectionRenderer;
   final Map<String, NodeComponent> _nodeComponents = {};
 
@@ -64,6 +59,9 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
 
   /// 视锥裁剪管理器
   late final ViewFrustumCuller _viewFrustumCuller;
+
+  /// 节点拖拽控制器
+  late final NodeDragController _nodeDragController;
 
   /// 是否启用视锥裁剪
   bool get enableViewFrustumCulling => true;
@@ -93,6 +91,16 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
     );
     _viewFrustumCuller.init(_spatialIndex, this);
 
+    // === 初始化NodeDragController ===
+    // 创建节点拖拽控制器
+    final layoutService = context.read<UILayoutService>();
+    _nodeDragController = NodeDragController(
+      layoutService: layoutService,
+      buildContext: context,
+    );
+    add(_nodeDragController);
+    _log.info('NodeDragController initialized');
+
     // 添加背景组件（处理空白区域拖拽）
     add(
       _BackgroundComponent(
@@ -107,20 +115,15 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
       ),
     );
 
-    // 根据特性开关选择渲染方式
-     // 根据特性开关选择渲染方式
-    if (_useNewLayoutSystem) {
-      await _loadWithNewLayoutSystem();
-    } else {
-      await _loadWithLegacySystem();
-    }
+    // 加载节点组件
+    await _loadNodes();
 
     // 订阅 BLoC 状态变化
     _subscribeToBloc();
   }
 
-  /// 使用新的UILayoutService系统加载
-  Future<void> _loadWithNewLayoutSystem() async {
+  /// 加载节点组件
+  Future<void> _loadNodes() async {
     try {
       final layoutService = context.read<UILayoutService>();
 
@@ -159,15 +162,13 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
                 Vector2(updatedNode.position.dx.toDouble(), updatedNode.position.dy.toDouble()),
               );
               // 更新UILayoutService中的位置
-              if (_useNewLayoutSystem) {
-                try {
-                  layoutService.updateNodePosition(
-                    nodeId: updatedNode.id,
-                    newPosition: LocalPosition.absolute(position.dx, position.dy),
-                  );
-                } catch (e) {
-                  // 静默失败，不影响拖拽功能
-                }
+              try {
+                layoutService.updateNodePosition(
+                  nodeId: updatedNode.id,
+                  newPosition: LocalPosition.absolute(position.dx, position.dy),
+                );
+              } catch (e) {
+                // 静默失败，不影响拖拽功能
               }
             },
             onSecondaryTap: (Node node, Offset position) {
@@ -187,6 +188,12 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
             },
           );
 
+          // === 集成NodeDragController ===
+          // 将拖拽控制器附加到节点组件
+          // 注意：这里通过设置parent来建立关联
+          // 实际的拖拽事件处理在NodeComponent中通过DragCallbacks mixin自动触发
+          // NodeDragController会监听全局拖拽事件并处理节点流动逻辑
+
           // 保存到组件映射
           _nodeComponents[nodeId] = component;
 
@@ -205,30 +212,12 @@ class GraphWorld extends Component with HasGameReference, BlocConsumerMixin {
         );
         add(component);
       } else {
-        // 如果Hook不存在，回退到旧实现
-        await _loadWithLegacySystem();
+        throw StateError('Graph hook not found in UILayoutService');
       }
     } catch (e) {
-      _log.warning('Failed to use new layout system, falling back: $e');
-      await _loadWithLegacySystem();
+      _log.error('Failed to load nodes: $e');
+      rethrow;
     }
-  }
-
-  /// 使用旧的系统加载
-  Future<void> _loadWithLegacySystem() async {
-
-    // 创建连接渲染器（先添加，在底层）
-    // 🔥 优化：初始化时使用空位置映射，避免在组件创建前遍历
-    _connectionRenderer = ConnectionRenderer(
-      connections: graphBloc.state.connections,
-      nodePositions: {}, // 初始为空，节点组件会添加自己的位置
-      theme: theme,
-      showConnections: graphBloc.state.viewState.showConnections,
-    );
-    add(_connectionRenderer);
-
-    // 创建初始节点组件
-    graphBloc.state.nodes.forEach(_addNodeComponent);
   }
 
   /// 订阅 BLoC 状态变化

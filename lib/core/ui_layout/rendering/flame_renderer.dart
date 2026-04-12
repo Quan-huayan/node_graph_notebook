@@ -41,8 +41,9 @@ import '../node_attachment.dart';
 import '../ui_hook_tree.dart';
 import 'renderer_base.dart';
 
-/// Reference to avoid direct Flame import issues.
-typedef FlameGame = Game;
+/// Reference to World type for context passing.
+/// Note: This used to be Game, but we now pass World (GraphWorld) instead.
+typedef FlameGameWorld = World;
 
 /// Typedef for Flame Component to avoid direct import issues.
 typedef FlameComponent = Component;
@@ -88,7 +89,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
 
   @override
   FlameComponent render(UIHookNode hook, Map<String, dynamic> context) {
-    final gameWorld = context['gameWorld'] as FlameGame?;
+    final gameWorld = context['gameWorld'] as FlameGameWorld?;
 
     // Get layout strategy
     final strategy = hook.layoutConfig.strategy;
@@ -127,7 +128,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   /// Renders absolute layout.
   ///
   /// Components positioned at absolute coordinates.
-  FlameComponent _renderAbsolute(UIHookNode hook, FlameGame? gameWorld) {
+  FlameComponent _renderAbsolute(UIHookNode hook, FlameGameWorld? gameWorld) {
     final container = _HookContainerComponent(
       hookId: hook.id,
       size: hook.size,
@@ -162,7 +163,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   }
 
   /// Renders sequential layout (column or row).
-  FlameComponent _renderSequential(UIHookNode hook, FlameGame? gameWorld) {
+  FlameComponent _renderSequential(UIHookNode hook, FlameGameWorld? gameWorld) {
     final isVertical = hook.layoutConfig.direction == Axis.vertical;
     final config = hook.layoutConfig;
 
@@ -213,10 +214,10 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   }
 
   /// Renders proportional layout.
-  FlameComponent _renderProportional(UIHookNode hook, FlameGame? gameWorld) => _renderSequential(hook, gameWorld); // Similar to sequential but with proportional sizing
+  FlameComponent _renderProportional(UIHookNode hook, FlameGameWorld? gameWorld) => _renderSequential(hook, gameWorld); // Similar to sequential but with proportional sizing
 
   /// Renders flow layout.
-  FlameComponent _renderFlow(UIHookNode hook, FlameGame? gameWorld) {
+  FlameComponent _renderFlow(UIHookNode hook, FlameGameWorld? gameWorld) {
     final config = hook.layoutConfig;
     final isVertical = config.direction == Axis.vertical;
 
@@ -288,7 +289,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   }
 
   /// Renders grid layout.
-  FlameComponent _renderGrid(UIHookNode hook, FlameGame? gameWorld) {
+  FlameComponent _renderGrid(UIHookNode hook, FlameGameWorld? gameWorld) {
     final config = hook.layoutConfig;
     final columns = config.columns ?? 2;
     final columnCount = columns > 0 ? columns : 2;
@@ -355,7 +356,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   }
 
   /// Renders custom layout using custom calculator.
-  FlameComponent _renderCustom(UIHookNode hook, FlameGame? gameWorld) {
+  FlameComponent _renderCustom(UIHookNode hook, FlameGameWorld? gameWorld) {
     final calculator = hook.layoutConfig.customCalculator;
     if (calculator == null) {
       return _renderSequential(hook, gameWorld);
@@ -369,7 +370,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
   FlameComponent _renderFromResult(
     UIHookNode hook,
     LayoutResult result,
-    FlameGame? gameWorld,
+    FlameGameWorld? gameWorld,
   ) {
     final container = _HookContainerComponent(
       hookId: hook.id,

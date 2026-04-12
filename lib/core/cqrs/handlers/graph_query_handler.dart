@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import '../../graph/adjacency_list.dart';
 import '../../models/node.dart';
 import '../../repositories/node_repository.dart';
 import '../queries/graph_query.dart';
@@ -7,12 +8,16 @@ import '../query/query.dart';
 
 /// 获取邻居节点的Handler
 ///
-/// TODO: 当前实现遍历所有节点，后续应使用AdjacencyList优化
+/// 使用AdjacencyList优化查询，提供O(1)复杂度的邻居查询
 class GetNeighborNodesQueryHandler extends QueryHandler<List<Node>, GetNeighborNodesQuery> {
   /// 构造函数
-  GetNeighborNodesQueryHandler(this._repository);
+  GetNeighborNodesQueryHandler(
+    this._repository,
+    this._adjacencyList,
+  );
 
   final NodeRepository _repository;
+  final AdjacencyList _adjacencyList;
 
   @override
   Future<QueryResult<List<Node>>> handle(GetNeighborNodesQuery query) async {
@@ -23,30 +28,25 @@ class GetNeighborNodesQueryHandler extends QueryHandler<List<Node>, GetNeighborN
         return QueryResult.failure('Center node not found: ${query.nodeId}');
       }
 
-      // 获取所有节点以查找邻居
-      final allNodes = await _repository.queryAll();
-      final neighbors = <Node>[];
+      // 使用AdjacencyList获取邻居ID
+      final neighborIds = <String>{};
 
-      for (final node in allNodes) {
-        if (node.id == query.nodeId) continue;
-
-        // 检查outgoing关系（中心节点引用了此节点）
-        if (query.direction == NeighborDirection.outgoing ||
-            query.direction == NeighborDirection.both) {
-          if (centerNode.references.containsKey(node.id)) {
-            neighbors.add(node);
-            continue;
-          }
-        }
-
-        // 检查incoming关系（此节点引用了中心节点）
-        if (query.direction == NeighborDirection.incoming ||
-            query.direction == NeighborDirection.both) {
-          if (node.references.containsKey(query.nodeId)) {
-            neighbors.add(node);
-          }
-        }
+      if (query.direction == NeighborDirection.outgoing ||
+          query.direction == NeighborDirection.both) {
+        neighborIds.addAll(_adjacencyList.getOutgoingNeighbors(query.nodeId));
       }
+
+      if (query.direction == NeighborDirection.incoming ||
+          query.direction == NeighborDirection.both) {
+        neighborIds.addAll(_adjacencyList.getIncomingNeighbors(query.nodeId));
+      }
+
+      // 批量加载邻居节点
+      if (neighborIds.isEmpty) {
+        return QueryResult.success(<Node>[]);
+      }
+
+      final neighbors = await _repository.loadAll(neighborIds.toList());
 
       return QueryResult.success(neighbors);
     } catch (error, stackTrace) {
@@ -95,27 +95,29 @@ class GetOutgoingReferencesQueryHandler extends QueryHandler<List<Node>, GetOutg
 
 /// 获取入边引用的Handler
 ///
-/// TODO: 当前实现遍历所有节点，后续应使用AdjacencyList优化
+/// 使用AdjacencyList优化查询，提供O(1)复杂度的入边查询
 class GetIncomingReferencesQueryHandler extends QueryHandler<List<Node>, GetIncomingReferencesQuery> {
   /// 构造函数
-  GetIncomingReferencesQueryHandler(this._repository);
+  GetIncomingReferencesQueryHandler(
+    this._repository,
+    this._adjacencyList,
+  );
 
   final NodeRepository _repository;
+  final AdjacencyList _adjacencyList;
 
   @override
   Future<QueryResult<List<Node>>> handle(GetIncomingReferencesQuery query) async {
     try {
-      final allNodes = await _repository.queryAll();
-      final incomingNodes = <Node>[];
+      // 使用AdjacencyList获取入边邻居ID
+      final incomingIds = _adjacencyList.getIncomingNeighbors(query.nodeId);
 
-      for (final node in allNodes) {
-        if (node.id == query.nodeId) continue;
-
-        // 检查此节点是否引用了目标节点
-        if (node.references.containsKey(query.nodeId)) {
-          incomingNodes.add(node);
-        }
+      if (incomingIds.isEmpty) {
+        return QueryResult.success(<Node>[]);
       }
+
+      // 批量加载节点
+      final incomingNodes = await _repository.loadAll(incomingIds.toList());
 
       return QueryResult.success(incomingNodes);
     } catch (error, stackTrace) {
@@ -216,12 +218,16 @@ class GetNodePathQueryHandler extends QueryHandler<List<Node>?, GetNodePathQuery
 
 /// 获取节点度数的Handler
 ///
-/// TODO: 当前实现遍历所有节点，后续应使用AdjacencyList优化
+/// 使用AdjacencyList优化查询，提供O(1)复杂度的度数查询
 class GetNodeDegreeQueryHandler extends QueryHandler<NodeDegree, GetNodeDegreeQuery> {
   /// 构造函数
-  GetNodeDegreeQueryHandler(this._repository);
+  GetNodeDegreeQueryHandler(
+    this._repository,
+    this._adjacencyList,
+  );
 
   final NodeRepository _repository;
+  final AdjacencyList _adjacencyList;
 
   @override
   Future<QueryResult<NodeDegree>> handle(GetNodeDegreeQuery query) async {
@@ -231,19 +237,9 @@ class GetNodeDegreeQueryHandler extends QueryHandler<NodeDegree, GetNodeDegreeQu
         return QueryResult.failure('Node not found: ${query.nodeId}');
       }
 
-      // 出度：节点引用了多少其他节点
-      final outDegree = node.references.length;
-
-      // 入度：有多少节点引用了此节点（需要遍历所有节点）
-      final allNodes = await _repository.queryAll();
-      var inDegree = 0;
-
-      for (final n in allNodes) {
-        if (n.id == query.nodeId) continue;
-        if (n.references.containsKey(query.nodeId)) {
-          inDegree++;
-        }
-      }
+      // 使用AdjacencyList获取度数
+      final outDegree = _adjacencyList.getOutDegree(query.nodeId);
+      final inDegree = _adjacencyList.getInDegree(query.nodeId);
 
       final degree = NodeDegree(
         inDegree: inDegree,

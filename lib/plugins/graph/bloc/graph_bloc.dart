@@ -19,21 +19,7 @@ import 'graph_event.dart';
 import 'graph_state.dart';
 
 /// Graph BLoC - 图状态管理核心
-///
-/// 职责：
-/// - 图的 CRUD 操作（创建、加载、切换、重命名）
-/// - 节点在图中的位置管理（视图层）
-/// - 节点选择状态（视图层）
-/// - 视图状态（缩放、平移、网格、连接线显示）
-/// - 订阅命令总线事件流，响应节点数据变化
-///
-/// 架构说明：
-/// - 写操作通过 CommandBus（业务逻辑层）
-/// - 读操作直接通过 Repository（数据访问层）
-/// - 订阅 CommandBus.eventStream 接收数据变化通知（替代 AppEventBus）
-/// - BLoC 只负责 UI 状态管理，不包含业务逻辑
 class GraphBloc extends Bloc<GraphEvent, GraphState> {
-  /// 创建 Graph BLoC
   ///
   /// [commandBus] - 命令总线，用于执行写操作和订阅事件流
   /// [graphRepository] - 图数据仓库，用于读操作
@@ -81,7 +67,7 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
     on<_NodeSyncedEvent>(_onNodeSynced);
 
     // 订阅命令总线的事件流，响应节点数据变化
-    // CommandBus 现在是统一的通信中心，替代了 AppEventBus
+    // CommandBus 现在是统一的通信中心
     _subscribeToEvents();
   }
 
@@ -108,7 +94,20 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
       if (graph != null) {
         await _loadGraphData(graph, emit);
       } else {
-        emit(state.copyWith(loadingState: LoadingState.loaded));
+        // 如果没有当前图，自动创建一个新图
+        final command = CreateGraphCommand(graphName: 'Default Graph');
+        final result = await _commandBus.dispatch(command);
+
+        if (result.isSuccess) {
+          await _loadGraphData(result.data!, emit);
+        } else {
+          emit(
+            state.copyWith(
+              loadingState: LoadingState.error,
+              error: 'Failed to create default graph: ${result.error}',
+            ),
+          );
+        }
       }
     } on FileSystemException catch (_) {
       emit(
@@ -871,7 +870,6 @@ class GraphBloc extends Bloc<GraphEvent, GraphState> {
   /// 实现图视图与节点数据的同步。
   ///
   /// 架构变更：
-  /// - 使用 CommandBus.eventStream 替代 AppEventBus.stream
   /// - CommandBus 现在是统一的通信中心
   /// - 命令执行后自动发布事件到 eventStream
   ///

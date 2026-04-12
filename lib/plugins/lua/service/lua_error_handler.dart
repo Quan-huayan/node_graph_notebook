@@ -339,7 +339,36 @@ class LuaErrorHandler {
   }
 
   /// 提取列号
-  static int? _extractColumnNumber(String message) => null; // TODO: Lua错误通常不包含列号，但如果有，可以尝试提取
+  ///
+  /// Lua错误消息中很少包含列号,但某些语法错误会包含位置信息
+  /// 例如: "unexpected symbol near 'x'" 可以推断出大致位置
+  static int? _extractColumnNumber(String message) {
+    // 尝试从"near"关键字提取位置
+    // 例如: "unexpected symbol near 'x'" 或 "')' expected near ','"
+    final nearMatch = RegExp(r"near\s+'([^']+)'").firstMatch(message);
+    if (nearMatch != null) {
+      // near关键字后面通常跟着错误位置的符号
+      // 但这不能直接转换为列号,需要结合脚本内容
+      // 这里返回一个标记值,表示错误位置与某个符号相关
+      return null;
+    }
+
+    // 某些Lua实现可能会包含列号信息
+    // 格式: "line:column: error message"
+    final columnMatch = RegExp(r':(\d+):(\d+):').firstMatch(message);
+    if (columnMatch != null) {
+      return int.tryParse(columnMatch.group(2)!);
+    }
+
+    // 尝试从"position"关键字提取
+    // 例如: "error at position 123"
+    final positionMatch = RegExp(r'position\s+(\d+)').firstMatch(message);
+    if (positionMatch != null) {
+      return int.tryParse(positionMatch.group(1)!);
+    }
+
+    return null;
+  }
 
 
   /// 清理错误消息

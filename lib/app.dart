@@ -21,6 +21,7 @@ import 'core/cqrs/query/query_bus.dart';
 import 'core/cqrs/read_models/node_read_model.dart';
 import 'core/execution/execution_engine.dart';
 import 'core/execution/task_registry.dart';
+import 'core/graph/adjacency_list.dart';
 import 'core/middleware/logging_middleware.dart';
 import 'core/middleware/transaction_middleware.dart';
 import 'core/middleware/undo_middleware.dart';
@@ -174,9 +175,18 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       );
       _log.info('[App] ✓ ServiceRegistry created');
 
+      // 11.5. 初始化 AdjacencyList（在 QueryBus 之前）
+      _log.info('Step 10.5: Initializing AdjacencyList...');
+      final adjacencyList = AdjacencyList();
+      await adjacencyList.init();
+      // 从现有节点构建邻接表
+      final allNodes = await _nodeRepository.queryAll();
+      adjacencyList.buildFromNodes(allNodes);
+      _log.info('[App] ✓ AdjacencyList initialized with ${allNodes.length} nodes');
+
       // 12. 创建 QueryBus（依赖 ServiceRegistry）
       _log.info('Step 11: Creating QueryBus...');
-      _queryBus = _createQueryBus();
+      _queryBus = _createQueryBus(adjacencyList);
 
       // 将 QueryBus 注册到 ServiceRegistry，使其可供其他组件使用
       _serviceRegistry.registerCoreDependency<QueryBus>(QueryBus, _queryBus);
@@ -254,7 +264,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
   /// 架构说明：
   /// QueryHandler 在此方法中注册，此时 ServiceRegistry 已可用
   /// 所有 QueryHandler 从 ServiceRegistry 获取依赖的 Repository 和 Service
-  QueryBus _createQueryBus() {
+  QueryBus _createQueryBus(AdjacencyList adjacencyList) {
     final queryBus = QueryBus(
       serviceRegistry: _serviceRegistry,
       maxCacheSize: 1000,
@@ -316,7 +326,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
     // 注册图查询处理器
     ..registerHandler<List<Node>, GetNeighborNodesQuery>(
       GetNeighborNodesQuery,
-      () => GetNeighborNodesQueryHandler(nodeRepository),
+      () => GetNeighborNodesQueryHandler(nodeRepository, adjacencyList),
     )
 
     ..registerHandler<List<Node>, GetOutgoingReferencesQuery>(
@@ -326,7 +336,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
     ..registerHandler<List<Node>, GetIncomingReferencesQuery>(
       GetIncomingReferencesQuery,
-      () => GetIncomingReferencesQueryHandler(nodeRepository),
+      () => GetIncomingReferencesQueryHandler(nodeRepository, adjacencyList),
     )
 
     ..registerHandler<List<Node>?, GetNodePathQuery>(
@@ -336,7 +346,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
     ..registerHandler<NodeDegree, GetNodeDegreeQuery>(
       GetNodeDegreeQuery,
-      () => GetNodeDegreeQueryHandler(nodeRepository),
+      () => GetNodeDegreeQueryHandler(nodeRepository, adjacencyList),
     )
 
     // 注册搜索索引查询处理器
@@ -608,6 +618,9 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
 
             // 3. 查询总线（Query Bus - CQRS 读操作层）
             Provider<QueryBus>.value(value: _queryBus),
+
+            // 4. UI 布局服务（UILayoutService - 用于 Hook 树和节点附着）
+            Provider<UILayoutService>.value(value: _layoutService),
 
             // === 国际化 Provider ===
             // 注意：I18n 服务现在由 I18nPlugin 提供

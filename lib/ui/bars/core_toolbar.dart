@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/config/feature_flags.dart';
 import '../../core/plugin/ui_hooks/hook_context.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../core/ui_layout/rendering/flutter_renderer.dart';
@@ -21,43 +20,11 @@ class CoreToolbar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) {
-    // 检查是否启用新的UI布局系统
-    if (LayoutFeatureFlags.useNewLayoutSystem ||
-        LayoutFeatureFlags.useNewLayoutSystemForToolbar) {
-      return _buildNewToolbar(context);
-    }
+  Widget build(BuildContext context) => _buildDefaultToolbar(context);
 
-    // 使用旧的HookRegistry实现
-    return _buildLegacyToolbar(context);
-  }
-
-  /// 使用新的UILayoutService系统构建Toolbar
-  Widget _buildNewToolbar(BuildContext context) {
-    try {
-      final layoutService = context.read<UILayoutService>();
-      final renderer = FlutterRenderer();
-      final toolbarHook = layoutService.getHook('main.toolbar');
-
-      if (toolbarHook != null) {
-        return SizedBox(
-          height: preferredSize.height,
-          child: renderer.render(toolbarHook, {'buildContext': context}),
-        );
-      }
-
-      // 如果Hook不存在，回退到旧实现
-      return _buildLegacyToolbar(context);
-    } catch (e) {
-      _log.warning('Failed to use new layout system, falling back: $e');
-      return _buildLegacyToolbar(context);
-    }
-  }
-
-  /// 使用旧的HookRegistry系统构建Toolbar
-  Widget _buildLegacyToolbar(BuildContext context)
-    // ✅ 监听 HookRegistry 变化，自动重新构建
-    => AnimatedBuilder(
+  /// 构建默认 Toolbar（当 Hook 不存在时使用）
+  Widget _buildDefaultToolbar(BuildContext context) {
+    return AnimatedBuilder(
       animation: hookRegistry,
       builder: (context, child) {
         final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
@@ -87,4 +54,5 @@ class CoreToolbar extends StatelessWidget implements PreferredSizeWidget {
         );
       },
     );
+  }
 }

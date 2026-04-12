@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/config/feature_flags.dart';
 import '../../core/models/models.dart';
 import '../../core/plugin/ui_hooks/hook_context.dart';
 import '../../core/plugin/ui_hooks/hook_lifecycle.dart';
@@ -121,38 +120,10 @@ class _SidebarState extends State<Sidebar> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // 检查是否启用新的UI布局系统
-    if (LayoutFeatureFlags.useNewLayoutSystem ||
-        LayoutFeatureFlags.useNewLayoutSystemForSidebar) {
-      return _buildNewSidebar(context);
-    }
+  Widget build(BuildContext context) => _buildDefaultSidebar(context);
 
-    // 使用旧的HookRegistry实现
-    return _buildLegacySidebar(context);
-  }
-
-  /// 使用新的UILayoutService系统构建Sidebar
-  Widget _buildNewSidebar(BuildContext context) {
-    try {
-      final layoutService = context.read<UILayoutService>();
-      final renderer = FlutterRenderer();
-      final sidebarHook = layoutService.getHook('sidebar');
-
-      if (sidebarHook != null) {
-        return renderer.render(sidebarHook, {'buildContext': context});
-      }
-
-      // 如果Hook不存在，回退到旧实现
-      return _buildLegacySidebar(context);
-    } catch (e) {
-      _log.warning('Failed to use new layout system, falling back: $e');
-      return _buildLegacySidebar(context);
-    }
-  }
-
-  /// 使用旧的HookRegistry系统构建Sidebar
-  Widget _buildLegacySidebar(BuildContext context) {
+  /// 构建默认Sidebar（当Hook不存在时使用）
+  Widget _buildDefaultSidebar(BuildContext context) {
     final i18n = I18n.of(context);
     // 使用 context.select 进行细粒度状态订阅，避免不必要的重建
     // 只有当节点列表发生变化时才重建此组件

@@ -22,7 +22,7 @@ import 'node_state.dart';
 /// 架构说明：
 /// - 写操作通过 CommandBus（业务逻辑层）
 /// - 读操作直接通过 Repository（数据访问层）
-/// - 订阅 CommandBus.eventStream 接收数据变化通知（替代 AppEventBus）
+/// - 订阅 CommandBus.eventStream 接收数据变化通知
 /// - BLoC 只负责 UI 状态管理，不包含业务逻辑
 class NodeBloc extends Bloc<NodeEvent, NodeState> {
   /// 创建 Node BLoC

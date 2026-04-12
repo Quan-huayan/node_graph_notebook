@@ -74,8 +74,18 @@ class GraphGame extends FlameGame {
     // 从配置中读取相机中心位置
     final cameraConfig = viewConfig.camera;
 
-    // 配置相机组件 - 使用配置的分辨率
+    // 创建 GraphWorld
+    _graphWorld = GraphWorld(
+      graphBloc: bloc,
+      uiState: uiState,
+      theme: theme,
+      context: context,
+      executionEngine: executionEngine,
+    );
+
+    // 配置相机组件 - 使用配置的分辨率，并关联到 world
     camera = CameraComponent.withFixedResolution(
+      world: _graphWorld,
       width: cameraConfig.centerWidth,
       height: cameraConfig.centerHeight,
     );
@@ -91,16 +101,8 @@ class GraphGame extends FlameGame {
     );
     camera.viewfinder.zoom = cameraConfig.zoom; // ← 使用持久化的 zoom
 
-    // 创建 GraphWorld 并添加到 FlameGame 的 world 中
-    _graphWorld = GraphWorld(
-      graphBloc: bloc,
-      uiState: uiState,
-      theme: theme,
-      context: context,
-      executionEngine: executionEngine,
-    );
-
-    await world.add(_graphWorld!);
+    // 设置 world（相机已经关联了 world）
+    world = _graphWorld!;
 
     // 订阅 BLoC 状态变化以更新 Flame 组件
     _blocSubscription = bloc.stream.listen(_onStateChanged);

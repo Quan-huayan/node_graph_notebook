@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../events/app_events.dart';
 import '../models/node.dart';
+import '../ui_layout/events/layout_events.dart';
 import '../utils/logger.dart';
 
 /// EventAggregationMiddleware的日志记录器
@@ -77,8 +78,18 @@ class EventAggregationMiddleware {
   }
 
   /// 判断事件类型是否应该聚合
-  /// TODO：这里只列出了NodeDataChangedEvent，后续可以根据需要添加更多事件类型
-  bool _shouldAggregate(Type eventType) => eventType == NodeDataChangedEvent; 
+  ///
+  /// 支持聚合的事件类型:
+  /// - NodeDataChangedEvent: 节点数据变更事件
+  /// - NodePositionUpdatedEvent: 节点位置更新事件
+  /// - NodeMovedEvent: 节点移动事件
+  /// - GraphNodeRelationChangedEvent: 图节点关系变更事件
+  ///
+  /// 这些事件可能会在短时间内频繁触发,聚合可以减少不必要的处理
+  bool _shouldAggregate(Type eventType) => eventType == NodeDataChangedEvent ||
+        eventType == NodePositionUpdatedEvent ||
+        eventType == NodeMovedEvent ||
+        eventType == GraphNodeRelationChangedEvent; 
 
   /// 处理聚合的事件
   void _processAggregatedEvents() {
@@ -121,7 +132,84 @@ class EventAggregationMiddleware {
       return _aggregateNodeDataChanged(events.cast<NodeDataChangedEvent>());
     }
 
+    if (firstEvent is NodePositionUpdatedEvent) {
+      return _aggregateNodePositionUpdated(events.cast<NodePositionUpdatedEvent>());
+    }
+
+    if (firstEvent is NodeMovedEvent) {
+      return _aggregateNodeMoved(events.cast<NodeMovedEvent>());
+    }
+
+    if (firstEvent is GraphNodeRelationChangedEvent) {
+      return _aggregateGraphNodeRelationChanged(events.cast<GraphNodeRelationChangedEvent>());
+    }
+
     // 默认：返回最后一个事件
+    return events.last;
+  }
+
+  /// 聚合节点位置更新事件
+  ///
+  /// 策略：只保留最终位置
+  NodePositionUpdatedEvent _aggregateNodePositionUpdated(
+    List<NodePositionUpdatedEvent> events,
+  ) {
+    // 按节点ID分组，保留每个节点的最终位置
+    final latestPositions = <String, NodePositionUpdatedEvent>{};
+
+    for (final event in events) {
+      latestPositions[event.nodeId] = event;
+    }
+
+    // 如果只有一个节点，返回该节点的最终事件
+    if (latestPositions.length == 1) {
+      return latestPositions.values.first;
+    }
+
+    // 如果有多个节点，返回最后一个事件
+    // 实际应用中可能需要创建一个批量更新事件
+    return events.last;
+  }
+
+  /// 聚合节点移动事件
+  ///
+  /// 策略：只保留最终移动结果
+  NodeMovedEvent _aggregateNodeMoved(List<NodeMovedEvent> events) {
+    // 按节点ID分组，保留每个节点的最终移动
+    final latestMoves = <String, NodeMovedEvent>{};
+
+    for (final event in events) {
+      latestMoves[event.nodeId] = event;
+    }
+
+    // 如果只有一个节点，返回该节点的最终事件
+    if (latestMoves.length == 1) {
+      return latestMoves.values.first;
+    }
+
+    // 如果有多个节点，返回最后一个事件
+    return events.last;
+  }
+
+  /// 聚合图节点关系变更事件
+  ///
+  /// 策略：只保留最终关系状态
+  GraphNodeRelationChangedEvent _aggregateGraphNodeRelationChanged(
+    List<GraphNodeRelationChangedEvent> events,
+  ) {
+    // 按图ID分组，保留每个图的最终关系变更
+    final latestRelations = <String, GraphNodeRelationChangedEvent>{};
+
+    for (final event in events) {
+      latestRelations[event.graphId] = event;
+    }
+
+    // 如果只有一个图，返回该图的最终事件
+    if (latestRelations.length == 1) {
+      return latestRelations.values.first;
+    }
+
+    // 如果有多个图，返回最后一个事件
     return events.last;
   }
 

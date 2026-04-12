@@ -227,7 +227,6 @@ abstract class Plugin {
   ///     create: (ctx) => NodeBloc(
   ///       commandBus: ctx.read<CommandBus>(),
   ///       nodeRepository: ctx.read<NodeRepository>(),
-  ///       eventBus: ctx.read<AppEventBus>(),
   ///     )..add(const NodeLoadEvent()),
   ///   ),
   /// ];

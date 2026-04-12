@@ -2,43 +2,6 @@ import '../utils/logger.dart';
 
 const _log = AppLogger('RenderingFeatureFlags');
 
-/// UI布局系统功能标志
-///
-/// **用途：**
-/// - 控制新的UILayoutService系统的启用/禁用
-/// - 支持渐进式迁移和A/B测试
-/// - 提供降级机制以确保稳定性
-///
-/// **使用场景：**
-/// 1. 在开发环境启用新系统
-/// 2. 在生产环境逐步推出
-/// 3. 遇到问题时快速禁用新系统
-class LayoutFeatureFlags {
-  /// 是否启用新的UI布局系统（总开关）
-  ///
-  /// 设为 false 可完全禁用新系统，回退到旧的HookRegistry实现
-  /// 设为 true 则使用新的UILayoutService系统
-  ///
-  /// **重要：** 默认为 false，确保系统稳定性
-  /// 在完成所有组件的测试和验证之前，请保持为 false
-  static const bool useNewLayoutSystem = false;
-
-  /// 是否为Sidebar启用新系统
-  ///
-  /// 支持组件级别的渐进式迁移
-  static const bool useNewLayoutSystemForSidebar = false;
-
-  /// 是否为Toolbar启用新系统
-  ///
-  /// 支持组件级别的渐进式迁移
-  static const bool useNewLayoutSystemForToolbar = false;
-
-  /// 是否为Graph启用新系统
-  ///
-  /// 支持组件级别的渐进式迁移
-  static const bool useNewLayoutSystemForGraph = false;
-}
-
 /// 渲染优化功能标志
 ///
 /// **用途：**

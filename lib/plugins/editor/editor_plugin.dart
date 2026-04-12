@@ -1,4 +1,8 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../core/plugin/plugin.dart';
+import '../../../core/plugin/ui_hooks/hook_base.dart';
+import 'ui/node_editor_panel_hook_simple.dart';
 
 /// 编辑器插件
 ///
@@ -24,6 +28,11 @@ class EditorPlugin extends Plugin {
   );
 
   @override
+  List<HookFactory> registerHooks() => [
+    NodeEditorPanelHook.new,
+  ];
+
+  @override
   Future<void> onLoad(PluginContext context) async {
     // 注册命令处理器
   }
@@ -42,4 +51,13 @@ class EditorPlugin extends Plugin {
   Future<void> onUnload() async {
     // 清理资源
   }
+
+  @override
+  List<ServiceBinding> registerServices() => [];
+
+  @override
+  List<BlocProvider> registerBlocs() => [];
+
+  @override
+  Map<String, dynamic> exportAPIs() => {};
 }

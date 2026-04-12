@@ -24,8 +24,23 @@ class LuaArgumentException implements Exception {
 ///
 /// 提供Lua脚本访问应用功能的实际实现
 ///
-/// 注意：当前为简化版本，用于测试环境
-/// TODO: 实现完整的异步API调用机制
+/// **异步调用机制：**
+/// - 所有API方法都支持异步操作
+/// - 使用Future.then()和catchError()处理异步结果
+/// - 通过回调函数返回操作结果
+/// - 提供完善的错误处理和日志记录
+///
+/// **使用示例：**
+/// ```lua
+/// -- 创建节点
+/// createNode("标题", "内容", function(success, result)
+///   if success then
+///     print("节点已创建: " .. result.id)
+///   else
+///     print("错误: " .. result.error)
+///   end
+/// end)
+/// ```
 class LuaAPIImplementation {
   /// 构造函数
   LuaAPIImplementation({

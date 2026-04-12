@@ -16,7 +16,7 @@ import 'models/middleware.dart';
 /// 2. 中间件管道执行
 /// 3. 执行结果处理
 /// 4. 错误处理和日志
-/// 5. 事件发布（替代 AppEventBus）
+/// 5. 事件发布
 ///
 /// 架构说明：
 /// - CommandBus 现在是统一的通信中心
@@ -54,13 +54,11 @@ class CommandBus {
 
   /// 应用事件流控制器
   ///
-  /// 用于发布应用事件（替代 AppEventBus）
   /// BLoC 订阅此流以接收数据变化通知
   final _eventStreamController = StreamController<AppEvent>.broadcast();
 
   /// 应用事件流
   ///
-  /// 替代 AppEventBus.stream
   /// BLoC 应该订阅此流以接收节点数据变化、图关系变化等事件
   Stream<AppEvent> get eventStream => _eventStreamController.stream;
 

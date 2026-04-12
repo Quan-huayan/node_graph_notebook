@@ -407,7 +407,6 @@ class UpdateNodeHandler implements CommandHandler<UpdateNodeCommand, Node> {
     // ❌ 每次执行都查找服务
     final nodeService = context.read<NodeService>();
     final graphService = context.read<GraphService>();
-    final eventBus = context.read<AppEventBus>();
 
     // 执行逻辑...
   }
@@ -428,13 +427,11 @@ class CachedUpdateNodeHandler implements CommandHandler<UpdateNodeCommand, Node>
   // 缓存服务引用
   late NodeService _nodeService;
   late GraphService _graphService;
-  late AppEventBus _eventBus;
 
   @override
   void initialize(CommandContext context) {
     _nodeService = context.read<NodeService>();
     _graphService = context.read<GraphService>();
-    _eventBus = context.read<AppEventBus>();
   }
 
   @override

@@ -254,6 +254,21 @@ class UIHookNode {
     _attachedNodes[nodeId] = attachment.copyWith(localPosition: newPosition);
   }
 
+  /// Updates the metadata of an attached Node.
+  ///
+  /// [nodeId] is the ID of the Node to update.
+  /// [metadata] is the new metadata map.
+  ///
+  /// Throws [StateError] if the Node is not attached.
+  void updateNodeMetadata(String nodeId, Map<String, dynamic> metadata) {
+    final attachment = _attachedNodes[nodeId];
+    if (attachment == null) {
+      throw StateError('Node not attached to this Hook: $nodeId');
+    }
+
+    _attachedNodes[nodeId] = attachment.copyWith(metadata: metadata);
+  }
+
   /// Gets an attached Node by ID.
   ///
   /// [nodeId] is the ID of the Node to get.

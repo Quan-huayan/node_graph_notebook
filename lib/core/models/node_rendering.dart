@@ -282,15 +282,63 @@ mixin DefaultNodeRendering on Node implements NodeRendering {
 
   @override
   Component buildFlameComponent(dynamic world) => _PlaceholderNodeComponent(node: this);
-  // TODO: 返回一个基本的占位组件
-  // 在实际实现中，这将返回一个适当的Flame组件
 }
 
 /// 没有自定义渲染的节点的占位Flame组件。
-class _PlaceholderNodeComponent extends Component {
-  _PlaceholderNodeComponent({required this.node});
+///
+/// 提供基本的节点渲染功能:
+/// - 显示节点标题
+/// - 显示节点边框
+/// - 支持基本的交互
+class _PlaceholderNodeComponent extends PositionComponent {
+  _PlaceholderNodeComponent({required this.node}) {
+    // 设置组件大小
+    size = Vector2(
+      node.size.width.isFinite ? node.size.width : 200,
+      node.size.height.isFinite ? node.size.height : 80,
+    );
+
+    // 设置组件位置
+    position = Vector2(
+      node.position.dx,
+      node.position.dy,
+    );
+  }
 
   final Node node;
+
+  @override
+  void render(Canvas canvas) {
+    // 绘制背景
+    final backgroundColor = node.color != null
+        ? Color(int.parse(node.color!))
+        : const Color(0xFFFFFFFF);
+    final backgroundPaint = Paint()..color = backgroundColor;
+    canvas.drawRect(size.toRect(), backgroundPaint);
+
+    // 绘制边框
+    final borderPaint = Paint()
+      ..color = const Color(0xFFCCCCCC)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    canvas.drawRect(size.toRect(), borderPaint);
+
+    // 绘制标题
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: node.title,
+        style: const TextStyle(
+          color: Color(0xFF000000),
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 2,
+    );
+    textPainter.layout(maxWidth: size.x - 16);
+    textPainter.paint(canvas, const Offset(8, 8));
+  }
 
   @override
   String toString() => 'PlaceholderNodeComponent(${node.id})';

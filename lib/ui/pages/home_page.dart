@@ -27,7 +27,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    // ✅ 设置全局消息服务的context
+    // ✅ 设置全局消息服务的 context
     GlobalMessageService.setContext(context);
 
     return Scaffold(
@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context, nodeState) => BlocBuilder<UIBloc, UIState>(
         builder: (context, uiState) => Row(
           children: [
-            // 侧边栏 - 由主UI管理
+            // 侧边栏 - 由主 UI 管理
             if (uiState.isSidebarOpen && graphState.hasGraph)
               Row(
                 children: [

@@ -490,10 +490,17 @@ class FlameInteractionAdapter extends EventAdapter {
   }
 
   @override
-  Stream<NodeInteractionEvent> adaptEventsInternal(dynamic sourceEvent)
-    // TODO: This is a convenience method for bulk event adaptation
-    // Most usage will be direct method calls (adaptTap, adaptDragStart, etc.)
-    => const Stream.empty();
+  Stream<NodeInteractionEvent> adaptEventsInternal(dynamic sourceEvent) =>
+    // FlameInteractionAdapter使用特定的adapt方法而不是批量适配
+    // 推荐使用方式:
+    // - adaptTap() - 处理点击事件
+    // - adaptDragStart() - 处理拖拽开始
+    // - adaptDragUpdate() - 处理拖拽更新
+    // - adaptDragEnd() - 处理拖拽结束
+    //
+    // 如果需要批量适配,可以实现一个事件流监听器
+    // 但在Flame中,通常直接使用HasDragCallbacks等mixin更高效
+    const Stream.empty();
 
   @override
   bool _validateSourceEventType(dynamic sourceEvent) =>
