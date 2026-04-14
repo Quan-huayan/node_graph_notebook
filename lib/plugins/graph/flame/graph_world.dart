@@ -481,7 +481,7 @@ class GraphWorld extends World with HasGameReference, BlocConsumerMixin {
   /// 移除节点组件
   void _removeNodeComponent(String nodeId) {
     final component = _nodeComponents.remove(nodeId);
-    if (component != null) {
+    if (component != null && component.parent != null) {
       // 从空间索引中移除
       _spatialIndex.removeNode(nodeId);
       // 从组件树中移除

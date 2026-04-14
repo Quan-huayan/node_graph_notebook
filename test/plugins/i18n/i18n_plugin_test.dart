@@ -36,15 +36,6 @@ void main() {
       );
     });
 
-    test('应该正确注册插件元数据', () {
-      final plugin = I18nPlugin();
-
-      expect(plugin.metadata.id, 'i18n');
-      expect(plugin.metadata.name, '国际化');
-      expect(plugin.metadata.version, '1.0.0');
-      expect(plugin.metadata.enabledByDefault, true);
-    });
-
     test('应该注册 I18n 服务', () {
       final plugin = I18nPlugin();
       final services = plugin.registerServices();

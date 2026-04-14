@@ -82,8 +82,8 @@ class NodeComponent extends PositionComponent
   late Paint _backgroundPaint;
   late Paint _selectedPaint;
   late TextPainter _titlePainter;
-  late TextPainter _contentPainter;
-  late TextPainter _fullContentPainter;
+  TextPainter? _contentPainter;
+  TextPainter? _fullContentPainter;
   TextPainter? _iconPainter; // 自定义图标绘制器（从 metadata['icon']）
 
   void _initPaints() {
@@ -151,13 +151,14 @@ class NodeComponent extends PositionComponent
         ),
         textDirection: TextDirection.ltr,
       );
-      _contentPainter.layout();
+      _contentPainter!.layout();
       return;
     }
 
     switch (node.viewMode) {
       case NodeViewMode.titleOnly:
         // 不需要内容绘制器
+        _contentPainter = null;
         break;
       case NodeViewMode.compact:
         // 紧凑模式显示首字母或自定义图标
@@ -176,7 +177,7 @@ class NodeComponent extends PositionComponent
           ),
           textDirection: TextDirection.ltr,
         );
-        _contentPainter.layout();
+        _contentPainter!.layout();
         break;
       case NodeViewMode.titleWithPreview:
         final preview = _getPreviewText();
@@ -189,7 +190,7 @@ class NodeComponent extends PositionComponent
           maxLines: 3,
           ellipsis: '...',
         );
-        _contentPainter.layout(maxWidth: width - 16);
+        _contentPainter!.layout(maxWidth: width - 16);
         break;
       case NodeViewMode.fullContent:
         if (node.content != null && node.content!.isNotEmpty) {
@@ -217,7 +218,9 @@ class NodeComponent extends PositionComponent
             maxLines: maxLines > 0 ? maxLines : 1,
             ellipsis: '...',
           );
-          _fullContentPainter.layout(maxWidth: width - 16);
+          _fullContentPainter!.layout(maxWidth: width - 16);
+        } else {
+          _fullContentPainter = null;
         }
         break;
     }
@@ -354,7 +357,7 @@ class NodeComponent extends PositionComponent
     _titlePainter.paint(canvas, Offset(8 + iconOffset, 10));
 
     // 绘制子项数量
-    _contentPainter.paint(
+    _contentPainter?.paint(
       canvas,
       Offset(8 + iconOffset, _titlePainter.height + 14),
     );
@@ -482,12 +485,12 @@ class NodeComponent extends PositionComponent
     canvas.drawCircle(Offset(centerX, centerY), width / 2 - 2, _borderPaint);
 
     // 绘制首字母
-    if (node.viewMode == NodeViewMode.compact) {
-      _contentPainter.paint(
+    if (node.viewMode == NodeViewMode.compact && _contentPainter != null) {
+      _contentPainter!.paint(
         canvas,
         Offset(
-          centerX - _contentPainter.width / 2,
-          centerY - _contentPainter.height / 2,
+          centerX - _contentPainter!.width / 2,
+          centerY - _contentPainter!.height / 2,
         ),
       );
     }
@@ -516,7 +519,7 @@ class NodeComponent extends PositionComponent
           _iconPainter!.paint(canvas, const Offset(8, 10));
         }
         _titlePainter.paint(canvas, Offset(8 + iconOffset, 8));
-        _contentPainter.paint(
+        _contentPainter?.paint(
           canvas,
           Offset(8 + iconOffset, _titlePainter.height + 8),
         );
@@ -803,28 +806,32 @@ class NodeComponent extends PositionComponent
       // 文件夹节点显示引用的节点数量
       final childCount = node.references.length;
       final newText = '$childCount item${childCount != 1 ? "s" : ""}';
-      if (_contentPainter.text?.toPlainText() != newText) {
-        _contentPainter.text = TextSpan(
+      if (_contentPainter?.text?.toPlainText() != newText) {
+        _contentPainter ??= TextPainter(textDirection: TextDirection.ltr);
+        _contentPainter!.text = TextSpan(
           text: newText,
           style: TextStyle(color: theme.text.secondary, fontSize: 11),
         );
-        _contentPainter.layout();
+        _contentPainter!.layout();
       }
     } else {
       // 根据视图模式更新内容
       switch (node.viewMode) {
         case NodeViewMode.titleOnly:
           // titleOnly 模式没有内容绘制器
+          _contentPainter = null;
           break;
 
         case NodeViewMode.compact:
           // compact 模式不显示内容
+          _contentPainter = null;
           break;
 
         case NodeViewMode.titleWithPreview:
           final previewText = _getPreviewText();
-          if (_contentPainter.text?.toPlainText() != previewText) {
-            _contentPainter.text = TextSpan(
+          if (_contentPainter?.text?.toPlainText() != previewText) {
+            _contentPainter ??= TextPainter(textDirection: TextDirection.ltr);
+            _contentPainter!.text = TextSpan(
               text: previewText,
               style: TextStyle(
                 color: theme.text.secondary,
@@ -832,9 +839,9 @@ class NodeComponent extends PositionComponent
                 height: 1.4,
               ),
             );
-            _contentPainter.layout(maxWidth: width - 16);
-          } else if (needsLayout) {
-            _contentPainter.layout(maxWidth: width - 16);
+            _contentPainter!.layout(maxWidth: width - 16);
+          } else if (needsLayout && _contentPainter != null) {
+            _contentPainter!.layout(maxWidth: width - 16);
           }
           break;
 
@@ -849,8 +856,9 @@ class NodeComponent extends PositionComponent
             const lineHeight = 11.0 * 1.4;
             final maxLines = (availableHeight / lineHeight).floor();
 
-            if (_fullContentPainter.text?.toPlainText() != node.content) {
-              _fullContentPainter.text = TextSpan(
+            if (_fullContentPainter?.text?.toPlainText() != node.content) {
+              _fullContentPainter ??= TextPainter(textDirection: TextDirection.ltr);
+              _fullContentPainter!.text = TextSpan(
                 text: node.content,
                 style: TextStyle(
                   color: theme.text.primary,
@@ -858,12 +866,14 @@ class NodeComponent extends PositionComponent
                   height: 1.4,
                 ),
               );
-              _fullContentPainter.maxLines = maxLines > 0 ? maxLines : 1;
-              _fullContentPainter.ellipsis = '...';
-              _fullContentPainter.layout(maxWidth: width - 16);
-            } else if (needsLayout) {
-              _fullContentPainter.layout(maxWidth: width - 16);
+              _fullContentPainter!.maxLines = maxLines > 0 ? maxLines : 1;
+              _fullContentPainter!.ellipsis = '...';
+              _fullContentPainter!.layout(maxWidth: width - 16);
+            } else if (needsLayout && _fullContentPainter != null) {
+              _fullContentPainter!.layout(maxWidth: width - 16);
             }
+          } else {
+            _fullContentPainter = null;
           }
           break;
       }
