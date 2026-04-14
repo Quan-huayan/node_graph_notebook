@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
+import '../../../core/plugin/ui_hooks/hook_context.dart';
+import '../../../core/plugin/ui_hooks/hook_point_registry.dart';
 import 'ui/node_editor_panel_hook_simple.dart';
 
 /// 编辑器插件
@@ -30,6 +32,17 @@ class EditorPlugin extends Plugin {
   @override
   List<HookFactory> registerHooks() => [
     NodeEditorPanelHook.new,
+  ];
+
+  @override
+  List<HookPointDefinition> registerHookPoints() => [
+    const HookPointDefinition(
+      id: 'editor.node',
+      name: 'Node Editor',
+      description: 'Node content editor',
+      category: 'editor',
+      contextType: NodeEditorHookContext,
+    ),
   ];
 
   @override

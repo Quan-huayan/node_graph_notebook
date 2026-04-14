@@ -28,7 +28,6 @@ import 'core/middleware/undo_middleware.dart';
 import 'core/middleware/validation_middleware.dart';
 import 'core/models/node.dart';
 import 'core/plugin/builtin_plugin_loader.dart';
-import 'core/plugin/dynamic_provider_widget.dart';
 import 'core/plugin/plugin.dart';
 import 'core/plugin/ui_hooks/hook_context.dart';
 import 'core/plugin/ui_hooks/hook_point_registry.dart';
@@ -432,33 +431,6 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
       contextType: StatusBarHookContext,
     ))
 
-    // 节点编辑器 Hook 点
-    ..registerHookPoint(const HookPointDefinition(
-      id: 'editor.node',
-      name: 'Node Editor',
-      description: 'Node content editor',
-      category: 'editor',
-      contextType: NodeEditorHookContext,
-    ))
-
-    // 导入导出 Hook 点
-    ..registerHookPoint(const HookPointDefinition(
-      id: 'import_export',
-      name: 'Import/Export',
-      description: 'Import/export functionality',
-      category: 'import_export',
-      contextType: ImportExportHookContext,
-    ))
-
-    // 设置 Hook 点
-    ..registerHookPoint(const HookPointDefinition(
-      id: 'settings',
-      name: 'Settings',
-      description: 'Application settings',
-      category: 'settings',
-      contextType: SettingsHookContext,
-    ))
-
     // 帮助 Hook 点
     ..registerHookPoint(const HookPointDefinition(
       id: 'help',
@@ -575,7 +547,7 @@ class _NodeGraphNotebookAppState extends State<NodeGraphNotebookApp> {
         // 1. coreProviders: 核心依赖（Settings, Repository, CommandBus 等）- 不重建
         // 2. serviceProviders: 插件服务（由 ServiceRegistry 生成）- 可重建
         // 3. blocProviders: 插件 BLoC（由 PluginManager 生成，依赖服务）- 可重建
-        return HybridDynamicProviderWidget(
+        return DynamicProviderWidget(
           serviceRegistry: _serviceRegistry,
           pluginManager: pluginManager,
           coreProviders: [

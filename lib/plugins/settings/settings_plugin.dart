@@ -1,5 +1,7 @@
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
+import '../../../core/plugin/ui_hooks/hook_context.dart';
+import '../../../core/plugin/ui_hooks/hook_point_registry.dart';
 import 'settings_toolbar_hook.dart';
 
 /// Settings 插件
@@ -29,6 +31,17 @@ class SettingsPlugin extends Plugin {
   @override
   List<HookFactory> registerHooks() => [
     SettingsToolbarHook.new,
+  ];
+
+  @override
+  List<HookPointDefinition> registerHookPoints() => [
+    const HookPointDefinition(
+      id: 'settings',
+      name: 'Settings',
+      description: 'Application settings',
+      category: 'settings',
+      contextType: SettingsHookContext,
+    ),
   ];
 
   @override

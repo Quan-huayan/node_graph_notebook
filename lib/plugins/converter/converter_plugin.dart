@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
+import '../../../core/plugin/ui_hooks/hook_context.dart';
+import '../../../core/plugin/ui_hooks/hook_point_registry.dart';
 import 'bloc/converter_bloc.dart';
 import 'converter_toolbar_hook.dart';
 import 'service/converter_service_bindings.dart';
@@ -48,6 +50,17 @@ class ConverterPlugin extends Plugin {
   @override
   List<HookFactory> registerHooks() => [
     ConverterToolbarHook.new,
+  ];
+
+  @override
+  List<HookPointDefinition> registerHookPoints() => [
+    const HookPointDefinition(
+      id: 'import_export',
+      name: 'Import/Export',
+      description: 'Import/export functionality',
+      category: 'import_export',
+      contextType: ImportExportHookContext,
+    ),
   ];
 
   @override
