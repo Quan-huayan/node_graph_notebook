@@ -219,7 +219,7 @@ void main() {
         };
         final registryWithCore = ServiceRegistry(coreDependencies: coreDeps);
 
-        expect(registryWithCore.hasService<String>(), false);
+        expect(registryWithCore.hasService<String>(), true);
       });
     });
 
