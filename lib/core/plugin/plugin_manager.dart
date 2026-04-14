@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../commands/command_bus.dart';
-import '../events/app_events.dart';
+import '../cqrs/commands/command_bus.dart';
+import '../cqrs/commands/events/app_events.dart';
 import '../execution/execution_engine.dart';
 import '../execution/task_registry.dart';
 import '../repositories/graph_repository.dart';

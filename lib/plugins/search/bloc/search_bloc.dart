@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/commands/command_bus.dart';
 import '../../../../core/cqrs/queries/advanced_search_query.dart';
 import '../../../../core/cqrs/query/query_bus.dart';
 import '../../../../core/models/node.dart';
+import '../../../core/cqrs/commands/command_bus.dart';
 import '../../graph/service/node_service.dart';
 import '../command/search_commands.dart';
 import '../model/search_query.dart';

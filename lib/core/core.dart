@@ -3,15 +3,15 @@
 /// 提供应用程序的核心功能和框架抽象
 library;
 
-// 命令系统
-export 'commands/command_bus.dart';
-export 'commands/models/command_context.dart';
-export 'commands/models/command_handler.dart';
-export 'commands/models/middleware.dart';
 // 配置
 export 'config/feature_flags.dart';
+// 命令系统
+export 'cqrs/commands/command_bus.dart';
 // 事件系统
-export 'events/app_events.dart';
+export 'cqrs/commands/events/app_events.dart';
+export 'cqrs/commands/models/command_context.dart';
+export 'cqrs/commands/models/command_handler.dart';
+export 'cqrs/commands/models/middleware.dart';
 // 执行系统
 export 'execution/cpu_task.dart';
 export 'execution/execution_engine.dart';

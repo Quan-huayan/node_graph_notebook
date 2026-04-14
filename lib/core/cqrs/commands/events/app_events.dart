@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../models/models.dart';
+import '../../../models/models.dart';
 
 /// 应用事件基类
 ///

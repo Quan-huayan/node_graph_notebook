@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:node_graph_notebook/core/commands/models/command_context.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_context.dart';
 import 'package:node_graph_notebook/core/models/enums.dart';
 import 'package:node_graph_notebook/core/models/graph.dart';
 import 'package:node_graph_notebook/core/models/node.dart';

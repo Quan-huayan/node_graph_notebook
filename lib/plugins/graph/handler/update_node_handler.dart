@@ -1,8 +1,8 @@
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/commands/models/command_handler.dart';
-import '../../../../core/events/app_events.dart';
 import '../../../../core/models/node.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../command/node_commands.dart';
 import '../service/node_service.dart';
 

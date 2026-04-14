@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/commands/models/command_handler.dart';
+
 import '../../../../core/repositories/graph_repository.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../../layout/event/layout_events.dart';
 import '../command/graph_commands.dart';
 

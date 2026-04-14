@@ -1,5 +1,5 @@
-import '../../../core/commands/models/command.dart';
-import '../../../core/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
 
 /// 删除Lua脚本命令
 class DeleteLuaScriptCommand extends Command<void> {

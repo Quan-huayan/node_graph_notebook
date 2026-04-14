@@ -1,6 +1,6 @@
-import '../../../core/commands/models/command.dart';
-import '../../../core/commands/models/command_context.dart';
-import '../../../core/commands/models/command_handler.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../command/toggle_lua_script_command.dart';
 import '../service/lua_script_service.dart';
 

@@ -10,8 +10,6 @@ import '../../core/plugin/ui_hooks/hook_metadata.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
 import '../../core/plugin/ui_hooks/sidebar_tab_hook_base.dart';
 import '../../core/services/i18n.dart';
-import '../../core/ui_layout/rendering/flutter_renderer.dart';
-import '../../core/ui_layout/ui_layout_service.dart';
 import '../../core/utils/logger.dart';
 import '../../plugins/graph/bloc/graph_bloc.dart';
 import '../../plugins/graph/bloc/graph_event.dart';

@@ -28,8 +28,8 @@ library;
 import 'package:flame/events.dart';
 import 'package:flutter/gestures.dart';
 
-import '../../commands/command_bus.dart';
-import '../../events/app_events.dart';
+import '../../cqrs/commands/command_bus.dart';
+import '../../cqrs/commands/events/app_events.dart';
 import '../coordinate_system.dart';
 
 /// Type of user interaction with a Node.

@@ -1,9 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
-import 'package:node_graph_notebook/core/commands/models/command_context.dart';
-import 'package:node_graph_notebook/core/events/app_events.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/events/app_events.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_context.dart';
 import 'package:node_graph_notebook/core/models/connection.dart';
 import 'package:node_graph_notebook/core/models/enums.dart';
 import 'package:node_graph_notebook/core/models/node.dart';

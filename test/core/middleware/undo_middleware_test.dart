@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/commands/models/command.dart';
-import 'package:node_graph_notebook/core/commands/models/command_context.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_context.dart';
 import 'package:node_graph_notebook/core/middleware/undo_middleware.dart';
 
 class UndoableTestCommand extends Command<dynamic> {

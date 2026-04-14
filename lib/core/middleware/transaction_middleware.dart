@@ -1,6 +1,6 @@
-import '../commands/models/command.dart';
-import '../commands/models/command_context.dart';
-import '../commands/models/middleware.dart';
+import '../cqrs/commands/models/command.dart';
+import '../cqrs/commands/models/command_context.dart';
+import '../cqrs/commands/models/middleware.dart';
 
 /// 事务中间件
 ///

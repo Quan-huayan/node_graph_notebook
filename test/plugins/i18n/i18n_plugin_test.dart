@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/plugin/plugin.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_registry.dart';
 import 'package:node_graph_notebook/core/services/i18n.dart';

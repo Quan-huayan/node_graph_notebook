@@ -1,9 +1,9 @@
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/commands/models/command_handler.dart';
-import '../../../../core/events/app_events.dart';
 import '../../../../core/models/node_reference.dart';
 import '../../../../core/repositories/node_repository.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../command/node_commands.dart';
 
 /// 断开节点连接处理器

@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
-import 'package:node_graph_notebook/core/commands/models/command.dart';
-import 'package:node_graph_notebook/core/commands/models/command_context.dart';
-import 'package:node_graph_notebook/core/commands/models/command_handler.dart';
-import 'package:node_graph_notebook/core/events/app_events.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/events/app_events.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_context.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_handler.dart';
 import 'package:node_graph_notebook/core/plugin/api/api_registry.dart';
 import 'package:node_graph_notebook/core/plugin/plugin.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_base.dart';

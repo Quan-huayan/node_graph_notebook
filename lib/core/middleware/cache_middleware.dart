@@ -1,5 +1,5 @@
-import '../commands/models/command.dart';
-import '../commands/models/command_context.dart';
+import '../cqrs/commands/models/command.dart';
+import '../cqrs/commands/models/command_context.dart';
 import '../plugin/middleware/middleware_plugin.dart';
 import '../plugin/plugin_context.dart';
 import '../plugin/plugin_metadata.dart';

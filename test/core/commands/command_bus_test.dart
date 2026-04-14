@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
-import 'package:node_graph_notebook/core/commands/models/command.dart';
-import 'package:node_graph_notebook/core/commands/models/command_context.dart';
-import 'package:node_graph_notebook/core/commands/models/command_handler.dart';
-import 'package:node_graph_notebook/core/commands/models/middleware.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_context.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_handler.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/middleware.dart';
 
 // 模拟命令类
 class MockCommand extends Command<dynamic> {

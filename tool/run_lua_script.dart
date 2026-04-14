@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 import 'package:node_graph_notebook/plugins/graph/command/node_commands.dart';
 import 'package:node_graph_notebook/plugins/graph/handler/create_node_handler.dart';

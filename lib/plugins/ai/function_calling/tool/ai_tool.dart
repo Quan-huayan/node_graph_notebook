@@ -4,8 +4,8 @@
 /// 支持类似 OpenAI function calling 的功能
 library;
 
-import '../../../../core/commands/command_bus.dart';
-import '../../../../core/commands/models/command.dart';
+import '../../../../core/cqrs/commands/command_bus.dart';
+import '../../../../core/cqrs/commands/models/command.dart';
 import '../../../../core/cqrs/query/query.dart';
 import '../../../../core/cqrs/query/query_bus.dart';
 import '../../../../core/plugin/plugin_context.dart';

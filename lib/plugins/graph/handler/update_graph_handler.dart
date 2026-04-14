@@ -1,7 +1,7 @@
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/models/graph.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../command/graph_commands.dart';
 import '../service/graph_service.dart';
 

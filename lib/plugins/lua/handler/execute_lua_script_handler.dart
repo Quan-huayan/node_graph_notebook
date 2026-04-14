@@ -1,7 +1,7 @@
 import 'dart:io';
-import '../../../core/commands/models/command.dart';
-import '../../../core/commands/models/command_context.dart';
-import '../../../core/commands/models/command_handler.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../command/execute_lua_script_command.dart';
 import '../models/lua_execution_result.dart';
 import '../service/lua_engine_service.dart';

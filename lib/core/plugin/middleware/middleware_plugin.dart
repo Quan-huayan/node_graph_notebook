@@ -1,5 +1,5 @@
-import '../../commands/models/command.dart';
-import '../../commands/models/command_context.dart';
+import '../../cqrs/commands/models/command.dart';
+import '../../cqrs/commands/models/command_context.dart';
 import '../plugin.dart';
 
 /// 中间件插件接口

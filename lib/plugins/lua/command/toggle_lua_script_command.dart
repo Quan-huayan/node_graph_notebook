@@ -1,5 +1,5 @@
-import '../../../core/commands/models/command.dart';
-import '../../../core/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
 
 /// 切换Lua脚本启用状态命令
 class ToggleLuaScriptCommand extends Command<void> {

@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/commands/command_bus.dart';
 import '../../../../core/cqrs/query/query_bus.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/plugin/plugin_context.dart';
 import '../../../../core/repositories/graph_repository.dart';
 import '../../../../core/repositories/node_repository.dart';
 import '../../../../core/services/services.dart';
+import '../../../core/cqrs/commands/command_bus.dart';
 import '../../graph/bloc/node_bloc.dart';
 import '../../graph/bloc/node_event.dart';
 import '../function_calling/service/ai_function_calling_service.dart';

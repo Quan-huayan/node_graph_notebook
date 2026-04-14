@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:node_graph_notebook/core/commands/models/command_context.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_context.dart';
 import 'package:node_graph_notebook/core/repositories/graph_repository.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
 import 'package:node_graph_notebook/core/services/infrastructure/storage_path_service.dart';

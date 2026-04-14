@@ -1,9 +1,9 @@
 import 'dart:ui';
 
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/events/app_events.dart';
 import '../../../../core/models/node.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
 import '../service/ai_service.dart';
 
 /// 分析节点命令

@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../commands/command_bus.dart';
+import '../cqrs/commands/command_bus.dart';
 import '../execution/cpu_task.dart';
 import '../execution/execution_engine.dart';
 import '../execution/task_registry.dart';

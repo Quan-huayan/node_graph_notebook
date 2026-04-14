@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../core/plugin/ui_hooks/hook_context.dart';
 import '../../core/plugin/ui_hooks/hook_registry.dart';
-import '../../core/ui_layout/rendering/flutter_renderer.dart';
-import '../../core/ui_layout/ui_layout_service.dart';
 import '../../core/utils/logger.dart';
 
 const _log = AppLogger('CoreToolbar');
@@ -23,8 +20,7 @@ class CoreToolbar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) => _buildDefaultToolbar(context);
 
   /// 构建默认 Toolbar（当 Hook 不存在时使用）
-  Widget _buildDefaultToolbar(BuildContext context) {
-    return AnimatedBuilder(
+  Widget _buildDefaultToolbar(BuildContext context) => AnimatedBuilder(
       animation: hookRegistry,
       builder: (context, child) {
         final hookWrappers = hookRegistry.getHookWrappers('main.toolbar');
@@ -54,5 +50,4 @@ class CoreToolbar extends StatelessWidget implements PreferredSizeWidget {
         );
       },
     );
-  }
 }

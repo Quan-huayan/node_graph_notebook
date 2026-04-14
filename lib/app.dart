@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'core/commands/command_bus.dart';
+import 'core/cqrs/commands/command_bus.dart';
 import 'core/cqrs/handlers/advanced_search_handler.dart';
 import 'core/cqrs/handlers/graph_query_handler.dart';
 import 'core/cqrs/handlers/list_nodes_handler.dart';

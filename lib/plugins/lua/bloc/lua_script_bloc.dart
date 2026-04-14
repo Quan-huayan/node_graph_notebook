@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/commands/command_bus.dart';
+import '../../../core/cqrs/commands/command_bus.dart';
 import '../command/create_lua_script_command.dart';
 import '../command/delete_lua_script_command.dart';
 import '../command/execute_lua_script_command.dart';

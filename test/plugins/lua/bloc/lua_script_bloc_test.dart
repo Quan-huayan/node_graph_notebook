@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
 import 'package:node_graph_notebook/plugins/lua/bloc/lua_script_bloc.dart';
 import 'package:node_graph_notebook/plugins/lua/bloc/lua_script_event.dart';
 import 'package:node_graph_notebook/plugins/lua/models/lua_script.dart';

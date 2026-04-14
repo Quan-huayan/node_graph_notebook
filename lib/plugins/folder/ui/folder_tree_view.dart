@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/commands/command_bus.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/services/i18n.dart';
 import '../../../../core/services/services.dart';
+import '../../../core/cqrs/commands/command_bus.dart';
 import '../../editor/ui/markdown_editor_page.dart';
 import '../../graph/bloc/graph_bloc.dart';
 import '../../graph/bloc/graph_event.dart';

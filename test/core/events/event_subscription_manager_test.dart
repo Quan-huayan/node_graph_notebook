@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/events/event_subscription_manager.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/events/event_subscription_manager.dart';
 
 void main() {
   group('EventSubscriptionManager', () {

@@ -1,4 +1,4 @@
-import '../../../../core/events/app_events.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
 
 /// 布局应用事件
 ///

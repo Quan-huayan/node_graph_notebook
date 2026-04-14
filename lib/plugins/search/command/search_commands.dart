@@ -1,5 +1,5 @@
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
 import '../model/search_preset_model.dart';
 
 /// 保存搜索预设命令

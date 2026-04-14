@@ -1,9 +1,9 @@
 import 'dart:ui';
 
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/events/app_events.dart';
 import '../../../../core/repositories/node_repository.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
 
 /// 应用布局命令
 ///

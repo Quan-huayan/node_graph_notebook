@@ -29,7 +29,7 @@
 /// ```
 library;
 
-import '../../events/app_events.dart';
+import '../../cqrs/commands/events/app_events.dart';
 import '../coordinate_system.dart';
 
 /// Event published when a Node is attached to a Hook.

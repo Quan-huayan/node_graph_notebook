@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/commands/models/command_handler.dart';
 import '../../../../core/repositories/graph_repository.dart';
 import '../../../../core/repositories/node_repository.dart';
 import '../../../../core/services/infrastructure/storage_path_service.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../command/repair_data_command.dart';
 
 /// 数据修复命令处理器

@@ -53,7 +53,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../commands/command_bus.dart';
+import '../cqrs/commands/command_bus.dart';
 import '../models/node.dart';
 import 'coordinate_system.dart';
 import 'events/layout_events.dart';

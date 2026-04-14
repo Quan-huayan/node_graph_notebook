@@ -33,7 +33,6 @@ library;
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import '../layout_strategy.dart';

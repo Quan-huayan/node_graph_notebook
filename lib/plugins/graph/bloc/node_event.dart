@@ -2,8 +2,8 @@ import 'dart:ui';
 
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/events/app_events.dart';
 import '../../../../core/models/models.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
 
 /// 节点事件基类
 ///

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../utils/logger.dart';
+import '../../../utils/logger.dart';
 
 /// Logger for EventSubscriptionManager
 const _log = AppLogger('EventSubscriptionManager');

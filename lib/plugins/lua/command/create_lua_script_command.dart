@@ -1,5 +1,5 @@
-import '../../../core/commands/models/command.dart';
-import '../../../core/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
 import '../models/lua_script.dart';
 
 /// 创建Lua脚本命令

@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/plugin/plugin.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_base.dart';
 import 'package:node_graph_notebook/core/plugin/ui_hooks/hook_context.dart';

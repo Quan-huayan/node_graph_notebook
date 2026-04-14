@@ -5,13 +5,13 @@ import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/commands/command_bus.dart';
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/events/app_events.dart';
-import '../../../../core/events/event_subscription_manager.dart';
 import '../../../../core/models/models.dart';
 import '../../../../core/repositories/graph_repository.dart';
 import '../../../../core/repositories/node_repository.dart';
+import '../../../core/cqrs/commands/command_bus.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
+import '../../../core/cqrs/commands/events/event_subscription_manager.dart';
+import '../../../core/cqrs/commands/models/command.dart';
 import '../../layout/command/layout_commands.dart';
 import '../command/graph_commands.dart';
 import '../service/graph_service.dart';

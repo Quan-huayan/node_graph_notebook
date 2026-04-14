@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:node_graph_notebook/core/commands/models/command_context.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/models/command_context.dart';
 import 'package:node_graph_notebook/plugins/search/command/search_commands.dart';
 import 'package:node_graph_notebook/plugins/search/handler/delete_search_preset_handler.dart';
 import 'package:node_graph_notebook/plugins/search/handler/save_search_preset_handler.dart';

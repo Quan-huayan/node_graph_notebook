@@ -1,4 +1,4 @@
-import '../../events/app_events.dart';
+import '../events/app_events.dart';
 import 'command_context.dart';
 
 /// 命令基类

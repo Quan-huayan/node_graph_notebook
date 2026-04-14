@@ -1,9 +1,9 @@
-import '../../../../core/commands/models/command.dart';
-import '../../../../core/commands/models/command_context.dart';
-import '../../../../core/commands/models/command_handler.dart';
-import '../../../../core/events/app_events.dart';
 import '../../../../core/models/connection.dart';
 import '../../../../core/models/enums.dart';
+import '../../../core/cqrs/commands/events/app_events.dart';
+import '../../../core/cqrs/commands/models/command.dart';
+import '../../../core/cqrs/commands/models/command_context.dart';
+import '../../../core/cqrs/commands/models/command_handler.dart';
 import '../../graph/service/node_service.dart';
 import '../command/ai_commands.dart';
 import '../service/ai_service.dart';

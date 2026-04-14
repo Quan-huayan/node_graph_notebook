@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import '../events/app_events.dart';
-import '../plugin/middleware/middleware_pipeline.dart';
-import '../plugin/middleware/middleware_plugin.dart';
+import '../../plugin/middleware/middleware_pipeline.dart';
+import '../../plugin/middleware/middleware_plugin.dart';
 import 'command_handler_registry.dart';
+import 'events/app_events.dart';
 import 'models/command.dart';
 import 'models/command_context.dart';
 import 'models/command_handler.dart';

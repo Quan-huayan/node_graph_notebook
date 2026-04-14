@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:node_graph_notebook/core/commands/command_bus.dart';
+import 'package:node_graph_notebook/core/cqrs/commands/command_bus.dart';
 import 'package:node_graph_notebook/core/models/models.dart';
 import 'package:node_graph_notebook/core/repositories/graph_repository.dart';
 import 'package:node_graph_notebook/core/repositories/node_repository.dart';
