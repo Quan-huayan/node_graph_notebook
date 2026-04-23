@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
 import '../../../core/ui_layout/node_template.dart';
-import '../sidebarNode/ui/sidebar_hook_renderer_simple.dart';
+import '../sidebarNode/ui/sidebar_hook_renderer.dart';
 import 'folder_node_template.dart';
 import 'folder_sidebar_tab_hook.dart';
 

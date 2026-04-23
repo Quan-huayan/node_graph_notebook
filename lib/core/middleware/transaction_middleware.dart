@@ -1,6 +1,10 @@
 import '../cqrs/commands/models/command.dart';
 import '../cqrs/commands/models/command_context.dart';
 import '../cqrs/commands/models/middleware.dart';
+import '../utils/logger.dart';
+
+/// 事务中间件日志记录器
+const _log = AppLogger('TransactionMiddleware');
 
 /// 事务中间件
 ///
@@ -23,16 +27,15 @@ class TransactionMiddleware extends CommandMiddlewareBase {
     CommandContext context,
     CommandResult result,
   ) async {
-    // 清除事务标记
-    context.clearMetadata();
+    context.setMetadata('_transaction_active', null);
+    context.setMetadata('_transaction_command', null);
 
-    // 如果命令失败且可撤销，尝试自动撤销
     if (!result.isSuccess && command.isUndoable) {
       try {
         await command.undo(context);
       } catch (e) {
-        // 撤销失败，记录错误但不影响原错误抛出
-        // 这里可以添加日志或错误通知
+        // 撤销失败时忽略异常，因为事务已经失败
+        _log.warning('Undo failed during transaction rollback', error: e);
       }
     }
   }

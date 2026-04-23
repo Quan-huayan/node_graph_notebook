@@ -166,7 +166,7 @@ class FileSystemNodeRepository implements NodeRepository {
       }
 
       // 异步保存邻接表
-      _adjacencyList!.save();
+      await _adjacencyList!.save();
     }
   }
 
@@ -521,7 +521,7 @@ class FileSystemNodeRepository implements NodeRepository {
       // 只查找一级标题（单个 # 号）
       var contentStartIndex = 0;
       for (var i = 0; i < trimmedContentLines.length; i++) {
-        final line = contentLines[i];
+        final line = trimmedContentLines[i];
         final trimmed = line.trim();
 
         // 只匹配一级标题：行首是 # 且后面不是 #
@@ -568,8 +568,20 @@ class FileSystemNodeRepository implements NodeRepository {
       return references;
     }
 
-    (frontmatter['references'] as Map<String, dynamic>).forEach((key, value) {
-      final refData = value as Map<String, dynamic>;
+    final refsValue = frontmatter['references'];
+    if (refsValue == null) {
+      return references;
+    }
+
+    if (refsValue is! Map<String, dynamic>) {
+      return references;
+    }
+
+    refsValue.forEach((key, value) {
+      if (value is! Map<String, dynamic>) {
+        return;
+      }
+      final refData = value;
 
       // 构建 properties Map
       final properties = <String, dynamic>{};

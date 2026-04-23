@@ -172,7 +172,7 @@ class I18nTranslations {
 
       // === After configuration ===
       // use Test AI Connection to verify
-      'After configuration': '配置完成后，使用测试 AI 连接进行验证',
+      'After configuration': 'After configuration, use Test AI Connection to verify',
 
       // === 快捷键 ===
       'Keyboard Shortcuts': 'Keyboard Shortcuts',
@@ -540,7 +540,7 @@ class I18nTranslations {
 
       // === After configuration ===
       // use Test AI Connection to verify
-      'After configuration': 'use Test AI Connection to verify',
+      'After configuration': '配置完成后，使用测试 AI 连接进行验证',
 
       // === 快捷键 ===
       'Keyboard Shortcuts': '键盘快捷键',

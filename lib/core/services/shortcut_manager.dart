@@ -108,7 +108,8 @@ class ShortcutManager {
   bool handleKeyPress(KeyEvent event) {
     for (final entry in _shortcuts.entries) {
       final activator = entry.key;
-      if (activator.accepts(event, ServicesBinding.instance.keyboard)) {
+      final keyboard = ServicesBinding.instance.keyboard;
+      if (activator.accepts(event, keyboard)) {
         entry.value();
         return true;
       }

@@ -159,25 +159,27 @@ class _SidebarNodeListContentState extends State<_SidebarNodeListContent> {
       return _buildEmptyState(context);
     }
 
-    return ListView.builder(
+    return Container(
       key: _key,
-      itemCount: nodeDataList.length,
-      itemBuilder: (context, index) {
-        final nodeData = nodeDataList[index];
-        final isSelected = _selectedNodeId == nodeData.id;
+      child: ListView.builder(
+        itemCount: nodeDataList.length,
+        itemBuilder: (context, index) {
+          final nodeData = nodeDataList[index];
+          final isSelected = _selectedNodeId == nodeData.id;
 
-        return _NodeListItem(
-          nodeData: nodeData,
-          isSelected: isSelected,
-          onTap: () => _handleNodeTap(nodeData),
-          onDoubleTap: () => _handleNodeDoubleTap(nodeData),
-        );
-      },
+          return _NodeListItem(
+            nodeData: nodeData,
+            isSelected: isSelected,
+            onTap: () => _handleNodeTap(nodeData),
+            onDoubleTap: () => _handleNodeDoubleTap(nodeData),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final i18n = I18n.of(context);
+    final i18n = _tryGetI18n(context);
 
     return Center(
       child: Column(
@@ -186,12 +188,12 @@ class _SidebarNodeListContentState extends State<_SidebarNodeListContent> {
           const Icon(Icons.folder_open, size: 48, color: Colors.grey),
           const SizedBox(height: 16),
           Text(
-            i18n.t('No nodes yet'),
+            i18n?.t('No nodes yet') ?? 'No nodes yet',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            i18n.t('Create your first node to get started'),
+            i18n?.t('Create your first node to get started') ?? 'Create your first node to get started',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -199,8 +201,28 @@ class _SidebarNodeListContentState extends State<_SidebarNodeListContent> {
     );
   }
 
+  I18n? _tryGetI18n(BuildContext context) {
+    try {
+      return I18n.of(context);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  UILayoutService? _tryGetLayoutService() {
+    try {
+      final buildContext = widget.hookContext.get<BuildContext>('buildContext');
+      if (buildContext != null) {
+        return buildContext.read<UILayoutService>();
+      }
+    } catch (_) {}
+    return null;
+  }
+
   void _handleNodeTap(NodeData nodeData) {
     _log.debug('Node tapped: ${nodeData.id}');
+
+    final previousSelectedNodeId = _selectedNodeId;
 
     // 更新选中状态
     setState(() {
@@ -209,18 +231,19 @@ class _SidebarNodeListContentState extends State<_SidebarNodeListContent> {
 
     // 高亮选中的节点
     // 可以通过UILayoutService更新节点的渲染状态
-    if (_layoutService != null) {
+    final layoutService = _layoutService ?? _tryGetLayoutService();
+    if (layoutService != null) {
       try {
         // 清除之前选中节点的高亮
-        if (_selectedNodeId != null && _selectedNodeId != nodeData.id) {
-          _layoutService!.updateNodeRenderState(
-            nodeId: _selectedNodeId!,
+        if (previousSelectedNodeId != null && previousSelectedNodeId != nodeData.id) {
+          layoutService.updateNodeRenderState(
+            nodeId: previousSelectedNodeId,
             renderState: 'rendering',
           );
         }
 
         // 高亮当前选中的节点
-        _layoutService!.updateNodeRenderState(
+        layoutService.updateNodeRenderState(
           nodeId: nodeData.id,
           renderState: 'hovering',
         );
@@ -292,7 +315,6 @@ class _NodeListItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      onDoubleTap: onDoubleTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(

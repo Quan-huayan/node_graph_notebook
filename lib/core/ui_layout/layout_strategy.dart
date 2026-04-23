@@ -462,7 +462,7 @@ class GridLayoutCalculator implements LayoutCalculator {
     // Calculate cell size
     final availableWidth = hook.size.width - config.padding.horizontal;
     final cellWidth = (availableWidth -
-            (columns - 1) * config.crossAxisSpacing) /
+            (columnCount - 1) * config.crossAxisSpacing) /
         columnCount;
 
     // Combine children and attached nodes

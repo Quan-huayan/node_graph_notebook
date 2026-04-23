@@ -180,13 +180,21 @@ class MetadataValidationResult {
   /// [errorMessage] 错误信息（无效时）
   const MetadataValidationResult._({required this.isValid, this.errorMessage});
 
-  /// 创建有效结果
-  factory MetadataValidationResult.valid() => const MetadataValidationResult._(isValid: true);
-
   /// 创建无效结果
   ///
   /// [message] 错误信息
-  factory MetadataValidationResult.invalid(String message) => MetadataValidationResult._(isValid: false, errorMessage: message);
+  /// 注意：由于 message 是动态的，无法使用 const 构造函数
+  /// 但我们会缓存相同消息的实例以优化内存使用
+  factory MetadataValidationResult.invalid(String message) => _cache.putIfAbsent(
+      message,
+      () => MetadataValidationResult._(isValid: false, errorMessage: message),
+    );
+
+  /// 创建有效结果
+  factory MetadataValidationResult.valid() => const MetadataValidationResult._(isValid: true);
+
+  /// 缓存常用的错误消息实例
+  static final Map<String, MetadataValidationResult> _cache = {};
 
   /// 是否有效
   final bool isValid;
@@ -313,6 +321,41 @@ class StandardSchemas {
     description: 'AI 分析详细结果',
   );
 
+  /// 创建时间 Schema
+  static const MetadataSchema createdAt = MetadataSchema(
+    type: MetadataType.dateTime,
+    required: false,
+    description: '节点创建时间',
+  );
+
+  /// 更新时间 Schema
+  static const MetadataSchema updatedAt = MetadataSchema(
+    type: MetadataType.dateTime,
+    required: false,
+    description: '节点最后更新时间',
+  );
+
+  /// 访问时间 Schema
+  static const MetadataSchema accessedAt = MetadataSchema(
+    type: MetadataType.dateTime,
+    required: false,
+    description: '节点最后访问时间',
+  );
+
+  /// 版本号 Schema
+  static const MetadataSchema version = MetadataSchema(
+    type: MetadataType.string,
+    required: false,
+    description: '节点版本号',
+  );
+
+  /// 作者 Schema
+  static const MetadataSchema author = MetadataSchema(
+    type: MetadataType.string,
+    required: false,
+    description: '节点创建者',
+  );
+
   /// 获取所有标准 Schema 的映射
   static Map<String, MetadataSchema> getAll() => {
       StandardMetadata.nodeType: nodeType,
@@ -328,5 +371,10 @@ class StandardSchemas {
       StandardMetadata.priority: priority,
       StandardMetadata.aiScore: aiScore,
       StandardMetadata.aiAnalysis: aiAnalysis,
+      StandardMetadata.createdAt: createdAt,
+      StandardMetadata.updatedAt: updatedAt,
+      StandardMetadata.accessedAt: accessedAt,
+      StandardMetadata.version: version,
+      StandardMetadata.author: author,
     };
 }

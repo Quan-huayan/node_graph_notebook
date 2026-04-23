@@ -139,11 +139,19 @@ class LuaScriptService {
   /// 移除元数据注释
   String _removeMetadata(String content) {
     final lines = content.split('\n');
-    final startIndex = lines.indexWhere((line) =>
-        !line.startsWith('--') || line.trim().isEmpty);
+    var startIndex = -1;
+    
+    for (var i = 0; i < lines.length; i++) {
+      final trimmedLine = lines[i].trim();
+      if (trimmedLine.isEmpty || trimmedLine.startsWith('--')) {
+        continue;
+      }
+      startIndex = i;
+      break;
+    }
 
     if (startIndex == -1) {
-      return content;
+      return '';
     }
 
     return lines.sublist(startIndex).join('\n');
@@ -161,18 +169,14 @@ class LuaScriptService {
         await dir.create(recursive: true);
       }
 
-      // 构建文件路径
-      final fileName = '${script.name}.lua';
+      final fileName = '${script.id}.lua';
       final filePath = path.join(_scriptsDirectory, fileName);
       final file = File(filePath);
 
-      // 构建脚本内容（包含元数据）
       final content = _buildScriptContent(script);
 
-      // 写入文件
       await file.writeAsString(content);
 
-      // 更新缓存
       _scriptCache[script.id] = script.copyWith(updatedAt: DateTime.now());
     } catch (e) {
       throw LuaScriptServiceException('保存脚本失败: $e');

@@ -30,7 +30,15 @@ class SafeCallback {
 
     try {
       final result = callback();
+      // 区分 TypeError 和其他异常，TypeError 应该抛出
+      // 如果 T 是非可空类型但 result 是 null，应该抛出 TypeError
+      if (result == null && null is! T) {
+        throw TypeError();
+      }
       return result as T?;
+    } on TypeError {
+      // 类型转换错误应该重新抛出，让调用者知道类型不匹配
+      rethrow;
     } catch (e) {
       const AppLogger('SafeCallback').warning('Callback failed', error: e);
       onError?.call(e);
@@ -64,7 +72,15 @@ class SafeCallback {
 
     try {
       final result = await callback();
+      // 区分 TypeError 和其他异常，TypeError 应该抛出
+      // 如果 T 是非可空类型但 result 是 null，应该抛出 TypeError
+      if (result == null && null is! T) {
+        throw TypeError();
+      }
       return result as T?;
+    } on TypeError {
+      // 类型转换错误应该重新抛出，让调用者知道类型不匹配
+      rethrow;
     } catch (e) {
       const AppLogger('SafeCallback').warning('Async callback failed', error: e);
       onError?.call(e);
@@ -101,7 +117,15 @@ class SafeCallback {
 
     try {
       final result = callback(arg);
+      // 区分 TypeError 和其他异常，TypeError 应该抛出
+      // 如果 T 是非可空类型但 result 是 null，应该抛出 TypeError
+      if (result == null && null is! T) {
+        throw TypeError();
+      }
       return result as T?;
+    } on TypeError {
+      // 类型转换错误应该重新抛出，让调用者知道类型不匹配
+      rethrow;
     } catch (e) {
       const AppLogger('SafeCallback').warning('Callback with arg failed', error: e);
       onError?.call(e);
@@ -138,7 +162,15 @@ class SafeCallback {
 
     try {
       final result = callback(args);
+      // 区分 TypeError 和其他异常，TypeError 应该抛出
+      // 如果 T 是非可空类型但 result 是 null，应该抛出 TypeError
+      if (result == null && null is! T) {
+        throw TypeError();
+      }
       return result as T?;
+    } on TypeError {
+      // 类型转换错误应该重新抛出，让调用者知道类型不匹配
+      rethrow;
     } catch (e) {
       const AppLogger('SafeCallback').warning('Callback with args failed', error: e);
       onError?.call(e);

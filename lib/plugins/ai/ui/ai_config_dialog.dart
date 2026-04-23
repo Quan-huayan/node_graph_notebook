@@ -87,6 +87,11 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
                         label: Text(i18n.t('Anthropic')),
                         icon: const Icon(Icons.cloud),
                       ),
+                      ButtonSegment(
+                        value: 'zhipuai',
+                        label: Text(i18n.t('智谱AI')),
+                        icon: const Icon(Icons.smart_toy),
+                      ),
                     ],
                     selected: {_selectedProvider},
                     onSelectionChanged: (Set<String> newSelection) {
@@ -96,9 +101,12 @@ class _AIConfigDialogState extends State<AIConfigDialog> {
                         if (_selectedProvider == 'openai') {
                           _baseUrlController.text = 'https://api.openai.com/v1';
                           _modelController.text = 'gpt-4';
-                        } else {
+                        } else if (_selectedProvider == 'anthropic') {
                           _baseUrlController.text = 'https://api.anthropic.com';
                           _modelController.text = 'claude-3-sonnet-20240229';
+                        } else if (_selectedProvider == 'zhipuai') {
+                          _baseUrlController.text = 'https://open.bigmodel.cn/api/paas/v4';
+                          _modelController.text = 'glm-4';
                         }
                       });
                     },

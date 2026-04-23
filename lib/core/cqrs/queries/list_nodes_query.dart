@@ -58,7 +58,10 @@ class GetNodeReadModelsQuery extends CacheableQuery<List<NodeReadModel>> {
   final List<String> nodeIds;
 
   @override
-  String get cacheKey => 'GetNodeReadModels:${nodeIds.join(',')}';
+  String get cacheKey {
+    final sortedIds = List<String>.from(nodeIds)..sort();
+    return 'GetNodeReadModels:${sortedIds.join(',')}';
+  }
 
   @override
   Duration? get cacheTtl => const Duration(minutes: 10);

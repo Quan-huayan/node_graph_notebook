@@ -228,7 +228,19 @@ class Node {
           _mapEquals(metadata, other.metadata);
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(
+    id,
+    title,
+    content,
+    position,
+    size,
+    viewMode,
+    color,
+    createdAt,
+    updatedAt,
+    _mapHashCode(metadata),
+    _mapHashCode(references),
+  );
 
   @override
   String toString() =>
@@ -243,4 +255,9 @@ class Node {
     }
     return true;
   }
+
+  /// 辅助方法：计算 Map 的稳定 hashCode
+  int _mapHashCode<K, V>(Map<K, V> map) => Object.hashAllUnordered(
+      map.entries.map((e) => Object.hash(e.key, e.value)),
+    );
 }

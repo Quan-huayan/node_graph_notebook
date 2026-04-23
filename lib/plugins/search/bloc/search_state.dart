@@ -5,6 +5,11 @@ import '../../../../core/models/models.dart';
 import '../model/search_preset_model.dart';
 import '../model/search_query.dart';
 
+/// 哨兵值，用于区分 "未传递参数" 和 "传递了 null"
+class _Sentinel {
+  const _Sentinel();
+}
+
 /// 搜索状态基类
 @immutable
 class SearchState extends Equatable {
@@ -68,19 +73,25 @@ class SearchState extends Equatable {
   /// 复制并更新部分字段
   ///
   /// 返回一个新的搜索状态，其中包含指定的字段更新
+  /// 使用 [clearQuery] 参数设置为 true 来清除当前查询
   SearchState copyWith({
     List<Node>? results,
     List<SearchPreset>? presets,
     bool? isLoading,
     bool? isSavingPreset,
-    SearchQuery? currentQuery,
+    Object? currentQuery = const _Sentinel(),
     String? error,
+    bool clearQuery = false,
   }) => SearchState(
       results: results ?? this.results,
       presets: presets ?? this.presets,
       isLoading: isLoading ?? this.isLoading,
       isSavingPreset: isSavingPreset ?? this.isSavingPreset,
-      currentQuery: currentQuery ?? this.currentQuery,
+      currentQuery: clearQuery
+          ? null
+          : (currentQuery is SearchQuery
+              ? currentQuery
+              : (currentQuery == null ? null : this.currentQuery)),
       error: error,
     );
 

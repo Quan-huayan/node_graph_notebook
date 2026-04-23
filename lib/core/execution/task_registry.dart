@@ -51,7 +51,7 @@ class TaskRegistry {
   /// 结果转换器映射
   ///
   /// 键为任务类型，值为转换器函数
-  final Map<String, ResultConverter> _converters = {};
+  final Map<String, ResultConverter<dynamic>> _converters = {};
 
   /// 注册任务类型
   ///
@@ -76,7 +76,7 @@ class TaskRegistry {
   void registerTaskType(
     String taskType,
     CPUTaskFactory factory,
-    ResultConverter converter,
+    ResultConverter<dynamic> converter,
   ) {
     _factories[taskType] = factory;
     _converters[taskType] = converter;
@@ -85,7 +85,19 @@ class TaskRegistry {
   /// 批量注册任务类型
   ///
   /// 用于一次性注册多个任务类型
-  void registerAll(Map<String, CPUTaskFactory> factories, Map<String, ResultConverter> converters) {
+  void registerAll(Map<String, CPUTaskFactory> factories, Map<String, ResultConverter<dynamic>> converters) {
+    // 验证工厂和转换器的键一致性
+    final factoryKeys = factories.keys.toSet();
+    final converterKeys = converters.keys.toSet();
+
+    assert(
+      factoryKeys.length == converterKeys.length &&
+          factoryKeys.containsAll(converterKeys) &&
+          converterKeys.containsAll(factoryKeys),
+      'Factories and converters must have matching keys. '
+      'Factories: ${factoryKeys.toList()}, Converters: ${converterKeys.toList()}',
+    );
+
     for (final entry in factories.entries) {
       _factories[entry.key] = entry.value;
     }

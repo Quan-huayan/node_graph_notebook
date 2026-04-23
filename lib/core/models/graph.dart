@@ -53,8 +53,13 @@ class GraphViewConfig {
   );
 
   /// 转换为JSON
-  Map<String, dynamic> toJson() =>
-      _$GraphViewConfigToJson(this)..['camera'] = camera.toJson();
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'camera': camera.toJson(),
+    'autoLayoutEnabled': autoLayoutEnabled,
+    'layoutAlgorithm': layoutAlgorithm.name,
+    'showConnectionLines': showConnectionLines,
+    'backgroundStyle': backgroundStyle.name,
+  };
 
   /// 复制并更新部分字段
   GraphViewConfig copyWith({
@@ -250,8 +255,17 @@ class Graph {
   final DateTime updatedAt;
 
   /// 转换为JSON
-  Map<String, dynamic> toJson() =>
-      _$GraphToJson(this)..['viewConfig'] = viewConfig.toJson();
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'name': name,
+    'nodeIds': nodeIds,
+    'nodePositions': nodePositions.map(
+      (k, e) => MapEntry(k, const OffsetConverter().toJson(e)),
+    ),
+    'viewConfig': viewConfig.toJson(),
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   /// 复制并更新部分字段
   Graph copyWith({

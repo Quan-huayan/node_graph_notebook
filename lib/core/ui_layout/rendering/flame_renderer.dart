@@ -301,7 +301,7 @@ class FlameRenderer extends RendererBase<FlameComponent> {
     // Calculate cell size
     final availableWidth = hook.size.width - config.padding.horizontal;
     final cellWidth =
-        (availableWidth - (columns - 1) * config.crossAxisSpacing) /
+        (availableWidth - (columnCount - 1) * config.crossAxisSpacing) /
             columnCount;
 
     // Combine children and attached nodes

@@ -291,18 +291,17 @@ mixin DefaultNodeRendering on Node implements NodeRendering {
 /// - 显示节点边框
 /// - 支持基本的交互
 class _PlaceholderNodeComponent extends PositionComponent {
-  _PlaceholderNodeComponent({required this.node}) {
+  _PlaceholderNodeComponent({required this.node, Offset? position}) {
     // 设置组件大小
     size = Vector2(
       node.size.width.isFinite ? node.size.width : 200,
       node.size.height.isFinite ? node.size.height : 80,
     );
 
-    // 设置组件位置
-    position = Vector2(
-      node.position.dx,
-      node.position.dy,
-    );
+    // 设置组件位置（由外部传入，不使用已弃用的 node.position）
+    this.position = position != null 
+        ? Vector2(position.dx, position.dy)
+        : Vector2.zero();
   }
 
   final Node node;

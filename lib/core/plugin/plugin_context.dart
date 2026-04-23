@@ -108,7 +108,11 @@ class PluginContext {
   /// [defaultValue] 默认值（如果配置不存在）
   T? getConfig<T>(String key, {T? defaultValue}) {
     if (!_config.containsKey(key)) return defaultValue;
-    return _config[key] as T?;
+    final value = _config[key];
+    if (value is T) {
+      return value;
+    }
+    return defaultValue;
   }
 
   /// 检查配置键是否存在
@@ -171,7 +175,7 @@ class PluginContext {
         throw PluginStateException(
           'plugin',
           'uninitialized',
-          'NodeRepository available',
+          'NodeRepository not available',
         );
       }
       return nodeRepository as T;
@@ -181,7 +185,7 @@ class PluginContext {
         throw PluginStateException(
           'plugin',
           'uninitialized',
-          'GraphRepository available',
+          'GraphRepository not available',
         );
       }
       return graphRepository as T;

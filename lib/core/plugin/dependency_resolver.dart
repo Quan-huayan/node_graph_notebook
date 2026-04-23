@@ -182,15 +182,22 @@ class DependencyResolver {
   /// 返回所有直接或间接依赖该插件的其他插件
   Set<String> getDependents(
     String pluginId,
-    Map<String, PluginMetadata> plugins,
-  ) {
+    Map<String, PluginMetadata> plugins, [
+    Set<String>? visited,
+  ]) {
+    visited ??= {};
+    
+    if (visited.contains(pluginId)) {
+      return {};
+    }
+    visited.add(pluginId);
+
     final dependents = <String>{};
 
     for (final entry in plugins.entries) {
       if (entry.value.dependencies.contains(pluginId)) {
-        dependents..add(entry.key)
-        // 递归查找依赖该插件的插件
-        ..addAll(getDependents(entry.key, plugins));
+        dependents.add(entry.key);
+        dependents.addAll(getDependents(entry.key, plugins, visited));
       }
     }
 

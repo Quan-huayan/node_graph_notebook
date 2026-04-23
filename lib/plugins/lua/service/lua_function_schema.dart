@@ -195,7 +195,7 @@ class LuaFunctionSchema {
       final error = param.validate(value);
       if (error != null) {
         throw LuaFunctionValidationException(
-          'Function "$name" parameter ${i + 1} ($name): $error',
+          'parameter ${i + 1} (${param.name}): $error',
         );
       }
 

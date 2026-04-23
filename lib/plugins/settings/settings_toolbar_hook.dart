@@ -28,7 +28,7 @@ class SettingsToolbarHook extends MainToolbarHookBase {
 
     // 使用Consumer监听语言变化
     return Consumer<I18n>(
-      builder: (ctx, i18n, child) => IconButton(
+      builder: (_, i18n, _) => IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () => _openSettingsDialog(context),
           tooltip: i18n.t('Settings'),

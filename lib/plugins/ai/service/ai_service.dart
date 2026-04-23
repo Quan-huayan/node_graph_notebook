@@ -368,7 +368,7 @@ class AIServiceImpl extends ChangeNotifier implements AIService {
       throw AIServiceException('AI provider not set');
     }
 
-    final contextText = context.map((n) => n.content).join('\n\n');
+    final contextText = context.map((n) => n.content ?? '').join('\n\n');
     final prompt = 'Context:\n\n$contextText\n\nQuestion: $question';
     return _provider!.generate(prompt);
   }

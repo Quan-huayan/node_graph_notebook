@@ -330,7 +330,7 @@ class AIToolParameterValidator {
         if (schema.containsKey('properties')) {
           final nestedErrors = _validateAgainstSchema(
             value,
-            schema,
+            Map<String, dynamic>.from(schema),
           );
           if (nestedErrors.isNotEmpty) {
             return nestedErrors.join('; ');

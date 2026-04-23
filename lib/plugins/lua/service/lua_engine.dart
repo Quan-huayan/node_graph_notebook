@@ -313,7 +313,6 @@ class LuaEngine {
     } else if (value is String) {
       final escaped = value
           .replaceAll('\\', '\\\\')
-          .replaceAll('"', '\\"')
           .replaceAll("'", "\\'")
           .replaceAll('\n', '\\n')
           .replaceAll('\r', '\\r')
@@ -392,7 +391,7 @@ class LuaEngine {
 
       _runtime!.run(script);
 
-      final errorLine = _outputBuffer.cast<String>().firstWhere(
+      final errorLine = _outputBuffer.firstWhere(
         (line) => line.startsWith('[CALLBACK_ERROR]'),
         orElse: () => '',
       );

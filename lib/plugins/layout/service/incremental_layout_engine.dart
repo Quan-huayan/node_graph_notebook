@@ -128,19 +128,22 @@ class IncrementalLayoutEngine {
 
     // BFS遍历邻居
     var currentRadius = 0;
-    while (queue.isNotEmpty && currentRadius < influenceRadius) {
+    while (queue.isNotEmpty && currentRadius <= influenceRadius) {
       final levelSize = queue.length;
+      final isLastLevel = currentRadius == influenceRadius;
 
       for (var i = 0; i < levelSize; i++) {
         final nodeId = queue.removeFirst();
         affected.add(nodeId);
 
-        // 添加邻居
-        final neighbors = adjacencyList.getAllNeighbors(nodeId);
-        for (final neighborId in neighbors) {
-          if (!visited.contains(neighborId)) {
-            visited.add(neighborId);
-            queue.add(neighborId);
+        // 只在未达到影响半径时添加邻居
+        if (!isLastLevel) {
+          final neighbors = adjacencyList.getAllNeighbors(nodeId);
+          for (final neighborId in neighbors) {
+            if (!visited.contains(neighborId)) {
+              visited.add(neighborId);
+              queue.add(neighborId);
+            }
           }
         }
       }

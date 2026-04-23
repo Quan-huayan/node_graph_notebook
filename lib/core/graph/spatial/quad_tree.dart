@@ -149,7 +149,16 @@ class QuadTree {
     final itemsToRedistribute = List<QuadTreeItem>.from(_items);
     _items.clear();
 
-    itemsToRedistribute.forEach(insert);
+    for (final item in itemsToRedistribute) {
+      // 尝试插入到子节点
+      if (_northWest!.insert(item)) continue;
+      if (_northEast!.insert(item)) continue;
+      if (_southWest!.insert(item)) continue;
+      if (_southEast!.insert(item)) continue;
+
+      // 如果子节点都无法插入，保留在当前节点
+      _items.add(item);
+    }
   }
 
   /// 查询范围内的所有项目
@@ -227,6 +236,9 @@ class QuadTree {
   /// [newPosition] 新位置
   /// 返回是否成功更新
   bool update(QuadTreeItem item, Vector2 newPosition) {
+    // 保存旧位置以便恢复
+    final oldPosition = item.position.clone();
+
     // 移除旧位置
     if (!remove(item)) {
       return false;
@@ -235,8 +247,15 @@ class QuadTree {
     // 更新位置
     item.position = newPosition;
 
-    // 插入新位置
-    return insert(item);
+    // 尝试插入新位置
+    if (insert(item)) {
+      return true;
+    }
+
+    // 插入失败，恢复旧位置并重新插入
+    item.position = oldPosition;
+    insert(item);
+    return false;
   }
 
   /// 清空所有项目

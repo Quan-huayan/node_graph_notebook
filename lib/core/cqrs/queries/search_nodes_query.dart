@@ -69,6 +69,8 @@ class FilterNodesQuery extends CacheableQuery<List<Node>> {
       '${tags?.join(',') ?? "all"}:'
       '${createdAtStart?.millisecondsSinceEpoch ?? "any"}:'
       '${createdAtEnd?.millisecondsSinceEpoch ?? "any"}:'
+      '${updatedAtStart?.millisecondsSinceEpoch ?? "any"}:'
+      '${updatedAtEnd?.millisecondsSinceEpoch ?? "any"}:'
       '$limit:$offset';
 
   @override

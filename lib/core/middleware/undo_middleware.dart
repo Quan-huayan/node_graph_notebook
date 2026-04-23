@@ -73,13 +73,18 @@ class UndoMiddleware extends CommandMiddlewareBase {
     }
 
     final command = _undoStack.removeLast();
-    await command.undo(context);
-    _redoStack.add(command);
+    try {
+      await command.undo(context);
+      _redoStack.add(command);
+    } catch (e) {
+      _undoStack.add(command);
+      rethrow;
+    }
   }
 
   /// 重做最后一个被撤销的命令
   ///
-  /// 从重做栈取出最后一个命令并重新执行
+  /// 从重做栈取出最后一个命令并通过 CommandBus 重新执行
   /// 执行成功后，将命令移动回撤销栈
   ///
   /// 抛出 [StateError] 如果没有可重做的命令
@@ -89,14 +94,21 @@ class UndoMiddleware extends CommandMiddlewareBase {
     }
 
     final command = _redoStack.removeLast();
-    final result = await command.execute(context);
+    
+    try {
+      final result = await context.commandBus.dispatch(command);
 
-    // 只有执行成功才加入撤销栈
-    if (result.isSuccess) {
-      _undoStack.add(command);
+      if (result.isSuccess) {
+        _undoStack.add(command);
+      } else {
+        _redoStack.add(command);
+      }
+
+      return result;
+    } catch (e) {
+      _redoStack.add(command);
+      rethrow;
     }
-
-    return result;
   }
 
   /// 清空撤销和重做栈

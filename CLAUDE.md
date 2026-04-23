@@ -499,21 +499,47 @@ test/
 │   ├── i18n/                      # i18n plugin tests
 │   ├── lua/                       # Lua plugin tests (service, handler, integration)
 │   └── search/                    # Search plugin tests
-├── integration/                   # Integration tests
+├── integration/                   # Backend integration tests
+│   ├── folder_integration_test.dart
 │   ├── graph_integration_test.dart
 │   └── graph_workflow_integration_test.dart
 ├── performance/                   # Performance tests
 │   ├── cqrs_performance_test.dart
 │   └── graph_performance_test.dart
 └── test_config.dart               # Test configuration
+
+integration_test/                  # UI Integration Tests (User Flow Tests)
+├── app_test.dart                  # Application startup tests
+├── helpers/                       # Test utilities
+│   ├── helpers.dart               # Export file
+│   ├── test_app.dart              # Test app wrapper
+│   ├── pump_app.dart              # Widget pump helpers
+│   ├── finder_extensions.dart     # Custom finders
+│   ├── test_data_factory.dart     # Test data creation
+│   ├── test_actions.dart          # User action helpers
+│   ├── test_assertions.dart       # Assertion helpers
+│   └── flame_test_helper.dart     # Flame rendering helpers
+├── flows/                         # User flow tests
+│   ├── node_management_test.dart  # Node CRUD operations
+│   └── folder_operations_test.dart # Folder management
+├── widgets/                       # Widget interaction tests
+│   └── graph_view_test.dart       # Graph view rendering
+└── accessibility/                 # Accessibility tests
 ```
 
 **Running Tests:**
 ```bash
+# Unit and backend integration tests
 flutter test                           # Run all tests
 flutter test test/core/commands/command_bus_test.dart  # Run specific file
 flutter test --coverage                # Run with coverage
 flutter test test/plugins/lua/integration/  # Run specific directory
+
+# UI Integration tests (user flow tests)
+flutter test integration_test/         # Run all UI integration tests
+flutter test integration_test/flows/   # Run flow tests only
+.\tool\run_integration_test.bat        # Windows script
+./tool/run_integration_test.sh         # Unix/macOS script
 ```
 
 **Testing Guidelines:**
@@ -524,6 +550,15 @@ flutter test test/plugins/lua/integration/  # Run specific directory
 - Integration tests for complex workflows
 - Performance tests for critical paths
 - Boundary tests for edge cases
+- **UI Integration Tests**: Test complete user flows from UI perspective
+
+**UI Integration Testing:**
+The `integration_test/` directory contains UI-focused integration tests that simulate real user interactions:
+- **Test App Wrapper**: Provides isolated test environment with temporary file system
+- **Custom Finders**: `findNodeById()`, `findButton()`, `findTextField()`, etc.
+- **Test Actions**: `NodeActions`, `FolderActions`, `SearchActions`, `SettingsActions`
+- **Flame Helpers**: Special utilities for testing Flame game engine rendering
+- **Test Data Factory**: Quick creation of test nodes, folders, and connections
 
 **Note:** The test suite includes comprehensive coverage across all layers. Run tests regularly to catch regressions early.
 

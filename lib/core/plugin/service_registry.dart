@@ -631,6 +631,7 @@ class ServiceRegistry with ChangeNotifier {
   static const _interfaceImplementations = <String, List<String>>{
     // Repository 实现
     'FileSystemNodeRepository': ['NodeRepository'],
+    'FileSystemGraphRepository': ['GraphRepository'],
 
     // Graph Service 实现
     'NodeServiceImpl': ['NodeService'],

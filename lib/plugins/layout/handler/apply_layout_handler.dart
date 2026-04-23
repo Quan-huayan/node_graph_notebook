@@ -140,7 +140,7 @@ class BatchMoveNodesHandler implements CommandHandler<BatchMoveNodesCommand> {
         final node = await _nodeRepository.load(entry.key);
         if (node != null) {
           // 保存原始位置
-          command.oldPositions[entry.key] = node.position;
+          command.oldPositions![entry.key] = node.position;
 
           // 更新位置
           await _nodeRepository.save(node.copyWith(position: entry.value));

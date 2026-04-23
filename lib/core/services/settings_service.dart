@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/logger.dart';
 import 'infrastructure/storage_path_service.dart';
+export 'infrastructure/storage_path_service.dart' show StorageUsage;
 
 /// Logger for SettingsService
 const _log = AppLogger('SettingsService');

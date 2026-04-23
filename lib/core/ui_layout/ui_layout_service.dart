@@ -796,12 +796,16 @@ class UILayoutService {
         'nodeAttachments': _nodeToHookIndex.map((nodeId, hookId) {
           final hook = _hookIndex[hookId];
           final attachment = hook?.getAttachedNode(nodeId);
+          final localPosition = attachment?.localPosition;
           return MapEntry(nodeId, {
             'hookId': hookId,
             'position': {
-              'x': attachment?.localPosition.x ?? 0.0,
-              'y': attachment?.localPosition.y ?? 0.0,
-              'type': attachment?.localPosition.type.name ?? 'absolute',
+              'x': localPosition?.x ?? 0.0,
+              'y': localPosition?.y ?? 0.0,
+              'type': localPosition?.type.name ?? 'absolute',
+              'index': localPosition?.type == PositionType.sequential
+                  ? localPosition?.x.toInt()
+                  : null,
             },
             'zIndex': attachment?.zIndex ?? 0,
           });
@@ -853,12 +857,12 @@ class UILayoutService {
 
         final x = positionData['x'] as double;
         final y = positionData['y'] as double;
-        final index = positionData['index'] as int?;
+        final index = positionData['index'] as int? ?? x.toInt();
 
         final position = switch (positionType) {
           PositionType.absolute => LocalPosition.absolute(x, y),
           PositionType.proportional => LocalPosition.proportional(x, y),
-          PositionType.sequential => LocalPosition.sequential(index: index ?? 0),
+          PositionType.sequential => LocalPosition.sequential(index: index),
           PositionType.fill => const LocalPosition.fill(),
         };
 

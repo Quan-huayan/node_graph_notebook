@@ -62,10 +62,27 @@ class NodeReference {
       other is NodeReference &&
           runtimeType == other.runtimeType &&
           nodeId == other.nodeId &&
-          type == other.type;
+          type == other.type &&
+          _mapEquals(properties, other.properties);
 
   @override
-  int get hashCode => nodeId.hashCode ^ type.hashCode;
+  int get hashCode => Object.hash(
+    nodeId,
+    type,
+    _mapHashCode(properties),
+  );
+
+  bool _mapEquals(Map<String, dynamic> a, Map<String, dynamic> b) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key) || a[key] != b[key]) return false;
+    }
+    return true;
+  }
+
+  int _mapHashCode(Map<String, dynamic> map) => Object.hashAllUnordered(
+      map.entries.map((e) => Object.hash(e.key, e.value)),
+    );
 
   @override
   String toString() =>

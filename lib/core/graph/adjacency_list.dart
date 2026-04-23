@@ -118,21 +118,27 @@ class AdjacencyList {
   ///
   /// [nodeId] 节点ID
   void removeNode(String nodeId) {
-    // 删除所有出边
+    // 获取所有指向此节点的节点（入边来源）
+    final incomingSources = _incomingEdges[nodeId];
+    if (incomingSources != null) {
+      // 从这些节点的出边中移除此节点
+      for (final sourceId in incomingSources) {
+        _outgoingEdges[sourceId]?.remove(nodeId);
+      }
+    }
+
+    // 获取所有此节点指向的节点（出边目标）
+    final outgoingTargets = _outgoingEdges[nodeId];
+    if (outgoingTargets != null) {
+      // 从这些节点的入边中移除此节点
+      for (final targetId in outgoingTargets) {
+        _incomingEdges[targetId]?.remove(nodeId);
+      }
+    }
+
+    // 删除节点本身的边记录
     _outgoingEdges.remove(nodeId);
-
-    // 删除所有入边
     _incomingEdges.remove(nodeId);
-
-    // 从其他节点的出边中移除此节点
-    for (final edges in _outgoingEdges.values) {
-      edges.remove(nodeId);
-    }
-
-    // 从其他节点的入边中移除此节点
-    for (final edges in _incomingEdges.values) {
-      edges.remove(nodeId);
-    }
   }
 
   /// 获取节点的出边邻居

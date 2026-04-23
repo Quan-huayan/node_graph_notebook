@@ -66,16 +66,28 @@ class PluginCommunicationImpl implements PluginCommunication {
     String message,
     dynamic data,
   ) async {
-    // 这里需要实现消息发送逻辑
-    // 例如通过插件管理器找到目标插件并调用其处理方法
-    _messageStreamController.add(
-      PluginMessage(
-        fromPluginId: 'system',
-        message: message,
-        data: data,
-        timestamp: DateTime.now(),
-      ),
+    final pluginMessage = PluginMessage(
+      fromPluginId: 'system',
+      message: message,
+      data: data,
+      timestamp: DateTime.now(),
     );
+    
+    _messageStreamController.add(pluginMessage);
+    
+    if (_handlers.containsKey(message)) {
+      dynamic lastResult;
+      for (final handler in _handlers[message]!) {
+        final result = handler(data);
+        if (result is Future) {
+          lastResult = await result;
+        } else {
+          lastResult = result;
+        }
+      }
+      return lastResult;
+    }
+    
     return null;
   }
 

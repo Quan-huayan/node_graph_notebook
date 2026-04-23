@@ -89,8 +89,8 @@ class AIFunctionCallingService {
     List<ChatMessage>? conversationHistory,
     required AIToolContext context,
   }) async {
-    // 初始化消息历史
-    final messages = conversationHistory ?? [];
+    // 初始化消息历史 - 创建新列表避免修改传入的列表
+    final messages = [...?conversationHistory];
     messages.add(ChatMessage(role: 'user', content: userMessage));
 
     // 获取适用于该提供商的工具

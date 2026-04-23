@@ -4,7 +4,6 @@
 library;
 
 // 数据恢复服务（将转换为插件）
-export 'data_recovery_service.dart';
 export 'infrastructure/settings_registry.dart';
 // 基础设施服务
 export 'infrastructure/storage_path_service.dart';

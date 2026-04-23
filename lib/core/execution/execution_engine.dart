@@ -76,10 +76,15 @@ class ExecutionEngine {
   /// [task] 要执行的 CPU 任务
   /// 返回任务执行结果
   ///
-  /// 抛出 [StateError] 如果引擎未初始化
+  /// 抛出 [StateError] 如果引擎未初始化或 TaskRegistry 未设置
   Future<T> executeCPU<T>(CPUTask<T> task) async {
     if (_pool == null) {
       throw StateError('ExecutionEngine not initialized. Call initialize() first.');
+    }
+
+    if (_taskRegistry == null) {
+      throw StateError('TaskRegistry not initialized. '
+          'Did you forget to pass TaskRegistry to initialize()?');
     }
 
     final taskData = _serializeTask(task);
@@ -126,6 +131,7 @@ class ExecutionEngine {
       _pool = null;
       _taskTypeToFunctionName.clear();
     }
+    _taskRegistry = null;
   }
 
   Map<String, dynamic> _serializeTask(CPUTask task) => task.serialize();

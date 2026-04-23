@@ -64,7 +64,7 @@ class _AITestDialogState extends State<AITestDialog> {
 
     try {
       final settingsService = context.read<SettingsService>();
-      final aiService = context.read<AIServiceImpl>();
+      final aiService = context.read<AIService>();
 
       // 验证配置
       if (!settingsService.isAIConfigured) {
@@ -81,6 +81,12 @@ class _AITestDialogState extends State<AITestDialog> {
       final AIProvider provider;
       if (settingsService.aiProvider == 'anthropic') {
         provider = AnthropicProvider(
+          apiKey: settingsService.aiApiKey!,
+          model: settingsService.aiModel,
+          baseUrl: settingsService.aiBaseUrl,
+        );
+      } else if (settingsService.aiProvider == 'zhipuai') {
+        provider = ZhipuAIProvider(
           apiKey: settingsService.aiApiKey!,
           model: settingsService.aiModel,
           baseUrl: settingsService.aiBaseUrl,

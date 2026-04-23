@@ -26,23 +26,37 @@ class MarketToolbarHook extends MainToolbarHookBase {
     final buildContext = context.data['buildContext'] as BuildContext?;
     if (buildContext == null) return const SizedBox.shrink();
 
-    // 使用Consumer监听语言变化
-    return Consumer<I18n>(
-      builder: (ctx, i18n, child) => IconButton(
+    final i18n = _tryGetI18n(buildContext);
+
+    if (i18n != null) {
+      return Consumer<I18n>(
+        builder: (_, i18n, _) => IconButton(
           icon: const Icon(Icons.extension),
-          onPressed: () => _openPluginMarket(context),
+          onPressed: () => _openPluginMarket(buildContext),
           tooltip: i18n.t('Plugin Market'),
         ),
+      );
+    }
+
+    return IconButton(
+      icon: const Icon(Icons.extension),
+      onPressed: () => _openPluginMarket(buildContext),
+      tooltip: 'Plugin Market',
     );
   }
 
-  void _openPluginMarket(MainToolbarHookContext context) {
-    final buildContext = context.data['buildContext'] as BuildContext?;
-    if (buildContext == null) return;
+  I18n? _tryGetI18n(BuildContext context) {
+    try {
+      return context.read<I18n?>();
+    } catch (_) {
+      return null;
+    }
+  }
 
+  void _openPluginMarket(BuildContext buildContext) {
     Navigator.push(
       buildContext,
-      MaterialPageRoute(builder: (ctx) => const PluginMarketPage()),
+      MaterialPageRoute(builder: (_) => const PluginMarketPage()),
     );
   }
 }

@@ -114,12 +114,49 @@ class YamlUtils {
         if (valueStr.isEmpty) {
           // 可能是嵌套对象或列表，需要向前看
           i++;
-          if (i >= lines.length) break;
+          if (i >= lines.length) {
+            // 文件末尾的空键，设置为空 Map
+            output[key] = <String, dynamic>{};
+            continue;
+          }
 
-          final nextLine = lines[i];
+          // 跳过空行和注释来判断类型
+          var lookAheadIndex = i;
+          while (lookAheadIndex < lines.length) {
+            final lookAheadLine = lines[lookAheadIndex].trim();
+            if (lookAheadLine.isEmpty || lookAheadLine.startsWith('#')) {
+              lookAheadIndex++;
+              continue;
+            }
+            break;
+          }
+
+          // 如果到了文件末尾，设置为空 Map
+          if (lookAheadIndex >= lines.length) {
+            output[key] = <String, dynamic>{};
+            continue;
+          }
+
+          final nextLine = lines[lookAheadIndex];
+          final nextLineIndent = nextLine.length - nextLine.trimLeft().length;
+
+          // 如果下一行的缩进不大于当前缩进，说明是空对象
+          if (nextLineIndent <= baseIndent) {
+            output[key] = <String, dynamic>{};
+            continue;
+          }
+
           if (nextLine.trim().startsWith('-')) {
             // 这是一个列表
             final list = <dynamic>[];
+            // 跳过开头的空行和注释
+            while (i < lines.length) {
+              if (lines[i].trim().isEmpty || lines[i].trim().startsWith('#')) {
+                i++;
+                continue;
+              }
+              break;
+            }
             while (i < lines.length) {
               if (lines[i].trim().isEmpty || lines[i].trim().startsWith('#')) {
                 i++;
@@ -146,7 +183,7 @@ class YamlUtils {
                 // 检查是否有更多属性
                 i++;
                 while (i < lines.length) {
-                  if (lines[i].trim().isEmpty) {
+                  if (lines[i].trim().isEmpty || lines[i].trim().startsWith('#')) {
                     i++;
                     continue;
                   }
@@ -219,11 +256,73 @@ class YamlUtils {
 
     // 数组格式 [a, b, c]
     if (value.startsWith('[') && value.endsWith(']')) {
-      final items = value.substring(1, value.length - 1).split(',');
-      return items.map((e) => e.trim()).toList();
+      final content = value.substring(1, value.length - 1).trim();
+      // 空数组
+      if (content.isEmpty) {
+        return <dynamic>[];
+      }
+      // 使用智能分割处理引号内的逗号
+      final items = _splitArrayContent(content);
+      return items.map((e) => _parseYamlValue(e.trim())).where((e) => e != null).toList();
     }
 
     // 默认返回字符串
     return value;
+  }
+
+  /// 智能分割数组内容，正确处理引号内的逗号
+  ///
+  /// [content] 数组括号内的内容
+  /// 返回分割后的元素列表
+  static List<String> _splitArrayContent(String content) {
+    final items = <String>[];
+    final buffer = StringBuffer();
+    String? inQuote;
+    var escaped = false;
+
+    for (var i = 0; i < content.length; i++) {
+      final char = content[i];
+
+      if (escaped) {
+        buffer.write(char);
+        escaped = false;
+        continue;
+      }
+
+      if (char == '\\') {
+        buffer.write(char);
+        escaped = true;
+        continue;
+      }
+
+      if (char == '"' || char == "'") {
+        if (inQuote == null) {
+          inQuote = char;
+        } else if (inQuote == char) {
+          inQuote = null;
+        }
+        buffer.write(char);
+        continue;
+      }
+
+      if (char == ',' && inQuote == null) {
+        final item = buffer.toString().trim();
+        if (item.isNotEmpty) {
+          items.add(item);
+        }
+        buffer.clear();
+        continue;
+      }
+
+      buffer.write(char);
+    }
+
+    // 添加最后一个元素
+    final lastItem = buffer.toString().trim();
+    if (lastItem.isNotEmpty) {
+      items.add(lastItem);
+    }
+
+    return items;
   }
 }

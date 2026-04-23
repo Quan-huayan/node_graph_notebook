@@ -55,10 +55,11 @@ class LanguageToggleHook extends MainToolbarHookBase {
   /// [context] BuildContext 用于显示对话框
   void _showLanguageDialog(BuildContext context) {
     final i18n = I18n.of(context);
+    final scaffoldContext = context;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text(i18n.t('Select Language')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -70,7 +71,7 @@ class LanguageToggleHook extends MainToolbarHookBase {
               trailing: i18n.currentLanguage == 'en'
                   ? const Icon(Icons.check, color: Colors.green)
                   : null,
-              onTap: () => _switchLanguage(ctx, i18n, 'en'),
+              onTap: () => _switchLanguage(dialogCtx, scaffoldContext, i18n, 'en'),
             ),
             const Divider(),
             // 中文选项
@@ -80,13 +81,13 @@ class LanguageToggleHook extends MainToolbarHookBase {
               trailing: i18n.currentLanguage == 'zh'
                   ? const Icon(Icons.check, color: Colors.green)
                   : null,
-              onTap: () => _switchLanguage(ctx, i18n, 'zh'),
+              onTap: () => _switchLanguage(dialogCtx, scaffoldContext, i18n, 'zh'),
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: Text(i18n.t('Close')),
           ),
         ],
@@ -96,15 +97,21 @@ class LanguageToggleHook extends MainToolbarHookBase {
 
   /// 切换语言
   ///
-  /// [context] BuildContext 用于关闭对话框和显示提示
+  /// [dialogContext] BuildContext 用于关闭对话框
+  /// [scaffoldContext] BuildContext 用于显示 SnackBar
   /// [i18n] I18n 服务实例
   /// [language] 目标语言代码 ('en' 或 'zh')
-  void _switchLanguage(BuildContext context, I18n i18n, String language) {
+  void _switchLanguage(
+    BuildContext dialogContext,
+    BuildContext scaffoldContext,
+    I18n i18n,
+    String language,
+  ) {
     i18n.switchLanguage(language);
-    Navigator.pop(context);
+    Navigator.pop(dialogContext);
 
     // 显示切换成功提示
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(scaffoldContext).showSnackBar(
       SnackBar(
         content: Text(
           language == 'zh'

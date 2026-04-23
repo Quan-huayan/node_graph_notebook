@@ -83,9 +83,8 @@ class MetadataValidator {
             'Invalid value for "$key"$contextStr: ${result.errorMessage}',
           ),
         );
-      } else {
-        results.add(result);
       }
+      // 验证成功时不添加结果到列表
     }
 
     // 检查必需的值

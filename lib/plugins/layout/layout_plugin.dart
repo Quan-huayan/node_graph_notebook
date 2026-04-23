@@ -1,5 +1,6 @@
 import '../../../core/plugin/plugin.dart';
 import '../../../core/plugin/ui_hooks/hook_base.dart';
+import '../../../core/repositories/node_repository.dart';
 import '../graph/service/graph_service.dart';
 import 'command/layout_commands.dart';
 import 'handler/apply_layout_handler.dart';
@@ -65,11 +66,18 @@ class LayoutPlugin extends Plugin {
     final commandBus = context.commandBus;
     final graphService = context.read<GraphService>();
     final layoutService = context.read<LayoutService>();
+    final nodeRepository = context.read<NodeRepository>();
 
     // 注册布局命令处理器
     commandBus.registerHandler<ApplyLayoutCommand>(
       ApplyLayoutHandler(graphService, layoutService, commandBus),
       ApplyLayoutCommand,
+    );
+
+    // 注册批量移动节点命令处理器
+    commandBus.registerHandler<BatchMoveNodesCommand>(
+      BatchMoveNodesHandler(nodeRepository),
+      BatchMoveNodesCommand,
     );
   }
 }

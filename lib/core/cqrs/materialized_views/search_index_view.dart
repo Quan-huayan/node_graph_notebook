@@ -198,29 +198,31 @@ class SearchIndexMaterializedView {
 
     final tokens = <String>{};
 
-    // 转小写
     final lowerText = text.toLowerCase();
 
-    // 按空格和常见分隔符分割
+    final englishWords = RegExp(r'[a-z0-9]+').allMatches(lowerText);
+    for (final match in englishWords) {
+      final word = match.group(0)!;
+      if (word.length >= minTokenLength) {
+        tokens.add(word);
+      }
+    }
+
     final pattern = RegExp(r'[\s\n\r\t,.;:!?()<>[\]{}\\/|`~@#$%^&*+\-=]+');
     final parts = lowerText.split(pattern);
 
     for (final part in parts) {
       if (part.length < minTokenLength) continue;
 
-      // 英文单词
       if (RegExp(r'^[a-z0-9]+$').hasMatch(part)) {
         tokens.add(part);
       } else {
-        // 中文或混合文本：提取所有连续的中文字符
         final chineseChars = part.split('').where((c) =>
           RegExp(r'[\u4e00-\u9fff]').hasMatch(c)
         ).toList();
 
-        // 添加单个中文字符
         chineseChars.forEach(tokens.add);
 
-        // 添加中文词语（简单的2-3字组合）
         for (var i = 0; i < chineseChars.length - 1; i++) {
           tokens.add(chineseChars[i] + chineseChars[i + 1]);
           if (i < chineseChars.length - 2) {

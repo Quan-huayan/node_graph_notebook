@@ -25,6 +25,20 @@ class APIRegistry {
   /// Value: API 注册信息
   final Map<String, APIRegistration> _apis = {};
 
+  /// 类型检查函数映射表
+  ///
+  /// Key: 类型名称
+  /// Value: 类型检查函数
+  static final Map<String, bool Function(dynamic)> _typeCheckers = {};
+
+  /// 注册类型检查函数
+  ///
+  /// [typeName] 类型名称
+  /// [checker] 类型检查函数
+  static void registerTypeChecker(String typeName, bool Function(dynamic) checker) {
+    _typeCheckers[typeName] = checker;
+  }
+
   /// 注册 API
   ///
   /// [pluginId] 插件 ID
@@ -42,7 +56,6 @@ class APIRegistry {
     dynamic api, {
     Type? interfaceType,
   }) {
-    // ✅ 接口类型验证
     if (interfaceType != null && api != null) {
       if (!_implementsInterface(api, interfaceType)) {
         throw APITypeMismatchException(
@@ -53,6 +66,37 @@ class APIRegistry {
       }
     }
 
+    if (_apis.containsKey(apiName)) {
+      throw APIAlreadyExistsException(
+        apiName,
+        _apis[apiName]!.pluginId,
+        pluginId,
+      );
+    }
+
+    _apis[apiName] = APIRegistration(
+      pluginId: pluginId,
+      apiName: apiName,
+      version: version,
+      api: api,
+    );
+  }
+
+  /// 注册 API（泛型版本，支持类型检查）
+  ///
+  /// [pluginId] 插件 ID
+  /// [apiName] API 名称
+  /// [version] API 版本
+  /// [api] API 实例
+  ///
+  /// 抛出 [APIAlreadyExistsException] 如果 API 已存在
+  /// 抛出 [APITypeMismatchException] 如果 API 实例不匹配接口类型 T
+  void registerAPIWithInterface<T>(
+    String pluginId,
+    String apiName,
+    String version,
+    T api,
+  ) {
     if (_apis.containsKey(apiName)) {
       throw APIAlreadyExistsException(
         apiName,
@@ -116,14 +160,20 @@ class APIRegistry {
 
   /// 检查实例是否实现了接口
   ///
-  /// 简化的接口实现检查
-  /// 注意：这是一个简化的实现，可能无法处理所有情况
+  /// 使用类型检查函数映射表进行验证
+  /// 如果没有注册对应的类型检查函数，则返回 false
   bool _implementsInterface(dynamic instance, Type interfaceType) {
     if (instance == null) {
       return false;
     }
 
-    return true;
+    final typeName = interfaceType.toString();
+    final checker = _typeCheckers[typeName];
+    if (checker != null) {
+      return checker(instance);
+    }
+
+    return false;
   }
 }
 

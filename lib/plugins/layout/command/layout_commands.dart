@@ -53,11 +53,10 @@ class ApplyLayoutCommand extends Command<Map<String, Offset>> {
       // 获取所有节点并恢复位置
       for (final entry in _originalPositions!.entries) {
         final nodes = await repository.queryAll();
-        final node = nodes.firstWhere(
-          (n) => n.id == entry.key,
-          orElse: () => nodes.first,
-        );
-        await repository.save(node.copyWith(position: entry.value));
+        final node = nodes.where((n) => n.id == entry.key).firstOrNull;
+        if (node != null) {
+          await repository.save(node.copyWith(position: entry.value));
+        }
       }
 
       // 发布节点更新事件（使用新API）
@@ -87,7 +86,7 @@ class BatchMoveNodesCommand extends Command<void> {
   /// 原始位置（用于撤销）
   ///
   /// 公共字段，允许 Handler 在执行时设置旧值以支持撤销操作
-  late Map<String, Offset> oldPositions;
+  Map<String, Offset>? oldPositions;
 
   @override
   String get name => 'BatchMoveNodes';
@@ -104,9 +103,13 @@ class BatchMoveNodesCommand extends Command<void> {
   @override
   Future<void> undo(CommandContext context) async {
     // 恢复原始位置
+    if (oldPositions == null) {
+      throw StateError('oldPositions is not set. Execute the command first.');
+    }
+
     final repository = context.read<NodeRepository>();
 
-    for (final entry in oldPositions.entries) {
+    for (final entry in oldPositions!.entries) {
       final node = await repository.load(entry.key);
       if (node != null) {
         await repository.save(node.copyWith(position: entry.value));

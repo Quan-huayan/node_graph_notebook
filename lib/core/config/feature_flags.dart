@@ -126,15 +126,18 @@ class RenderingFeatureFlags {
 
     if (multiThreadingThreshold < optimizationThreshold) {
       _log.info('WARNING: multiThreadingThreshold < optimizationThreshold');
+      return false;
     }
 
     if (textureCacheThreshold > optimizationThreshold) {
       _log.info('WARNING: textureCacheThreshold > optimizationThreshold');
+      return false;
     }
 
     // 检查缓存大小
     if (maxTextureCacheSize < 10 * 1024 * 1024) {
       _log.info('WARNING: maxTextureCacheSize < 10MB');
+      return false;
     }
 
     return true;
