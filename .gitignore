@@ -78,8 +78,8 @@ coverage/
 Thumbs.db
 Desktop.ini
 
-# (private? design)
-hyperweb.md
+# Temp files
+temp
 
 # AIGC docs
 .docsdata/nodes/index.json
