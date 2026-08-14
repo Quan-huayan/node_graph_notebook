@@ -1,0 +1,61 @@
+name: appframe
+version: 0.1.0
+description: The app package for the main application logic and UI.
+publish_to: none
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+resolution: workspace
+
+dependencies:
+  core_data:
+    path: ../core_data
+  plugin:
+    path: ../plugin
+  flutter:
+    sdk: flutter
+
+  # State Management
+  provider: ^6.1.1
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.5
+
+  # File System
+  path_provider: ^2.1.1
+  path: ^1.8.3
+
+  # Data & Serialization
+  uuid: ^4.2.1
+  json_annotation: ^4.8.1
+  shared_preferences: ^2.2.2
+
+  # Internationalization
+  intl: ^0.20.2
+
+  # Core
+  core:
+    path: ../core
+
+  file_picker: any
+  repository_fs: any
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Code Generation
+  build_runner: ^2.4.6
+  json_serializable: ^6.7.1
+
+  # Testing
+  mockito: ^5.4.2
+  bloc_test: ^10.0.0
+  integration_test:
+    sdk: flutter
+  test: ^1.30.0
+
+  # Development Tools
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,23 @@
+name: plugin
+version: 0.1.0
+description: A standalone, reusable plugin system for Flutter applications. Provides plugin lifecycle management, service registry with type-safe DI, hook system for UI extensibility, and automatic Provider tree construction.
+publish_to: none
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Provider — used to build the widget-tree DI layer
+  provider: ^6.1.1
+
+  # flutter_bloc — BlocProvider is a first-class concept in the plugin system
+  flutter_bloc: ^9.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

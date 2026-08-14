@@ -4,4 +4,8 @@
 
 All is node!!!
 
+## 编译运行
+
+项目现在已经调整为多package结构，需要在packages\app下运行flutter.
+
 **Node Graph Notebook** - 用概念地图重新思考笔记组织方式 🚀

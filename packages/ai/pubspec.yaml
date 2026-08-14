@@ -1,0 +1,23 @@
+name: node_ai
+version: 2.0.0
+description: AI integration plugin for Node Graph Notebook.
+publish_to: none
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+resolution: workspace
+dependencies:
+  core_data:
+    path: ../core_data
+  flutter: { sdk: flutter }
+  flutter_bloc: ^9.1.1
+  provider: ^6.1.1
+  equatable: ^2.0.5
+  http: ^1.2.0
+  core: { path: ../core }
+  appframe: { path: ../appframe }
+  node_graph: { path: ../graph }
+  node_settings: { path: ../settings }
+  uuid: any
+  plugin: any
+dev_dependencies:
+  flutter_test: { sdk: flutter }

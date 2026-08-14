@@ -1,0 +1,23 @@
+name: node_market
+version: 1.0.0
+description: Plugin marketplace for Node Graph Notebook.
+publish_to: none
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.1
+  core:
+    path: ../core
+  appframe:
+    path: ../appframe
+
+  plugin: any
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
