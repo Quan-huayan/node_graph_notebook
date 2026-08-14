@@ -1,0 +1,58 @@
+# CI（P2-1，05 纪律 12：CI 测试矩阵输出为唯一口径）。
+#
+# 门槛：check_imports（依赖方向/声明一致性）→ check_hardcoded_strings
+# （UI 硬编码中文）→ analyze（零 error/warning）→ benchmark 30k
+# （预算内）→ 16 包全量测试（自有 271 + vendored plugon 117）。
+#
+# 平台：windows-latest——node_lua 依赖 lua54.dll（assets），Windows 全链路可测。
+name: ci
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+          channel: stable
+          cache: true
+
+      - name: Resolve workspace dependencies
+        run: dart pub get
+
+      - name: Dependency direction check (tool/check_imports.dart)
+        run: dart run tool/check_imports.dart
+
+      - name: Hardcoded UI string check (tool/check_hardcoded_strings.dart)
+        run: dart run tool/check_hardcoded_strings.dart
+
+      - name: Analyze (zero error/warning)
+        run: dart analyze --fatal-warnings
+
+      - name: Benchmark 30k (tool/benchmark.dart)
+        run: dart run tool/benchmark.dart --nodes 30000
+
+      - name: Test all packages
+        shell: pwsh
+        run: |
+          $failed = @()
+          Get-ChildItem packages -Directory | ForEach-Object {
+            Push-Location $_.FullName
+            Write-Host "=== $($_.Name) ==="
+            flutter test
+            if ($LASTEXITCODE -ne 0) { $failed += $_.Name }
+            Pop-Location
+          }
+          if ($failed.Count -gt 0) {
+            Write-Error "Failed packages: $failed"
+            exit 1
+          }
+          Write-Host "All packages passed."

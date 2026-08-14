@@ -14,3 +14,15 @@ temp
 # Dart
 **/.dart_tool
 **/.flutter-plugins-dependencies
+# Build artifacts
+**/build/
+
+# 本地 Claude Code 设置（个人权限，不入库）
+.claude/settings.local.json
+
+# 运行时数据目录（用户数据，绝不可误提交）
+packages/app/data/
+
+# 本地截图产物
+/screenshot.png
+/screenshot_small.jpg

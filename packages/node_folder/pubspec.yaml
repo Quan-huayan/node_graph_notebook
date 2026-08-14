@@ -1,0 +1,28 @@
+name: node_folder
+version: 0.1.0
+description: >-
+  Folder container plugin (M6 试金石): folder Concept with children
+  references, drop semantics (DataMove), and the MoveNodesCommand
+  double-write handler.
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  flutter:
+    sdk: flutter
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

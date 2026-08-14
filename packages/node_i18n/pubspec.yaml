@@ -1,0 +1,28 @@
+name: node_i18n
+version: 0.1.0
+description: >-
+  i18n plugin (M7): zh/en translation resources carried over from the old
+  packages (archive/i18n_zh, i18n_en) + I18nService (current language,
+  t(key)). Language switching is service-level (MVP: no runtime UI switch).
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  flutter:
+    sdk: flutter
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

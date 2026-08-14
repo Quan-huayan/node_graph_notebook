@@ -1,0 +1,32 @@
+name: node_search
+version: 0.1.0
+description: >-
+  Search plugin (M7): title/content substring search (case-insensitive) —
+  a pure read-side service (02 §1.5: read optimization belongs to the
+  implementation layer; no bus abstraction).
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  flutter:
+    sdk: flutter
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # P2-2：仅测试用（search_drag_test 拖搜索结果上画布——落点语义判
+  # 断需要 GraphPlugin 的 DragTarget）。
+  node_graph:
+    path: ../node_graph

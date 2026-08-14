@@ -1,90 +1,53 @@
 name: app
 version: 0.1.0
-description: The app package for the main application logic and UI.
-publish_to: none
+description: >-
+  Node Graph Notebook application entry: assembles HostRuntime with the
+  builtin plugins and provides the Flutter UI shell.
+publish_to: 'none'
+resolution: workspace
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
 
-resolution: workspace
-
 dependencies:
-  plugin:
-    path: ../plugin
-  flutter:
-    sdk: flutter
-
-  # State Management
-  provider: ^6.1.1
-  flutter_bloc: ^9.1.1
-  equatable: ^2.0.5
-
-  # File System
-  path_provider: ^2.1.1
-  path: ^1.8.3
-
-  # Data & Serialization
-  uuid: ^4.2.1
-  json_annotation: ^4.8.1
-  shared_preferences: ^2.2.2
-
-  # Internationalization
-  intl: ^0.20.2
-
-  # Core
-  core:
-    path: ../core
-  repository_fs:
-    path: ../repository_fs
-
-  # AppFrame
   appframe:
     path: ../appframe
-
-  # Plugin
-  node_data_recovery:
-    path: ../data_recovery
-  node_settings:
-    path: ../settings
-  node_i18n_en:
-    path: ../i18n_en
-  node_i18n_zh:
-    path: ../i18n_zh
-  node_market:
-    path: ../market
-  node_graph:
-    path: ../graph
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  flutter:
+    sdk: flutter
   node_ai:
-    path: ../ai
-  node_lua:
-    path: ../lua
+    path: ../node_ai
   node_converter:
-    path: ../converter
-  node_search:
-    path: ../search
+    path: ../node_converter
+  node_data_recovery:
+    path: ../node_data_recovery
   node_editor:
-    path: ../editor
+    path: ../node_editor
   node_folder:
-    path: ../folder
-  node_layout:
-    path: ../layout
+    path: ../node_folder
+  node_i18n:
+    path: ../node_i18n
+  node_market:
+    path: ../node_market
+  node_search:
+    path: ../node_search
+  node_settings:
+    path: ../node_settings
+  node_graph:
+    path: ../node_graph
+  node_lua:
+    path: ../node_lua
+  plugon:
+    path: ../plugon
+  # P2-2：main.dart 注入 SharedPreferences（P1-1 设置持久化由 app 层提供）。
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # Code Generation
-  build_runner: ^2.4.6
-  json_serializable: ^6.7.1
-
-  # Testing
-  mockito: ^5.4.2
-  bloc_test: ^10.0.0
-  integration_test:
-    sdk: flutter
-  test: ^1.30.0
-
-  # Development Tools
   flutter_lints: ^6.0.0
 
 flutter:

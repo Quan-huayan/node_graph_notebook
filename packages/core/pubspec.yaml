@@ -1,63 +1,24 @@
 name: core
 version: 0.1.0
-description: The core package for node data structures and utilities.
-publish_to: none
+description: >-
+  Core mechanisms for the node graph notebook rewrite: Concept matching
+  priority, fallback Concept, acyclic check, nodeId→hookId invalidation,
+  command routing. Pure Dart (no Flutter imports).
+publish_to: 'none'
+resolution: workspace
+
 environment:
   sdk: '>=3.8.0 <4.0.0'
-
-resolution: workspace
 
 dependencies:
   core_data:
     path: ../core_data
-  plugin:
-    path: ../plugin
-
-  flutter:
-    sdk: flutter
-
-  # Flame Game Engine
-  flame: ^1.10.0
-  # flame_json is now included in flame
-  vector_math: ^2.2.0
-
-  # State Management
-  provider: ^6.1.1
-  flutter_hooks: ^0.21.3+1
-  flutter_bloc: ^9.1.1
-  equatable: ^2.0.5
-
-  # File System
-  path_provider: ^2.1.1
-  path: ^1.8.3
-  file_picker: ^10.3.10
-
-  # Data & Serialization
-  uuid: ^4.2.1
-  json_annotation: ^4.8.1
-  shared_preferences: ^2.2.2
-
-  # Concurrency
-  worker_pool: ^0.0.5
+  # DI / ExtensionRegistry / PluginManager / Plugin 契约 → package:plugon
+  # （architecture.md §2；M5 接入编排，M1 先声明依赖）
+  plugon:
+    path: ../plugon
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # Code Generation
-  build_runner: ^2.4.6
-  json_serializable: ^6.7.1
-
-  # Testing
-  mockito: ^5.4.2
-  bloc_test: ^10.0.0
-  integration_test:
-    sdk: flutter
-  test: ^1.30.0
-
-  # Development Tools
   flutter_lints: ^6.0.0
-
-
-flutter:
-  uses-material-design: true

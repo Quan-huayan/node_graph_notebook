@@ -1,0 +1,29 @@
+name: node_market
+version: 0.1.0
+description: >-
+  Plugin market plugin (M7): static market dialog listing installed plugins
+  (host.loadedPlugins) and local concept entries — MVP no network.
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  flutter:
+    sdk: flutter
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # P2-2：仅测试用（i18n_settings_market_test 装配语言/设置插件验证
+  # 市场对话框条目）。
+  node_i18n:
+    path: ../node_i18n
+  node_settings:
+    path: ../node_settings

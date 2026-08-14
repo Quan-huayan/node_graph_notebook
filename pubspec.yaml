@@ -7,30 +7,27 @@ environment:
   sdk: '>=3.8.0 <4.0.0'
 
 workspace:
-  - packages/plugin
+  - packages/plugon
   - packages/core_data
   - packages/core
-  - packages/repository_fs
-  - packages/app
   - packages/appframe
-  - packages/data_recovery
-  - packages/settings
-  - packages/i18n_en
-  - packages/i18n_zh
-  - packages/market
-  - packages/graph
-  - packages/layout
-  - packages/editor
-  - packages/ai
-  - packages/converter
-  - packages/folder
-  - packages/search
+  - packages/node_folder
+  - packages/node_graph
+  - packages/node_ai
+  - packages/node_lua
+  - packages/node_editor
+  - packages/node_converter
+  - packages/node_search
+  - packages/node_i18n
+  - packages/node_settings
+  - packages/node_market
+  - packages/node_data_recovery
+  - packages/app
 
-dependencies:
-  core:
-    path: packages/core
-  core_data:
-    path: packages/core_data
-  flutter:
-    sdk: flutter
-  shared_preferences: ^2.2.2
+# 旧 19 包已冻结归档到 archive/（01 拍板记录 #4，M6 后整体删除）。
+# 新架构包（core_data / core / appframe / plugins/*）在 M1-M5 里程碑逐个建入此列表。
+
+# 仅根级工具脚本（tool/benchmark.dart）使用；非应用入口。
+dev_dependencies:
+  appframe:
+    path: packages/appframe

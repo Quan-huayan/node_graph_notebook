@@ -1,0 +1,75 @@
+/// FlutterRenderContext —— 位置无关渲染的 Flutter 目标（02 §3.1 / 架构 §7）。
+///
+/// Hook 渲染进 widget 树：Flutter 插件实现的 Hook 通过 mount 把自己
+/// 画的 widget 挂进渲染树（`(context as FlutterRenderContext).mount(w)`）。
+/// Hook 契约本身保持位置无关——core_data 不 import Flutter；
+/// 可被渲染进任意 RenderContext（含全局 overlay——飞行壳层前提，03 §二）。
+///
+/// M7 修正（Hook 承载 UI，00"UI 是 Hook 构成的图"）：
+/// - host：渲染宿主引用——Hook 渲染时经此解析服务（plugon DI），
+///   构造自己的 UI（服务注入——插件 UI 不依赖组合根类型）
+/// - onCardDrop：画布卡片 drop 语义分发（**数据层**——目标 Concept
+///   判定归组合根，插件互相不依赖，01 拍板 #32）
+/// - sink：渲染结果收集（widget 列表；null = 丢弃，供测试）
+///
+/// 节点打开 = 渲染节点 Hook（HookView）——**无 UI 行为分发回调**。
+library;
+
+import 'package:core_data/core_data.dart';
+import 'package:flutter/widgets.dart';
+
+import '../host/host_runtime.dart';
+
+/// 画布卡片 drop 语义分发（数据层——true = 已消费，不走默认语义）。
+typedef CanvasCardDropHandler =
+    Future<bool> Function({
+      required String targetId,
+      required String draggedId,
+    });
+
+/// Flutter 渲染目标。
+class FlutterRenderContext implements RenderContext {
+  /// 注入宿主、渲染形态、数据层回调与渲染结果收集。
+  FlutterRenderContext({
+    this.host,
+    this.kind,
+    this.onCardDrop,
+    this.onDragStart,
+    this.sink,
+  });
+
+  /// 渲染宿主（Hook 解析服务的通道；null = 测试环境）。
+  final HostRuntime? host;
+
+  /// 渲染形态（HookContext.kind：sidebar / graph / open …——
+  /// Hook render 按形态分发自己的呈现，02 §1.2）。
+  final String? kind;
+
+  /// 画布卡片 drop 语义分发（数据层）。
+  final CanvasCardDropHandler? onCardDrop;
+
+  /// 拖拽起点记录（飞行视觉——拖拽源 Hook 的 Draggable 调用，
+  /// 目标容器经 DragController 读取；M7）。
+  final void Function(Offset position)? onDragStart;
+
+  /// 渲染结果收集（widget 列表；null = 丢弃）。
+  final List<Widget>? sink;
+
+  /// 挂载：Hook 把自己画的 widget 放进渲染树。
+  ///
+  /// 由 Flutter 插件的 Hook 实现调用（Hook 代码可 import Flutter；
+  /// core_data 契约本身零 Flutter 依赖）。
+  void mount(Widget widget) {
+    sink?.add(widget);
+  }
+
+  @override
+  FlutterRenderContext createChildContext(Hook childHook) =>
+      FlutterRenderContext(
+        host: host,
+        kind: kind,
+        onCardDrop: onCardDrop,
+        onDragStart: onDragStart,
+        sink: sink,
+      );
+}

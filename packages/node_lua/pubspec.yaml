@@ -1,0 +1,30 @@
+name: node_lua
+version: 0.1.0
+description: >-
+  Lua plugin (M7): dynamic Concept engine — scripts in data/lua_scripts define
+  Concepts (validate/createHook in Lua), command handlers, and use the host
+  write API (node_create/update/delete) which routes through CommandBus.
+  Vendored Lua 5.4 runtime (flutter_embed_lua, MIT) + lua54.dll asset.
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  ffi: ^2.1.0
+  flutter:
+    sdk: flutter
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

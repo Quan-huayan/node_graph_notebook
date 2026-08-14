@@ -1,0 +1,29 @@
+name: node_editor
+version: 0.1.0
+description: >-
+  Editor plugin (M7): markdown note editing — SaveNoteCommand (DTO + Handler,
+  03 §四) and the MarkdownEditorDialog (edit + simple preview). Editing saves
+  through the write path; the plugin owns its command (plugins don't depend
+  on each other, 04 §三).
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  flutter:
+    sdk: flutter
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

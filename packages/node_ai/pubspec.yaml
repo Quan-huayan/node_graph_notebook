@@ -1,0 +1,35 @@
+name: node_ai
+version: 0.1.0
+description: >-
+  AI plugin (M7 杀手演示): AI node container Concept (kind == 'ai'), chat
+  session instances (L1-node referencing {ai, source}), message persistence
+  as chat content markdown, and the long-task ask handler (03 §四).
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  # P1-1：设置持久化（AI key/model/baseUrl——app 层注入 prefs）。
+  shared_preferences: ^2.3.0
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # P2-2：仅测试用（function_calling_test 以 GraphPlugin 装配节点命令
+  # Handler）——lib/ 零 node_graph 依赖（DTO 走 core 词表，04 §三 约束 3）。
+  node_graph:
+    path: ../node_graph

@@ -1,0 +1,28 @@
+name: node_converter
+version: 0.1.0
+description: >-
+  Converter plugin (M7): node export/import — ExportCommand writes nodes as
+  JSON (structure-preserving round-trip) to a target file; ImportCommand
+  creates nodes from a JSON file (DTO + Handler, 03 §四; write path only).
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  appframe:
+    path: ../appframe
+  core:
+    path: ../core
+  core_data:
+    path: ../core_data
+  flutter:
+    sdk: flutter
+  plugon:
+    path: ../plugon
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
