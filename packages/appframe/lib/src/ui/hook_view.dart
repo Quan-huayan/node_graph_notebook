@@ -56,7 +56,7 @@ class HookView extends StatefulWidget {
   final CanvasCardDropHandler? onCardDrop;
 
   /// 拖拽起点记录（飞行视觉——父容器透传给子 Hook）。
-  final void Function(Offset position)? onDragStart;
+  final DragStartHandler? onDragStart;
 
   /// 关闭时回收物化 Hook（窗口化：节点打开对话框场景）。
   final bool recycleOnDispose;

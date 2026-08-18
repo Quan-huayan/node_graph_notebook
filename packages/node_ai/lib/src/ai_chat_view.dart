@@ -56,6 +56,7 @@ class AIChatView extends StatefulWidget {
 
 class _AIChatViewState extends State<AIChatView> {
   final TextEditingController _input = TextEditingController();
+  final ScrollController _scroll = ScrollController();
   late final void Function(WriteResult) _onWrite;
   String? _selectedSourceId;
   bool _busy = false;
@@ -64,19 +65,63 @@ class _AIChatViewState extends State<AIChatView> {
   void initState() {
     super.initState();
     // 写后通知 → 刷新（消息落盘即重渲染；dispose 关闭，03 §五 硬规则）。
+    // UX（自动滚动）：消息变化后滚到底部——但只在用户本来就在底部时
+    // 跟随（回看历史时不被拽走）；AI 回复中（_busy）强制保持底部可见。
+    // 底部判定按**写前**位置：写后 maxScrollExtent 增长会让"在底部"
+    // 误判为 false（新内容未出现时用户确实在旧底部）。
     _onWrite = (_) {
-      if (mounted) {
-        setState(() {});
+      if (!mounted) {
+        return;
       }
+      final wasAtBottom =
+          _scroll.hasClients &&
+          _scroll.position.pixels >= _scroll.position.maxScrollExtent - 48;
+      setState(() {});
+      _scrollToLatest(force: wasAtBottom || _busy);
     };
     (widget.commandBus as WriteNotifier).attach(_onWrite);
+    // 首次打开/默认选中会话 → 滚到最新消息（对话入口显示最近内容，
+    // 而不是最早消息；UX P2）。
+    _afterFrame(() => _scrollToLatest(force: true));
   }
 
   @override
   void dispose() {
     (widget.commandBus as WriteNotifier).detach(_onWrite);
     _input.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  /// 帧后回调（mounted 守卫）。
+  void _afterFrame(VoidCallback callback) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        callback();
+      }
+    });
+  }
+
+  /// 滚到底部：force = 强制（切会话/发送完成）；否则仅当用户已在底部
+  /// 或 AI 回复中（避免回看历史时被拽走，UX P2）。
+  ///
+  /// post-frame 内读取 `maxScrollExtent`（该帧布局已落定）；目标略微
+  /// 超界时由滚动物理钳制回真实最大值（首帧内容高度回落后位置回正）。
+  void _scrollToLatest({bool force = false}) {
+    _afterFrame(() {
+      if (!_scroll.hasClients) {
+        return;
+      }
+      final position = _scroll.position;
+      final atBottom = position.pixels >= position.maxScrollExtent - 48;
+      if (force || atBottom || _busy) {
+        _scroll.animateTo(
+          position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   /// 会话列表（读侧反查：references.ai == 本节点的 chat 实例的 source）。
@@ -126,7 +171,11 @@ class _AIChatViewState extends State<AIChatView> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  onTap: () => setState(() => _selectedSourceId = sourceId),
+                  onTap: () {
+                    setState(() => _selectedSourceId = sourceId);
+                    // 切会话 → 强制滚到该会话最新消息。
+                    _afterFrame(() => _scrollToLatest(force: true));
+                  },
                 ),
             ],
           ),
@@ -145,10 +194,7 @@ class _AIChatViewState extends State<AIChatView> {
             color: theme.colorScheme.primary,
           ),
           const SizedBox(height: 12),
-          Text(
-            widget.i18n.t('ai.dropHint'),
-            textAlign: TextAlign.center,
-          ),
+          Text(widget.i18n.t('ai.dropHint'), textAlign: TextAlign.center),
         ],
       ),
     );
@@ -210,6 +256,7 @@ class _AIChatViewState extends State<AIChatView> {
                   ),
                 )
               : ListView(
+                  controller: _scroll,
                   padding: const EdgeInsets.all(12),
                   children: [
                     for (final message in messages)
@@ -308,9 +355,7 @@ class _AIChatViewState extends State<AIChatView> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '${widget.i18n.t('ai.networkFailed')}（$error）',
-            ),
+            content: Text('${widget.i18n.t('ai.networkFailed')}（$error）'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -318,6 +363,8 @@ class _AIChatViewState extends State<AIChatView> {
     } finally {
       if (mounted) {
         setState(() => _busy = false);
+        // 回复落盘后强制滚到底部（用户等待的正是最新回复）。
+        _afterFrame(() => _scrollToLatest(force: true));
       }
     }
   }

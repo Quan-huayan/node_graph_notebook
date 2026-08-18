@@ -73,6 +73,14 @@ class ToolbarContainerConcept extends Concept {
           .where((n) => const ToolbarConcept().validate(n))
           .map((n) => n.id)
           .toList();
+
+  @override
+  DropSemantics askDropSemantics(Node node) =>
+      // M7.4（Flowing UI 落点语义统一）：工具栏是容器——接收任意节点
+      // 意味着"建一个打开该节点的按钮"（判据① 数据命令）。具体命令
+      // 由 ToolbarDropSemantics 服务在 DragController 命令工厂中路由
+      // （插件 last-wins 覆盖）。
+      const DataMove(<String, String>{});
 }
 
 /// 工具栏容器 Hook（渲染按钮行——子级 = HookView 递归，02 §3.2

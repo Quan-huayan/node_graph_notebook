@@ -27,7 +27,13 @@ Future<bool> showDeleteNodeConfirm(
           onPressed: () => Navigator.pop(dialogContext, false),
           child: Text(i18n.t('dialog.cancel')),
         ),
+        // 危险操作确认按钮用错误色（UX：破坏性动作必须与主操作视觉
+        // 区分——防误触确认；取消按钮保持中性）。文案仍走语言包。
         FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(dialogContext).colorScheme.error,
+            foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+          ),
           onPressed: () => Navigator.pop(dialogContext, true),
           child: Text(i18n.t('node.delete')),
         ),

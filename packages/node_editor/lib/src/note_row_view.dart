@@ -28,7 +28,7 @@ class NoteRowView extends StatelessWidget {
   final Node node;
 
   /// 拖拽起点记录（飞行视觉——目标容器经 DragController 读取）。
-  final void Function(Offset position)? onDragStart;
+  final DragStartHandler? onDragStart;
 
   @override
   Widget build(BuildContext context) => Draggable<String>(
@@ -46,6 +46,7 @@ class NoteRowView extends StatelessWidget {
     onDragStarted: () {
       final box = context.findRenderObject() as RenderBox?;
       onDragStart?.call(
+        node.id,
         box == null ? Offset.zero : box.localToGlobal(Offset.zero),
       );
     },

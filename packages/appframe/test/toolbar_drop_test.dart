@@ -48,9 +48,11 @@ Future<HostRuntime> seed(Directory root) async {
 
 /// 测试壳：AppBar 工具栏（HookView toolbar-root）+ body 源 Draggable。
 class _Harness extends StatelessWidget {
-  const _Harness({required this.host});
+  const _Harness({required this.host, this.draggedId = 'noteA'});
 
   final HostRuntime host;
+
+  final String draggedId;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -62,7 +64,7 @@ class _Harness extends StatelessWidget {
       ),
       body: Center(
         child: Draggable<String>(
-          data: 'noteA',
+          data: draggedId,
           feedback: const Material(
             color: Colors.transparent,
             child: Text('笔记A'),
@@ -151,6 +153,29 @@ void main() {
     expect(command, isNull);
     final toolbarSemantics = host.serviceProvider.get<ToolbarDropSemantics>();
     expect(toolbarSemantics(draggedNodeId: 'noteA'), isNull);
+  });
+
+  testWidgets('拖不存在的节点到工具栏 → 用户可见失败反馈，不创建按钮', (tester) async {
+    final host = await seed(root);
+    await tester.pumpWidget(_Harness(host: host, draggedId: 'missing'));
+    await tester.pump();
+
+    final source = find.text('拖我');
+    final target = find.byType(ToolbarActionsRow);
+    await tester.drag(
+      source,
+      tester.getCenter(target) - tester.getCenter(source),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(host.graph.get('toolbar-open-missing'), isNull);
+    // 架构 §8：禁止静默失败——旧实现只 debugPrint，用户无感。
+    expect(find.textContaining('操作失败'), findsOneWidget);
+
+    // SnackBar 定时器清理。
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('拖节点到工具栏 → 按钮节点创建（ToolbarActionsRow 接收）', (tester) async {

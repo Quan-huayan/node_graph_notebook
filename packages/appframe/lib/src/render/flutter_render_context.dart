@@ -20,6 +20,9 @@ import 'package:flutter/widgets.dart';
 
 import '../host/host_runtime.dart';
 
+/// 拖拽起点回调（节点 id + 全局坐标——共享事务的 Phase 1 入口）。
+typedef DragStartHandler = void Function(String nodeId, Offset position);
+
 /// 画布卡片 drop 语义分发（数据层——true = 已消费，不走默认语义）。
 typedef CanvasCardDropHandler =
     Future<bool> Function({
@@ -50,7 +53,7 @@ class FlutterRenderContext implements RenderContext {
 
   /// 拖拽起点记录（飞行视觉——拖拽源 Hook 的 Draggable 调用，
   /// 目标容器经 DragController 读取；M7）。
-  final void Function(Offset position)? onDragStart;
+  final DragStartHandler? onDragStart;
 
   /// 渲染结果收集（widget 列表；null = 丢弃）。
   final List<Widget>? sink;

@@ -37,7 +37,11 @@ typedef InvalidationListener = void Function(InvalidationEvent event);
 /// UI 管理器契约。
 abstract class UIManager {
   /// 视口变化 → 窗口化物化（architecture.md §5.1 时序）。
-  void onViewportChanged(ValueRect viewport);
+  ///
+  /// [kind] = 本次视口物化所属容器（缺省 = materializeRoot 登记的
+  /// 根容器 kind）。画布等第二容器传 'graph'——避免把已存在 sidebar
+  /// Hook 误判为"已物化"而漏建 graph 形态（M7.4 Flowing UI 修正）。
+  void onViewportChanged(ValueRect viewport, {String? kind});
 
   /// 数据变更（写后通知，architecture.md §5.2）：
   /// hookIds = HookIndex.lookup(nodeId) → 只通知已物化 Hook。

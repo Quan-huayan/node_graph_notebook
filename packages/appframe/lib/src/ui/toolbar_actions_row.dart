@@ -31,6 +31,18 @@ class ToolbarActionsRow extends StatelessWidget {
   /// 工具栏容器节点（kind == 'toolbar-root'）。
   final Node node;
 
+  /// toolbar 语义的命令工厂：ToolbarDropSemantics 服务先问
+  /// （插件 last-wins 覆盖），null → 默认建打开源节点的按钮。
+  Command _toolbarMoveFactory({
+    required String draggedNodeId,
+    required String targetContainerId,
+    required Map<String, String> newReferences,
+  }) {
+    final semantics = host.serviceProvider.get<ToolbarDropSemantics>();
+    return semantics(draggedNodeId: draggedNodeId) ??
+        CreateToolbarButtonCommand(sourceId: draggedNodeId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final childIds =
@@ -40,26 +52,38 @@ class ToolbarActionsRow extends StatelessWidget {
     // （拖拽中提示可放置区）。
     return DragTarget<String>(
       onAcceptWithDetails: (details) async {
-        final semantics = host.serviceProvider.get<ToolbarDropSemantics>();
-        final custom = semantics(draggedNodeId: details.data);
-        final command =
-            custom ?? CreateToolbarButtonCommand(sourceId: details.data);
-        try {
-          await host.commandBus.dispatch<Command, WriteResult>(command);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '${host.i18nService.t('toolbar.buttonCreated')}「${host.graph.get(details.data)?.title ?? details.data}」',
-                ),
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          }
-        } catch (error) {
-          // 命令失败（源节点缺失等）→ 静默（无副作用）。
-          debugPrint('toolbar drop failed: $error');
+        final source = host.graph.get(details.data);
+        final targetHook = const ToolbarContainerConcept().createHook(
+          node,
+          const HookContext(kind: 'toolbar-root'),
+        );
+        // M7.4（Flowing UI 落点语义统一）：工具栏 drop 也走共享
+        // DragController/FlightShell——成功飞行、失败回弹、状态清理与
+        // folder 路径同一套事务（旧实现直接 dispatch，绕过了 03 §一）。
+        final outcome = await host.dragController.onDrop(
+          draggedNodeId: details.data,
+          targetContainerHook: targetHook,
+          dropPoint: details.offset,
+          from: host.dragController.dragStartOffset ?? details.offset,
+          overlay: Overlay.of(context),
+          flightChild: source == null
+              ? null
+              : _ToolbarFlightCard(title: source.title),
+          moveCommandFactory: _toolbarMoveFactory,
+        );
+        if (!context.mounted) {
+          return;
         }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              outcome.kind == DropOutcomeKind.committed
+                  ? '${host.i18nService.t('toolbar.buttonCreated')}「${source?.title ?? details.data}」'
+                  : '${host.i18nService.t('error.operationFailed')}：${outcome.reason ?? ''}',
+            ),
+            duration: const Duration(seconds: 1),
+          ),
+        );
       },
       builder: (context, candidates, rejected) {
         final highlight = candidates.isNotEmpty;
@@ -89,4 +113,24 @@ class ToolbarActionsRow extends StatelessWidget {
       },
     );
   }
+}
+
+/// 工具栏拖拽飞行影像（03 §二 壳层影像——纯渲染，不接触数据层）。
+class _ToolbarFlightCard extends StatelessWidget {
+  const _ToolbarFlightCard({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: Card(
+      elevation: 6,
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
+      ),
+    ),
+  );
 }

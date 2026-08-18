@@ -160,7 +160,12 @@ class _VaultSettingsFormState extends State<VaultSettingsForm> {
             onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(i18n.t('dialog.cancel')),
           ),
+          // 危险操作（数据移入回收站）确认按钮错误色，与取消/主操作区分。
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            ),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(i18n.t('vault.remove')),
           ),

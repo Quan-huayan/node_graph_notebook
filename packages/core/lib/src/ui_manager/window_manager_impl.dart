@@ -27,7 +27,17 @@ class WindowManagerImpl implements WindowManager {
   }
 
   @override
-  bool isMaterialized(String nodeId) => _byNode.containsKey(nodeId);
+  bool isMaterialized(String nodeId, {String? kind}) {
+    final hookIds = _byNode[nodeId];
+    if (hookIds == null || hookIds.isEmpty) {
+      return false;
+    }
+    if (kind == null) {
+      return true;
+    }
+    // kind 感知：同一节点多容器多 Hook（M7.1 kindOf 区分）。
+    return hookIds.any((hookId) => _entries[hookId]?.kind == kind);
+  }
 
   /// 回收：非物化 hookId → 静默 no-op。
   @override

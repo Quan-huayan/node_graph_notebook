@@ -7,6 +7,7 @@ library;
 import 'package:appframe/appframe.dart';
 import 'package:core/core.dart';
 import 'package:core_data/core_data.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/in_memory_graph.dart';
@@ -115,6 +116,17 @@ class _MemUIStateStore implements UIStateStore {
       listener(key);
     }
   }
+}
+
+/// 未注册命令（验证非 CycleError 失败也会终结事务）。
+class _UnhandledCommand extends Command<_UnhandledCommand> {
+  const _UnhandledCommand();
+
+  @override
+  String get name => 'test.unhandled';
+
+  @override
+  Map<String, dynamic> get payload => const <String, dynamic>{};
 }
 
 void main() {
@@ -323,6 +335,115 @@ void main() {
       expect(writeLog, isEmpty); // 无数据命令。
     });
 
+    test('M7.4 会话态：dragStart → dragMove 分发；提交后全部清理', () async {
+      graph
+        ..save(TestNode(id: 'folderA', title: '文件夹A'))
+        ..save(TestNode(id: 'noteB', title: '笔记B'));
+      final folder = _ContainerConcept(
+        id: 'folder',
+        semantics: (_) =>
+            const DataMove(<String, String>{'children': 'folderA'}),
+      );
+      final moves = <String>[];
+      final drag = DragController(
+        graph: graph,
+        concepts: StaticConceptRegistry(concepts: <Concept>[folder]),
+        commandBus: bus,
+        uiStateStore: uiState,
+        flightShell: shell,
+        onDragMove: (nodeId, position) {
+          moves.add('$nodeId@$position');
+        },
+      );
+
+      drag.dragStart('noteB');
+      drag.recordDragStart(const Offset(10, 20));
+      drag.dragMove(const Offset(30, 40));
+
+      expect(drag.dragging, 'noteB');
+      expect(drag.lastDragPosition, const Offset(30, 40));
+      expect(moves, <String>['noteB@Offset(30.0, 40.0)']);
+
+      final containerHook = folder.createHook(
+        graph.get('folderA')!,
+        const HookContext(kind: 'sidebar'),
+      );
+      final outcome = await drag.onDrop(
+        draggedNodeId: 'noteB',
+        targetContainerHook: containerHook,
+        dropPoint: const Offset(120, 80),
+      );
+
+      expect(outcome.kind, DropOutcomeKind.committed);
+      expect(drag.dragging, isNull);
+      expect(drag.lastDragPosition, isNull);
+      expect(drag.dragStartOffset, isNull);
+    });
+
+    test('M7.4 非 CycleError 命令失败：终结事务并返回 rejected（不泄漏异常）', () async {
+      graph
+        ..save(TestNode(id: 'folderA', title: '文件夹A'))
+        ..save(TestNode(id: 'noteB', title: '笔记B'));
+      final folder = _ContainerConcept(
+        id: 'folder',
+        semantics: (_) =>
+            const DataMove(<String, String>{'children': 'folderA'}),
+      );
+      final drag = DragController(
+        graph: graph,
+        concepts: StaticConceptRegistry(concepts: <Concept>[folder]),
+        commandBus: bus,
+        uiStateStore: uiState,
+        flightShell: shell,
+        moveCommandFactory:
+            ({
+              required String draggedNodeId,
+              required String targetContainerId,
+              required Map<String, String> newReferences,
+            }) => const _UnhandledCommand(),
+      );
+      drag.dragStart('noteB');
+      final containerHook = folder.createHook(
+        graph.get('folderA')!,
+        const HookContext(kind: 'sidebar'),
+      );
+
+      final outcome = await drag.onDrop(
+        draggedNodeId: 'noteB',
+        targetContainerHook: containerHook,
+        dropPoint: Offset.zero,
+      );
+
+      expect(outcome.kind, DropOutcomeKind.rejected);
+      expect(outcome.reason, contains('移动失败'));
+      expect(phaseLog, <FlightPhase>[FlightPhase.aborted]);
+      expect(drag.dragging, isNull);
+      expect(drag.dragStartOffset, isNull);
+    });
+
+    test('M7.4 cancel 幂等：无事务/重复 cancel 只回滚一次', () async {
+      graph
+        ..save(TestNode(id: 'folderA', title: '文件夹A'))
+        ..save(TestNode(id: 'noteB', title: '笔记B'));
+      final folder = _ContainerConcept(
+        id: 'folder',
+        semantics: (_) => const RejectDrop('no'),
+      );
+      final drag = controller(
+        StaticConceptRegistry(concepts: <Concept>[folder]),
+      );
+
+      drag.cancel(); // 无事务 no-op。
+      expect(phaseLog, isEmpty);
+
+      drag.dragStart('noteB');
+      drag.cancel();
+      drag.cancel(); // 会话态已清理 → 第二次不再 abort。
+
+      expect(phaseLog, <FlightPhase>[FlightPhase.aborted]);
+      expect(drag.dragging, isNull);
+    });
+
     test('FlightShell 插值：tick 沿 from → to 线性插值', () {
       final positions = <Offset>[];
       final shell = FlightShell(
@@ -338,6 +459,73 @@ void main() {
       expect(positions[1], const Offset(50, 0));
       expect(positions[2], const Offset(100, 0));
       expect(shell.phase, FlightPhase.flying);
+    });
+  });
+
+  group('M7.4 FlightShell 视觉状态机', () {
+    testWidgets('present 携带 overlay 影像 → 动画完成自动提交并移除', (tester) async {
+      final log = <bool>[];
+      final shell = FlightShell(onFinished: log.add);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: Builder(builder: (context) => const SizedBox())),
+        ),
+      );
+      final overlay = tester.state<OverlayState>(find.byType(Overlay).first);
+      shell.present(
+        overlay: overlay,
+        child: const Text('flight-child'),
+        from: const Offset(10, 10),
+        to: const Offset(120, 80),
+        duration: const Duration(milliseconds: 100),
+      );
+
+      expect(shell.phase, FlightPhase.flying);
+      await tester.pump();
+      expect(find.text('flight-child'), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.text('flight-child'), findsNothing);
+      expect(shell.phase, FlightPhase.committed);
+      expect(log, <bool>[true]);
+    });
+
+    testWidgets('bounce 视觉完成 → aborted；新 present 会替换旧影像不崩溃', (tester) async {
+      final shell = FlightShell();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: Builder(builder: (context) => const SizedBox())),
+        ),
+      );
+      final overlay = tester.state<OverlayState>(find.byType(Overlay).first);
+
+      shell.bounce(
+        overlay: overlay,
+        child: const Text('bounce-child'),
+        from: const Offset(0, 0),
+        to: const Offset(80, 80),
+        duration: const Duration(milliseconds: 100),
+        onFinished: (_) {},
+      );
+      await tester.pump();
+      expect(find.text('bounce-child'), findsOneWidget);
+
+      // 未等回弹结束立即启动新 present：旧 entry 应被安全替换。
+      shell.present(
+        overlay: overlay,
+        child: const Text('replacement-child'),
+        from: const Offset(0, 0),
+        to: const Offset(20, 20),
+        duration: const Duration(milliseconds: 100),
+      );
+      await tester.pump();
+      expect(find.text('bounce-child'), findsNothing);
+      expect(find.text('replacement-child'), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.text('replacement-child'), findsNothing);
+      expect(shell.phase, FlightPhase.committed);
     });
   });
 }

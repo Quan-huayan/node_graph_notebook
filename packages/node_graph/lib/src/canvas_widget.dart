@@ -389,7 +389,10 @@ class _GraphCanvasState extends State<GraphCanvas> {
   /// `onViewportChanged` 的生产接线）。
   void _scheduleViewportPush() {
     _viewportPushTimer?.cancel();
-    _viewportPushTimer = Timer(const Duration(milliseconds: 300), _pushViewport);
+    _viewportPushTimer = Timer(
+      const Duration(milliseconds: 300),
+      _pushViewport,
+    );
   }
 
   /// 计算当前可见场景矩形并推给 UIManager（矩形未变则跳过）。
@@ -410,7 +413,7 @@ class _GraphCanvasState extends State<GraphCanvas> {
       return;
     }
     _pushedViewport = rect;
-    widget.host.uiManager.onViewportChanged(rect);
+    widget.host.uiManager.onViewportChanged(rect, kind: 'graph');
   }
 
   /// 可见场景矩形（相机逆变换 × 视口尺寸 + 边缘余量——渲染与推送
@@ -608,7 +611,9 @@ class _GraphCanvasState extends State<GraphCanvas> {
     } on IOException {
       _showError(widget.host.i18nService.t('error.saveFailed'));
     } catch (error) {
-      _showError('${widget.host.i18nService.t('error.operationFailed')}: $error');
+      _showError(
+        '${widget.host.i18nService.t('error.operationFailed')}: $error',
+      );
     }
   }
 
@@ -633,7 +638,10 @@ class _GraphCanvasState extends State<GraphCanvas> {
           // （相机 listener 只覆盖平移/缩放）。
           if (constraints.maxWidth != _lastViewportSize.width ||
               constraints.maxHeight != _lastViewportSize.height) {
-            _lastViewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+            _lastViewportSize = Size(
+              constraints.maxWidth,
+              constraints.maxHeight,
+            );
             _scheduleViewportPush();
           }
           // 成员位置 = 落盘位置 + 拖拽中临时预览（卡片/连线实时跟随）。
@@ -679,10 +687,11 @@ class _GraphCanvasState extends State<GraphCanvas> {
           final visibleRect = _visibleSceneRect(
             Size(constraints.maxWidth, constraints.maxHeight),
           );
-          final memberIds = positions.keys
-              .where((id) => visibleRect.contains(positions[id]!))
-              .toList()
-            ..sort();
+          final memberIds =
+              positions.keys
+                  .where((id) => visibleRect.contains(positions[id]!))
+                  .toList()
+                ..sort();
 
           // 连接线：连接实例（L1）→ 两端位置（端点无位置/未物化 → 跳过）。
           // 坐标相对世界原点偏移（与卡片一致，容器内命中/渲染一致）。
@@ -697,8 +706,7 @@ class _GraphCanvasState extends State<GraphCanvas> {
             if (from == null || to == null) {
               continue;
             }
-            if (!visibleRect.contains(from) &&
-                !visibleRect.contains(to)) {
+            if (!visibleRect.contains(from) && !visibleRect.contains(to)) {
               continue;
             }
             lines.add((from + worldOffset, to + worldOffset));
@@ -862,7 +870,9 @@ class _GraphCanvasState extends State<GraphCanvas> {
       _showError(widget.host.i18nService.t('error.saveFailed'));
       return;
     } catch (error) {
-      _showError('${widget.host.i18nService.t('error.operationFailed')}: $error');
+      _showError(
+        '${widget.host.i18nService.t('error.operationFailed')}: $error',
+      );
       return;
     }
     // 画布成员 = 外观位置（判据②）：新节点落点在双击处。

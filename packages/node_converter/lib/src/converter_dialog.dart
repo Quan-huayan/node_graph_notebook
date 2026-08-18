@@ -43,23 +43,40 @@ class _ConverterDialogState extends State<ConverterDialog> {
     final ext = _markdown ? 'md' : 'json';
     final path =
         '$dir${sep}export-${DateTime.now().microsecondsSinceEpoch}.$ext';
-    final result = await widget.host.commandBus
-        .dispatch<ExportCommand, ExportResult>(ExportCommand(path: path));
-    if (!mounted) {
-      return;
-    }
-    setState(() => _busy = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          widget.host.i18nService
-              .t('converter.exported')
-              .replaceFirst('%s', '${result.exportedCount}')
-              .replaceFirst('%s', path),
+    try {
+      final result = await widget.host.commandBus
+          .dispatch<ExportCommand, ExportResult>(ExportCommand(path: path));
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.host.i18nService
+                .t('converter.exported')
+                .replaceFirst('%s', '${result.exportedCount}')
+                .replaceFirst('%s', path),
+          ),
+          duration: const Duration(seconds: 3),
         ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+      );
+    } catch (error) {
+      // 失败反馈（架构 §8：禁止静默失败——磁盘写失败/权限不足可见）。
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${widget.host.i18nService.t('converter.exportFailed')}: $error',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
   }
 
   Future<void> _import() async {
@@ -68,22 +85,39 @@ class _ConverterDialogState extends State<ConverterDialog> {
       return;
     }
     setState(() => _busy = true);
-    final result = await widget.host.commandBus
-        .dispatch<ImportCommand, ImportResult>(ImportCommand(path: path));
-    if (!mounted) {
-      return;
-    }
-    setState(() => _busy = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          widget.host.i18nService
-              .t('converter.imported')
-              .replaceFirst('%s', '${result.importedNodeIds.length}'),
+    try {
+      final result = await widget.host.commandBus
+          .dispatch<ImportCommand, ImportResult>(ImportCommand(path: path));
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.host.i18nService
+                .t('converter.imported')
+                .replaceFirst('%s', '${result.importedNodeIds.length}'),
+          ),
+          duration: const Duration(seconds: 2),
         ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
+    } catch (error) {
+      // 失败反馈（架构 §8：文件不存在/格式错误等不再静默崩溃）。
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${widget.host.i18nService.t('converter.importFailed')}: $error',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
   }
 
   @override
@@ -104,7 +138,9 @@ class _ConverterDialogState extends State<ConverterDialog> {
             ),
             ButtonSegment<bool>(
               value: true,
-              label: Text(widget.host.i18nService.t('converter.formatMarkdown')),
+              label: Text(
+                widget.host.i18nService.t('converter.formatMarkdown'),
+              ),
             ),
           ],
           selected: <bool>{_markdown},

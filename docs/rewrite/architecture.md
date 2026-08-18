@@ -317,3 +317,10 @@ M7 落地（2026-08-05，01 拍板 #30-41）
 - **节点样式**：`style.graph.<nodeId>`（判据②）——颜色（12 色板）/ 尺寸 / 形态（card/circle 卡片与圆圈）；只在画布卡片壳层应用（卡片体 Hook 渲染样式无关）；默认按 kind 配色（ai→indigo 50、folder→amber 50）；DeleteNodeHandler 级联清理样式键。
 - **布局**：`ApplyLayoutCommand`（ChangeKind.ui，不发失效事件——画布观察者通道刷新）——力导向（`IncrementalLayoutEngine` 移植，AdjacencyList → AdjacencyMap）/ 网格 / 树状（BFS 分层 + 分量兜底）；入口 = 画布空白右键菜单 + 工具栏 'layout.apply' 动作。
 - **Function Calling 复活**：`AIToolRegistry`（服务，factory 预装 6 内置工具——onLoad 副作用在 plugon provider 重建后丢失的修正）/ `AIToolParameterValidator`（原型污染/DoS 防护）/ `FunctionCallingLoop`（maxIterations=10 兜底）；`AIProvider.complete`（OpenAI tools + tool_choice:auto，Mock scriptedToolCalls 测试驱动）；工具经 CommandBus dispatch 节点命令（判据①，写后通知画布实时反映）；AskAIHandler 工具调用/结果以 AI 角色文本落盘（每次重读最新 chat——陈旧快照互相覆盖的实测坑）；注册表空 → 旧 generate 路径回归兼容。
+
+### M7.4 Flowing UI 补漏（2026-08-15）
+
+- `DragController` / `FlightShell` 上移为 HostRuntime 共享单例：拖拽事务四阶段真正接线（dragStart → dragMove → onDrop → cancel），侧边栏（笔记行/文件夹/搜索结果）起点统一上报。
+- `FlightShell.present` 合流状态机与视觉：`present(overlay:, child:)` 成功飞行、失败 `bounce` 回弹、`abort/commit` 清理影像；旧 entry 被替换时 identity 守卫防二次 remove。
+- 工具栏 drop 走共享事务（`ToolbarContainerConcept.askDropSemantics = DataMove` + per-drop 命令工厂路由 `ToolbarDropSemantics`），失败反馈 SnackBar——三向落点同一事务机制。
+- 视口物化 kind 感知：`UIManager.onViewportChanged(rect, kind: 'graph')` 与 `WindowManager.isMaterialized(nodeId, kind:)`——同节点 sidebar/graph 多 Hook 窗口化不再互相遮挡。

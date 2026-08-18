@@ -99,9 +99,9 @@ void main() {
     await tester.pumpWidget(_Harness(host: host));
     await tester.pump();
 
-    // 搜索出 noteA。
+    // 搜索出 noteA（防抖 150ms 后）。
     await tester.enterText(find.byType(TextField), '第一篇');
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('第一篇笔记'), findsOneWidget);
 
     // 拖结果行到画布中心。
@@ -132,7 +132,7 @@ void main() {
     await tester.pump();
 
     await tester.enterText(find.byType(TextField), '第二篇');
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('第二篇笔记'), findsOneWidget);
 
     final toolbar = find.byType(ToolbarActionsRow);
@@ -156,7 +156,7 @@ void main() {
     await tester.pump();
 
     await tester.enterText(find.byType(TextField), '第一篇');
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     final toolbar = find.byType(ToolbarActionsRow);
     final row = find.text('第一篇笔记');
     await tester.drag(row, tester.getCenter(toolbar) - tester.getCenter(row));

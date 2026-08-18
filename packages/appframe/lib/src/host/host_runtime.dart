@@ -26,6 +26,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../command/create_toolbar_button.dart';
 import '../i18n/i18n_service.dart';
 import '../interaction/drag_controller.dart';
+import '../interaction/flight_shell.dart';
 import '../render/flutter_render_context.dart';
 import '../spatial/quad_tree_viewport_query.dart';
 import '../store/fs_graph.dart';
@@ -59,7 +60,8 @@ class HostRuntime {
        prefs = prefs,
        _renderRoot = renderRoot ?? FlutterRenderContext() {
     // 视口查询在构造体装配（依赖已初始化的 uiStateStore 字段）。
-    _viewportQuery = viewportQuery ?? QuadTreeViewportQuery(uiStateStore: uiStateStore);
+    _viewportQuery =
+        viewportQuery ?? QuadTreeViewportQuery(uiStateStore: uiStateStore);
     // 扩展点 / 派生查询器 / 路由总线共享同一注册表（initializer 内
     // 无法引用实例字段，故在构造体装配）。
     extensions = ExtensionRegistry();
@@ -69,6 +71,20 @@ class HostRuntime {
     undoManager = UndoManager(dispatchRaw: commandBus.executeRaw);
     commandBus.undoManager = undoManager;
     concepts = PluginConceptRegistry(extensions: extensions);
+    // M7.4（Flowing UI 共享事务）：DragController/FlightShell 是壳层
+    // 单例——拖拽起点记录与落点判定必须在同一事务实例上。旧实现每个
+    // FolderView 各建一个 DragController，dragStart 永远没有调用方，
+    // 会话态恒为 null；且嵌套 folder 拖拽的起点记录在源视图自己的
+    // 控制器里，目标视图的控制器根本读不到（飞行视觉 from 退化为
+    // dropPoint）。共享后插件/视图只按目标容器路由命令工厂。
+    flightShell = FlightShell();
+    dragController = DragController(
+      graph: graph,
+      concepts: concepts,
+      commandBus: commandBus,
+      uiStateStore: uiStateStore,
+      flightShell: flightShell,
+    );
     // 核心服务注册（插件 onLoad 经 plugon DI 解析）。
     // CommandBus 注册（M7：Lua 插件宿主写 API 需 dispatch——闭包延迟
     // 求值，dispatch 时 commandBus 已初始化）。
@@ -82,6 +98,9 @@ class HostRuntime {
       ..addSingleton<UIStateStore>((sp) => uiStateStore)
       ..addSingleton<CommandBus>((sp) => commandBus)
       ..addSingleton<ToolbarActionRegistry>((sp) => toolbarActions)
+      // M7.4（Flowing UI）：共享拖拽事务与飞行壳层注册为服务。
+      ..addSingleton<DragController>((sp) => dragController)
+      ..addSingleton<FlightShell>((sp) => flightShell)
       // P1-4：壳层信号服务（侧边栏 tab 切换等跨插件协调）。
       ..addSingleton<ShellSignals>((sp) => shellSignals)
       // M7.2（E3 主题接线）：壳层主题控制器注册为服务——设置插件
@@ -152,6 +171,12 @@ class HostRuntime {
 
   /// UI 管理器（物化/失效/降级）。
   late final WindowedUIManager uiManager;
+
+  /// 飞行壳层（共享过渡渲染层——全应用同一 overlay 影像槽）。
+  late final FlightShell flightShell;
+
+  /// 拖拽控制器（共享事务：dragStart/dragMove/onDrop 全应用同源）。
+  late final DragController dragController;
 
   /// DI 容器（plugon owned 视图）。
   final ServiceCollection services = ServiceCollection();

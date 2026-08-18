@@ -16,13 +16,21 @@ import 'folder_view.dart';
 /// 侧边栏 Tab 容器（sidebar-root 形态）。
 class SidebarTabsView extends StatefulWidget {
   /// 注入宿主与根节点。
-  const SidebarTabsView({super.key, required this.host, required this.node});
+  const SidebarTabsView({
+    super.key,
+    required this.host,
+    required this.node,
+    this.onDragStart,
+  });
 
   /// 宿主组合根。
   final HostRuntime host;
 
   /// 根节点（kind == 'folder'，sidebar 语义）。
   final Node node;
+
+  /// 面板内拖拽源起点上报（共享 DragController，M7.4）。
+  final DragStartHandler? onDragStart;
 
   @override
   State<SidebarTabsView> createState() => _SidebarTabsViewState();
@@ -42,7 +50,10 @@ class _SidebarTabsViewState extends State<SidebarTabsView>
       final controller = _tabController;
       final panelIds = _panelIds();
       final index = panelIds
-          .where((id) => widget.host.graph.get(id)?.metadata['kind'] == 'search-panel')
+          .where(
+            (id) =>
+                widget.host.graph.get(id)?.metadata['kind'] == 'search-panel',
+          )
           .map(panelIds.indexOf)
           .firstOrNull;
       if (controller != null && index != null && mounted) {
@@ -66,6 +77,25 @@ class _SidebarTabsViewState extends State<SidebarTabsView>
       .map((n) => n.id)
       .toList();
 
+  /// Tab 变化 → 若切到搜索面板 tab（点击或 Ctrl+F 动画到达），再发一次
+  /// 聚焦信号——搜索面板据此聚焦输入框（键盘/鼠标直达搜索，UX P2）。
+  /// 幂等：已聚焦再通知无副作用；无搜索面板时无操作。
+  void _onTabChanged() {
+    final controller = _tabController;
+    if (!mounted || controller == null) {
+      return;
+    }
+    final panelIds = _panelIds();
+    final index = controller.index - 1; // 0 = 文件夹 tab，面板从 1 起。
+    if (index < 0 || index >= panelIds.length) {
+      return;
+    }
+    final panel = widget.host.graph.get(panelIds[index]);
+    if (panel?.metadata['kind'] == 'search-panel') {
+      widget.host.shellSignals.requestSearchFocus();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final root = widget.node;
@@ -78,11 +108,9 @@ class _SidebarTabsViewState extends State<SidebarTabsView>
     if (panelIds.isEmpty) {
       return folderView;
     }
-    // 显式 TabController（P1-4：壳层信号可切换）。
-    _tabController ??= TabController(
-      length: panelIds.length + 1,
-      vsync: this,
-    );
+    // 显式 TabController（P1-4：壳层信号可切换；UX：tab 变更 → 聚焦信号）。
+    _tabController ??= TabController(length: panelIds.length + 1, vsync: this)
+      ..addListener(_onTabChanged);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -109,6 +137,7 @@ class _SidebarTabsViewState extends State<SidebarTabsView>
                   host: widget.host,
                   nodeId: id,
                   kind: 'sidebar-panel',
+                  onDragStart: widget.onDragStart,
                 ),
             ],
           ),

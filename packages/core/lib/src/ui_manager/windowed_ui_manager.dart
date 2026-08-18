@@ -70,12 +70,16 @@ class WindowedUIManager implements UIManager {
       materializer.materialize(nodeId, containerHook, kind);
 
   @override
-  void onViewportChanged(ValueRect viewport) {
+  void onViewportChanged(ValueRect viewport, {String? kind}) {
+    final targetKind = kind ?? _rootKind;
+    // 第二容器（如画布）没有递归根 Hook；容器 null = widget 驱动物化
+    // （与 materializeIfAbsent 同一简化，M7.1）。
+    final container = targetKind == _rootKind ? _rootHook : null;
     for (final nodeId in query.queryNodes(viewport)) {
-      if (window.isMaterialized(nodeId)) {
+      if (window.isMaterialized(nodeId, kind: targetKind)) {
         continue;
       }
-      materializer.materialize(nodeId, _rootHook, _rootKind);
+      materializer.materialize(nodeId, container, targetKind);
     }
   }
 

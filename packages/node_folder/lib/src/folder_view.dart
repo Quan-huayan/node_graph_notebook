@@ -42,43 +42,32 @@ class FolderView extends StatefulWidget {
 }
 
 class _FolderViewState extends State<FolderView> {
-  late final DragController _drag;
+  /// 共享拖拽事务（HostRuntime 单例，M7.4）——dragStart/onDrop 同源。
+  DragController get _drag => widget.host.dragController;
 
-  /// 拖拽起点（飞行视觉——子 Hook 经 onDragStart 记录）。
+  /// Phase 1：开启共享事务并记录影像起点（拖拽源统一入口）。
+  void _recordDragStart(String nodeId, Offset position) {
+    _drag.dragStart(nodeId);
+    _drag.recordDragStart(position);
+  }
 
-  @override
-  void initState() {
-    super.initState();
-    // 拖拽事务（folder 语义：contain 实例变更——数据命令）。
-    // M7.3（Flowing UI 语义分发）：宿主 SidebarDropSemantics 服务先问
-    // （插件覆盖——node_ai 对 AI 节点返回 CreateAIPanelCommand = 拖 AI
-    // 入侧边栏钉面板 tab）；null → 默认 folder 语义。
-    _drag = DragController(
-      graph: widget.host.graph,
-      concepts: widget.host.concepts,
-      commandBus: widget.host.commandBus,
-      uiStateStore: widget.host.uiStateStore,
-      flightShell: FlightShell(),
-      moveCommandFactory:
-          ({
-            required String draggedNodeId,
-            required String targetContainerId,
-            required Map<String, String> newReferences,
-          }) {
-            final semantics = widget.host.serviceProvider
-                .get<SidebarDropSemantics>();
-            final custom = semantics(
-              draggedNodeId: draggedNodeId,
-              targetContainerId: targetContainerId,
-            );
-            if (custom != null) {
-              return custom;
-            }
-            return MoveNodesCommand(
-              containerId: targetContainerId,
-              childId: draggedNodeId,
-            );
-          },
+  /// folder 语义的命令工厂（共享事务按目标容器路由的实例级覆盖）。
+  Command _folderMoveFactory({
+    required String draggedNodeId,
+    required String targetContainerId,
+    required Map<String, String> newReferences,
+  }) {
+    final semantics = widget.host.serviceProvider.get<SidebarDropSemantics>();
+    final custom = semantics(
+      draggedNodeId: draggedNodeId,
+      targetContainerId: targetContainerId,
+    );
+    if (custom != null) {
+      return custom;
+    }
+    return MoveNodesCommand(
+      containerId: targetContainerId,
+      childId: draggedNodeId,
     );
   }
 
@@ -95,37 +84,23 @@ class _FolderViewState extends State<FolderView> {
     // 其他容器）。拖拽起点记录（飞行视觉，同 NoteRowView 模式）。
     final content = DragTarget<String>(
       onAcceptWithDetails: (details) async {
-        // M7 落地（Flowing UI）：影像从源飞向目标（03 §二 壳层）。
         final start = _drag.dragStartOffset ?? details.offset;
         final child = widget.host.graph.get(details.data);
-        if (child != null) {
-          _drag.flightShell.fly(
-            overlay: Overlay.of(context),
-            child: _FlightCard(title: child.title),
-            from: start,
-            to: details.offset,
-            onFinished: (_) {},
-          );
-        }
         final hook = const FolderConcept().createHook(
           node,
           const HookContext(kind: 'sidebar'),
         );
+        // M7.4：成功飞行 / 失败回弹统一由 DragController 编排——
+        // 不再先 fly 再按结果 bounce（旧路径存在双影像竞态）。
         final outcome = await _drag.onDrop(
           draggedNodeId: details.data,
           targetContainerHook: hook,
           dropPoint: details.offset,
+          from: start,
+          overlay: Overlay.of(context),
+          flightChild: child == null ? null : _FlightCard(title: child.title),
+          moveCommandFactory: _folderMoveFactory,
         );
-        if (outcome.kind != DropOutcomeKind.committed) {
-          // 失败 → 回弹（03 Phase 4：影像弹回源位置，无副作用）。
-          _drag.flightShell.bounce(
-            overlay: Overlay.of(context),
-            child: _FlightCard(title: child?.title ?? ''),
-            from: start,
-            to: details.offset,
-            onFinished: (_) {},
-          );
-        }
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -169,7 +144,7 @@ class _FolderViewState extends State<FolderView> {
                   host: widget.host,
                   nodeId: childId,
                   kind: 'sidebar',
-                  onDragStart: _drag.recordDragStart,
+                  onDragStart: _recordDragStart,
                 ),
             ],
           ),
@@ -202,7 +177,7 @@ class _FolderViewState extends State<FolderView> {
                 host: widget.host,
                 nodeId: noteId,
                 kind: 'sidebar',
-                onDragStart: _drag.recordDragStart,
+                onDragStart: _recordDragStart,
               ),
           ],
         );
@@ -218,7 +193,8 @@ class _FolderViewState extends State<FolderView> {
       feedback: _FlightCard(title: node.title),
       onDragStarted: () {
         final box = context.findRenderObject() as RenderBox?;
-        _drag.recordDragStart(
+        _recordDragStart(
+          node.id,
           box == null ? Offset.zero : box.localToGlobal(Offset.zero),
         );
       },

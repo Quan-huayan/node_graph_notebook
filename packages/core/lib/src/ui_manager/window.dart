@@ -11,7 +11,10 @@ import 'package:core_data/core_data.dart';
 /// 窗口化管理：物化登记与回收（architecture.md §3 核心类）。
 abstract class WindowManager {
   /// 是否已物化（视口物化时序 §5.1 的判据）。
-  bool isMaterialized(String nodeId);
+  ///
+  /// [kind] 提供时按 kind 感知判定（同一节点可在 sidebar/graph/open
+  /// 多容器各有一个 Hook）；省略 = 任意 kind 已物化（向后兼容）。
+  bool isMaterialized(String nodeId, {String? kind});
 
   /// 物化登记：把 [hook] 挂到 [containerHook] 下（§5.1 时序 attach）。
   ///

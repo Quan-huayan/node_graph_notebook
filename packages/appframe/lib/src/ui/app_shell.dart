@@ -133,6 +133,9 @@ class _AppShellState extends State<AppShell> {
             nodeId: widget.rootNodeId,
             kind: 'sidebar-root',
             onCardDrop: widget.onCardDrop,
+            // M7.4：侧边栏内所有拖拽源（笔记行/搜索行）向共享事务
+            // 记录起点——成功飞行/失败回弹的 from 不再退化到落点。
+            onDragStart: _onDragStart,
           ),
         ),
         const VerticalDivider(width: 1),
@@ -259,6 +262,13 @@ class _AppShellState extends State<AppShell> {
     return <Widget>[
       HookView(host: widget.host, nodeId: id, kind: 'toolbar-root'),
     ];
+  }
+
+  /// 拖拽源起点上报（共享 DragController 的 Phase 1 入口）。
+  void _onDragStart(String nodeId, Offset position) {
+    widget.host.dragController
+      ..dragStart(nodeId)
+      ..recordDragStart(position);
   }
 
   /// 工具栏容器节点（kind == 'toolbar-root'，结构判定——壳不依赖

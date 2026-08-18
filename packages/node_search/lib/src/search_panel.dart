@@ -5,6 +5,8 @@
 /// 点击打开节点）。纯读侧服务（01 拍板 #36）。
 library;
 
+import 'dart:async';
+
 import 'package:appframe/appframe.dart';
 import 'package:core_data/core_data.dart';
 import 'package:flutter/material.dart';
@@ -94,6 +96,7 @@ class SearchPanelHook extends Hook {
       SearchPanelView(
         host: host,
         search: host.serviceProvider.get<SearchService>(),
+        onDragStart: context.onDragStart,
       ),
     );
   }
@@ -102,7 +105,12 @@ class SearchPanelHook extends Hook {
 /// 搜索面板视图（输入 + 结果 + 点击打开节点）。
 class SearchPanelView extends StatefulWidget {
   /// 注入宿主与搜索服务。
-  const SearchPanelView({super.key, required this.host, required this.search});
+  const SearchPanelView({
+    super.key,
+    required this.host,
+    required this.search,
+    this.onDragStart,
+  });
 
   /// 宿主组合根。
   final HostRuntime host;
@@ -110,88 +118,189 @@ class SearchPanelView extends StatefulWidget {
   /// 搜索服务（读侧）。
   final SearchService search;
 
+  /// 结果行拖拽起点上报（共享 DragController，M7.4）。
+  final DragStartHandler? onDragStart;
+
   @override
   State<SearchPanelView> createState() => _SearchPanelViewState();
 }
 
 class _SearchPanelViewState extends State<SearchPanelView> {
   final TextEditingController _input = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   List<Node> _results = const <Node>[];
+  Timer? _debounce;
+  late final void Function() _onSearchSignal;
+
+  /// 防抖窗口（输入停顿后触发搜索——大仓库下避免每键全量扫描抖动）。
+  static const Duration _debounceDuration = Duration(milliseconds: 150);
+
+  @override
+  void initState() {
+    super.initState();
+    // Ctrl+F（壳层信号，P1-4）→ 聚焦输入框并全选——键盘直达搜索，
+    // 无需再点一次输入框（判据③ 会话态：信号只通知不落盘）。
+    _onSearchSignal = () {
+      if (!mounted) {
+        return;
+      }
+      _focusNode.requestFocus();
+      _input.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _input.text.length,
+      );
+    };
+    widget.host.shellSignals.addListener(_onSearchSignal);
+  }
 
   @override
   void dispose() {
+    widget.host.shellSignals.removeListener(_onSearchSignal);
+    _debounce?.cancel();
     _input.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   void _onChanged(String text) {
-    setState(() {
-      _results = widget.search.search(SearchQuery(text: text));
+    // 防抖：停止输入 _debounceDuration 后才搜索（大仓库性能 UX）。
+    _debounce?.cancel();
+    _debounce = Timer(_debounceDuration, () {
+      if (mounted) {
+        setState(() {
+          _results = widget.search.search(SearchQuery(text: text));
+        });
+      }
     });
   }
 
+  /// 内容摘要（空白折叠 + 截断——结果行可读性，用户无需打开即可判断）。
+  static String _snippet(String content) {
+    final collapsed = content.trim().replaceAll(RegExp(r'\s+'), ' ');
+    return collapsed.length <= 48
+        ? collapsed
+        : '${collapsed.substring(0, 48)}…';
+  }
+
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: <Widget>[
-      Padding(
-        padding: const EdgeInsets.all(8),
-        child: TextField(
-          controller: _input,
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.search),
-            hintText: widget.host.i18nService.t('search.hint'),
-            isDense: true,
-            border: const OutlineInputBorder(),
+  Widget build(BuildContext context) {
+    final query = _input.text.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: TextField(
+            controller: _input,
+            focusNode: _focusNode,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              hintText: widget.host.i18nService.t('search.hint'),
+              isDense: true,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: _onChanged,
           ),
-          onChanged: _onChanged,
         ),
-      ),
-      Expanded(
-        child: _results.isEmpty
-            ? Center(
-                child: Text(
-                  widget.host.i18nService.t('search.hint'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              )
-            : ListView.builder(
-                itemCount: _results.length,
-                itemBuilder: (context, index) {
-                  final node = _results[index];
-                  // M7.3（Flowing UI 三向拖拽）：结果行 = 拖拽源——
-                  // 拖到侧边栏 folder = 列表项（MoveNodes）、拖到画布 =
-                  // 卡片（位置直写）、拖到工具栏 = 按钮（CreateToolbar-
-                  // ButtonCommand）。落点语义全在既有 DragTarget，本行
-                  // 只提供 Draggable（data = nodeId，对齐 NoteRowView）。
-                  return Draggable<String>(
-                    data: node.id,
-                    feedback: Material(
-                      color: Colors.transparent,
-                      child: Card(
-                        elevation: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(node.title, maxLines: 1),
+        // 结果计数（有查询词时显示——搜索反馈明确化）。
+        if (query.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
+            child: Text(
+              widget.host.i18nService
+                  .t('search.resultsCount')
+                  .replaceFirst('%s', '${_results.length}'),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+          ),
+        Expanded(
+          child: query.isEmpty
+              ? Center(
+                  child: Text(
+                    widget.host.i18nService.t('search.hint'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                )
+              : _results.isEmpty
+              ? Center(
+                  child: Text(
+                    widget.host.i18nService.t('search.noResults'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _results.length,
+                  itemBuilder: (context, index) {
+                    final node = _results[index];
+                    // M7.3（Flowing UI 三向拖拽）：结果行 = 拖拽源——
+                    // 拖到侧边栏 folder = 列表项（MoveNodes）、拖到画布 =
+                    // 卡片（位置直写）、拖到工具栏 = 按钮（CreateToolbar-
+                    // ButtonCommand）。落点语义全在既有 DragTarget，本行
+                    // 只提供 Draggable（data = nodeId，对齐 NoteRowView）。
+                    // Builder：itemBuilder 的 context.renderObject 是
+                    // RenderSliverList，不能直接 localToGlobal；拿行级
+                    // BuildContext 才能量到结果行 RenderBox（M7.4）。
+                    return Builder(
+                      builder: (rowContext) => Draggable<String>(
+                        data: node.id,
+                        onDragStarted: () {
+                          final box =
+                              rowContext.findRenderObject() as RenderBox?;
+                          widget.onDragStart?.call(
+                            node.id,
+                            box == null
+                                ? Offset.zero
+                                : box.localToGlobal(Offset.zero),
+                          );
+                        },
+                        feedback: Material(
+                          color: Colors.transparent,
+                          child: Card(
+                            elevation: 4,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Text(node.title, maxLines: 1),
+                            ),
+                          ),
+                        ),
+                        child: ListTile(
+                          dense: true,
+                          leading: Icon(_kindIcon(node), size: 18),
+                          title: Text(
+                            node.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          // 内容摘要（命中内容可预览，无需打开节点）。
+                          subtitle:
+                              node.content == null ||
+                                  node.content!.trim().isEmpty
+                              ? null
+                              : Text(
+                                  _snippet(node.content!),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                          onTap: () => _openNode(rowContext, node.id),
                         ),
                       ),
-                    ),
-                    child: ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.description, size: 18),
-                      title: Text(
-                        node.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () => _openNode(context, node.id),
-                    ),
-                  );
-                },
-              ),
-      ),
-    ],
-  );
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  /// 结果行图标（kind 感知——同 GenericNodeCardBody 的映射约定）。
+  static IconData _kindIcon(Node node) => switch (node.metadata['kind']) {
+    'folder' => Icons.folder_outlined,
+    'ai' => Icons.smart_toy_outlined,
+    _ => Icons.description_outlined,
+  };
 
   /// 打开节点 = 渲染其 Hook（D1 打开契约：发起方负责外壳）。
   void _openNode(BuildContext context, String nodeId) {

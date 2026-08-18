@@ -82,6 +82,28 @@ void main() {
       expect(concept.created, hasLength(1));
     });
 
+    test('onViewportChanged kind 感知：同节点已有 sidebar Hook 仍物化 graph', () {
+      final graph = InMemoryGraph()..save(TestNode(id: 'a', title: 'A'));
+      final concept = RecordingConcept(id: 'note', matchNodeIds: const {'a'});
+      final manager = _manager(
+        graph: graph,
+        concepts: _registry(<Concept>[concept]),
+        query: FixedViewportQuery(const <String>['a']),
+      );
+      manager.materialize('a', null, 'sidebar');
+
+      manager.onViewportChanged(
+        const ValueRect(x: 0, y: 0, width: 100, height: 100),
+        kind: 'graph',
+      );
+
+      // 旧实现按 nodeId 判"已物化"会跳过——同节点多容器多 Hook 的
+      // 窗口化被 sidebar Hook 挡住，graph 卡片永远不会由视口物化。
+      expect(concept.created, hasLength(2));
+      expect(manager.hookFor('a', 'sidebar'), isNotNull);
+      expect(manager.hookFor('a', 'graph'), isNotNull);
+    });
+
     test('materializeRoot 物化根容器（kind 追溯链）', () {
       final graph = InMemoryGraph()
         ..save(

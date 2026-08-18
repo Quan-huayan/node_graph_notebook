@@ -129,7 +129,14 @@ class FolderHook extends Hook {
     if (flutterContext.kind == 'sidebar-root') {
       // M7.2（Flowing UI 具象化，用户裁决）：侧边栏根 = Tab 容器
       // （文件夹树 + 各插件面板——搜索面板等）。
-      sink.add(SidebarTabsView(host: host, node: host.graph.get(nodeId)!));
+      sink.add(
+        SidebarTabsView(
+          host: host,
+          node: host.graph.get(nodeId)!,
+          // M7.4：面板内拖拽源（搜索行）也上报共享事务起点。
+          onDragStart: flutterContext.onDragStart,
+        ),
+      );
       return;
     }
     sink.add(
