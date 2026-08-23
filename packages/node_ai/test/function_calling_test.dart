@@ -96,7 +96,7 @@ void main() {
     ].forEach(host.graph.save);
     await host.start(plugins: <Plugin>[GraphPlugin()], rootNodeId: 'canvas');
 
-    final provider = MockAIProvider(
+    const provider = MockAIProvider(
       delay: Duration.zero,
       scriptedToolCalls: <ToolCallIntent>[
         ToolCallIntent(
@@ -106,10 +106,10 @@ void main() {
         ),
       ],
     );
-    final loop = const FunctionCallingLoop();
+    const loop = FunctionCallingLoop();
     final reply = await loop.run(
       provider: provider,
-      history: <AIMessage>[AIMessage(role: 'user', content: '帮我记一条笔记')],
+      history: <AIMessage>[const AIMessage(role: 'user', content: '帮我记一条笔记')],
       tools: <AITool>[const CreateNodeTool()],
       executeTool: (tool, arguments) async {
         final node = await tool.execute(
@@ -126,7 +126,7 @@ void main() {
   });
 
   test('工具循环：未知工具名 → 错误回填不中断', () async {
-    final provider = MockAIProvider(
+    const provider = MockAIProvider(
       delay: Duration.zero,
       scriptedToolCalls: <ToolCallIntent>[
         ToolCallIntent(
@@ -136,12 +136,12 @@ void main() {
         ),
       ],
     );
-    final loop = const FunctionCallingLoop();
+    const loop = FunctionCallingLoop();
     final reply = await loop.run(
       provider: provider,
-      history: <AIMessage>[AIMessage(role: 'user', content: 'x')],
+      history: <AIMessage>[const AIMessage(role: 'user', content: 'x')],
       tools: const <AITool>[CreateNodeTool()],
-      executeTool: (tool, arguments) async => AIToolResult.success(data: 'ok'),
+      executeTool: (tool, arguments) async => const AIToolResult.success(data: 'ok'),
     );
     expect(reply, contains('Mock 回复'));
   });
@@ -149,14 +149,14 @@ void main() {
   test('工具循环：超限抛错（maxIterations 兜底）', () async {
     // 脚本永不消费完的 provider（覆盖 complete 恒返回工具调用）。
     final provider = _NeverEndingProvider();
-    final loop = FunctionCallingLoop(maxIterations: 3);
+    const loop = FunctionCallingLoop(maxIterations: 3);
     await expectLater(
       loop.run(
         provider: provider,
-        history: <AIMessage>[AIMessage(role: 'user', content: 'x')],
+        history: <AIMessage>[const AIMessage(role: 'user', content: 'x')],
         tools: <AITool>[const CreateNodeTool()],
         executeTool: (tool, arguments) async =>
-            AIToolResult.success(data: 'ok'),
+            const AIToolResult.success(data: 'ok'),
       ),
       throwsA(isA<AIProviderException>()),
     );
@@ -200,7 +200,7 @@ void main() {
     await host.start(
       plugins: <Plugin>[
         AiPlugin(
-          provider: MockAIProvider(
+          provider: const MockAIProvider(
             delay: Duration.zero,
             scriptedToolCalls: <ToolCallIntent>[
               ToolCallIntent(
@@ -218,14 +218,14 @@ void main() {
     );
     // 建会话（拖入）+ 用户消息 + 提问。
     await host.commandBus.dispatch<DropIntoAICommand, DropIntoAIResult>(
-      DropIntoAICommand(aiNodeId: 'aiNode', sourceId: 'noteA'),
+      const DropIntoAICommand(aiNodeId: 'aiNode', sourceId: 'noteA'),
     );
-    final chatId = 'chat-noteA-aiNode';
+    const chatId = 'chat-noteA-aiNode';
     await host.commandBus.dispatch<AppendMessageCommand, AppendMessageResult>(
-      AppendMessageCommand(chatId: chatId, message: '帮我记一条'),
+      const AppendMessageCommand(chatId: chatId, message: '帮我记一条'),
     );
     await host.commandBus.dispatch<AskAICommand, AskAIResult>(
-      AskAICommand(chatId: chatId),
+      const AskAICommand(chatId: chatId),
     );
 
     final chat = host.graph.get(chatId)!;
@@ -250,13 +250,13 @@ class _NeverEndingProvider implements AIProvider {
   Future<AssistantResponse> complete({
     required List<AIMessage> messages,
     List<AITool>? tools,
-  }) async => AssistantResponse(
+  }) async => const AssistantResponse(
     content: null,
     toolCalls: <ToolCallIntent>[
       ToolCallIntent(
         id: 'call-n',
         name: 'create_node',
-        arguments: const <String, dynamic>{},
+        arguments: <String, dynamic>{},
       ),
     ],
   );

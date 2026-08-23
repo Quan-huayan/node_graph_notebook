@@ -14,7 +14,6 @@ import 'dart:io';
 
 import 'package:appframe/appframe.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:core/core.dart';
 import 'package:node_ai/node_ai.dart';
 import 'package:node_converter/node_converter.dart';
@@ -236,6 +235,27 @@ void seedIfEmpty(HostRuntime host) {
       createdAt: now,
       updatedAt: now,
     ),
+    // 标签面板节点（A2：Obsidian 标签语义——tags-panel 侧边栏 Tab，
+    // 与 search-panel 同机制；数据 = TagService 读侧推导）。
+    StoredNode(
+      id: 'tags-panel',
+      title: '标签',
+      references: const <String, String>{'sidebar': 'root'},
+      metadata: const <String, dynamic>{'kind': 'tags-panel'},
+      createdAt: now,
+      updatedAt: now,
+    ),
+    // 最近打开面板节点（C5：Obsidian 最近文件语义——recent-panel 侧边栏
+    // Tab；数据 = UIStateStore recent.* 外观键，打开记录由 openNodeDialog
+    // 写，删除时键级联清理）。
+    StoredNode(
+      id: 'recent-panel',
+      title: '最近打开',
+      references: const <String, String>{'sidebar': 'root'},
+      metadata: const <String, dynamic>{'kind': 'recent-panel'},
+      createdAt: now,
+      updatedAt: now,
+    ),
     StoredNode(
       id: 'toolbar-converter',
       title: '导入导出',
@@ -256,6 +276,20 @@ void seedIfEmpty(HostRuntime host) {
         'icon': 'storefront',
         'tooltip': '插件市场',
         'action': 'market.open',
+      },
+      createdAt: now,
+      updatedAt: now,
+    ),
+    // C1：全局图谱按钮（Obsidian Graph view 语义——动作 = 本插件对话框，
+    // 命令面板经按钮节点数据驱动自动入列）。
+    StoredNode(
+      id: 'toolbar-graph-global',
+      title: '全局图谱',
+      metadata: const <String, dynamic>{
+        'kind': 'toolbar',
+        'icon': 'hub',
+        'tooltip': '全局图谱',
+        'action': 'graph.global',
       },
       createdAt: now,
       updatedAt: now,

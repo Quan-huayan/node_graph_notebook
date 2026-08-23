@@ -92,7 +92,7 @@ void main() {
     final host = await seed(root);
     final result = await host.commandBus
         .dispatch<CreateToolbarButtonCommand, CreateToolbarButtonResult>(
-          CreateToolbarButtonCommand(sourceId: 'noteA'),
+          const CreateToolbarButtonCommand(sourceId: 'noteA'),
         );
     expect(result.buttonId, 'toolbar-open-noteA');
 
@@ -106,14 +106,14 @@ void main() {
     // 幂等：再建 → 同一 id，不重复创建。
     await host.commandBus
         .dispatch<CreateToolbarButtonCommand, CreateToolbarButtonResult>(
-          CreateToolbarButtonCommand(sourceId: 'noteA'),
+          const CreateToolbarButtonCommand(sourceId: 'noteA'),
         );
     expect(host.graph.get('toolbar-open-noteA'), isNotNull);
 
     // AI 源 → smart_toy 图标。
     await host.commandBus
         .dispatch<CreateToolbarButtonCommand, CreateToolbarButtonResult>(
-          CreateToolbarButtonCommand(sourceId: 'aiNode'),
+          const CreateToolbarButtonCommand(sourceId: 'aiNode'),
         );
     expect(
       host.graph.get('toolbar-open-aiNode')!.metadata['icon'],

@@ -1,10 +1,18 @@
 /// MarkdownEditorView —— 笔记编辑/预览视图（M7 修正，Hook 承载 UI）。
 ///
 /// EditorHook.render 挂载本视图（kind = 'open'——点击笔记 = 渲染其
-/// Hook = 编辑器视图）。**服务注入**（commandBus——不依赖组合根 host）；
-/// 无对话框外壳（HookView 的宿主提供容器）。保存 dispatch
-/// `SaveNoteCommand`（写路径，00 不变量 4.4-1）；写后通知 → 重渲染。
-/// 预览 = 简单 markdown 行解析（# 标题 / - 列表 / 普通文本）。
+/// Hook = 编辑器视图）。保存 dispatch `SaveNoteCommand`（写路径，00
+/// 不变量 4.4-1）；写后通知 → 重渲染。
+///
+/// A（Obsidian 补齐，可选参数——无宿主场景（单插件测试）行为不变）：
+/// - 富 markdown 预览（A1：MarkdownView——块级 + 行内子集）
+/// - 标签 chips（A2：TagService 解析 content 的 `#tag`；点击 → 带标签
+///   过滤的搜索请求（shellSignals.requestTagSearch））
+/// - 反向链接区（A3：BacklinkService——图引用 linked + 内容提及
+///   unlinked，点击打开对端节点）
+/// - 字数统计（C4：会话态，随输入即时更新）
+/// - 导出为 Markdown 菜单（A4：动作名查 ToolbarActionRegistry 的
+///   targeted 动作 'converter.exportNote'——插件互不依赖，未注册隐藏）
 library;
 
 import 'dart:io';
@@ -15,17 +23,24 @@ import 'package:core_data/core_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'markdown/markdown_view.dart';
 import 'save_note.dart';
 
 /// 笔记编辑视图。
 class MarkdownEditorView extends StatefulWidget {
   /// 注入命令总线、目标节点与国际化服务（服务注入，M7 修正）。
+  /// [host] 与知识服务为可选——A2/A3/A4 扩展；null = 相应区块隐藏。
   const MarkdownEditorView({
     super.key,
     required this.commandBus,
     required this.node,
     required this.i18n,
     this.padding = const EdgeInsets.all(16),
+    this.host,
+    this.tagService,
+    this.backlinkService,
+    this.shellSignals,
+    this.onExportNote,
   });
 
   /// 命令总线。
@@ -40,6 +55,22 @@ class MarkdownEditorView extends StatefulWidget {
   /// 内边距（宿主容器适配）。
   final EdgeInsets padding;
 
+  /// 宿主组合根（A2/A3 打开/导出接线；null = 隐藏扩展区块）。
+  final HostRuntime? host;
+
+  /// 标签服务（A2 chips；null = 隐藏）。
+  final TagService? tagService;
+
+  /// 反链服务（A3；null = 隐藏）。
+  final BacklinkService? backlinkService;
+
+  /// 壳层信号（A2 chip 点击 → 带标签搜索；null = chips 不可点）。
+  final ShellSignals? shellSignals;
+
+  /// 导出单节点动作（A4：查 registry 的 targeted 'converter.exportNote'；
+  /// null = 隐藏导出菜单——converter 插件未加载）。
+  final void Function(BuildContext context, String nodeId)? onExportNote;
+
   @override
   State<MarkdownEditorView> createState() => _MarkdownEditorViewState();
 }
@@ -47,7 +78,10 @@ class MarkdownEditorView extends StatefulWidget {
 class _MarkdownEditorViewState extends State<MarkdownEditorView> {
   late final TextEditingController _title;
   late final TextEditingController _content;
+  late final TextEditingController _propsTags;
   bool _preview = false;
+  bool _showBacklinks = true;
+  bool _showProps = true;
   late final void Function(WriteResult) _onWrite;
 
   @override
@@ -55,6 +89,12 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
     super.initState();
     _title = TextEditingController(text: widget.node.title);
     _content = TextEditingController(text: widget.node.content ?? '');
+    // C2：属性面板——初始值 = 当前 metadata（tags 列表），
+    // 编辑后整体写回（标签为主字段，其余 metadata 只读展示）。
+    final tags = widget.node.metadata['tags'];
+    _propsTags = TextEditingController(
+      text: tags is List ? tags.whereType<String>().join(', ') : (tags?.toString() ?? ''),
+    );
     // 写后通知 → 刷新（外部保存时视图同步最新数据；dispose 关闭，
     // 03 §五 插件观察契约硬规则）。
     _onWrite = (_) {
@@ -71,6 +111,24 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
     _title.dispose();
     _content.dispose();
     super.dispose();
+  }
+
+  /// 字数统计（会话态：空白折叠分词；空 = 0）。
+  int get _wordCount {
+    final text = _content.text.trim();
+    if (text.isEmpty) {
+      return 0;
+    }
+    return text.split(RegExp(r'\s+')).length;
+  }
+
+  /// 当前内容标签（A2：TagService 解析——未保存的编辑也即时可见）。
+  Set<String> get _tags {
+    final service = widget.tagService;
+    if (service == null) {
+      return const <String>{};
+    }
+    return TagService.parseTags(_content.text).toSet();
   }
 
   @override
@@ -99,7 +157,34 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
             Expanded(
               child: Text('${widget.i18n.t('node.edit')}「${widget.node.title}」'),
             ),
-            // 编辑/预览切换（简单 markdown 渲染）。
+            // C4：字数（会话态）。
+            Text(
+              '${widget.i18n.t('editor.words')}：$_wordCount',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+            const SizedBox(width: 8),
+            // A4：导出为 Markdown（动作未注册 → 隐藏）。
+            if (widget.onExportNote != null)
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                tooltip: widget.i18n.t('node.more'),
+                onSelected: (value) {
+                  if (value == 'export') {
+                    widget.onExportNote!(context, widget.node.id);
+                  }
+                },
+                itemBuilder: (context) => <PopupMenuItem<String>>[
+                  PopupMenuItem<String>(
+                    value: 'export',
+                    child: ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.upload_outlined, size: 18),
+                      title: Text(widget.i18n.t('editor.exportMarkdown')),
+                    ),
+                  ),
+                ],
+              ),
+            // 编辑/预览切换（富 markdown 渲染，A1）。
             SegmentedButton<bool>(
               segments: <ButtonSegment<bool>>[
                 ButtonSegment<bool>(
@@ -122,6 +207,24 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
             ),
           ],
         ),
+        // A2：标签 chips（内容编辑即时解析）。
+        if (_tags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Wrap(
+              spacing: 6,
+              children: <Widget>[
+                for (final tag in _tags)
+                  ActionChip(
+                    label: Text('#$tag'),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: widget.shellSignals == null
+                        ? null
+                        : () => widget.shellSignals!.requestTagSearch(tag),
+                  ),
+              ],
+            ),
+          ),
         const SizedBox(height: 12),
         TextField(
           controller: _title,
@@ -133,7 +236,12 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
         const SizedBox(height: 12),
         Expanded(
           child: _preview
-              ? _MarkdownPreview(text: _content.text)
+              ? SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: MarkdownView(text: _content.text, i18n: widget.i18n),
+                  ),
+                )
               : TextField(
                   controller: _content,
                   expands: true,
@@ -141,6 +249,7 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
                   minLines: null,
                   maxLines: null,
                   textAlignVertical: TextAlignVertical.top,
+                  onChanged: (_) => setState(() {}), // 字数/标签即时更新。
                   decoration: InputDecoration(
                     labelText: widget.i18n.t('dialog.content'),
                     alignLabelWithHint: true,
@@ -156,11 +265,126 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
             child: Text(widget.i18n.t('dialog.save')),
           ),
         ),
+        // C2：属性区（metadata 编辑——标签主字段，重启保持，判据②）。
+        _propertiesSection(context),
+        // A3：反向链接区（图引用 + 内容提及）。
+        if (widget.backlinkService != null) _backlinksSection(context),
               ],
             ),
           ),
         ),
       );
+
+  /// C2 属性区（metadata 编辑——标签主字段；保存走 UpdateNodeCommand
+  /// 写路径（判据①），对偶撤销恢复旧 metadata；重启保持（判据②）。
+  Widget _propertiesSection(BuildContext context) => _SectionCard(
+      title: widget.i18n.t('properties.title'),
+      expanded: _showProps,
+      onToggle: () => setState(() => _showProps = !_showProps),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          Expanded(
+            child: TextField(
+              controller: _propsTags,
+              decoration: InputDecoration(
+                labelText: widget.i18n.t('properties.tags'),
+                isDense: true,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: _saveProps,
+            child: Text(widget.i18n.t('properties.save')),
+          ),
+        ],
+      ),
+    );
+
+  /// 保存属性（标签列表 → metadata['tags'] 整体写回）。
+  Future<void> _saveProps() async {
+    final tags = _propsTags.text
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final metadata = Map<String, dynamic>.from(widget.node.metadata)
+      ..['tags'] = tags;
+    try {
+      await widget.commandBus.dispatch<UpdateNodeCommand, UpdateNodeResult>(
+        UpdateNodeCommand(nodeId: widget.node.id, metadata: metadata),
+      );
+      _showSnack(widget.i18n.t('properties.saved'));
+    } catch (error) {
+      _showSnack('${widget.i18n.t('error.operationFailed')}: $error');
+    }
+  }
+  Widget _backlinksSection(BuildContext context) {
+    final nodeId = widget.node.id;
+    final linked = widget.backlinkService!.linkedBacklinks(nodeId);
+    final unlinked = widget.backlinkService!.unlinkedMentions(nodeId);
+    return _SectionCard(
+      title: widget.i18n.t('backlinks.title'),
+      expanded: _showBacklinks,
+      onToggle: () => setState(() => _showBacklinks = !_showBacklinks),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _subGroup(
+            context,
+            widget.i18n.t('backlinks.linked'),
+            linked,
+            nodeId,
+          ),
+          const SizedBox(height: 4),
+          _subGroup(
+            context,
+            widget.i18n.t('backlinks.unlinked'),
+            unlinked,
+            nodeId,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 子组（图引用/提及）列表。
+  Widget _subGroup(
+    BuildContext context,
+    String label,
+    List<Node> nodes,
+    String selfNodeId,
+  ) {
+    final host = widget.host;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        if (nodes.isEmpty)
+          Text(
+            widget.i18n.t('backlinks.empty'),
+            style: Theme.of(context).textTheme.bodySmall,
+          )
+        else
+          for (final node in nodes)
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.link, size: 16),
+              title: Text(node.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+              onTap: host == null
+                  ? null
+                  : () => openNodeDialog(context, host, node.id),
+            ),
+      ],
+    );
+  }
 
   /// 保存（写路径：dispatch → Handler 落盘 → 写后通知）。
   ///
@@ -198,64 +422,60 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
   }
 }
 
+/// 折叠区块卡片（反链区外壳）。
+class _SectionCard extends StatelessWidget {
+  /// 构造。
+  const _SectionCard({
+    required this.title,
+    required this.expanded,
+    required this.onToggle,
+    required this.child,
+  });
+
+  /// 标题。
+  final String title;
+
+  /// 展开态。
+  final bool expanded;
+
+  /// 切换回调。
+  final VoidCallback onToggle;
+
+  /// 内容。
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(top: 8),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          InkWell(
+            onTap: onToggle,
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+                Text(title, style: Theme.of(context).textTheme.titleSmall),
+              ],
+            ),
+          ),
+          if (expanded) ...[
+            const Divider(height: 8),
+            child,
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
 /// Ctrl+S 保存意图（P1-4：编辑器内作用域）。
 class _SaveIntent extends Intent {
   const _SaveIntent();
-}
-
-/// 简单 markdown 预览（M7 MVP：标题/列表/普通文本——不引第三方渲染器）。
-class _MarkdownPreview extends StatelessWidget {
-  const _MarkdownPreview({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final lines = text.split('\n');
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final line in lines)
-              if (line.startsWith('# '))
-                Text(
-                  line.substring(2),
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-              else if (line.startsWith('## '))
-                Text(
-                  line.substring(3),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-              else if (line.startsWith('- '))
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('•  '),
-                      Expanded(child: Text(line.substring(2))),
-                    ],
-                  ),
-                )
-              else if (line.trim().isEmpty)
-                const SizedBox(height: 8)
-              else
-                Text(line),
-          ],
-        ),
-      ),
-    );
-  }
 }

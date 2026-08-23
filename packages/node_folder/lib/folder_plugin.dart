@@ -11,6 +11,7 @@ import 'package:plugon/plugon.dart';
 
 import 'src/contain_concept.dart';
 import 'src/folder_concept.dart';
+import 'src/folder_create.dart';
 import 'src/move_nodes.dart';
 
 /// 文件夹插件。
@@ -66,6 +67,13 @@ class FolderPlugin extends Plugin {
     registry.addContribution(
       commandHandlerPoint,
       UncontainHandler(graphProvider: () => _provider.get<Graph>()),
+      ownerPluginId: metadata.id,
+    );
+    // B3：文件夹内新建（组合写 = 新笔记 + contain 实例；对偶撤销 =
+    // DeleteNodeCommand 级联——一步撤销链闭合）。
+    registry.addContribution(
+      commandHandlerPoint,
+      CreateNodeInFolderHandler(graphProvider: () => _provider.get<Graph>()),
       ownerPluginId: metadata.id,
     );
   }

@@ -9,8 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plugon/plugon.dart';
 
 /// 装配管理器（空插件 + 幂等 seed：root 节点）。
-VaultManager createManager(Directory base) {
-  return VaultManager(
+VaultManager createManager(Directory base) => VaultManager(
     baseDir: base,
     pluginFactory: (_) => const <Plugin>[],
     seed: (host) {
@@ -22,7 +21,6 @@ VaultManager createManager(Directory base) {
       }
     },
   );
-}
 
 void main() {
   late Directory base;

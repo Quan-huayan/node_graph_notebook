@@ -159,7 +159,7 @@ class ToolbarHook extends Hook {
     sink.add(
       Builder(
         builder: (context) => IconButton(
-          icon: Icon(_iconFor(iconName)),
+          icon: Icon(iconFor(iconName)),
           tooltip: tooltip,
           onPressed: action == null
               ? null
@@ -190,8 +190,9 @@ class ToolbarHook extends Hook {
     handler(context);
   }
 
-  IconData _iconFor(String? name) {
-    // Material Icons 名字典（M7 常用集——图标名是数据，字典是呈现）。
+  /// 图标名字典（公开——B1 命令面板/工具栏行共用：图标名是数据，
+  /// 字典是呈现）。
+  static IconData iconFor(String? name) {
     switch (name) {
       case 'graphic_eq':
         return Icons.graphic_eq;
@@ -209,6 +210,10 @@ class ToolbarHook extends Hook {
         return Icons.import_export;
       case 'open_in_new':
         return Icons.open_in_new;
+      case 'hub':
+        return Icons.hub_outlined;
+      case 'history':
+        return Icons.history;
       default:
         return Icons.circle_outlined;
     }

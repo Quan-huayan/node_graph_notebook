@@ -31,3 +31,4 @@ workspace:
 dev_dependencies:
   appframe:
     path: packages/appframe
+  core: any

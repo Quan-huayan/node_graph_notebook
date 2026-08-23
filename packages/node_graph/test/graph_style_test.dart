@@ -174,7 +174,7 @@ void main() {
       'width': 260,
     });
     await host.commandBus.dispatch<DeleteNodeCommand, DeleteNodeResult>(
-      DeleteNodeCommand(nodeId: 'noteB'),
+      const DeleteNodeCommand(nodeId: 'noteB'),
     );
     expect(host.uiStateStore.get(canvasPositionKey('noteB')), isNull);
     expect(host.uiStateStore.get(canvasStyleKey('noteB')), isNull);

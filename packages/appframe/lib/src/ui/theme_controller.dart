@@ -93,4 +93,16 @@ class ThemeController extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  /// 主题循环切换（B1 命令面板：system → light → dark → system）。
+  void cycle() {
+    switch (mode) {
+      case AppThemeMode.system:
+        setMode(AppThemeMode.light);
+      case AppThemeMode.light:
+        setMode(AppThemeMode.dark);
+      case AppThemeMode.dark:
+        setMode(AppThemeMode.system);
+    }
+  }
 }

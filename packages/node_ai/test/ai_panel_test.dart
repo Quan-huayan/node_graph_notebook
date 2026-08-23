@@ -51,7 +51,7 @@ void main() {
     final host = await seed(root);
     final result = await host.commandBus
         .dispatch<CreateAIPanelCommand, CreateAIPanelResult>(
-          CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
+          const CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
         );
     expect(result.panelId, 'ai-panel-aiNode');
 
@@ -69,11 +69,11 @@ void main() {
     final host = await seed(root);
     final first = await host.commandBus
         .dispatch<CreateAIPanelCommand, CreateAIPanelResult>(
-          CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
+          const CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
         );
     final second = await host.commandBus
         .dispatch<CreateAIPanelCommand, CreateAIPanelResult>(
-          CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
+          const CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
         );
     expect(second.panelId, first.panelId);
     expect(
@@ -98,10 +98,10 @@ void main() {
       ),
     );
     await host.commandBus.dispatch<CreateAIPanelCommand, CreateAIPanelResult>(
-      CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
+      const CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
     );
     await host.commandBus.dispatch<CreateAIPanelCommand, CreateAIPanelResult>(
-      CreateAIPanelCommand(aiNodeId: 'aiNode2', sidebarRootId: 'root'),
+      const CreateAIPanelCommand(aiNodeId: 'aiNode2', sidebarRootId: 'root'),
     );
     final panels = host.graph
         .getAll()
@@ -136,7 +136,7 @@ void main() {
   test('侧边栏枚举：面板节点 references.sidebar == root → 成为 tab', () async {
     final host = await seed(root);
     await host.commandBus.dispatch<CreateAIPanelCommand, CreateAIPanelResult>(
-      CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
+      const CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
     );
     // SidebarTabsView 枚举条件（references.sidebar == root.id）。
     final panels = host.graph
@@ -180,7 +180,7 @@ void main() {
     );
     await expectLater(
       host.commandBus.dispatch<CreateAIPanelCommand, CreateAIPanelResult>(
-        CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
+        const CreateAIPanelCommand(aiNodeId: 'aiNode', sidebarRootId: 'root'),
       ),
       throwsA(isA<CycleError>()),
     );

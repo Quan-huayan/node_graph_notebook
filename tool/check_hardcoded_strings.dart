@@ -37,6 +37,7 @@ const List<String> allowlist = <String>[
   'packages/appframe/lib/src/store/sidecar_store.dart', // 损坏兜底：FallbackNode 合成标题 + 异常消息
   'packages/node_graph/lib/src/node_commands.dart',
   'packages/node_folder/lib/src/move_nodes.dart',
+  'packages/node_folder/lib/src/folder_create.dart', // 目标文件夹不存在（内部错误）
   'packages/node_editor/lib/src/save_note.dart',
   // —— 序列化/协议文本 ——
   'packages/node_converter/lib/src/converter_handlers.dart', // 导出文件头
@@ -74,8 +75,10 @@ const List<String> allowlist = <String>[
   'packages/node_i18n/lib/src/i18n_settings.dart',
   'packages/node_lua/lib/src/lua_concept.dart',
   'packages/node_market/lib/market_plugin.dart',
+  'packages/appframe/lib/src/ui/recent_panel.dart', // C5 面板元数据+内部错误
   'packages/node_search/lib/search_plugin.dart',
   'packages/node_search/lib/src/search_panel.dart',
+  'packages/node_search/lib/src/tags_panel.dart', // A2 面板元数据+内部错误
   'packages/node_settings/lib/settings_plugin.dart',
   'packages/node_settings/lib/src/settings_container.dart',
   'packages/node_settings/lib/src/theme_settings.dart',
@@ -134,9 +137,7 @@ void main() {
   }
 }
 
-bool _allowed(String rel) {
-  return allowlist.any((a) => rel == a || rel.startsWith('$a/'));
-}
+bool _allowed(String rel) => allowlist.any((a) => rel == a || rel.startsWith('$a/'));
 
 /// 状态机剥离注释后，返回字符串字面量内出现 CJK 的行号集合。
 ///

@@ -437,5 +437,6 @@ class MyPlugin extends Plugin {   // package:plugon/plugon.dart
 - `docs/rewrite/architecture.md` — 落地架构（谁写、写在哪、时序；10⁶ 未交付项已标 [计划]）
 - `docs/rewrite/01-responsibilities.md` — 职责矩阵 + 逐日拍板回填（决策日志）
 - `docs/rewrite/05-lessons-and-disciplines.md` — 审计复盘：12 条纪律 + 整改清单回填
+- `docs/design/flowing_ui.md` — Flowing UI 设计 v2（改进方案：概念模型/协议/流动矩阵/差距审计/实施计划）
 - `docs/COMMAND_LINE_GUIDE.md` - Lua 脚本编写指南（含安全沙箱）
 - `packages/plugon/docs/ARCHITECTURE.md` - plugon（vendored）契约文档

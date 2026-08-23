@@ -15,6 +15,10 @@
 /// DTO**（node_graph 既有消费方零改动）。
 library;
 
+import 'package:appframe/appframe.dart';
+import 'package:core/core.dart';
+import 'package:core_data/core_data.dart';
+
 export 'package:core/core.dart'
     show
         CreateNodeCommand,
@@ -27,10 +31,6 @@ export 'package:core/core.dart'
         RestoreNodeResult,
         ConnectNodesCommand,
         ConnectNodesResult;
-
-import 'package:appframe/appframe.dart';
-import 'package:core/core.dart';
-import 'package:core_data/core_data.dart';
 
 /// 创建 Handler：落盘新节点（写操作唯一执行者）。
 class CreateNodeHandler
@@ -84,16 +84,24 @@ class UpdateNodeHandler
     if (node == null) {
       throw StateError('节点不存在: ${command.nodeId}');
     }
-    // P1-2：落盘前捕获旧值（对偶命令 = 恢复旧标题/内容）。
+    // P1-2：落盘前捕获旧值（对偶命令 = 恢复旧标题/内容/元数据）。
     final previousTitle = node.title;
     final previousContent = node.content;
-    graph.save(node.copyWith(title: command.title, content: command.content));
+    final previousMetadata = node.metadata;
+    graph.save(
+      node.copyWith(
+        title: command.title,
+        content: command.content,
+        metadata: command.metadata,
+      ),
+    );
     return UpdateNodeResult(
       affectedNodeIds: <String>{command.nodeId},
       inverse: UpdateNodeCommand(
         nodeId: command.nodeId,
         title: previousTitle,
         content: previousContent,
+        metadata: previousMetadata,
       ),
     );
   }
@@ -145,6 +153,13 @@ class DeleteNodeHandler
     // 外观同步清理（判据②：画布成员 = 位置键；样式键一并，M7.3）。
     uiState.remove(canvasPositionKey(command.nodeId));
     uiState.remove(canvasStyleKey(command.nodeId));
+    // C5：最近打开键级联（recent.<ts> → 被删节点——Obsidian 最近文件
+    // 语义：删除后不应残留在面板；recent.* 前缀扫描，值 == nodeId 即删）。
+    for (final entry in uiState.getByPrefix('recent.').entries) {
+      if (entry.value == command.nodeId) {
+        uiState.remove(entry.key);
+      }
+    }
     return DeleteNodeResult(
       affectedNodeIds: affected,
       inverse: doomed == null

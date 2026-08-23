@@ -19,6 +19,7 @@ import 'package:plugon/plugon.dart';
 
 import 'src/canvas_concept.dart';
 import 'src/connection_concept.dart';
+import 'src/global_graph_dialog.dart';
 import 'src/graph_nodes_dialog.dart';
 import 'src/layout/layout_commands.dart';
 import 'src/layout/layout_dialog.dart';
@@ -72,6 +73,11 @@ class GraphPlugin extends Plugin {
         builder: (context) =>
             CanvasLayoutDialog(host: _provider.get<HostRuntime>()),
       );
+    });
+    // C1：全局图谱（Obsidian Graph view 语义）——只读只读对话框（纯内存
+    // 力导向；按钮/命令面板数据驱动自动入列，动作名 'graph.global'）。
+    _provider.get<ToolbarActionRegistry>().register('graph.global', (ctx) {
+      showGlobalGraphDialog(ctx, _provider.get<HostRuntime>());
     });
   }
 

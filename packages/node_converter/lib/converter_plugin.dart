@@ -3,12 +3,15 @@
 /// 贡献：Export / Import Handler（写命令，03 §四）。
 library;
 
+import 'dart:io';
+
 import 'package:appframe/appframe.dart';
 import 'package:core/core.dart';
 import 'package:core_data/core_data.dart';
 import 'package:flutter/material.dart';
 import 'package:plugon/plugon.dart';
 
+import 'src/converter_commands.dart';
 import 'src/converter_dialog.dart';
 import 'src/converter_handlers.dart';
 
@@ -67,6 +70,55 @@ class ConverterPlugin extends Plugin {
         ),
       );
     });
+    // A4（单节点导出）：注册**目标动作** `converter.exportNote`——编辑器
+    // （node_editor，插件互不依赖）经 registry 查动作名触发，不 import
+    // 本插件；target = 节点 id → 导出该节点为 Markdown（ExportCommand
+    // nodeIds 已支持单节点，M7 双格式复用）。动作未注册（插件未加载）
+    // → 编辑器菜单隐藏（registry 驱动，零耦合）。
+    _services.get<ToolbarActionRegistry>().registerTargeted(
+      'converter.exportNote',
+      (ctx, nodeId) {
+        final host = _services.get<HostRuntime>();
+        final sep = Platform.pathSeparator;
+        final dir = '${host.dataRoot.path}${sep}exports';
+        final node = host.graph.get(nodeId);
+        final slug = (node?.title ?? nodeId)
+            .trim()
+            .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+            .replaceAll(RegExp(r'\s+'), '_');
+        final path =
+            '$dir${sep}note-$slug-${DateTime.now().microsecondsSinceEpoch}.md';
+        host.commandBus
+            .dispatch<ExportCommand, ExportResult>(
+              ExportCommand(path: path, nodeIds: <String>{nodeId}),
+            )
+            .then((_) {
+          if (ctx.mounted) {
+            final i18n = _services.get<I18nService>();
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(
+                content: Text(
+                  i18n.t('converter.exported')
+                      .replaceFirst('%s', '1')
+                      .replaceFirst('%s', path),
+                ),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }).catchError((Object error) {
+          if (ctx.mounted) {
+            final i18n = _services.get<I18nService>();
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(
+                content: Text('${i18n.t('converter.exportFailed')}: $error'),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        });
+      },
+    );
   }
 
   @override

@@ -203,7 +203,7 @@ class AskAIHandler extends CommandHandler<AskAICommand, AskAIResult> {
     String chatId,
     Node source,
   ) async {
-    final loop = const FunctionCallingLoop();
+    const loop = FunctionCallingLoop();
     return loop.run(
       provider: provider,
       history: <AIMessage>[AIMessage(role: 'user', content: prompt)],

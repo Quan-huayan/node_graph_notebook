@@ -8,6 +8,7 @@
 /// DI 编辑控制器，本根经 ListenableBuilder 响应运行时切换。
 library;
 
+import 'package:core_data/core_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -15,7 +16,10 @@ import '../host/host_runtime.dart';
 import '../host/vault_manager.dart';
 import '../render/flutter_render_context.dart';
 import 'app_shell.dart';
+import 'command_palette.dart';
+import 'quick_switcher.dart';
 import 'theme_controller.dart';
+import 'toolbar_concept.dart';
 
 /// 应用根。
 class NotebookApp extends StatelessWidget {
@@ -103,6 +107,9 @@ class NotebookApp extends StatelessWidget {
         SingleActivator(LogicalKeyboardKey.keyY, control: true): RedoIntent(),
         SingleActivator(LogicalKeyboardKey.keyN, control: true): NewNoteIntent(),
         SingleActivator(LogicalKeyboardKey.keyF, control: true): SearchIntent(),
+        // B1/B2：命令面板 Ctrl+P / 快速切换 Ctrl+O（Obsidian 同款）。
+        SingleActivator(LogicalKeyboardKey.keyP, control: true): PaletteIntent(),
+        SingleActivator(LogicalKeyboardKey.keyO, control: true): QuickSwitchIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
@@ -130,6 +137,33 @@ class NotebookApp extends StatelessWidget {
           SearchIntent: CallbackAction<SearchIntent>(
             onInvoke: (_) {
               effectiveHost.shellSignals.requestSearchFocus();
+              return null;
+            },
+          ),
+          PaletteIntent: CallbackAction<PaletteIntent>(
+            onInvoke: (_) {
+              final ctx = navigatorKey.currentContext;
+              if (ctx != null) {
+                showCommandPalette(
+                  ctx,
+                  _paletteEntries(ctx, effectiveHost, onNewNote),
+                  emptyMessage: effectiveHost.i18nService.t('palette.empty'),
+                );
+              }
+              return null;
+            },
+          ),
+          QuickSwitchIntent: CallbackAction<QuickSwitchIntent>(
+            onInvoke: (_) {
+              final ctx = navigatorKey.currentContext;
+              if (ctx != null) {
+                showQuickSwitcher(
+                  ctx,
+                  effectiveHost,
+                  hint: effectiveHost.i18nService.t('quickswitch.hint'),
+                  empty: effectiveHost.i18nService.t('quickswitch.empty'),
+                );
+              }
               return null;
             },
           ),
@@ -207,4 +241,89 @@ class NewNoteIntent extends Intent {
 class SearchIntent extends Intent {
   /// 构造意图。
   const SearchIntent();
+}
+
+/// Ctrl+P 命令面板意图（B1）。
+class PaletteIntent extends Intent {
+  /// 构造意图。
+  const PaletteIntent();
+}
+
+/// Ctrl+O 快速切换意图（B2）。
+class QuickSwitchIntent extends Intent {
+  /// 构造意图。
+  const QuickSwitchIntent();
+}
+
+/// 命令面板条目（B1：内置 + 工具栏动作数据驱动）。
+///
+/// 工具栏按钮 = 节点（00"All is Node"）：kind=='toolbar' 的节点即命令
+/// 入口——动作名查 ToolbarActionRegistry（targeted 优先），图标/标签
+/// 取节点 metadata（icon/tooltip）。
+List<PaletteEntry> _paletteEntries(
+  BuildContext ctx,
+  HostRuntime host,
+  void Function(BuildContext)? newNote,
+) {
+  final t = host.i18nService.t;
+  return <PaletteEntry>[
+    if (newNote != null)
+      PaletteEntry(
+        label: t('palette.newNote'),
+        icon: Icons.note_add_outlined,
+        run: () => newNote(ctx),
+      ),
+    PaletteEntry(
+      label: t('palette.search'),
+      icon: Icons.search,
+      run: () => host.shellSignals.requestSearchFocus(),
+    ),
+    PaletteEntry(
+      label: t('palette.quickSwitch'),
+      icon: Icons.swap_horiz,
+      run: () => showQuickSwitcher(
+        ctx,
+        host,
+        hint: t('quickswitch.hint'),
+        empty: t('quickswitch.empty'),
+      ),
+    ),
+    PaletteEntry(
+      label: t('palette.toggleTheme'),
+      icon: Icons.brightness_6_outlined,
+      run: () => host.themeController.cycle(),
+    ),
+    // 工具栏动作（kind=='toolbar' 且有 action + tooltip）。
+    for (final node in host.graph.getAll())
+      if (node.metadata['kind'] == 'toolbar' &&
+          node.metadata['action'] is String &&
+          node.metadata['tooltip'] is String)
+        PaletteEntry(
+          label: node.metadata['tooltip'] as String,
+          icon: ToolbarHook.iconFor(node.metadata['icon'] as String?),
+          run: () => _runPaletteAction(
+            ctx,
+            host,
+            node,
+            node.metadata['action'] as String,
+          ),
+        ),
+  ];
+}
+
+/// 执行工具栏动作（targeted 优先——M7.3 同 ToolbarHook._runAction 语义）。
+void _runPaletteAction(
+  BuildContext ctx,
+  HostRuntime host,
+  Node node,
+  String action,
+) {
+  final registry = host.toolbarActions;
+  final target = node.metadata['target'] as String?;
+  final targeted = registry.lookupTargeted(action);
+  if (targeted != null && target != null) {
+    targeted(ctx, target);
+    return;
+  }
+  registry.lookup(action)?.call(ctx);
 }

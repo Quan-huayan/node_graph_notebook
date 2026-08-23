@@ -124,6 +124,15 @@ class EditorHook extends Hook {
         commandBus: host.serviceProvider.get<CommandBus>(),
         node: node,
         i18n: host.i18nService,
+        // A2/A3/A4：知识语义扩展——host + 壳层服务（A2 标签 chips /
+        // A3 反链区 / A4 单节点导出，null = 区块隐藏）。
+        host: host,
+        tagService: host.serviceProvider.get<TagService>(),
+        backlinkService: host.serviceProvider.get<BacklinkService>(),
+        shellSignals: host.shellSignals,
+        // A4：converter 插件注册的 targeted 动作（未注册 → null 隐藏）。
+        onExportNote: host.toolbarActions
+            .lookupTargeted('converter.exportNote'),
       ),
     );
   }

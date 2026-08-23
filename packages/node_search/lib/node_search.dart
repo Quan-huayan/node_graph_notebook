@@ -7,3 +7,4 @@ library;
 export 'search_plugin.dart';
 export 'src/search_panel.dart';
 export 'src/search_service.dart';
+export 'src/tags_panel.dart';

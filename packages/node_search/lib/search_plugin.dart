@@ -11,6 +11,7 @@ import 'package:plugon/plugon.dart';
 
 import 'src/search_panel.dart';
 import 'src/search_service.dart';
+import 'src/tags_panel.dart';
 
 /// 搜索插件。
 class SearchPlugin extends Plugin {
@@ -39,6 +40,12 @@ class SearchPlugin extends Plugin {
     registry.addContribution(
       conceptPoint,
       const SearchPanelConcept(),
+      ownerPluginId: metadata.id,
+    );
+    // A2：标签面板（kind 'tags-panel'——同 search-panel 的侧边栏 Tab 机制）。
+    registry.addContribution(
+      conceptPoint,
+      const TagsPanelConcept(),
       ownerPluginId: metadata.id,
     );
   }

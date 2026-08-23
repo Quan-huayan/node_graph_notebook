@@ -89,7 +89,7 @@ void main() {
 
     final result = await host.commandBus
         .dispatch<ApplyLayoutCommand, ApplyLayoutResult>(
-          ApplyLayoutCommand(algorithm: LayoutAlgorithm.force),
+          const ApplyLayoutCommand(algorithm: LayoutAlgorithm.force),
         );
     expect(result.changeKind, ChangeKind.ui);
     final positions = positionsOf(host);
@@ -112,7 +112,7 @@ void main() {
   test('网格：确定性行宽布局', () async {
     final host = await seed(root);
     await host.commandBus.dispatch<ApplyLayoutCommand, ApplyLayoutResult>(
-      ApplyLayoutCommand(algorithm: LayoutAlgorithm.grid),
+      const ApplyLayoutCommand(algorithm: LayoutAlgorithm.grid),
     );
     final positions = positionsOf(host);
     // 5 节点 → 列 = ceil(√5) = 3 → 第 3 行 (0, 320)。
@@ -126,7 +126,7 @@ void main() {
   test('树状：连接 a-b/a-c → 网络分层，b/c 在 a 下一层；全部覆盖', () async {
     final host = await seed(root);
     await host.commandBus.dispatch<ApplyLayoutCommand, ApplyLayoutResult>(
-      ApplyLayoutCommand(algorithm: LayoutAlgorithm.tree),
+      const ApplyLayoutCommand(algorithm: LayoutAlgorithm.tree),
     );
     final positions = positionsOf(host);
     // 无向邻接下无入度集为空 → 分量兜底：排序最小 id（a）为网络根（层 0）；
@@ -169,7 +169,7 @@ void main() {
   test('目标子集：只布局指定节点', () async {
     final host = await seed(root);
     await host.commandBus.dispatch<ApplyLayoutCommand, ApplyLayoutResult>(
-      ApplyLayoutCommand(
+      const ApplyLayoutCommand(
         algorithm: LayoutAlgorithm.grid,
         targets: <String>{'a', 'b'},
       ),

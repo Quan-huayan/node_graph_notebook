@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../host/host_runtime.dart';
 import '../host/vault_manager.dart';
+import '../knowledge/backlink_service.dart';
 import '../render/flutter_render_context.dart';
 import 'hook_view.dart';
 
@@ -61,7 +62,7 @@ class _AppShellState extends State<AppShell> {
         return;
       }
       final prefs = widget.host.prefs;
-      if (prefs == null || prefs.getBool('onboarding.shown') == true) {
+      if (prefs == null || (prefs.getBool('onboarding.shown') ?? false)) {
         return;
       }
       prefs.setBool('onboarding.shown', true);
@@ -150,7 +151,40 @@ class _AppShellState extends State<AppShell> {
         ),
       ],
     ),
+    // C4：状态栏（Obsidian 状态栏语义）——节点数（剔除 UI 代理，
+    // 呈现计数稳定）+ 当前仓库名（多仓库）；结构失效已驱动壳级重建，
+    // 计数在 build 时读 Graph（读侧直读，零额外监听）。
+    bottomNavigationBar: _statusBar(context),
   );
+
+  /// 状态栏（C4）：节点数（剔除 UI 代理）+ 当前仓库名。
+  Widget _statusBar(BuildContext context) {
+    final i18n = widget.host.i18nService;
+    final count = widget.host.graph
+        .getAll()
+        .where((n) => !BacklinkService.isUiProxy(n))
+        .length;
+    return BottomAppBar(
+      height: 28,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: <Widget>[
+            Text(
+              i18n.t('status.nodes').replaceFirst('%s', '$count'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const Spacer(),
+            if (widget.vaultManager != null)
+              Text(
+                '${i18n.t('status.vault')}：${widget.vaultManager!.current.name}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   /// 仓库切换器（PopupMenuButton：当前仓库名 + 列表切换，M7.3）。
   Widget _vaultSwitcher(BuildContext context) {

@@ -129,6 +129,8 @@ class _SearchPanelViewState extends State<SearchPanelView> {
   final TextEditingController _input = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   List<Node> _results = const <Node>[];
+  // C3：最近查询（会话态，判据③——不落盘；容量 10，去重置顶）。
+  final List<String> _recentQueries = <String>[];
   Timer? _debounce;
   late final void Function() _onSearchSignal;
 
@@ -140,9 +142,17 @@ class _SearchPanelViewState extends State<SearchPanelView> {
     super.initState();
     // Ctrl+F（壳层信号，P1-4）→ 聚焦输入框并全选——键盘直达搜索，
     // 无需再点一次输入框（判据③ 会话态：信号只通知不落盘）。
+    // A2：`requestTagSearch(tag)`（编辑器标签 chip 点击）→ 输入框置
+    // `tag:<tag>` 过滤并聚焦（消费后 pendingTagFilter 置回 null）。
     _onSearchSignal = () {
       if (!mounted) {
         return;
+      }
+      final pendingTag = widget.host.shellSignals.pendingTagFilter;
+      if (pendingTag != null) {
+        widget.host.shellSignals.pendingTagFilter = null;
+        _input.text = 'tag:$pendingTag';
+        _onChanged(_input.text);
       }
       _focusNode.requestFocus();
       _input.selection = TextSelection(
@@ -168,10 +178,44 @@ class _SearchPanelViewState extends State<SearchPanelView> {
     _debounce = Timer(_debounceDuration, () {
       if (mounted) {
         setState(() {
-          _results = widget.search.search(SearchQuery(text: text));
+          _results = widget.search.search(_queryOf(text));
+          // C3：最近查询记录（去重置顶、容量 10——会话态）。
+          final norm = text.trim();
+          if (norm.isNotEmpty) {
+            _recentQueries.remove(norm);
+            _recentQueries.insert(0, norm);
+            if (_recentQueries.length > 10) {
+              _recentQueries.removeLast();
+            }
+          }
         });
       }
     });
+  }
+
+  /// 输入 → 查询（`tag:`/`folder:` 前缀解析——A2 标签 / C3 文件夹过滤；
+  /// 余词为文本）。
+  static SearchQuery _queryOf(String text) {
+    final trimmed = text.trim();
+    final tagMatch =
+        RegExp(r'^tag:([\p{L}\p{N}_-]+)\s*(.*)$', unicode: true)
+            .firstMatch(trimmed);
+    if (tagMatch != null) {
+      return SearchQuery(
+        text: tagMatch.group(2)!.trim(),
+        tag: tagMatch.group(1),
+      );
+    }
+    final folderMatch =
+        RegExp(r'^folder:([\p{L}\p{N}_-]+)\s*(.*)$', unicode: true)
+            .firstMatch(trimmed);
+    if (folderMatch != null) {
+      return SearchQuery(
+        text: folderMatch.group(2)!.trim(),
+        folderId: folderMatch.group(1),
+      );
+    }
+    return SearchQuery(text: trimmed);
   }
 
   /// 内容摘要（空白折叠 + 截断——结果行可读性，用户无需打开即可判断）。
@@ -217,12 +261,50 @@ class _SearchPanelViewState extends State<SearchPanelView> {
           ),
         Expanded(
           child: query.isEmpty
-              ? Center(
-                  child: Text(
-                    widget.host.i18nService.t('search.hint'),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                )
+              ? _recentQueries.isEmpty
+                  ? Center(
+                      child: Text(
+                        widget.host.i18nService.t('search.hint'),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Text(
+                            widget.host.i18nService.t('search.recent'),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.outline,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: <Widget>[
+                              for (final q in _recentQueries)
+                                ActionChip(
+                                  label: Text(
+                                    q,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  onPressed: () {
+                                    _input.text = q;
+                                    _onChanged(q);
+                                  },
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
               : _results.isEmpty
               ? Center(
                   child: Text(
@@ -302,37 +384,9 @@ class _SearchPanelViewState extends State<SearchPanelView> {
     _ => Icons.description_outlined,
   };
 
-  /// 打开节点 = 渲染其 Hook（D1 打开契约：发起方负责外壳）。
+  /// 打开节点 = 渲染其 Hook（D1 打开契约：外壳收敛 = openNodeDialog 共用
+  /// 助手）。
   void _openNode(BuildContext context, String nodeId) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => Dialog(
-        child: SizedBox(
-          width: 640,
-          height: 480,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: widget.host.i18nService.t('dialog.close'),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-              Expanded(
-                child: HookView(
-                  host: widget.host,
-                  nodeId: nodeId,
-                  kind: 'open',
-                  recycleOnDispose: true,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    openNodeDialog(context, widget.host, nodeId);
   }
 }

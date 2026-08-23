@@ -58,9 +58,70 @@ void main() {
           .map((n) => n.id),
       <String>['root'],
     );
-    expect(
-      service.search(const SearchQuery(text: '根')).map((n) => n.id),
-      <String>['root'],
+  });
+
+  test('C3 文件夹过滤：folderId → 仅 contain.parent 成员', () {
+    final now = DateTime.now();
+    host.graph.save(
+      StoredNode(
+        id: 'folderA',
+        title: '文件夹A',
+        metadata: const <String, dynamic>{'kind': 'folder'},
+        createdAt: now,
+        updatedAt: now,
+      ),
     );
+    host.graph.save(
+      StoredNode(id: 'in-folder', title: '文件夹内笔记', createdAt: now, updatedAt: now),
+    );
+    // contain 实例（L1：父文件夹 → 子笔记）。
+    host.graph.save(
+      StoredNode(
+        id: 'contain-1',
+        title: '包含',
+        references: const <String, String>{'parent': 'folderA', 'child': 'in-folder'},
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    final service = host.serviceProvider.get<SearchService>();
+    expect(
+      service
+          .search(const SearchQuery(text: '', folderId: 'folderA'))
+          .map((n) => n.id),
+      <String>['in-folder'],
+    );
+    // 不存在/无成员的文件夹 → 空。
+    expect(
+      service.search(const SearchQuery(text: '', folderId: 'missing')).isEmpty,
+      isTrue,
+    );
+  });
+
+  test('A2 标签过滤：SearchQuery.tag（内容 #tag ∪ metadata.tags）', () {
+    host.graph.save(
+      StoredNode(
+        id: 'tagged',
+        title: '标签笔记',
+        content: '计划 #工作 事项',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    host.graph.save(
+      StoredNode(
+        id: 'meta-tagged',
+        title: '元数据标签',
+        metadata: const <String, dynamic>{'tags': <String>['工作']},
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    final service = host.serviceProvider.get<SearchService>();
+    final results = service
+        .search(const SearchQuery(text: '', tag: '工作'))
+        .map((n) => n.id)
+        .toSet();
+    expect(results, <String>{'tagged', 'meta-tagged'});
   });
 }

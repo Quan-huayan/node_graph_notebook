@@ -63,38 +63,9 @@ class NoteRowView extends StatelessWidget {
       ),
       // 打开 = 渲染自己的 'open' 形态 Hook（编辑器视图）——
       // Hook Tree 的一致呈现（02 §1.2 形态由 kind 决定）。
-      // M7.2（D1 弹框归属，用户裁决）：侧边栏自弹自负责外壳——
-      // 关闭按钮 + 回收（recycleOnDispose，窗口化 M7.1）。
-      onTap: () => showDialog<void>(
-        context: context,
-        builder: (context) => Dialog(
-          child: SizedBox(
-            width: 640,
-            height: 480,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    tooltip: host.i18nService.t('dialog.close'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-                Expanded(
-                  child: HookView(
-                    host: host,
-                    nodeId: node.id,
-                    kind: 'open',
-                    recycleOnDispose: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      // M7.2（D1 弹框归属，用户裁决）：外壳收敛 = openNodeDialog 共用助手
+      // （关闭按钮 + 回收 + 最近打开记录）。
+      onTap: () => openNodeDialog(context, host, node.id),
     ),
   );
 

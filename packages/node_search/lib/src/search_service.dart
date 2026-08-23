@@ -4,18 +4,25 @@
 /// 纯读侧——不写存储、不触发命令（02 §1.5：读优化归实现层）。
 library;
 
+import 'package:appframe/appframe.dart';
 import 'package:core_data/core_data.dart';
 
 /// 搜索查询。
 class SearchQuery {
   /// 构造查询。
-  const SearchQuery({required this.text, this.kind});
+  const SearchQuery({required this.text, this.kind, this.tag, this.folderId});
 
   /// 搜索文本（空 = 全部）。
   final String text;
 
   /// kind 过滤（metadata.kind 精确匹配；null = 不过滤）。
   final String? kind;
+
+  /// 标签过滤（A2：内容 `#tag` 解析 ∪ metadata.tags；null = 不过滤）。
+  final String? tag;
+
+  /// 文件夹过滤（C3：contain.parent == folderId 的成员；null = 不过滤）。
+  final String? folderId;
 }
 
 /// 搜索服务（10⁶ 优化项：物化搜索索引——M7 数据量小全量扫描）。
@@ -26,13 +33,33 @@ class SearchService {
   /// 结构存储。
   final Graph graph;
 
-  /// 执行搜索（按标题匹配优先排序，次按内容匹配）。
+  /// 执行搜索（标签过滤 + 标题匹配优先排序，次按内容匹配）。
   List<Node> search(SearchQuery query) {
     final needle = query.text.trim().toLowerCase();
+    final tag = query.tag;
+    // 标签过滤（TagService 同源规则：内容 `#tag` 解析 ∪ metadata.tags）。
+    final tagHits = tag == null
+        ? null
+        : TagService(graph: graph).nodesForTag(tag).map((n) => n.id).toSet();
+    // 文件夹过滤（C3：contain.parent == folderId 的成员——读侧反查）。
+    final folderId = query.folderId;
+    final folderHits = folderId == null
+        ? null
+        : graph
+            .getAll()
+            .where((n) => n.references['parent'] == folderId)
+            .map((n) => n.references['child']!)
+            .toSet();
     final results = <Node>[];
     for (final node in graph.getAll()) {
       final kind = query.kind;
       if (kind != null && node.metadata['kind'] != kind) {
+        continue;
+      }
+      if (tagHits != null && !tagHits.contains(node.id)) {
+        continue;
+      }
+      if (folderHits != null && !folderHits.contains(node.id)) {
         continue;
       }
       final title = node.title.toLowerCase();

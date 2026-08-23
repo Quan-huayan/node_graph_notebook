@@ -19,7 +19,6 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:core_data/core_data.dart';
-import 'package:flutter/material.dart';
 import 'package:plugon/plugon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,11 +26,14 @@ import '../command/create_toolbar_button.dart';
 import '../i18n/i18n_service.dart';
 import '../interaction/drag_controller.dart';
 import '../interaction/flight_shell.dart';
+import '../knowledge/backlink_service.dart';
+import '../knowledge/tag_service.dart';
 import '../render/flutter_render_context.dart';
 import '../spatial/quad_tree_viewport_query.dart';
 import '../store/fs_graph.dart';
 import '../store/fs_ui_state_store.dart';
-import '../ui/hook_view.dart';
+import '../ui/node_open_dialog.dart';
+import '../ui/recent_panel.dart';
 import '../ui/shell_signals.dart';
 import '../ui/theme_controller.dart';
 import '../ui/toolbar_concept.dart';
@@ -109,6 +111,12 @@ class HostRuntime {
       // M7.2（i18n 上移壳层）：国际化服务注册——全局文案统一解析
       // （插件互不依赖的根因修正：语言包在插件里不可达）。
       ..addSingleton<I18nService>((sp) => i18nService)
+      // A2/A3（知识语义壳层服务）：标签 = 内容 `#tag` 读侧推导 ∪ metadata.tags；
+      // 反链 = 关系实例对端（linked）+ 内容标题提及（unlinked）。两者纯读，
+      // 插件经 serviceProvider 解析（互不依赖——node_editor 反链区 / 标签
+      // chips、node_search 标签面板共用同一推导）。
+      ..addSingleton<TagService>((sp) => TagService(graph: graph))
+      ..addSingleton<BacklinkService>((sp) => BacklinkService(graph: graph))
       // M7.3（Flowing UI 拖入语义）：宿主缺省注册（返回 null = 默认
       // folder/建按钮语义）；插件 last-wins 覆盖（node_ai → AI 面板）。
       ..addSingleton<SidebarDropSemantics>(
@@ -221,6 +229,13 @@ class HostRuntime {
       const ToolbarContainerConcept(),
       ownerPluginId: null,
     );
+    // C5：最近打开面板 Concept（侧边栏 Tab 面板——宿主级贡献，
+    // 面板实例由 app 播种；'recent-panel' 语义见 ui/recent_panel.dart）。
+    extensions.addContribution(
+      conceptPoint,
+      const RecentPanelConcept(),
+      ownerPluginId: null,
+    );
     // 宿主级通用写命令（M4 机制：环校验 + 落盘 + 写后通知）。
     commandBus.register(MoveReferencesHandler(graph: graph));
     // M7.3：拖拽建工具栏按钮（判据①，All is Node——按钮 = 节点）。
@@ -231,36 +246,9 @@ class HostRuntime {
       if (graph.get(nodeId) == null) {
         return;
       }
-      showDialog<void>(
-        context: ctx,
-        builder: (context) => Dialog(
-          child: SizedBox(
-            width: 640,
-            height: 480,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    tooltip: i18nService.t('dialog.close'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-                Expanded(
-                  child: HookView(
-                    host: this,
-                    nodeId: nodeId,
-                    kind: 'open',
-                    recycleOnDispose: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      // M7.2 D1 + A（打开契约收敛）：外壳 = openNodeDialog 共用助手——
+      // 打开 = 渲染节点 Hook，附带最近打开记录（UIStateStore recent.*）。
+      openNodeDialog(ctx, this, nodeId);
     });
     loadedPlugins = List<Plugin>.unmodifiable(plugins);
     // M7 修正（插件 UI 归插件）：已装插件列表注册为服务

@@ -61,10 +61,10 @@ class CreateNodeResult implements WriteResult {
   final Command? inverse;
 }
 
-/// 更新节点命令（标题/内容）。
+/// 更新节点命令（标题/内容/元数据——C2 属性面板用 metadata）。
 class UpdateNodeCommand extends Command<UpdateNodeCommand> {
-  /// 携带变更字段（null = 不变）。
-  const UpdateNodeCommand({required this.nodeId, this.title, this.content});
+  /// 携带变更字段（null = 不变；metadata = 整体替换语义）。
+  const UpdateNodeCommand({required this.nodeId, this.title, this.content, this.metadata});
 
   /// 目标节点。
   final String nodeId;
@@ -75,6 +75,9 @@ class UpdateNodeCommand extends Command<UpdateNodeCommand> {
   /// 新内容（null = 不变）。
   final String? content;
 
+  /// 新元数据（整体替换；null = 不变）。
+  final Map<String, dynamic>? metadata;
+
   @override
   String get name => 'graph.update';
 
@@ -83,6 +86,7 @@ class UpdateNodeCommand extends Command<UpdateNodeCommand> {
     'nodeId': nodeId,
     'title': title,
     'content': content,
+    'metadata': metadata,
   };
 }
 
@@ -173,6 +177,64 @@ class RestoreNodeCommand extends Command<RestoreNodeCommand> {
 class RestoreNodeResult implements WriteResult {
   /// 携带恢复的节点与关系实例。
   const RestoreNodeResult({required this.affectedNodeIds, this.inverse});
+
+  @override
+  final Set<String> affectedNodeIds;
+
+  @override
+  ChangeKind get changeKind => ChangeKind.structure;
+
+  @override
+  final Command? inverse;
+}
+
+/// 在文件夹内创建节点命令（B3：Obsidian 文件夹内新建语义）。
+///
+/// = 新建笔记（L0，references 空）+ 新建 contain 实例（引用两端）的
+/// 组合写（Handler 归 node_folder 贡献）。对偶撤销 = DeleteNodeCommand
+/// （node_graph 级联：删除笔记连带删除指向它的 contain 实例——一步
+/// 撤销链闭合）。
+class CreateNodeInFolderCommand extends Command<CreateNodeInFolderCommand> {
+  /// 携带容器与新节点字段。
+  const CreateNodeInFolderCommand({
+    required this.folderId,
+    required this.id,
+    required this.title,
+    this.content,
+    this.metadata,
+  });
+
+  /// 目标文件夹。
+  final String folderId;
+
+  /// 新节点 id（调用方生成，uuid）。
+  final String id;
+
+  /// 标题。
+  final String title;
+
+  /// 内容（markdown 等）。
+  final String? content;
+
+  /// 元数据。
+  final Map<String, dynamic>? metadata;
+
+  @override
+  String get name => 'folder.createIn';
+
+  @override
+  Map<String, dynamic> get payload => <String, dynamic>{
+    'folderId': folderId,
+    'id': id,
+    'title': title,
+    'content': content,
+  };
+}
+
+/// 文件夹内创建写结果（structure：新节点 + contain 实例 → 树重挂）。
+class CreateNodeInFolderResult implements WriteResult {
+  /// 携带受影响节点（新节点 + contain 实例 + 文件夹）与对偶命令。
+  const CreateNodeInFolderResult({required this.affectedNodeIds, this.inverse});
 
   @override
   final Set<String> affectedNodeIds;

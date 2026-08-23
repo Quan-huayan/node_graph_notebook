@@ -16,6 +16,8 @@ import 'package:flutter/material.dart';
 
 import 'contain_concept.dart';
 import 'folder_concept.dart';
+import 'folder_create.dart';
+import 'folder_create_dialog.dart';
 import 'move_nodes.dart';
 
 /// 文件夹容器视图（Hook Tree 的一层）。
@@ -129,12 +131,24 @@ class _FolderViewState extends State<FolderView> {
                   .replaceFirst('%s', '${children.length}'),
             ),
             // P1-5：侧边栏删除入口（根容器除外——根 = 数据树地基）。
+            // B3：文件夹内新建入口（Obsidian 同款「+」——根除外，
+            // 根下建 = 未归类，语义归属普通新建）。
             trailing: isRoot
                 ? null
-                : IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    tooltip: widget.host.i18nService.t('node.delete'),
-                    onPressed: () => _delete(context),
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      IconButton(
+                        icon: const Icon(Icons.note_add_outlined, size: 18),
+                        tooltip: widget.host.i18nService.t('folder.createIn'),
+                        onPressed: () => _create(context),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        tooltip: widget.host.i18nService.t('node.delete'),
+                        onPressed: () => _delete(context),
+                      ),
+                    ],
                   ),
             children: [
               // 02 §3.2：子级 = HookView 递归——子 Hook 渲染自己
@@ -200,6 +214,53 @@ class _FolderViewState extends State<FolderView> {
       },
       child: content,
     );
+  }
+
+  /// 文件夹内新建（B3：对话框收集 → CreateNodeInFolderCommand 写路径，
+  /// 判据①；一步撤销 = 删除新笔记（级联 contain）——UndoManager Ctrl+Z）。
+  Future<void> _create(BuildContext context) async {
+    final result = await showFolderCreateDialog(
+      context,
+      widget.host.i18nService,
+    );
+    if (result == null || !context.mounted) {
+      return;
+    }
+    final (title, content) = result;
+    try {
+      await widget.host.commandBus.dispatch<
+          CreateNodeInFolderCommand, CreateNodeInFolderResult>(
+        CreateNodeInFolderCommand(
+          folderId: widget.node.id,
+          id: folderNewNodeId(),
+          title: title,
+          content: content,
+        ),
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.host.i18nService
+                  .t('folder.createdIn')
+                  .replaceFirst('%s', title),
+            ),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${widget.host.i18nService.t('error.operationFailed')}: $error',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   /// 删除（P1-5：确认对话框共用壳 → DeleteNodeCommand 写路径；

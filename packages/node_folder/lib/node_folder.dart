@@ -6,6 +6,8 @@ export 'src/contain_concept.dart';
 export 'src/folder_card_view.dart';
 export 'src/folder_concept.dart';
 export 'src/folder_contents_view.dart';
+export 'src/folder_create.dart';
+export 'src/folder_create_dialog.dart';
 export 'src/folder_view.dart';
 export 'src/move_nodes.dart';
 export 'src/sidebar_tabs_view.dart';

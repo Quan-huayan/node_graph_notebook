@@ -110,9 +110,7 @@ class LayoutAlgorithms {
       }
     }
 
-    for (final root in roots) {
-      seed(root);
-    }
+    roots.forEach(seed);
     bfs();
     // **分量兜底**：BFS 后仍未访问的节点（孤立/环内分量）自为根，
     // 保证全部节点覆盖（无向邻接下无入度集可能为空）。

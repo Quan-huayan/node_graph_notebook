@@ -24,7 +24,6 @@ import 'canvas_concept.dart';
 import 'connection_concept.dart';
 import 'layout/layout_dialog.dart';
 import 'node_card.dart';
-import 'node_commands.dart';
 import 'node_dialogs.dart';
 
 /// 画布。
@@ -70,14 +69,14 @@ class _GraphCanvasState extends State<GraphCanvas> {
 
   /// 缩放钳制（手势与程序化缩放共用；M7.3 画布缩放）。
   static const double _minScale = 0.2;
-  static const double _maxScale = 4.0;
+  static const double _maxScale = 4;
 
   /// 缩放步进（滚轮与按钮共用相对因子）。
   static const double _zoomStep = 1.25;
 
   /// 适应视图的缩放钳制（避免极小图过度放大/极大图缩死）。
   static const double _fitMinScale = 0.1;
-  static const double _fitMaxScale = 2.0;
+  static const double _fitMaxScale = 2;
 
   /// 拖拽中的临时位置（nodeId → 场景坐标）——卡片与连线实时跟随，
   /// 松手 drop 时落盘（判据②），期间不写存储。

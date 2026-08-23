@@ -8,6 +8,8 @@ library;
 
 export 'editor_plugin.dart';
 export 'src/editor_concept.dart';
+export 'src/markdown/markdown_parser.dart';
+export 'src/markdown/markdown_view.dart';
 export 'src/markdown_editor_view.dart';
 export 'src/note_card_view.dart';
 export 'src/note_row_view.dart';

@@ -155,6 +155,13 @@ class MockAIProvider implements AIProvider {
   /// 脚本化工具调用（非空 → complete 恒返回工具调用；测试用）。
   final List<ToolCallIntent>? scriptedToolCalls;
 
+  /// 脚本消费进度（按实例身份）。
+  ///
+  /// `const` 构造下 `scriptedToolCalls` 是**不可变列表**，直接 removeAt
+  /// 会运行期崩溃（M7.4 const 清理后暴露）；消费进度改记在实例身份上
+  /// （Expando——const 实例同一性稳定），列表本身零修改。
+  static final Expando<int> _consumed = Expando<int>();
+
   @override
   String get serviceName => 'Mock AI';
 
@@ -186,11 +193,17 @@ class MockAIProvider implements AIProvider {
     // 工具循环可终止（确定性测试驱动）。
     final scripted = scriptedToolCalls;
     if (scripted != null && scripted.isNotEmpty) {
-      final call = scripted.removeAt(0);
-      return AssistantResponse(
-        content: null,
-        toolCalls: <ToolCallIntent>[call],
-      );
+      // 按实例身份取下一个脚本调用（不修改列表——const 列表不可变）。
+      final index = _consumed[this] ?? 0;
+      if (index >= scripted.length) {
+        _consumed[this] = scripted.length; // 消费完 → 回落文本路径。
+      } else {
+        _consumed[this] = index + 1;
+        return AssistantResponse(
+          content: null,
+          toolCalls: <ToolCallIntent>[scripted[index]],
+        );
+      }
     }
     // 无工具 / 脚本消费完 → 旧 generate 路径。
     return AssistantResponse(content: await generate(_promptOf(messages)));

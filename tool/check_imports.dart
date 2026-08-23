@@ -106,7 +106,9 @@ void main() {
   } else {
     stderr.writeln('check_imports: ${violations.length} 处违规：');
     violations.sort();
-    violations.forEach((v) => stderr.writeln('  $v'));
+    for (var v in violations) {
+      stderr.writeln('  $v');
+    }
     exitCode = 1;
   }
 }
