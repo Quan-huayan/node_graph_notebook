@@ -46,6 +46,10 @@ class MoveReferencesResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.structure;
 
+  // R3c 不可撤销理由（docs/review 总览 P0-3）：references **覆盖写**——
+  // handler 未捕获旧 references（构造对偶命令需旧值快照，超出本命令契约
+  // 范围）；撤销链由上层容器命令承担（folder 的 MoveNodesCommand 自带
+  // inverse 对偶，其 handler 捕获 previousParent）。本骨架命令显式不可撤销。
   @override
   Command? get inverse => null;
 }

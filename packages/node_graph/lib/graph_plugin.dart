@@ -68,13 +68,26 @@ Future<void> _showCreateNoteDialog(
       );
     }
     return;
-  } on Exception catch (error) {
-    // 失败反馈（架构 §8：禁止静默失败；R9：类型化异常——先
-    // IOException，再 Exception 兜底，禁裸 catch）。
+  } on StateError {
+    // 已知类型化失败（命令路由/前置校验）→ 用户可见反馈，原始 error
+    // 不上屏（R11 统一裁决）。
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${i18n.t('error.operationFailed')}: $error'),
+          content: Text(i18n.t('error.operationFailed')),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  } catch (error) {
+    // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+    // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+    // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+    debugPrint('<新建笔记> failed: $error');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(i18n.t('error.operationFailed')),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -95,9 +108,16 @@ class GraphPlugin extends Plugin {
 
   final ServiceProvider Function()? _servicesProvider;
 
+  /// R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+  /// servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产
+  /// 装配依赖。
   ServiceProvider? _snapshot;
 
   /// 服务解析：宿主入口（运行时最新）优先；缺省回退 onLoad 快照。
+  ///
+  /// R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+  /// servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产
+  /// 装配依赖。
   ServiceProvider get _provider => _servicesProvider?.call() ?? _snapshot!;
 
   @override
@@ -110,6 +130,9 @@ class GraphPlugin extends Plugin {
   @override
   Future<void> onLoad(PluginContext context) async {
     // 快照兜底（单插件测试）；多插件场景由宿主注入最新 provider 入口。
+    // R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+    // servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产
+    // 装配依赖。
     _snapshot = context.services;
     // M7 修正（Hook 承载 UI）：注册"画布管理"工具栏动作——按钮 =
     // UI 节点（metadata.action = 'canvas.manage'），动作 = 本插件 UI。

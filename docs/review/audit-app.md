@@ -25,3 +25,10 @@ UI 文案经 t()（键 zh/en 齐全，种子标题属 R11 豁免）。`lib/main.
 - 统计：violation 0｜warning 1｜info 2（M8 复核）
 - P0（M8 已执行）：#1 裸 catch → 移至 graph_plugin 并类型化（on IOException / on Exception）；#2 import 顺序 → main.dart 重排（SDK → Flutter → 第三方 → 项目包）。
 - 文档动作：#6 design_smell 随 M8 移除（组合根回调已删除）；#4 播种豁免理由已注明（architecture.md 多仓库行）。
+
+## 整改落实（2026 本次会话）
+
+> 全量整改由 docs/review 总览 §7 统一裁决驱动（P0 类型化捕获 + P0-2 环校验 + P0-3 inverse 注释；
+> P1-5 R13 测试兜底豁免 / P1-6 R10 import 顺序仓库惯例 / P1-7 R6 命令族聚合豁免；
+> P2-8/P2-9 窗口化回收与象限索引缓存）。组合根无代码级违规（warning/info 均已注释或按裁决豁免；
+> 详见总览 §7）。CI 两工具 PASS 与 `dart analyze` 零 error/warning 为验收线。

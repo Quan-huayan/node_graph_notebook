@@ -15,7 +15,8 @@ import 'command.dart';
 import 'command_bus.dart';
 import 'undo_manager.dart';
 
-/// 从扩展点路由的命令总线实现。
+/// 从扩展点路由的命令总线实现（**生产装配用**，HostRuntime 接线；
+/// 与 command_bus.dart 的 CommandBusImpl 关系见其文档注释，audit-core #10）。
 class PluginCommandBus implements CommandBus, WriteNotifier {
   /// 注入扩展注册表（活跃贡献 = 路由源）。
   PluginCommandBus({required this.extensions});

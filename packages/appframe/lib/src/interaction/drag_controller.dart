@@ -57,7 +57,9 @@ class DropOutcome {
   /// 结果种类。
   final DropOutcomeKind kind;
 
-  /// 拒绝原因 / 环路径（用户可读文案）。
+  /// 拒绝原因 / 环路径（**内部诊断文本**——R9/R11 裁决，总览 P0-1：
+  /// 不上屏。UI 侧按 [DropOutcomeKind] 展示翻译文案（folder_view /
+  /// toolbar_actions_row 已按键分型）；reason 仅测试断言与诊断日志使用）。
   final String? reason;
 }
 
@@ -309,16 +311,28 @@ class DragController {
         flightChild: flightChild,
       );
       return DropOutcome.cycleRejected(e.cyclePath.join(' → '));
-    } catch (error) {
-      // 其他命令失败（源节点已删、落盘 IO 失败等）同样要终结事务，
-      // 不再向 async DragTarget 回调泄漏未捕获异常。
+    } on StateError catch (error) {
+      // 已知失败：节点不存在/状态守卫错误（R9 类型化捕获）。
       _rollback(
         from: from,
         dropPoint: dropPoint,
         overlay: overlay,
         flightChild: flightChild,
       );
-      return DropOutcome.rejected('移动失败：$error');
+      return DropOutcome.rejected('移动失败：$error'); // 内部诊断（不上屏）。
+    } catch (error) {
+      // UI 边界兜底豁免（R9 注释，总览 P0-1 裁决）：异步拖拽回调不得泄漏
+      // 未捕获异常（M7.4 修正记录——任何命令失败都必须终结事务并回弹）；
+      // 未知编程错误保留诊断痕迹（debugPrint），不再向 async DragTarget
+      // 回调泄漏（05 纪律 8：失败必须有用户可见反馈——显示侧按键分型）。
+      debugPrint('drag commit failed: $error');
+      _rollback(
+        from: from,
+        dropPoint: dropPoint,
+        overlay: overlay,
+        flightChild: flightChild,
+      );
+      return const DropOutcome.rejected('移动失败（未知错误）');
     }
   }
 

@@ -85,6 +85,21 @@ void main() {
     expect(result.issues.any((i) => i.contains('ghost')), isTrue);
   });
 
+  test('R9 P0 修复：Verify 对合法但非 Map 的 JSON 判结构异常（不击穿）', () async {
+    // audit #4：第二遍 `as Map` 的 TypeError 曾击穿 Handler；补类型化捕获后
+    // 两遍均判「结构异常」（合法 JSON 数组/字符串非 Map）。
+    final sidecarDir = host.graph.sidecar.storeDir;
+    final partition = Directory('${sidecarDir.path}${Platform.pathSeparator}zz')
+      ..createSync(recursive: true);
+    File(
+      '${partition.path}${Platform.pathSeparator}zz1.node.json',
+    ).writeAsStringSync(jsonEncode(<int>[1, 2, 3]));
+    final result = await host.commandBus.dispatch<VerifyCommand, VerifyResult>(
+      const VerifyCommand(),
+    );
+    expect(result.issues.any((i) => i.contains('结构异常')), isTrue);
+  });
+
   test('Repair：损坏 sidecar 删除 + Graph 索引清理', () async {
     final sidecarDir = host.graph.sidecar.storeDir;
     final partition = Directory('${sidecarDir.path}${Platform.pathSeparator}xx')
@@ -102,6 +117,25 @@ void main() {
       ).existsSync(),
       isFalse,
     );
+    // 健康节点不受影响。
+    expect(host.graph.get('noteA'), isNotNull);
+  });
+
+  test('R9 P0 修复：Repair 对合法但非 Map 的 JSON 判损坏删除（不崩溃）', () async {
+    // audit #5：`as Map` TypeError 曾击穿修复 Handler（本应删除该损坏
+    // sidecar）；补 on TypeError 后按 corrupt 判定删除 + Graph 索引清理。
+    final sidecarDir = host.graph.sidecar.storeDir;
+    final partition = Directory('${sidecarDir.path}${Platform.pathSeparator}zz')
+      ..createSync(recursive: true);
+    final target = File(
+      '${partition.path}${Platform.pathSeparator}zz2.node.json',
+    );
+    target.writeAsStringSync(jsonEncode('just a string'));
+    final result = await host.commandBus.dispatch<RepairCommand, RepairResult>(
+      const RepairCommand(),
+    );
+    expect(result.repairedNodeIds, <String>{'zz2'});
+    expect(target.existsSync(), isFalse);
     // 健康节点不受影响。
     expect(host.graph.get('noteA'), isNotNull);
   });

@@ -70,7 +70,8 @@ class NoteRowView extends StatelessWidget {
   );
 
   /// 删除（P1-5：确认对话框共用壳 → DeleteNodeCommand 写路径；
-  /// 失败反馈对齐架构 §8）。
+  /// 失败反馈对齐架构 §8：已知命令失败（StateError/CycleError）类型化
+  /// 捕获，未知编程错误兜底 + debugPrint 诊断（R9 豁免，不上屏原始 error）。
   Future<void> _delete(BuildContext context) async {
     final confirmed = await showDeleteNodeConfirm(
       context,
@@ -84,17 +85,32 @@ class NoteRowView extends StatelessWidget {
       await host.commandBus.dispatch<DeleteNodeCommand, DeleteNodeResult>(
         DeleteNodeCommand(nodeId: node.id),
       );
+    } on StateError {
+      // 已知失败（DeleteNode/core）：目标节点已被删除/不存在 → 类型化
+      // 捕获，文案走 t() 键（R11：原始 $error 不上屏）。
+      _showDeleteFailed(context);
+    } on CycleError {
+      // 已知失败（core 环校验命中）→ 类型化捕获。
+      _showDeleteFailed(context);
     } catch (error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${host.i18nService.t('error.operationFailed')}: $error',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('DeleteNode failed: $error');
+      _showDeleteFailed(context);
     }
+  }
+
+  /// 删除失败 SnackBar（t() 键文案，不上屏原始 error，R11）。
+  void _showDeleteFailed(BuildContext context) {
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(host.i18nService.t('error.operationFailed')),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 }

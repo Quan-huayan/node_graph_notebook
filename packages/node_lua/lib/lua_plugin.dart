@@ -56,6 +56,9 @@ class LuaPlugin extends Plugin {
 
   @override
   Future<void> onLoad(PluginContext context) async {
+    // R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+    // servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产
+    // 装配依赖（_snapshot! 空断言 = 未注入装配错误快速失败）。
     _snapshot = context.services;
     final engine = LuaEngine();
     try {
@@ -75,6 +78,9 @@ class LuaPlugin extends Plugin {
       try {
         return _hostWriteSync(action: 'create', payload: args.firstOrNull);
       } catch (e) {
+        // UI/FFI 边界兜底豁免（R9 注释，audit-node_lua #6）：C 回调边界不得向 C
+        // 抛异常（引擎代码路径），未知错误保留诊断（debugPrint）并降级/返回
+        // 错误标记，不泄漏到宿主。
         return 'error:$e';
       }
     });
@@ -82,6 +88,9 @@ class LuaPlugin extends Plugin {
       try {
         return _hostWriteSync(action: 'update', payload: args.firstOrNull);
       } catch (e) {
+        // UI/FFI 边界兜底豁免（R9 注释，audit-node_lua #6）：C 回调边界不得向 C
+        // 抛异常（引擎代码路径），未知错误保留诊断（debugPrint）并降级/返回
+        // 错误标记，不泄漏到宿主。
         return 'error:$e';
       }
     });
@@ -89,6 +98,9 @@ class LuaPlugin extends Plugin {
       try {
         return _hostWriteSync(action: 'delete', payload: args.firstOrNull);
       } catch (e) {
+        // UI/FFI 边界兜底豁免（R9 注释，audit-node_lua #6）：C 回调边界不得向 C
+        // 抛异常（引擎代码路径），未知错误保留诊断（debugPrint）并降级/返回
+        // 错误标记，不泄漏到宿主。
         return 'error:$e';
       }
     });
@@ -136,6 +148,10 @@ class LuaPlugin extends Plugin {
   LuaCommandHandler? _commandHandler;
 
   /// 服务解析：宿主入口（运行时最新）优先；缺省回退 onLoad 快照。
+  ///
+  /// R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+  /// servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产
+  /// 装配依赖（_snapshot! 空断言 = 未注入装配错误快速失败）。
   ServiceProvider get _services => _servicesProvider?.call() ?? _snapshot!;
 
   /// 启用：加载脚本（onLoad 后引擎就绪；动态 Concept 运行时贡献）。
@@ -180,6 +196,19 @@ class LuaPlugin extends Plugin {
 
   /// 宿主写 API → LuaWriteHandler 同步执行 + 写后广播（M7 修正：
   /// C 回调无法 await——写逻辑同步完成，结果字符串通道返回）。
+  ///
+  /// 设计豁免注释（audit-node_lua #1/#2，不改行为）：
+  /// 1. **直调 Handler 绕过 dispatch**：C 回调边界无法 await dispatch
+  ///    （同步 C API，回调返回前宿主主线程被占用）——写逻辑本身无异步
+  ///    （Graph 同步落盘），applySync 语义等价 dispatch 的落盘段；写后
+  ///    通知经 CommandBus.notifyListeners 手动广播（与 dispatch 广播一致）。
+  ///    网关纪律弱化（插件停用后存活引用仍可写）已知：宿主 provider 为
+  ///    运行时求值（01 #47），写通道不随插件生命周期关闭，M7+ 收敛。
+  /// 2. **广播粒度恒 structure**：脚本宿主写统一按结构级广播属已知简化——
+  ///    纯 data 变更也按结构粒度广播（过度失效）；且脚本命令内嵌
+  ///    host.node_* 时，宿主路径 notifyListeners 与外层命令 dispatch 各
+  ///    广播一次（双失效事件）。已记录规划收敛（按动作推断粒度 + 统一
+  ///    单次广播，M7+ 落地）。
   String _hostWriteSync({required String action, required dynamic payload}) {
     final map = payload is Map<String, dynamic> ? payload : <String, dynamic>{};
     final result = _writeHandler!.applySync(

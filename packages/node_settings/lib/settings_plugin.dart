@@ -75,6 +75,8 @@ class SettingsPlugin extends Plugin {
 
   @override
   Future<void> onLoad(PluginContext context) async {
+    // R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+    // servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产装配依赖。
     _snapshot = context.services;
     // M7 修正（Hook 承载 UI）：注册设置动作——按钮 = UI 节点
     // （metadata.action = 'settings.open'），动作 = 本插件 UI。

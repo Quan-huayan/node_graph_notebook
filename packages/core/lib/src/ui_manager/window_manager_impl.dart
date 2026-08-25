@@ -15,9 +15,18 @@ class WindowManagerImpl implements WindowManager {
   final Map<String, _Entry> _entries = <String, _Entry>{};
   final Map<String, Set<String>> _byNode = <String, Set<String>>{};
 
+  /// 容器 → 直接子 hookId（子树级联回收用，02 §3.3；P2-8 补全——
+  /// 回收父 Hook 时子树不得残留，audit core #4）。
+  final Map<String, Set<String>> _children = <String, Set<String>>{};
+
   /// 物化登记：hook 挂到 containerHook 下（kind 为容器 kind）。
   @override
   void attach(Hook hook, Hook? containerHook, String kind) {
+    if (containerHook != null) {
+      _children
+          .putIfAbsent(containerHook.hookId, () => <String>{})
+          .add(hook.hookId);
+    }
     _entries[hook.hookId] = _Entry(
       hook: hook,
       containerHook: containerHook,
@@ -25,6 +34,10 @@ class WindowManagerImpl implements WindowManager {
     );
     _byNode.putIfAbsent(hook.nodeId, () => <String>{}).add(hook.hookId);
   }
+
+  /// 直接子 hookId（级联回收遍历；无子级返回空集）。
+  Iterable<String> childHookIds(String hookId) =>
+      _children[hookId] ?? const <String>{};
 
   @override
   bool isMaterialized(String nodeId, {String? kind}) {
@@ -40,12 +53,24 @@ class WindowManagerImpl implements WindowManager {
   }
 
   /// 回收：非物化 hookId → 静默 no-op。
+  ///
+  /// 仅移除**本条目**（子树级联由 MaterializerImpl.recycle 先行递归——
+  /// 保证子级先于父级注销，父 hook 的 _children 登记随之清空）。
   @override
   void recycle(String hookId) {
     final entry = _entries.remove(hookId);
     if (entry == null) {
       return;
     }
+    final parent = entry.containerHook;
+    if (parent != null) {
+      _children[parent.hookId]?.remove(hookId);
+      if (_children[parent.hookId]?.isEmpty ?? false) {
+        _children.remove(parent.hookId);
+      }
+    }
+    // 子树登记整体移除（防御：正常路径级联已清空，此处兜底防残留）。
+    _children.remove(hookId);
     _byNode[entry.hook.nodeId]?.remove(hookId);
     if (_byNode[entry.hook.nodeId]?.isEmpty ?? false) {
       _byNode.remove(entry.hook.nodeId);

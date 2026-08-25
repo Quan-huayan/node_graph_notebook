@@ -118,6 +118,11 @@ class FallbackNode extends Node {
 }
 
 /// 兜底 Hook：普通笔记视图面（M1 占位实现——真正渲染归 M3 呈现层）。
+///
+/// 跨层依赖说明（audit-core #6 记录）：FallbackHook.render 为空实现，呈现
+/// 兜底实际落在两层——(1) node_graph 的 GenericNodeCardBody（卡片体，kind
+/// 未匹配时）与 (2) appframe 的 HookView（Hook 渲染宿主，永不空洞）。本类
+/// 是「永不空洞」契约的结构落点，不直接承载 UI（core 零 Flutter）。
 class FallbackHook extends Hook {
   /// 占位视图面；hookId 由物化者传入（同一 Node 多容器不碰撞）。
   const FallbackHook({required this.nodeId, required this.hookId});

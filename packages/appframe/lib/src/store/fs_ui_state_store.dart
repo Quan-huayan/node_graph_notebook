@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:core_data/core_data.dart';
+import 'package:flutter/foundation.dart'; // debugPrint（R9 兜底诊断日志）
 
 /// UIStateStore 的文件系统实现（JSON KV）。
 class FSUIStateStore implements UIStateStore {
@@ -32,8 +33,20 @@ class FSUIStateStore implements UIStateStore {
       try {
         _cache = jsonDecode(_file.readAsStringSync()) as Map<String, dynamic>;
         return _cache!;
-      } catch (_) {
-        // 损坏的 ui-state.json：重建为空 KV（外观状态可丢，结构不可丢）。
+      } on FormatException {
+        // 损坏的 ui-state.json 已知形态 1（R9 类型化，audit-appframe #3）：
+        // JSON 语法损坏 → 重建为空 KV（外观状态可丢，结构不可丢）。
+        _cache = <String, dynamic>{};
+        return _cache!;
+      } on TypeError {
+        // 损坏的 ui-state.json 已知形态 2（顶层非 Map / 键值类型错）。
+        _cache = <String, dynamic>{};
+        return _cache!;
+      } catch (error) {
+        // 存储兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：损坏外观
+        // 文件不应使整个应用不可启动；未知异常保留诊断痕迹（debugPrint）
+        // 后同样降级为空 KV（结构权威在 graph，外观可丢不可崩）。
+        debugPrint('ui-state.json 损坏降级: $error');
         _cache = <String, dynamic>{};
         return _cache!;
       }

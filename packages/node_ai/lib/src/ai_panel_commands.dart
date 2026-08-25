@@ -48,6 +48,9 @@ class CreateAIPanelResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.structure;
 
+  // R3c 不可撤销理由：面板创建 = 钉侧边栏 tab 实例（L1 引用写），对偶需
+  // 「移除面板实例」命令（词表不存在——MVP 面板只增不删）——显式不可撤销
+  // （docs/review 总览 P0-3 / audit-node_ai #2）。
   @override
   Command? get inverse => null;
 }

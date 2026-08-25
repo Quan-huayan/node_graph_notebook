@@ -163,6 +163,10 @@ class LuaWriteHandler extends CommandHandler<LuaWriteCommand, LuaWriteResult> {
     return LuaWriteResult(affectedNodeIds: <String>{id});
   }
 
+  /// Lua 删除为**裸删**（audit-node_lua #5，已记录）：不级联清理反向引用，
+  /// 与 node_graph DeleteNodeHandler 的级联语义不同——脚本删节点后引用方
+  /// （文件夹成员/连接边）引用残留，脚本作者需自行处理引用残留
+  /// （先更新/删除引用方，或接受悬空引用）；M7+ 收敛为委托级联语义。
   LuaWriteResult _delete(Graph graph, LuaWriteCommand command) {
     final id = command.nodeId;
     if (id == null) {

@@ -1,9 +1,10 @@
 name: node_i18n
 version: 0.1.0
 description: >-
-  i18n plugin (M7): zh/en translation resources carried over from the old
-  packages (archive/i18n_zh, i18n_en) + I18nService (current language,
-  t(key)). Language switching is service-level (MVP: no runtime UI switch).
+  i18n plugin (M7): language settings entry (kind 'settings-i18n') + runtime
+  language switching form (zh / English applies immediately, edits the
+  shell-layer I18nService). The service itself lives in appframe and is
+  globally reachable across plugins.
 publish_to: 'none'
 resolution: workspace
 

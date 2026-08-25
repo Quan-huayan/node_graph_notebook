@@ -351,11 +351,37 @@ class _AIChatViewState extends State<AIChatView> {
           ),
         );
       }
-    } catch (error) {
+    } on StateError catch (e) {
+      // R9 类型化：会话/源笔记不存在（chat_handlers.dart 抛出的 StateError，
+      // message 即用户可读中文）——直接展示，不再落入未知兜底。
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${widget.i18n.t('ai.networkFailed')}（$error）'),
+            content: Text(e.message),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } on CycleError catch (e) {
+      // R9 类型化：环校验失败（DropIntoAI / CreateAIPanel Handler 抛出的
+      // CycleError——toString 即「此操作会形成循环引用」用户可读文案）。
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (error) {
+      // R9 兜底豁免注释（docs/review 总览 P0-1 裁决）：剩余未知编程错误
+      // 保留诊断痕迹（debugPrint——R12 禁 print），原始 error 文本不上屏
+      // （R11）——用户只看到统一失败文案。
+      debugPrint('AI chat send failed: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.i18n.t('ai.networkFailed')),
             duration: const Duration(seconds: 2),
           ),
         );

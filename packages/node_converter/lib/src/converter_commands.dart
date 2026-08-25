@@ -59,11 +59,15 @@ class ImportCommand extends Command<ImportCommand> {
 
 /// 导入写结果（structure：新节点 → 树重挂）。
 class ImportResult implements WriteResult {
-  /// 携带导入节点 id。
-  const ImportResult({required this.importedNodeIds});
+  /// 携带导入节点 id 与覆盖数量。
+  const ImportResult({required this.importedNodeIds, this.overwrittenCount = 0});
 
   /// 导入节点 id。
   final Set<String> importedNodeIds;
+
+  /// 覆盖的既有节点数（audit-node_converter #6：导入对既有 id 整体覆盖，
+  /// 对话框回显降低误导入风险）。
+  final int overwrittenCount;
 
   @override
   Set<String> get affectedNodeIds => importedNodeIds;
@@ -71,6 +75,9 @@ class ImportResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.structure;
 
+  // R3c 不可撤销理由（docs/review 总览 P0-3 / audit-node_converter #3）：
+  // 导入属文件恢复语义写（批量落盘，可能整体覆盖既有节点），其对偶 =
+  // 重新导出/手工修复（非命令）；显式不可撤销（与 ExportResult 同口径）。
   @override
   Command? get inverse => null;
 }

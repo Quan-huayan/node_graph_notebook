@@ -29,6 +29,8 @@ class BackupHandler extends CommandHandler<BackupCommand, BackupResult> {
 
   @override
   Future<BackupResult> handle(BackupCommand command) async {
+    // audit #7（info，设计气味）：恢复语义需文件级操作（sidecar/dataRoot
+    // 遍历），`as FSTGraph` 直达具体存储实现——耦合可接受，未来抽象存储层时留意。
     final graph = _graphProvider() as FSTGraph;
     final dataRoot = graph.dataRoot;
     final stamp = DateTime.now().toIso8601String().replaceAll(':', '-');
@@ -77,6 +79,7 @@ class VerifyHandler extends CommandHandler<VerifyCommand, VerifyResult> {
 
   @override
   Future<VerifyResult> handle(VerifyCommand command) async {
+    // 同 audit #7（`as FSTGraph` 文件级校验，未来抽象存储层时留意）。
     final graph = _graphProvider() as FSTGraph;
     final issues = <String>[];
     final parsedIds = <String>{};
@@ -125,6 +128,9 @@ class VerifyHandler extends CommandHandler<VerifyCommand, VerifyResult> {
         }
       } on FormatException {
         // 已在可解析性阶段记录。
+      } on TypeError {
+        // 已在可解析性阶段记录（合法但非 Map 的 JSON `as Map` TypeError，
+        // R9 类型化——第一遍已记「结构异常」，此处仅防击穿）。
       }
     }
     return VerifyResult(issues: issues);
@@ -144,6 +150,7 @@ class RepairHandler extends CommandHandler<RepairCommand, RepairResult> {
 
   @override
   Future<RepairResult> handle(RepairCommand command) async {
+    // 同 audit #7（`as FSTGraph` 文件级修复，未来抽象存储层时留意）。
     final graph = _graphProvider() as FSTGraph;
     final repaired = <String>{};
     final storeDir = graph.sidecar.storeDir;
@@ -163,6 +170,11 @@ class RepairHandler extends CommandHandler<RepairCommand, RepairResult> {
           corrupt = true;
         }
       } on FormatException {
+        // 解析损坏的已知形态（JSON 语法错误，R9 类型化）。
+        corrupt = true;
+      } on TypeError {
+        // 解析损坏的已知形态（合法但非 Map 的 JSON `as Map` TypeError，
+        // R9 类型化——本应判 corrupt 删除，而非击穿崩溃）。
         corrupt = true;
       }
       if (corrupt) {

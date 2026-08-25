@@ -3,6 +3,8 @@
 /// （appframe 组合根注入——设置条目经 plugon DI 解析）。
 library;
 
+import 'dart:io'; // R9 类型化捕获 FileSystemException（仓库新建/移除 IO 失败）。
+
 import 'package:appframe/appframe.dart';
 import 'package:core_data/core_data.dart';
 import 'package:flutter/material.dart';
@@ -142,8 +144,27 @@ class _VaultSettingsFormState extends State<VaultSettingsForm> {
     if (name.isEmpty) {
       return;
     }
-    await widget.manager.createVault(name);
-    _name.clear();
+    // R2 壳层直写豁免（docs/review 总览 P1 裁决，audit-node_settings #2）：
+    // vaults.json 属宿主配置数据（非 Graph 结构），createVault/removeVault 为
+    // 壳层服务职责内写；不进 CommandBus（无撤销/失效语义需求），已记录。
+    try {
+      await widget.manager.createVault(name);
+      _name.clear();
+    } on StateError catch (error) {
+      // 已知失败：仓库状态/守卫错误（R9 类型化捕获）。
+      debugPrint('vault create rejected: $error');
+      _showCreateFailure();
+    } on FileSystemException catch (error) {
+      // 已知失败：IO（vaults.json 写入 / 数据目录创建失败）。
+      debugPrint('vault create IO failed: $error');
+      _showCreateFailure();
+    } catch (error) {
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('vault create failed: $error');
+      _showCreateFailure();
+    }
   }
 
   Future<void> _remove(VaultEntry entry) async {
@@ -176,6 +197,7 @@ class _VaultSettingsFormState extends State<VaultSettingsForm> {
     if (confirmed != true) {
       return;
     }
+    // R2 壳层直写豁免同 _create（createVault/removeVault 同属壳层服务职责内写）。
     try {
       await widget.manager.removeVault(entry.id);
       if (mounted) {
@@ -186,13 +208,41 @@ class _VaultSettingsFormState extends State<VaultSettingsForm> {
           ),
         );
       }
+    } on StateError catch (error) {
+      // 已知失败：仓库守卫错误（当前/默认/仅剩仓库不可删，R9 类型化捕获）。
+      debugPrint('vault remove rejected: $error');
+      _showRemoveFailure();
+    } on FileSystemException catch (error) {
+      // 已知失败：IO（vaults.json 写入 / 数据移入 .trash 失败）。
+      debugPrint('vault remove IO failed: $error');
+      _showRemoveFailure();
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
-      }
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('vault remove failed: $error');
+      _showRemoveFailure();
     }
+  }
+
+  /// 新建失败反馈（05 纪律 8 / R11：翻译文案上屏，原始 error 文本不上屏）。
+  void _showCreateFailure() {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(widget.i18n.t('vault.createFailed'))),
+    );
+  }
+
+  /// 移除失败反馈（05 纪律 8 / R11：翻译文案上屏，原始 error 文本不上屏）。
+  void _showRemoveFailure() {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(widget.i18n.t('vault.removeFailed'))),
+    );
   }
 
   @override

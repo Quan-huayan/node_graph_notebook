@@ -27,7 +27,7 @@ class PaletteEntry {
 }
 
 /// 打开命令面板（搜索过滤 + 点击执行）。
-/// 打开命令面板（搜索过滤 + 点击执行）。
+///
 /// [emptyMessage] 空结果文案（i18n——调用方传词表键解析，本对话框零硬编码）。
 Future<void> showCommandPalette(
   BuildContext context,

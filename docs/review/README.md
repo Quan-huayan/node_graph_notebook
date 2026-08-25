@@ -30,14 +30,14 @@ inverse 对偶 / 失败可见性）、Public API 文档、print/existsSync/裸 c
 | R3 | Handler 纪律：(a) 写 references 前必须 AcyclicChecker 防环；(b) 失败不得静默；(c) 可撤销命令必须有 inverse 对偶，不可撤销写显式 inverse:null 并注释理由 |
 | R4 | 读 = Graph 直读或插件读侧服务；不得新建 QueryBus |
 | R5 | 插件互通只走 Command + 数据引用 |
-| R6 | Public API 必须有 /// 文档；复杂逻辑注释"为什么"；public API 有类型注解 |
+| R6 | Public API 必须有 /// 文档；复杂逻辑注释"为什么"；public API 有类型注解（命令族聚合 = DTO+Result+Handler 同文件，仓库既定豁免，见 §7 P1-7） |
 | R7 | 禁 print()（用 debugPrint()） |
 | R8 | 文件存在性检查用 existsSync()，禁 await exists() |
 | R9 | 类型化异常，禁裸 catch (e) |
-| R10 | import 顺序：Dart SDK → Flutter → 第三方 → 项目包 → 相对 |
+| R10 | import 顺序（仓库惯例修订，见 §7 P1-6）：标准库 → 项目包（appframe/core/core_data/plugon/node_*）→ Flutter/第三方 → 相对；CI 不检查顺序 |
 | R11 | UI 文案必须进 translations.dart（zh+en）经 t()；豁免：种子数据/模型元数据/内部错误/协议文本/vendored |
 | R12 | 无 codegen（禁 build_runner/.g.dart） |
-| R13 | 服务经 serviceProvider 运行时求值；禁在 onLoad 保存 provider/服务快照（01 #47） |
+| R13 | 服务经 serviceProvider 运行时求值；生产装配禁 onLoad 快照，快照仅单插件测试兜底豁免（见 §7 P1-5） |
 | R14 | Hook render 写 RenderContext.sink；UI 经 UIManager 物化 + 失效定向重建；画布窗口化渲染（可见集+onViewportChanged） |
 
 ## 3. 合规总评
@@ -119,3 +119,32 @@ inverse 对偶的**主线全部落实**（core/node_graph/node_folder 的 Handle
 | 机制层 | [audit-core.md](audit-core.md)、[audit-plugon.md](audit-plugon.md) |
 | 壳层 | [audit-appframe.md](audit-appframe.md)、[audit-app.md](audit-app.md) |
 | 插件 | [audit-node_folder.md](audit-node_folder.md)、[audit-node_graph.md](audit-node_graph.md)、[audit-node_ai.md](audit-node_ai.md)、[audit-node_lua.md](audit-node_lua.md)、[audit-node_editor.md](audit-node_editor.md)、[audit-node_converter.md](audit-node_converter.md)、[audit-node_search.md](audit-node_search.md)、[audit-node_i18n.md](audit-node_i18n.md)、[audit-node_settings.md](audit-node_settings.md)、[audit-node_market.md](audit-node_market.md)、[audit-node_data_recovery.md](audit-node_data_recovery.md) |
+
+## 7. 整改记录（2026 本次会话决议与落实）
+
+> 裁决出处全部指向 §5 编号；落实状态以各 audit-*.md 文件内 `## 整改` 段与下方
+> 勾选为准。全部整改保持 `dart analyze` 零 error/warning 与 CI 两工具 PASS（05 纪律 3/5）。
+
+### P0 —— 已全部落实
+
+| # | 问题 | 裁决 | 落实位置 |
+|---|---|---|---|
+| P0-1 | UI/边界层裸 catch（R9） | **UI 事件边界允许兜底 catch-all**，但必须：类型化已知失败在前（`on StateError / on CycleError / on IOException / on FormatException`）+ 兜底带标准豁免注释（引用"docs/review 总览 P0-1 裁决"）+ `debugPrint` 诊断 + 原始 error **不上屏**（R11，统一走 `t()` 文案）。非 UI 层（Handler 内）仍禁裸 catch。 | appframe：app_shell / drag_controller / fs_ui_state_store / sidecar_store / command_palette；node_converter：converter_dialog；node_folder / node_graph / node_editor / node_settings / node_lua / node_ai / node_data_recovery（按 audit 整改段） |
+| P0-2 | 导入未防环（R3a，node_converter） | 参照 MoveNodesHandler：ImportHandler 落盘 references 前增量 AcyclicChecker 环校验，发现环抛 CycleError（fail-fast）；自引用立即命中，互引在第二个节点落盘时命中。 | `packages/node_converter/lib/src/converter_handlers.dart`（ImportHandler.handle JSON 分支，构造器注入 checker） |
+| P0-3 | inverse:null 缺理由注释（R3c） | 全部补齐"为什么"注释（引用对应 audit 编号）；可对偶处不新增命令（裁决：注释即可，改动面最小）。 | core move_references、appframe create_toolbar_button、node_lua lua_commands、node_converter converter_commands、node_data_recovery recovery_commands、node_folder move_nodes（按 audit 整改段） |
+
+### P1 —— 裁决已锁定，规则文档已修订
+
+| # | 问题 | 裁决（已选） | 落实 |
+|---|---|---|---|
+| P1-5 | onLoad provider 快照（R13） | **B：保留快照**，补"单插件测试兜底豁免"注释；生产装配必须由 app 注入 `() => host.serviceProvider` 惰性入口；`_snapshot!` 空断言 = 装配错误快速失败。CLAUDE.md 已增"R13 测试兜底豁免"节。 | CLAUDE.md；9 插件 onLoad 注释（各 audit 整改段） |
+| P1-6 | import 顺序（R10） | **修订规则文档为仓库惯例**：标准库 → 项目包（appframe/core/core_data/plugon/node_*）→ Flutter/第三方 → 相对。CI 不检查顺序，新旧文件一律遵循惯例。**不重排既有文件**（避免 40+ 文件机械 churn）。 | CLAUDE.md "Import order（仓库既定惯例）"节；本表 R10 行 |
+| P1-7 | "一文件一类"（R6） | **规则显式豁免命令族聚合文件**：Command DTO + Result + Handler 同文件是仓库既定约定，新成员按命令族放置。 | CLAUDE.md "R6 命令族聚合豁免"节；本表 R6 行 |
+
+### P2 —— 可行项已落实，规模项保持 [计划]
+
+| # | 问题 | 处置 | 落实位置 |
+|---|---|---|---|
+| P2-8 | 窗口化回收半边缺失（R14） | **已落实**：onViewportChanged 计算可见集 → 回收离开视口的已物化 Hook（先子后父经 materializer cascade）；Materializer 判重改 kind 感知；HookIndex.recycle 改 `_hookToNode` 反查 O(1)。 | core windowed_ui_manager / materializer_impl / hook_index / window_manager_impl |
+| P2-9 | QuadTree 每查询全量重建 + AppShell getAll + 工具栏强解包 | **已落实**：QuadTreeViewportQuery 增加脏标记 + 缓存索引（外观变更定向失效）；toolbar_container_concept render 改 null 兜底。AppShell getAll×3 记 [计划]（数据量小，暂不动）。 | appframe quad_tree_viewport_query / toolbar_container_concept |
+| P2-10 | 连接线每帧 getAll / search 全扫 / folder 写路径 getAll | 保持 [计划]（连接 Hook 化 / 反查索引），注释已存在；不改动。 | — |

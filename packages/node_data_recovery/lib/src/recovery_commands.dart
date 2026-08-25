@@ -59,6 +59,9 @@ class VerifyResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.data;
 
+  // R3c 不可撤销理由：校验 = 只读检查（无写副作用），以 WriteResult 呈现
+  // 仅为统一结果通道——inverse 无意义（docs/review 总览 P0-3 /
+  // audit-node_data_recovery #3）。
   @override
   Command? get inverse => null;
 }
@@ -89,6 +92,9 @@ class RepairResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.structure;
 
+  // R3c 不可撤销理由：恢复写——删除损坏 sidecar（+ Graph 索引条目），
+  // 不可撤销（docs/review 总览 P0-3 / audit-node_data_recovery #2；
+  // 03 §四 明列恢复写豁免——修复即终端动作，无对偶命令）。
   @override
   Command? get inverse => null;
 }

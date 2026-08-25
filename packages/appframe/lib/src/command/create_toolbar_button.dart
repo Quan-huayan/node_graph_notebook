@@ -44,6 +44,12 @@ class CreateToolbarButtonResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.structure;
 
+  // 不可撤销理由（R3c，docs/review 总览 P0-3 / audit-appframe #5）：
+  // 工具栏按钮 = UI 代理节点（M7.3"拖到工具栏 = 建打开该节点的按钮"），
+  // 幂等创建/更新（tooltip 跟随源标题）。删除按钮本身有独立对偶
+  // （DeleteNodeCommand 级联），本命令的"创建"语义被幂等覆盖写——
+  // 构造对逆命令需"按钮是否已存在"的历史判定，超出本命令契约范围；
+  // 显式声明不可撤销（03 §四：不可撤销写必须注明理由）。
   @override
   Command? get inverse => null;
 }

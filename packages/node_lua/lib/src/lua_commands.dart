@@ -100,5 +100,8 @@ class LuaWriteResult implements WriteResult {
   ChangeKind get changeKind => ChangeKind.structure;
 
   @override
+  // R3c 不可撤销理由：Lua 宿主写 = 脚本动作，脚本语义由脚本自管，无可还原
+  // 对偶（docs/review 总览 P0-3 / audit-node_lua #4；参照同文件
+  // LuaCommandResult L44 注释）。
   Command? get inverse => null;
 }

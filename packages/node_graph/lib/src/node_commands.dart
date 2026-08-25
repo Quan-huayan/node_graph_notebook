@@ -175,6 +175,11 @@ class DeleteNodeHandler
 }
 
 /// 恢复 Handler：快照回写（节点 + 关系 + 画布键）。
+///
+/// 低风险注释（docs/review/audit-node_graph.md 项 9）：undo 还原的是删除前
+/// **历史有效状态**——该引用图当时已过环校验，恢复不引入新环；若端点其后
+/// 被独立删除，恢复的关系实例会悬空引用——读取侧容忍（连接线跳过无位置
+/// 端点、连接判定忽略无效端点），低风险已记录。
 class RestoreNodeHandler
     extends CommandHandler<RestoreNodeCommand, RestoreNodeResult> {
   /// 注入结构存储与外观存储（延迟解析）。

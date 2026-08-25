@@ -153,7 +153,11 @@ class _TagsPanelViewState extends State<TagsPanelView> {
         return ListTile(
           dense: true,
           leading: const Icon(Icons.tag, size: 18),
-          title: Text('${entry.key}（${entry.value}）'),
+          // R11（audit-node_search #3）：计数括号走翻译键 tags.count
+          // （zh '（%s）' / en ' (%s)'）——全角/半角括号由语言包提供，UI 不直接拼接。
+          title: Text(
+            '${entry.key}${widget.host.i18nService.t('tags.count').replaceFirst('%s', '${entry.value}')}',
+          ),
           onTap: () => setState(() => _expandedTag = entry.key),
         );
       },
@@ -213,14 +217,17 @@ class _TagsPanelViewState extends State<TagsPanelView> {
                         ),
                         child: ListTile(
                           dense: true,
-                          leading: const Icon(Icons.description_outlined,
-                              size: 18),
+                          leading: const Icon(
+                            Icons.description_outlined,
+                            size: 18,
+                          ),
                           title: Text(
                             node.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          onTap: () => openNodeDialog(context, widget.host, node.id),
+                          onTap: () =>
+                              openNodeDialog(context, widget.host, node.id),
                         ),
                       ),
                     );

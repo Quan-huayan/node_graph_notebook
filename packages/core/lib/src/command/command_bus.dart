@@ -37,6 +37,10 @@ abstract class CommandBus {
 ///
 /// 失败行为（架构 §3）：未注册命令 → StateError（配置错误）；
 /// Handler 内环校验失败 → CycleError（由 Handler 抛出）。
+///
+/// 与 PluginCommandBus 的关系（audit-core #10 记录）：**生产装配用
+/// PluginCommandBus**（扩展点路由，HostRuntime 接线）；本实现是插件订阅
+/// 方案成熟前的最小总线示例，保留作契约参考/独立测试，非生产依赖。
 class CommandBusImpl implements CommandBus, WriteNotifier {
   /// 路由表：commandType → handler。
   final Map<Type, CommandHandler<Command, WriteResult>> _handlers =

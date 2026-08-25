@@ -75,7 +75,22 @@ class WindowedUIManager implements UIManager {
     // 第二容器（如画布）没有递归根 Hook；容器 null = widget 驱动物化
     // （与 materializeIfAbsent 同一简化，M7.1）。
     final container = targetKind == _rootKind ? _rootHook : null;
-    for (final nodeId in query.queryNodes(viewport)) {
+    final visible = query.queryNodes(viewport).toSet();
+    // P2-8（audit core #2，R14 回收半边）：窗口化 = 物化 ∩ 回收对偶——
+    // 已物化但不在当前可见集的 Hook 必须回收（级联子树），否则平移
+    // 遍历全库后 Hook 持续累积，"Hook 数量 ≈ 可视窗口"的 10⁶ 背书失效。
+    final stale = <String>[];
+    for (final hookId in window.hookIds) {
+      if (window.kindOf(hookId) != targetKind) {
+        continue; // 只回收本容器 kind 的 Hook（sidebar/sidebar-root 不误伤）。
+      }
+      final nodeId = index.nodeIdOf(hookId);
+      if (nodeId == null || !visible.contains(nodeId)) {
+        stale.add(hookId);
+      }
+    }
+    stale.forEach(materializer.recycle);
+    for (final nodeId in visible) {
       if (window.isMaterialized(nodeId, kind: targetKind)) {
         continue;
       }

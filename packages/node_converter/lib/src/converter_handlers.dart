@@ -77,12 +77,21 @@ class ExportHandler extends CommandHandler<ExportCommand, ExportResult> {
 }
 
 /// 导入 Handler（JSON 或 Markdown 文件 → 节点落盘）。
+///
+/// 信任边界（docs/review 总览 P0-2，audit-node_converter #1/#6）：
+/// 导入文件是外部输入，**落盘 references 前必须 AcyclicChecker 环校验**
+/// ——恶意/手工 JSON 的自引用或互引不得写入图（与 MoveNodesHandler
+/// 同一增量校验 + CycleError 语义）。导入对既有 id 属**整体覆盖**
+/// （往返恢复语义），覆盖数在 ImportResult 回显，降低误导入风险。
 class ImportHandler extends CommandHandler<ImportCommand, ImportResult> {
-  /// [graphProvider] 延迟解析结构存储。
-  ImportHandler({required Graph Function() graphProvider})
-    : _graphProvider = graphProvider;
+  /// [graphProvider] 延迟解析结构存储；[checker] 环校验器（缺省内置）。
+  ImportHandler({required Graph Function() graphProvider, AcyclicChecker? checker})
+    : _graphProvider = graphProvider,
+      _checker = checker ?? const AcyclicChecker();
 
   final Graph Function() _graphProvider;
+
+  final AcyclicChecker _checker;
 
   @override
   Type get commandType => ImportCommand;
@@ -95,6 +104,7 @@ class ImportHandler extends CommandHandler<ImportCommand, ImportResult> {
       throw StateError('导入文件不存在: ${command.path}');
     }
     final imported = <String>{};
+    var overwritten = 0; // R3b：覆盖既有节点计数（info #6 回显）。
     if (command.path.toLowerCase().endsWith('.md')) {
       // Markdown 拆分（旧版能力恢复）：## 段 → 节点。
       for (final node in _parseMarkdown(file.readAsStringSync())) {
@@ -112,12 +122,29 @@ class ImportHandler extends CommandHandler<ImportCommand, ImportResult> {
         continue; // 坏条目跳过（导入宽容，坏数据不崩溃）。
       }
       final id = entry['id'] as String;
+      final references = _stringMap(entry['references']);
+      // P0-2（R3a 信任边界）：落盘 references 前增量环校验——已落盘图 +
+      // 本批次先前节点为参照；自引用立即命中；互引在第二个节点落盘时命中
+      // （A→B 先落盘无恙，B→A 落盘时 A→B 已可见 → CycleError 拦截）。
+      if (references.isNotEmpty) {
+        final cycle = _checker.check(
+          affectedRefs: <String, Set<String>>{id: references.values.toSet()},
+          graph: graph,
+        );
+        if (cycle != null) {
+          throw CycleError(cycle);
+        }
+      }
+      // R3b：导入对既有 id 属整体覆盖（往返恢复语义）；覆盖数回显（info #6）。
+      if (graph.get(id) != null) {
+        overwritten++;
+      }
       graph.save(
         StoredNode(
           id: id,
           title: entry['title'] as String? ?? id,
           content: entry['content'] as String?,
-          references: _stringMap(entry['references']),
+          references: references,
           metadata: entry['metadata'] is Map<String, dynamic>
               ? entry['metadata'] as Map<String, dynamic>
               : const <String, dynamic>{},
@@ -127,7 +154,7 @@ class ImportHandler extends CommandHandler<ImportCommand, ImportResult> {
       );
       imported.add(id);
     }
-    return ImportResult(importedNodeIds: imported);
+    return ImportResult(importedNodeIds: imported, overwrittenCount: overwritten);
   }
 
   /// 拆分 markdown：`## 标题` 段 → 节点（跳过 `#` 文档头与空段）。

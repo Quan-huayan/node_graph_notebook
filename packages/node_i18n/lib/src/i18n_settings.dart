@@ -15,38 +15,49 @@ class I18nSettingsConcept extends Concept {
   /// 无状态（可 const 装配）。
   const I18nSettingsConcept();
 
+  /// Concept id（契约字段，接口文档见 core_data Concept）。
   @override
   String get id => 'com.example.i18n:settings';
 
+  /// 语言条目显示名。
   @override
   String get name => '语言';
 
+  /// 语言条目说明。
   @override
   String get description => '界面语言（中文 / English）';
 
+  /// 设置槽位（聚合归设置容器反查）。
   @override
   Set<String> get slots => const <String>{'settings'};
 
+  /// 必需设置槽位（不挂设置容器即不匹配）。
   @override
   Set<String> get requiredSlots => const <String>{'settings'};
 
+  /// 元数据模式（仅 kind；字段语义见 core_data MetadataField）。
   @override
   Map<String, MetadataField> get metadataSchema =>
       const <String, MetadataField>{
         'kind': MetadataField(name: 'kind', type: MetadataType.string),
       };
 
+  /// 必需元数据键（kind）。
   @override
   Set<String> get requiredMetadataKeys => const <String>{'kind'};
 
+  /// 内容要求（无内容负载）。
   @override
   ContentRequirement get contentRequirement => ContentRequirement.none;
 
+  /// 结构匹配：kind == 'settings-i18n' 且指向设置容器。
   @override
   bool validate(Node node) =>
       node.metadata['kind'] == 'settings-i18n' &&
       node.references['settings'] != null;
 
+  /// 播种实例：设置条目由宿主创建，此处显式拒绝（契约 core_data
+  /// Concept.createInstance 文档化）。
   @override
   Node createInstance({
     required String id,
@@ -58,6 +69,7 @@ class I18nSettingsConcept extends Concept {
     throw UnimplementedError('设置条目节点由宿主播种（写路径）');
   }
 
+  /// 创建语言设置 Hook（open 形态 = 切换表单）。
   @override
   Hook createHook(Node instance, HookContext context) => I18nSettingsHook(
     nodeId: instance.id,
@@ -70,15 +82,19 @@ class I18nSettingsHook extends Hook {
   /// 视图面。
   const I18nSettingsHook({required this.nodeId, required this.hookId});
 
+  /// 节点 id（契约字段，core_data Hook 文档化）。
   @override
   final String nodeId;
 
+  /// Hook id（节点 id@形态）。
   @override
   final String hookId;
 
+  /// 无子 Hook 引用。
   @override
   Map<String, Hook> get references => const <String, Hook>{};
 
+  /// open 形态渲染语言切换表单（契约见 core_data Hook.render）。
   @override
   void render(RenderContext context) {
     if (context is! FlutterRenderContext) {

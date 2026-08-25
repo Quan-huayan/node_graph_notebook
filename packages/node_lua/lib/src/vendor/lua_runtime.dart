@@ -82,12 +82,18 @@ class LuaRuntime {
   late final Pointer<lua_State> L;
 
   /// 注册 C 函数到 Lua 全局。
+  ///
+  /// audit-node_lua #11 修复：name 经 toNativeUtf8 分配、仅注册期间使用的
+  /// 指针——lua_setglobal 内部会把 name 压栈复制（lua_pushstring 语义，
+  /// Lua 字符串 intern 到状态内），注册完成即释放，不再每注册泄漏一份。
   void registerFunction(
     String name,
     Pointer<NativeFunction<Int32 Function(Pointer<lua_State>)>> fn,
   ) {
     lua.lua_pushcclosure(L, fn as lua_CFunction, 0);
-    lua.lua_setglobal(L, name.toNativeUtf8().cast());
+    final namePtr = name.toNativeUtf8();
+    lua.lua_setglobal(L, namePtr.cast());
+    malloc.free(namePtr);
   }
 
   /// 执行脚本（字符串通道；语法/运行时错误返回 "Error: ..." 前缀——调用方检测）。

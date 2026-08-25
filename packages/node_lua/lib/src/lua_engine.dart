@@ -21,6 +21,10 @@ import 'vendor/lua_runtime.dart';
 
 /// 执行超时默认值（保留字段；MVP 未实现硬超时——沙箱为安全边界，
 /// 已知限制记录于文档）。
+///
+/// 未生效（[计划]，audit-node_lua #9）：常量暂无消费者；无超时下坏脚本
+/// （while true）会卡死 UI 主线程（同步 C API，无法让出事件循环）——
+/// 已知限制，M7+ 以钩子/隔离线程收敛。
 const Duration luaDefaultTimeout = Duration(seconds: 5);
 
 /// Lua 引擎封装。
@@ -50,6 +54,9 @@ class LuaEngine {
       _enableSandbox();
       _injectHostTable();
     } catch (e) {
+      // UI/FFI 边界兜底豁免（R9 注释，audit-node_lua #6）：C 回调边界不得向 C
+      // 抛异常（引擎代码路径），未知错误保留诊断（debugPrint）并降级/返回
+      // 错误标记，不泄漏到宿主。
       throw LuaEngineException('Lua 引擎初始化失败: $e');
     }
   }
@@ -169,6 +176,9 @@ class LuaEngine {
         final value = fn(args);
         result = value is String ? value : value.toString();
       } catch (e) {
+        // UI/FFI 边界兜底豁免（R9 注释，audit-node_lua #6）：C 回调边界不得向 C
+        // 抛异常（引擎代码路径），未知错误保留诊断（debugPrint）并降级/返回
+        // 错误标记，不泄漏到宿主。
         result = 'error:$e';
       }
     }
@@ -180,6 +190,13 @@ class LuaEngine {
   }
 
   /// 当前引擎（C 回调静态分发需要）。
+  ///
+  /// **M7 单引擎约束（audit-node_lua #8，设计裁决 = 保持单引擎）**：
+  /// `_currentEngine` / `LuaRuntime.lua` / `LuaRuntime.lastPrintOutput` 均为
+  /// 静态可变——多引擎并存（隔离测试同建两引擎）时 C 回调分发与 print 捕获
+  /// 会串台（回调到错误引擎、print 输出互相覆盖）。M7 裁决保持单引擎
+  /// （生产只装配一个 LuaPlugin）；M7+ 再以 userdata/实例字段承载引擎上下文
+  /// 实现隔离。
   static LuaEngine? _currentEngine;
 
   /// 绑定当前引擎（run/eval 期间——M7 单引擎实例，构造时绑定）。
@@ -276,8 +293,10 @@ class LuaEngine {
     } else if (value is List) {
       return '{${value.map(toLuaLiteral).join(', ')}}';
     } else if (value is Map) {
+      // audit-node_lua #10 修复：键与值一样走 toLuaLiteral 转义——键可能含
+      // 引号/换行（注入 Lua 代码），不得直接插值。
       final pairs = value.entries
-          .map((e) => "['${e.key}'] = ${toLuaLiteral(e.value)}")
+          .map((e) => '[${toLuaLiteral(e.key)}] = ${toLuaLiteral(e.value)}')
           .join(', ');
       return '{$pairs}';
     } else {

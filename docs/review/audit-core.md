@@ -33,3 +33,11 @@ UndoManager 经 executeRaw 原始通道避免撤销自压栈——设计正确�
 - 统计：violation 1｜warning 4｜info 7
 - P0：#1 补 inverse 注释/对偶；P2：#2–#5 属窗口化与失效路由的 10⁶ 落地差距，与 appframe QuadTree、
   node_graph 连接线全扫是同一条规模债的不同路段，建议合并进计划。
+
+## 整改落实（2026 本次会话）
+
+> 全量整改由 docs/review 总览 §7 统一裁决驱动（P0 类型化捕获 + P0-2 环校验 + P0-3 inverse 注释；
+> P1-5 R13 测试兜底豁免 / P1-6 R10 import 顺序仓库惯例 / P1-7 R6 命令族聚合豁免；
+> P2-8/P2-9 窗口化回收与象限索引缓存）。本文件各违规项落实状态：**已整改**（代码注释均引用本
+> 文件 audit 编号与总览 §7 行号，可溯源）。仅标 [计划] 的规模项（如每帧全扫、getAll×N）保持注释，
+> 未改实现。CI 两工具 PASS 与 `dart analyze` 零 error/warning 为验收线。

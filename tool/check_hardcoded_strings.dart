@@ -35,7 +35,11 @@ const List<String> allowlist = <String>[
   'packages/appframe/lib/src/command/create_toolbar_button.dart',
   'packages/appframe/lib/src/interaction/drag_controller.dart', // 拒绝原因
   'packages/appframe/lib/src/store/sidecar_store.dart', // 损坏兜底：FallbackNode 合成标题 + 异常消息
+  'packages/appframe/lib/src/store/fs_ui_state_store.dart', // 损坏 ui-state.json 兜底诊断日志（R9 内部错误，UI 已走 t()）
   'packages/node_graph/lib/src/node_commands.dart',
+  'packages/node_graph/lib/src/canvas_widget.dart', // 画布操作失败 debugPrint 诊断日志（R9 内部错误，UI 文案走 t()）
+  'packages/node_graph/lib/src/layout/layout_dialog.dart', // 布局失败诊断日志（内部错误）
+  'packages/node_graph/lib/src/node_card.dart', // 卡片操作失败诊断日志（内部错误）
   'packages/node_folder/lib/src/move_nodes.dart',
   'packages/node_folder/lib/src/folder_create.dart', // 目标文件夹不存在（内部错误）
   'packages/node_editor/lib/src/save_note.dart',

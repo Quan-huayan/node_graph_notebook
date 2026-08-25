@@ -76,10 +76,18 @@ class ToolbarActionsRow extends StatelessWidget {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            // R11 裁决（总览 P0-1/P1-6）：成功文案把节点标题并入键
+            // （「」括号随语言进词典）；失败按 kind 分键——reason 不上屏。
             content: Text(
               outcome.kind == DropOutcomeKind.committed
-                  ? '${host.i18nService.t('toolbar.buttonCreated')}「${source?.title ?? details.data}」'
-                  : '${host.i18nService.t('error.operationFailed')}：${outcome.reason ?? ''}',
+                  ? host.i18nService
+                        .t('toolbar.buttonCreated')
+                        .replaceFirst('%s', source?.title ?? details.data)
+                  : host.i18nService.t(
+                      outcome.kind == DropOutcomeKind.cycleRejected
+                          ? 'drag.cycleRejected'
+                          : 'drag.rejected',
+                    ),
             ),
             duration: const Duration(seconds: 1),
           ),

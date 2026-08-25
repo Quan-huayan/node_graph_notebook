@@ -209,6 +209,9 @@ class AskAIHandler extends CommandHandler<AskAICommand, AskAIResult> {
       history: <AIMessage>[AIMessage(role: 'user', content: prompt)],
       tools: tools,
       executeTool: (tool, arguments) async {
+        // R13 与 P0-1 一致：生产装配必经注入的 _commandBusProvider 运行时求值
+        // （01 #47）；单插件测试可能未注入——此处显式断言即装配快速失败。
+        final commandBus = _commandBusProvider!();
         final current = graph.get(chatId);
         if (current != null) {
           // 工具调用记录（AI 角色文本）。
@@ -222,10 +225,18 @@ class AskAIHandler extends CommandHandler<AskAICommand, AskAIResult> {
               ),
             ),
           );
+          // P0-1（audit-node_ai #1 落实）：中间转录显式广播——长任务期间
+          // 对话随工具步骤增量重绘（ChangeKind.data 定向重绘 chat Hook），
+          // 不再等最终回复一次性刷新。PluginCommandBus.notifyListeners 与
+          // dispatch 完成后的广播同语义（写后通知通道，见 core
+          // plugin_command_bus.dart）。
+          (commandBus as PluginCommandBus).notifyListeners(
+            AskAIResult(affectedNodeIds: <String>{chatId}),
+          );
         }
         final result = await tool.execute(
           arguments,
-          AIToolContext(commandBus: _commandBusProvider!(), graph: graph),
+          AIToolContext(commandBus: commandBus, graph: graph),
         );
         final latest = graph.get(chatId);
         if (latest != null) {
@@ -239,6 +250,11 @@ class AskAIHandler extends CommandHandler<AskAICommand, AskAIResult> {
                 chatTitle: source.title,
               ),
             ),
+          );
+          // P0-1（同上）：工具结果转录后同样显式广播（写后通知通道，
+          // 语义同前注——notifyListeners 与 dispatch 完成后的广播一致）。
+          (commandBus as PluginCommandBus).notifyListeners(
+            AskAIResult(affectedNodeIds: <String>{chatId}),
           );
         }
         return result;

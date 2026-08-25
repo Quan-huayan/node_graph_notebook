@@ -27,6 +27,10 @@ class HookIndex {
   ///
   /// 索引行本身无需变更（结构不变）；此方法保留路由契约——
   /// 真正的广播由 UI 管理器执行（03 §5.2）。
+  ///
+  /// @Deprecated（audit core #11）：死方法占位——恒 null 且语义与
+  /// UIManager.onNodeChanged 重复，仅因历史契约保留；新代码不得调用。
+  @Deprecated('死方法占位（audit core #11）；广播走 UIManager.onNodeChanged')
   void onNodeChanged(String nodeId) => null;
 
   /// 查询 nodeId 的全部物化 hookId。未物化返回空集（不抛）。
@@ -46,15 +50,21 @@ class HookIndex {
   }
 
   /// 回收：移除 hookId 的全部登记（窗口化回收，02 §3.3）。
+  ///
+  /// 实现 O(1)：经 `_hookToNode` 反查直接定位 nodeId（audit core #5——
+  /// 旧实现全表扫描与文件头 O(1) 声明矛盾）；未登记 → 静默 no-op。
   void recycle(String hookId) {
-    final stale = <String>[];
-    _index.forEach((nodeId, hookIds) {
-      if (hookIds.remove(hookId) && hookIds.isEmpty) {
-        stale.add(nodeId);
+    final nodeId = _hookToNode.remove(hookId);
+    if (nodeId == null) {
+      return;
+    }
+    final hookIds = _index[nodeId];
+    if (hookIds != null) {
+      hookIds.remove(hookId);
+      if (hookIds.isEmpty) {
+        _index.remove(nodeId);
       }
-    });
-    stale.forEach(_index.remove);
-    _hookToNode.remove(hookId);
+    }
   }
 
   /// 全部已登记 hookId（降级渲染遍历，10⁶ 背书：≈ 视口内 Hook 数）。

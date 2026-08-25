@@ -106,10 +106,19 @@ class _FolderViewState extends State<FolderView> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              // R11 裁决（docs/review 总览 P0-1）：成功 = 键内置 %s 占位并入
+              // 标题（「」括号随语言进词典）；失败按 kind 分键——reason 为
+              // 内部诊断文本不上屏。
               content: Text(
                 outcome.kind == DropOutcomeKind.committed
-                    ? '${widget.host.i18nService.t('folder.moved')}「${node.title}」'
-                    : '${widget.host.i18nService.t('folder.rejected')}：${outcome.reason ?? ''}',
+                    ? widget.host.i18nService
+                          .t('folder.moved')
+                          .replaceFirst('%s', node.title)
+                    : widget.host.i18nService.t(
+                        outcome.kind == DropOutcomeKind.cycleRejected
+                            ? 'drag.cycleRejected'
+                            : 'drag.rejected',
+                      ),
               ),
               duration: const Duration(seconds: 1),
             ),
@@ -228,15 +237,15 @@ class _FolderViewState extends State<FolderView> {
     }
     final (title, content) = result;
     try {
-      await widget.host.commandBus.dispatch<
-          CreateNodeInFolderCommand, CreateNodeInFolderResult>(
-        CreateNodeInFolderCommand(
-          folderId: widget.node.id,
-          id: folderNewNodeId(),
-          title: title,
-          content: content,
-        ),
-      );
+      await widget.host.commandBus
+          .dispatch<CreateNodeInFolderCommand, CreateNodeInFolderResult>(
+            CreateNodeInFolderCommand(
+              folderId: widget.node.id,
+              id: folderNewNodeId(),
+              title: title,
+              content: content,
+            ),
+          );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -249,13 +258,38 @@ class _FolderViewState extends State<FolderView> {
           ),
         );
       }
-    } catch (error) {
+    } on StateError catch (error) {
+      // 已知失败：目标文件夹不存在 / 目标 id 已存在（R9 类型化捕获，
+      // R3b 失败可见——audit-node_folder #2）。
+      debugPrint('folder view create rejected: $error');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '${widget.host.i18nService.t('error.operationFailed')}: $error',
-            ),
+            content: Text(widget.host.i18nService.t('error.operationFailed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } on CycleError catch (error) {
+      // 已知失败：新建 contain 成环（R9 类型化捕获）。
+      debugPrint('folder view create cycle rejected: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.host.i18nService.t('error.operationFailed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (error) {
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('folder view create failed: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.host.i18nService.t('error.operationFailed')),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -280,13 +314,37 @@ class _FolderViewState extends State<FolderView> {
           .dispatch<DeleteNodeCommand, DeleteNodeResult>(
             DeleteNodeCommand(nodeId: node.id),
           );
-    } catch (error) {
+    } on StateError catch (error) {
+      // 已知失败：目标文件夹不存在（R9 类型化捕获，R3b 失败可见）。
+      debugPrint('folder view delete rejected: $error');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '${widget.host.i18nService.t('error.operationFailed')}: $error',
-            ),
+            content: Text(widget.host.i18nService.t('error.operationFailed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } on CycleError catch (error) {
+      // 已知失败：级联删除成环（R9 类型化捕获）。
+      debugPrint('folder view delete cycle rejected: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.host.i18nService.t('error.operationFailed')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (error) {
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('folder view delete failed: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.host.i18nService.t('error.operationFailed')),
             duration: const Duration(seconds: 2),
           ),
         );

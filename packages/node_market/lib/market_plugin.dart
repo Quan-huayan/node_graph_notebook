@@ -31,6 +31,8 @@ class MarketPlugin extends Plugin {
   /// （单插件测试兼容）。
   ServiceProvider get _provider => _servicesProvider?.call() ?? _snapshot!;
 
+  /// 市场插件元数据（R6 简注）：插件市场身份 com.example.market，版本 1.0.0，
+  /// 静态列表来自宿主已装配插件（MVP 无网络）。
   @override
   PluginMetadata get metadata => const PluginMetadata(
     id: 'com.example.market',
@@ -40,6 +42,8 @@ class MarketPlugin extends Plugin {
 
   @override
   Future<void> onLoad(PluginContext context) async {
+    // R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+    // servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产装配依赖。
     _snapshot = context.services;
     // M7 修正（Hook 承载 UI）：注册市场动作——按钮 = UI 节点
     // （metadata.action = 'market.open'），动作 = 本插件对话框。

@@ -10,8 +10,10 @@
 /// - 行内：粗体 `**x**` / 斜体 `*x*` / 删除线 `~~x~~` / 行内代码 `` `x` ``
 ///   / 链接 `[label](url)`（label 纯文本）
 /// - 容错纪律：未闭合标记回退为纯文本；非法嵌套不抛错；**代码区（围栏
-///   与行内码）内的 `#tag` 不被 TagService 误计**——本文件同时暴露
-///   `extractTagCandidateLines`（TagService 复用同一跳过逻辑，见 A2）。
+///   与行内码）内的 `#tag` 不被 TagService 误计**——代码区跳过逻辑由
+///   TagService 自实现（appframe `TagService.parseTags` → `_maskCodeRegions`
+///   长度保持替换，与阅读预览同一规则，见 A2）；本文件不暴露标签候选
+///   提取 API（无 `extractTagCandidateLines`，文档与实现一致）。
 library;
 
 /// 行内 span 节点（sealed，穷举）。

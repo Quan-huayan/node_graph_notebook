@@ -8,6 +8,7 @@ library;
 import 'dart:io';
 
 import 'package:appframe/appframe.dart';
+import 'package:core/core.dart'; // CycleError（P0-2 环校验拦截后回显）
 import 'package:flutter/material.dart';
 
 import 'converter_commands.dart';
@@ -60,18 +61,20 @@ class _ConverterDialogState extends State<ConverterDialog> {
           duration: const Duration(seconds: 3),
         ),
       );
+    } on StateError catch (error) {
+      // 已知失败：导出目标不合法（R9 类型化捕获）。
+      debugPrint('converter export rejected: $error');
+      _showExportFailure();
+    } on FileSystemException catch (error) {
+      // 已知失败：IO（目录创建/文件写失败——磁盘/权限）。
+      debugPrint('converter export IO failed: $error');
+      _showExportFailure();
     } catch (error) {
-      // 失败反馈（架构 §8：禁止静默失败——磁盘写失败/权限不足可见）。
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${widget.host.i18nService.t('converter.exportFailed')}: $error',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      // UI 边界兜底豁免（R9 注释，总览 P0-1 裁决）：导出对话框是用户入口，
+      // 任何失败必须有用户可见反馈（05 纪律 8）；未知编程错误保留诊断痕迹
+      // （debugPrint），原始 error 文本不上屏（R11 内部错误不上屏）。
+      debugPrint('converter export failed: $error');
+      _showExportFailure();
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -91,33 +94,68 @@ class _ConverterDialogState extends State<ConverterDialog> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.host.i18nService
-                .t('converter.imported')
-                .replaceFirst('%s', '${result.importedNodeIds.length}'),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } catch (error) {
-      // 失败反馈（架构 §8：文件不存在/格式错误等不再静默崩溃）。
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${widget.host.i18nService.t('converter.importFailed')}: $error',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+      var message = widget.host.i18nService
+          .t('converter.imported')
+          .replaceFirst('%s', '${result.importedNodeIds.length}');
+      if (result.overwrittenCount > 0) {
+        // audit-node_converter #6：覆盖既有节点回显，降低误导入风险。
+        message += widget.host.i18nService
+            .t('converter.importOverwritten')
+            .replaceFirst('%s', '${result.overwrittenCount}');
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      );
+    } on StateError catch (error) {
+      // 已知失败：文件不存在/格式错误（R9 类型化捕获，R3b 失败可见）。
+      debugPrint('converter import rejected: $error');
+      _showImportFailure();
+    } on FileSystemException catch (error) {
+      // 已知失败：IO（读源文件/落盘）。
+      debugPrint('converter import IO failed: $error');
+      _showImportFailure();
+    } on CycleError catch (error) {
+      // 已知失败：导入文件含环（P0-2 环校验拦截）。
+      debugPrint('converter import cycle rejected: $error');
+      _showImportFailure();
+    } catch (error) {
+      // UI 边界兜底豁免（R9 注释，总览 P0-1 裁决）：导入对话框是用户入口，
+      // 任何失败必须有用户可见反馈（05 纪律 8）；未知编程错误保留诊断痕迹
+      // （debugPrint），原始 error 文本不上屏（R11 内部错误不上屏）。
+      debugPrint('converter import failed: $error');
+      _showImportFailure();
     } finally {
       if (mounted) {
         setState(() => _busy = false);
       }
     }
+  }
+
+  /// 导入失败反馈（R3b 失败可见：文件不存在/格式错误/含环统一走翻译文案，
+  /// 原始异常只留诊断日志——R11 内部错误不上屏）。
+  void _showImportFailure() {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(widget.host.i18nService.t('converter.importFailed')),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// 导出失败反馈（R3b 失败可见；原始异常只留诊断日志——R11 内部错误不上屏）。
+  void _showExportFailure() {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(widget.host.i18nService.t('converter.exportFailed')),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override

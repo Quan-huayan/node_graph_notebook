@@ -78,6 +78,9 @@ class AppendMessageResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.data;
 
+  // R3c 不可撤销理由：消息追加 = 会话 content data 写，对偶需"删除某条
+  // 消息"命令（词表不存在——会话写入单向追加）——显式不可撤销
+  // （docs/review 总览 P0-3 / audit-node_ai #2）。
   @override
   Command? get inverse => null;
 }
@@ -109,6 +112,9 @@ class AskAIResult implements WriteResult {
   @override
   ChangeKind get changeKind => ChangeKind.data;
 
+  // R3c 不可撤销理由：AskAI = 长任务回复落盘（会话 content 追加），对偶需
+  // "回滚会话整轮回复"命令（词表不存在）——显式不可撤销
+  // （docs/review 总览 P0-3 / audit-node_ai #2）。
   @override
   Command? get inverse => null;
 }

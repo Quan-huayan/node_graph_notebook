@@ -316,8 +316,19 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
         UpdateNodeCommand(nodeId: widget.node.id, metadata: metadata),
       );
       _showSnack(widget.i18n.t('properties.saved'));
+    } on StateError {
+      // 已知失败（UpdateNode/core）：目标节点不存在/未注册命令 → 类型化
+      // 捕获，文案走 t() 键（R11：原始 $error 不上屏）。
+      _showSnack(widget.i18n.t('error.operationFailed'));
+    } on CycleError {
+      // 已知失败（core 环校验命中）→ 类型化捕获。
+      _showSnack(widget.i18n.t('error.operationFailed'));
     } catch (error) {
-      _showSnack('${widget.i18n.t('error.operationFailed')}: $error');
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('UpdateNode failed: $error');
+      _showSnack(widget.i18n.t('error.operationFailed'));
     }
   }
   Widget _backlinksSection(BuildContext context) {
@@ -389,7 +400,8 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
   /// 保存（写路径：dispatch → Handler 落盘 → 写后通知）。
   ///
   /// 失败反馈（架构 §8：任何异常都有用户可见反馈，禁止静默失败）：
-  /// 磁盘 IO 失败 → 可读文案（含检查建议）；其他异常 → 通用失败提示。
+  /// 磁盘 IO 失败 → error.saveFailed；已知命令失败（StateError/CycleError）
+  /// → 类型化捕获 + t() 键文案；未知编程错误 → 兜底 + debugPrint（R9 豁免）。
   Future<void> _save() async {
     final title = _title.text.trim();
     if (title.isEmpty) {
@@ -407,8 +419,19 @@ class _MarkdownEditorViewState extends State<MarkdownEditorView> {
       _showSnack(widget.i18n.t('editor.saved'));
     } on IOException {
       _showSnack(widget.i18n.t('error.saveFailed'));
+    } on StateError {
+      // 已知失败（SaveNote/core）：目标节点不存在/未注册命令 → 类型化
+      // 捕获，文案走 t() 键（R11：原始 $error 不上屏）。
+      _showSnack(widget.i18n.t('error.operationFailed'));
+    } on CycleError {
+      // 已知失败（core 环校验命中）→ 类型化捕获。
+      _showSnack(widget.i18n.t('error.operationFailed'));
     } catch (error) {
-      _showSnack('${widget.i18n.t('error.operationFailed')}: $error');
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('SaveNote failed: $error');
+      _showSnack(widget.i18n.t('error.operationFailed'));
     }
   }
 

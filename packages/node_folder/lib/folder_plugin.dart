@@ -30,6 +30,8 @@ class FolderPlugin extends Plugin {
   ServiceProvider? _snapshot;
 
   /// 服务解析：宿主入口（运行时最新）优先；缺省回退 onLoad 快照。
+  // R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+  // servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产装配依赖。
   ServiceProvider get _provider => _servicesProvider?.call() ?? _snapshot!;
 
   @override
@@ -42,6 +44,8 @@ class FolderPlugin extends Plugin {
   @override
   Future<void> onLoad(PluginContext context) async {
     // 快照兜底（单插件测试）；多插件场景由宿主注入最新 provider 入口。
+    // R13 豁免注释（docs/review 总览 P1-5 裁决）：生产路径永远经宿主注入的
+    // servicesProvider 运行时求值（01 #47）；快照仅单插件测试兜底，非生产装配依赖。
     _snapshot = context.services;
   }
 

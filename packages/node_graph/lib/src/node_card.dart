@@ -15,6 +15,9 @@
 /// 双击同一模式）。写操作一律走 CommandBus（00 不变量 4.4-1）。
 library;
 
+// 桌面约束（dart:io 仅为捕获 IOException——存储层为文件 IO）；web 目标
+// 兼容 [计划]，待 appframe 暴露无平台依赖的存储异常类型
+// （docs/review/audit-node_graph.md 项 6）。
 import 'dart:io';
 
 import 'package:appframe/appframe.dart';
@@ -272,7 +275,11 @@ class NodeCard extends StatelessWidget {
     } on IOException {
       _showError(context, host.i18nService.t('error.saveFailed'));
     } catch (error) {
-      _showError(context, '${host.i18nService.t('error.operationFailed')}: $error');
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('<编辑节点> failed: $error');
+      _showError(context, host.i18nService.t('error.operationFailed'));
     }
   }
 
@@ -302,7 +309,11 @@ class NodeCard extends StatelessWidget {
     } on IOException {
       _showError(context, host.i18nService.t('error.saveFailed'));
     } catch (error) {
-      _showError(context, '${host.i18nService.t('error.operationFailed')}: $error');
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('<删除节点> failed: $error');
+      _showError(context, host.i18nService.t('error.operationFailed'));
     }
   }
 
@@ -326,7 +337,11 @@ class NodeCard extends StatelessWidget {
       _showError(context, host.i18nService.t('error.saveFailed'));
       return;
     } catch (error) {
-      _showError(context, '${host.i18nService.t('error.operationFailed')}: $error');
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('<断开连接> failed: $error');
+      _showError(context, host.i18nService.t('error.operationFailed'));
       return;
     }
     if (connections.isNotEmpty && context.mounted) {

@@ -4,6 +4,7 @@
 library;
 
 import 'package:appframe/appframe.dart';
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 
 import 'layout_algorithms.dart';
@@ -55,17 +56,22 @@ class _CanvasLayoutDialogState extends State<CanvasLayoutDialog> {
                   .dispatch<ApplyLayoutCommand, ApplyLayoutResult>(
                     ApplyLayoutCommand(algorithm: _algorithm),
                   );
+            } on CycleError {
+              // 布局 = 判据②外观直写（无结构引用写，正常不触发环校验）——
+              // 防御性类型化捕获（R9 已知失败在前），文案统一操作失败。
+              _showFailure('error.operationFailed');
+              return;
+            } on StateError {
+              // 已知类型化失败（命令路由/前置校验）→ 用户可见反馈，
+              // 原始 error 不上屏（R11 统一裁决）。
+              _showFailure('error.operationFailed');
+              return;
             } catch (error) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '${i18n.t('error.operationFailed')}: $error',
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              }
+              // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+              // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+              // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+              debugPrint('<应用布局> failed: $error');
+              _showFailure('error.operationFailed');
               return;
             }
             if (context.mounted) {
@@ -81,6 +87,20 @@ class _CanvasLayoutDialogState extends State<CanvasLayoutDialog> {
           child: Text(i18n.t('dialog.save')),
         ),
       ],
+    );
+  }
+
+  /// 失败反馈（架构 §8：禁止静默失败；R11：原始 error 不上屏，
+  /// 统一走翻译键文案）。
+  void _showFailure(String key) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(widget.host.i18nService.t(key)),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 

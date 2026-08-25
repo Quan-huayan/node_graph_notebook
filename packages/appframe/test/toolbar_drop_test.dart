@@ -171,7 +171,9 @@ void main() {
 
     expect(host.graph.get('toolbar-open-missing'), isNull);
     // 架构 §8：禁止静默失败——旧实现只 debugPrint，用户无感。
-    expect(find.textContaining('操作失败'), findsOneWidget);
+    // R11 裁决（docs/review 总览 P0-1）：失败文案走 t('drag.rejected')
+    // 键化，原始错误不上屏。
+    expect(find.textContaining(host.i18nService.t('drag.rejected')), findsOneWidget);
 
     // SnackBar 定时器清理。
     await tester.pump(const Duration(seconds: 2));

@@ -11,6 +11,8 @@
 /// 笔记 Hook 编辑器视图）；插件 UI 全在插件内；app 只组装。
 library;
 
+import 'dart:io'; // R9 类型化捕获 FileSystemException（仓库切换 IO 失败）。
+
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 
@@ -170,7 +172,10 @@ class _AppShellState extends State<AppShell> {
             const Spacer(),
             if (widget.vaultManager != null)
               Text(
-                '${i18n.t('status.vault')}：${widget.vaultManager!.current.name}',
+                // R11（audit-appframe #7）：冒号随语言进词典（「仓库：%s」）。
+                i18n
+                    .t('status.vault')
+                    .replaceFirst('%s', widget.vaultManager!.current.name),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
           ],
@@ -203,16 +208,18 @@ class _AppShellState extends State<AppShell> {
         Navigator.of(context).popUntil((route) => route.isFirst);
         try {
           await manager.switchTo(entry.id);
+        } on StateError catch (error) {
+          // 已知失败：仓库状态/守卫错误（R9 类型化捕获）。
+          _showSwitchFailure(context, error);
+        } on FileSystemException catch (error) {
+          // 已知失败：IO（vaults.json / 数据根读写）。
+          _showSwitchFailure(context, error);
         } catch (error) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '${widget.host.i18nService.t('vault.switchFailed')}: $error',
-                ),
-              ),
-            );
-          }
+          // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：
+          // 仓库切换是用户入口，任何失败须有用户可见反馈（05 纪律 8）；
+          // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+          debugPrint('vault switch failed: $error');
+          _showSwitchFailure(context, null);
         }
       },
       itemBuilder: (context) => <PopupMenuEntry<VaultEntry>>[
@@ -246,6 +253,19 @@ class _AppShellState extends State<AppShell> {
   /// （seed 的 folder '根目录'）——那是侧边栏树的文件夹名，放左上角
   /// AppBar 当应用标题非常奇怪；当前仓库名已由仓库切换器呈现。
   String _appTitle() => widget.host.i18nService.t('app.title');
+
+  /// 切换失败统一反馈（R9 类型化 + UI 边界兜底：已知类型展示翻译文案，
+  /// 未知错误只留诊断，不泄漏原始 error 文本）。
+  void _showSwitchFailure(BuildContext context, Object? error) {
+    if (error != null) {
+      debugPrint('vault switch failed: $error');
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.host.i18nService.t('vault.switchFailed'))),
+      );
+    }
+  }
 
   /// 首启引导（P1-6：杀手演示玩法——同一份笔记在不同容器中变形）。
   void _showOnboarding() {

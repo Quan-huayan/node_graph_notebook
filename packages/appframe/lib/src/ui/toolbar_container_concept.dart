@@ -106,6 +106,10 @@ class ToolbarContainerHook extends Hook {
     if (host == null || sink == null) {
       return; // 测试环境：无宿主/收集器 → 不渲染。
     }
-    sink.add(ToolbarActionsRow(host: host, node: host.graph.get(nodeId)!));
+    final node = host.graph.get(nodeId);
+    if (node == null) {
+      return; // 物化期间容器被删的竞态兜底（R14，audit-appframe #11）。
+    }
+    sink.add(ToolbarActionsRow(host: host, node: node));
   }
 }

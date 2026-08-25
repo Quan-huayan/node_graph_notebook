@@ -209,6 +209,9 @@ class UncontainHandler
         if (parentId != null) parentId,
       },
       // redo 链闭合：取消归属的对偶 = 移回原父级。
+      // R3c 不可撤销理由：损坏 contain 缺 parent，无原父级可还原；
+      // 正常数据下 requiredSlots 保证 parent 存在（docs/review 总览
+      // P0-3 / audit-node_folder #5）。
       inverse: parentId == null
           ? null
           : MoveNodesCommand(containerId: parentId, childId: command.childId),

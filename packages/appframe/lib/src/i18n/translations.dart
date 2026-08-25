@@ -51,7 +51,11 @@ const Map<String, String> zhTranslations = <String, String>{
   'layout.grid': '网格',
   'layout.tree': '树状',
   'layout.applied': '布局已应用',
-  'toolbar.buttonCreated': '已创建工具栏按钮',
+  'toolbar.buttonCreated': '已创建工具栏按钮「%s」',
+  // R11 裁决（docs/review 总览 P0-1/P1-6）：拖拽失败上屏文案按 outcome.kind
+  // 分键；原因串（DropOutcome.reason）为内部诊断文本不上屏。
+  'drag.rejected': '操作被拒绝',
+  'drag.cycleRejected': '此操作会形成循环引用，已阻止',
   'vault.title': '仓库',
   'vault.current': '当前仓库',
   'vault.create': '新建仓库',
@@ -61,6 +65,8 @@ const Map<String, String> zhTranslations = <String, String>{
   'vault.removeConfirmTitle': '移除仓库',
   'vault.removeConfirmBody': '确定移除「%s」？数据将移入回收站，不会被删除。',
   'vault.switchFailed': '仓库切换失败',
+  'vault.createFailed': '仓库创建失败',
+  'vault.removeFailed': '仓库移除失败',
   'vault.settingsHint': '多仓库：独立数据根目录（结构/内容/外观），切换即时生效。',
   'canvas.moved': '已放到画布',
   'canvas.connected': '已连接',
@@ -68,7 +74,7 @@ const Map<String, String> zhTranslations = <String, String>{
   'canvas.zoomIn': '放大',
   'canvas.zoomOut': '缩小',
   'canvas.zoomFit': '适应视图',
-  'folder.moved': '已移入',
+  'folder.moved': '已移入「%s」',
   'folder.rejected': '已拒绝',
   'plugin.list': '插件',
   'ai.chat': 'AI 助手',
@@ -100,9 +106,9 @@ const Map<String, String> zhTranslations = <String, String>{
   // A2/A3/C4 新增键（类 Obsidian 补齐）。
   'editor.words': '字数',
   'editor.linkCopied': '链接已复制：%s',
-  // C4 新增键（状态栏）。
+  // C4 新增键（状态栏）——仓库名占位并入键（全角冒号随语言，R11 标点进词典）。
   'status.nodes': '%s 个节点',
-  'status.vault': '仓库',
+  'status.vault': '仓库：%s',
   // C5 新增键（最近打开面板）。
   'recent.empty': '暂无最近打开',
   'recent.openedAt': '%s 打开',
@@ -114,6 +120,8 @@ const Map<String, String> zhTranslations = <String, String>{
   'backlinks.empty': '暂无',
   'tags.empty': '还没有标签——在笔记内容中用 #标签 添加',
   'tags.back': '返回标签列表',
+  // R11（node_search audit #3）：计数括号并入词典（CJK 括号随语言）。
+  'tags.count': '（%s）',
   // B1/B2 新增键（命令面板 / 快速切换）。
   'palette.empty': '无匹配命令',
   'palette.newNote': '新建笔记',
@@ -155,6 +163,8 @@ const Map<String, String> zhTranslations = <String, String>{
   'converter.import': '导入',
   'converter.exported': '已导出 %s 个节点 → %s',
   'converter.imported': '已导入 %s 个节点',
+  // R11（node_converter audit info #6）：导入覆盖既有节点需回显计数。
+  'converter.importOverwritten': '（覆盖 %s 个既有节点）',
   'market.installed': '已安装插件',
   'market.concepts': '概念（Concept）',
   'market.concept.folder': '文件夹（L0 容器，contain 关系承载）',
@@ -229,7 +239,9 @@ const Map<String, String> enTranslations = <String, String>{
   'layout.grid': 'Grid',
   'layout.tree': 'Tree',
   'layout.applied': 'Layout applied',
-  'toolbar.buttonCreated': 'Toolbar button created',
+  'toolbar.buttonCreated': 'Toolbar button "%s" created',
+  'drag.rejected': 'Operation rejected',
+  'drag.cycleRejected': 'This would create a cycle; blocked',
   'vault.title': 'Vault',
   'vault.current': 'Current vault',
   'vault.create': 'New vault',
@@ -240,6 +252,8 @@ const Map<String, String> enTranslations = <String, String>{
   'vault.removeConfirmBody':
       'Remove "%s"? Its data will be moved to trash, not deleted.',
   'vault.switchFailed': 'Vault switch failed',
+  'vault.createFailed': 'Vault create failed',
+  'vault.removeFailed': 'Vault removal failed',
   'vault.settingsHint':
       'Vaults: independent data roots (structure / content / appearance), switching applies instantly.',
   'canvas.moved': 'Placed on canvas',
@@ -248,7 +262,7 @@ const Map<String, String> enTranslations = <String, String>{
   'canvas.zoomIn': 'Zoom in',
   'canvas.zoomOut': 'Zoom out',
   'canvas.zoomFit': 'Fit to view',
-  'folder.moved': 'Filed into',
+  'folder.moved': 'Filed into "%s"',
   'folder.rejected': 'Rejected',
   'plugin.list': 'Plugins',
   'ai.chat': 'AI Assistant',
@@ -282,7 +296,7 @@ const Map<String, String> enTranslations = <String, String>{
   'editor.linkCopied': 'Link copied: %s',
   // C4 new keys (status bar).
   'status.nodes': '%s nodes',
-  'status.vault': 'Vault',
+  'status.vault': 'Vault: %s',
   // C5 new keys (recent panel).
   'recent.empty': 'No recent files',
   'recent.openedAt': 'Opened %s',
@@ -294,6 +308,7 @@ const Map<String, String> enTranslations = <String, String>{
   'backlinks.empty': 'None',
   'tags.empty': 'No tags yet — use #tag in note content',
   'tags.back': 'Back to tags',
+  'tags.count': ' (%s)',
   // B1/B2 new keys (command palette / quick switcher).
   'palette.empty': 'No matching command',
   'palette.newNote': 'New note',
@@ -340,6 +355,8 @@ const Map<String, String> enTranslations = <String, String>{
   'converter.import': 'Import',
   'converter.exported': 'Exported %s nodes → %s',
   'converter.imported': 'Imported %s nodes',
+  'converter.importOverwritten': ' (overwrote %s existing nodes)',
+  // R11（node_settings audit #1/#3）：vault 操作失败文案键化（错误路径必见）。
   'market.installed': 'Installed plugins',
   'market.concepts': 'Concepts',
   'market.concept.folder':

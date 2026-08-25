@@ -41,7 +41,10 @@ class MaterializerImpl implements Materializer {
 
   @override
   Hook? materialize(String nodeId, Hook? containerHook, String kind) {
-    if (containerHook != null && window.isMaterialized(nodeId)) {
+    // P2-8（audit core #3）：判重须 kind 感知——同一节点可多容器多个 Hook
+    // （sidebar 行 + graph 卡片 + open 对话框），无 kind 判重会把画布/对话框
+    // 容器下的子物化挡回（同节点已在 sidebar 物化时）。
+    if (containerHook != null && window.isMaterialized(nodeId, kind: kind)) {
       return null;
     }
     final node = graph.get(nodeId);
@@ -69,6 +72,10 @@ class MaterializerImpl implements Materializer {
 
   @override
   void recycle(String hookId) {
+    // P2-8（audit core #4）：回收必须级联子树——父 Hook 回收后其子 Hook
+    // 若残留，树重挂（structure）与新视口（平移）会产生僵尸登记与陈旧
+    // 渲染（containerHook 指向已回收 Hook）。子级先于父级注销（02 §3.3）。
+    window.childHookIds(hookId).toList().forEach(recycle);
     window.recycle(hookId);
     index.recycle(hookId);
   }

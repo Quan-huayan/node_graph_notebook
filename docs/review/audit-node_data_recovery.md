@@ -27,3 +27,11 @@ codegen，备份 inverse 注释齐备。明确违规：onLoad 保存 provider �
 
 - 统计：violation 2｜warning 4｜info 2
 - P0：#4/#5 TypeError 漏捕（恢复工具在坏数据上的正确性，直接优先级最高）；#1/#2 并入总览批量项。
+
+## 整改落实（2026 本次会话）
+
+> 全量整改由 docs/review 总览 §7 统一裁决驱动（P0 类型化捕获 + P0-2 环校验 + P0-3 inverse 注释；
+> P1-5 R13 测试兜底豁免 / P1-6 R10 import 顺序仓库惯例 / P1-7 R6 命令族聚合豁免；
+> P2-8/P2-9 窗口化回收与象限索引缓存）。本文件各违规项落实状态：**已整改**（代码注释均引用本
+> 文件 audit 编号与总览 §7 行号，可溯源）。仅标 [计划] 的规模项（如每帧全扫、getAll×N）保持注释，
+> 未改实现。CI 两工具 PASS 与 `dart analyze` 零 error/warning 为验收线。

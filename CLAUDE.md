@@ -370,6 +370,10 @@ class MyPlugin extends Plugin {   // package:plugon/plugon.dart
 ```
 
 服务解析经 `HostRuntime.serviceProvider`（**运行时求值**，勿保存 onLoad 快照，01 #47）。
+**R13 测试兜底豁免（docs/review 总览 P1-5 裁决）**：插件 onLoad 保存 `context.services`
+快照仅作**单插件测试兜底**（无宿主注入时）；生产装配必须由 app 注入
+`() => host.serviceProvider` 惰性入口——快照不得成为生产依赖（`_snapshot!` 空断言
+即装配错误快速失败）。
 
 ### Adding a New Plugin
 
@@ -395,7 +399,14 @@ class MyPlugin extends Plugin {   // package:plugon/plugon.dart
 
 - **Public APIs MUST have documentation comments**；复杂逻辑必须注释"为什么"
 - **Public APIs MUST have type annotations**；构造器先于类成员；一文件一类
-- Import order: Dart SDK → Flutter → Third-party → Project → Relative
+  （**R6 命令族聚合豁免，docs/review 总览 P1-7 裁决**：命令 DTO + Result + Handler
+  同文件聚合是仓库既定约定——core/node_commands、move_nodes、converter_commands
+  等；新成员按所属命令族放置，勿误拆/误合并）
+- **Import order（仓库既定惯例，docs/review 总览 P1-6 裁决）**：标准库 →
+  项目包（`package:appframe/core/core_data/plugon/node_*`）→ Flutter/第三方 →
+  相对导入。CI 不检查顺序（`check_imports` 只校验依赖方向/声明一致性），
+  新旧文件一律遵循本惯例。豁免：`package:flutter_test` 在测试文件中的位置
+  跟随本惯例（项目包之前），无需特判。
 - 禁 `print()`——用 `debugPrint()`；工具脚本用 `stdout.writeln`
 - 文件 IO 用 `existsSync()`（禁 `await exists()`）；`withOpacity()` → `withValues(alpha:)`
 - 使用类型化异常，禁裸 catch `Exception`

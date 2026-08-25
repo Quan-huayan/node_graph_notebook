@@ -79,8 +79,11 @@ class SidecarStore {
     try {
       final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
       return StoredNode.fromJson(json);
-    } catch (e) {
-      // 兜底加载：返回可编辑的普通笔记（架构 §8 恢复路径）。
+    } on FormatException {
+      // 解析损坏的已知形态（R9 类型化——仅 JSON 语法错误触发兜底，架构 §8）。
+      return FallbackNode(id: nodeId, title: '[损坏节点] $nodeId');
+    } on TypeError {
+      // 解析损坏的已知形态（类型不符：非 Map/字段类型错，R9 类型化）。
       return FallbackNode(id: nodeId, title: '[损坏节点] $nodeId');
     }
   }

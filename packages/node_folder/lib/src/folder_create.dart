@@ -17,9 +17,9 @@ String folderNewNodeId() =>
     '-${(DateTime.now().microsecondsSinceEpoch & 0xFFFF).toRadixString(36)}';
 
 /// 文件夹内创建 Handler。
-class CreateNodeInFolderHandler extends CommandHandler<
-    CreateNodeInFolderCommand,
-    CreateNodeInFolderResult> {
+class CreateNodeInFolderHandler
+    extends
+        CommandHandler<CreateNodeInFolderCommand, CreateNodeInFolderResult> {
   /// [graphProvider] 延迟解析结构存储（plugon 生命周期：registerExtensions
   /// 阶段尚无服务提供器，onLoad 后才可解析——同 MoveNodesHandler 模式）。
   CreateNodeInFolderHandler({required Graph Function() graphProvider})
@@ -37,6 +37,12 @@ class CreateNodeInFolderHandler extends CommandHandler<
     final graph = _graphProvider();
     if (graph.get(command.folderId) == null) {
       throw StateError('目标文件夹不存在: ${command.folderId}');
+    }
+    // audit #4（docs/review/audit-node_folder.md）：写前断言目标 id 不存在——
+    // id 撞车会整体覆盖既有节点（数据丢失），且该 id 恰为 folder 祖先时
+    // 新 contain 即成环（数据完整性双保险）。
+    if (graph.get(command.id) != null) {
+      throw StateError('目标 id 已存在: ${command.id}');
     }
     final now = DateTime.now();
     // 1. 新笔记（L0：references 恒空——00 §2.2）。
@@ -65,11 +71,7 @@ class CreateNodeInFolderHandler extends CommandHandler<
       ),
     );
     return CreateNodeInFolderResult(
-      affectedNodeIds: <String>{
-        command.id,
-        containId,
-        command.folderId,
-      },
+      affectedNodeIds: <String>{command.id, containId, command.folderId},
       // 一步撤销：删除新笔记（级联删除 contain 实例）。
       inverse: DeleteNodeCommand(nodeId: command.id),
     );

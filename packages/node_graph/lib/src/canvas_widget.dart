@@ -10,6 +10,9 @@
 library;
 
 import 'dart:async';
+// 桌面约束（dart:io 仅为捕获 IOException——存储层为文件 IO）；web 目标
+// 兼容 [计划]，待 appframe 暴露无平台依赖的存储异常类型
+// （docs/review/audit-node_graph.md 项 6）。
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -519,10 +522,17 @@ class _GraphCanvasState extends State<GraphCanvas> {
         } on IOException {
           _showError(widget.host.i18nService.t('error.saveFailed'));
           return;
-        } on Exception catch (error) {
-          _showError(
-            '${widget.host.i18nService.t('error.operationFailed')}: $error',
-          );
+        } on StateError {
+          // 已知类型化失败（路由/前置校验，如目标节点不存在）→ 用户可见
+          // 反馈，原始 error 不上屏（R11 统一裁决）。
+          _showError(widget.host.i18nService.t('error.operationFailed'));
+          return;
+        } catch (error) {
+          // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+          // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+          // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+          debugPrint('<连接判定> failed: $error');
+          _showError(widget.host.i18nService.t('error.operationFailed'));
           return;
         }
         return;
@@ -623,9 +633,11 @@ class _GraphCanvasState extends State<GraphCanvas> {
     } on IOException {
       _showError(widget.host.i18nService.t('error.saveFailed'));
     } catch (error) {
-      _showError(
-        '${widget.host.i18nService.t('error.operationFailed')}: $error',
-      );
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('<建立连接> failed: $error');
+      _showError(widget.host.i18nService.t('error.operationFailed'));
     }
   }
 
@@ -724,6 +736,32 @@ class _GraphCanvasState extends State<GraphCanvas> {
             lines.add((from + worldOffset, to + worldOffset));
           }
 
+          // 成员卡片渲染列表（与命中测试同源——可见即命中，P2-4）。
+          // 物化/删除竞态兜底（docs/review/audit-node_graph.md：渲染成员
+          // 强解包 → null 兜底）：位置键读取与渲染之间存在删除窗口（节点
+          // 已删但本帧位置键仍在）→ 跳过本卡片；画布级结构失效事件会
+          // 移除该成员。
+          final memberCards = <Widget>[];
+          for (final nodeId in memberIds) {
+            final node = widget.host.graph.get(nodeId);
+            if (node == null) {
+              continue;
+            }
+            memberCards.add(
+              _PositionedCard(
+                key: ValueKey('card-$nodeId'),
+                node: node,
+                host: widget.host,
+                position: positions[nodeId]! + worldOffset,
+                onTap: () => _openNode(context, nodeId),
+                onConnectRequest: _resolveDrop,
+                onDragStart: _onDragStart,
+                onDragUpdate: _onDragPreview,
+                onDragEnd: _onDragEnd,
+              ),
+            );
+          }
+
           return DragTarget<String>(
             onAcceptWithDetails: (details) =>
                 _resolveDrop(details.data, details.offset),
@@ -810,19 +848,7 @@ class _GraphCanvasState extends State<GraphCanvas> {
                                           ),
                                         ),
                                       ),
-                                    for (final nodeId in memberIds)
-                                      _PositionedCard(
-                                        key: ValueKey('card-$nodeId'),
-                                        node: widget.host.graph.get(nodeId)!,
-                                        host: widget.host,
-                                        position:
-                                            positions[nodeId]! + worldOffset,
-                                        onTap: () => _openNode(context, nodeId),
-                                        onConnectRequest: _resolveDrop,
-                                        onDragStart: _onDragStart,
-                                        onDragUpdate: _onDragPreview,
-                                        onDragEnd: _onDragEnd,
-                                      ),
+                                    ...memberCards,
                                   ],
                                 ),
                               ),
@@ -881,9 +907,11 @@ class _GraphCanvasState extends State<GraphCanvas> {
       _showError(widget.host.i18nService.t('error.saveFailed'));
       return;
     } catch (error) {
-      _showError(
-        '${widget.host.i18nService.t('error.operationFailed')}: $error',
-      );
+      // UI 边界兜底豁免（R9 注释，docs/review 总览 P0-1 裁决）：用户入口的
+      // 回调不得泄漏未捕获异常（05 纪律 8：任何失败须有用户可见反馈）；
+      // 未知编程错误保留诊断痕迹（debugPrint），原始 error 文本不上屏。
+      debugPrint('<创建节点> failed: $error');
+      _showError(widget.host.i18nService.t('error.operationFailed'));
       return;
     }
     // 画布成员 = 外观位置（判据②）：新节点落点在双击处。
