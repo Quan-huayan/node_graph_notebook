@@ -91,13 +91,13 @@ Flow     = 换一种解释，而不是复制或搬运节点
 | drop 语义三选一 | `DataMove` / `UIMove` / `RejectDrop` | `packages/core_data/lib/src/models/drop_semantics.dart` |
 | 容器语义推导 | `Concept.childNodeIdsOf`（folder contain 反查等） | `packages/core_data/lib/src/models/concept.dart` |
 | 物化/窗口化/失效 | `WindowedUIManager`、`HookIndex`、`WindowManagerImpl` | `packages/core/lib/src/ui_manager/` |
-| Flutter 渲染目标 | `FlutterRenderContext`（sink + host + onCardDrop） | `packages/appframe/lib/src/render/flutter_render_context.dart` |
+| Flutter 渲染目标 | `FlutterRenderContext`（sink + host + onDragStart） | `packages/appframe/lib/src/render/flutter_render_context.dart` |
 | Hook 渲染宿主 | `HookView`（hookFor → materializeIfAbsent → render） | `packages/appframe/lib/src/ui/hook_view.dart` |
 | 拖拽事务 | `DragController` 四阶段 + `DropOutcome` | `packages/appframe/lib/src/interaction/drag_controller.dart` |
 | 飞行壳层 | `FlightShell`（present/fly/bounce/abort，OverlayEntry 自清理） | `packages/appframe/lib/src/interaction/flight_shell.dart` |
 | 宿主共享事务 | `HostRuntime` 已注册 `dragController`/`flightShell` 单例 | `packages/appframe/lib/src/host/host_runtime.dart` |
 | 三向拖拽 | 侧边栏/画布/工具栏/搜索结果 | `packages/node_folder`、`packages/node_graph`、`packages/appframe`、`packages/node_search` |
-| 语义分发 | `SidebarDropSemantics`/`ToolbarDropSemantics` 服务 + `CanvasCardDropHandler` 组合根回调 | `appframe` + `packages/app/lib/main.dart` |
+| 语义分发 | 语义服务家族：`SidebarDropSemantics` / `ToolbarDropSemantics` / `CanvasCardDropSemantics`（宿主缺省 null + 插件 last-wins；M8 移除组合根回调） | `appframe`（drag_controller.dart）+ 插件（node_ai 等） |
 
 **当前成熟度**：机制层完整，交互层 70%——"能拖"已成立，但事务/视觉/失败反馈在四类目标上不统一（见 §6 差距审计）。
 
@@ -231,7 +231,7 @@ View_n(G,S)     = ( A(n),
 
 **症状 2：不能把节点拖到 AI Tab 页构成连接。**
 
-- 代码事实：`DropIntoAICommand` 只接在"画布卡片 → 画布 AI 卡片"的 `CanvasCardDropHandler` 上；`AIPanelView` 是普通会话列表，没有 `DragTarget`；`AIPanelConcept.askDropSemantics` 又是默认拒绝。
+- 代码事实：`DropIntoAICommand` 接在"画布卡片 → 画布 AI 卡片"的 `CanvasCardDropSemantics` 语义服务上（M8：插件 last-wins 覆盖，非组合根回调）；`AIPanelView` 是普通会话列表，没有 `DragTarget`；`AIPanelConcept.askDropSemantics` 又是默认拒绝。
 - 数学诊断：Expose 出来的投影没有继承 `pointsTo` 目标的容器语义。Tab 是 AI 节点的一张"脸"，但 drop 判定发生在 Tab（代理）上，而不是背后的身份节点上。
 - 目标设计：投影容器规则——**投影可以接收 drop，但语义必须委托**：`AIPanelView` 包 `DragTarget<String>`，drop 后解析 `references.ai`，对真正的 `aiNode` 执行 `DropIntoAICommand`。
 
@@ -481,10 +481,10 @@ abstract class WriteResult {
 | F3 | 搜索结果行 | folder | Reparent | ① 数据命令 | `MoveNodesCommand` | 与 F1 同路径 |
 | F4 | 侧边栏笔记 / 搜索结果 | 画布空白 | Project | ② 外观直写 | `position.graph.<id>` | `UIMovePlacement` 换算场景坐标 |
 | F5 | 画布卡片 | 画布空白 | Project | ② 外观直写 | `position.graph.<id>` | 卡片拖动即时预览，drop 才落盘 |
-| F6 | 画布卡片 | 另一卡片附近 | Bind | ① 数据命令 | `ConnectNodesCommand` | 宿主 `onCardDrop` 先做 AI 分发；命中容差 + 就近判定 |
+| F6 | 画布卡片 | 另一卡片附近 | Bind | ① 数据命令 | `ConnectNodesCommand` | `CanvasCardDropSemantics` 服务先判定（插件 last-wins：AI 目标 = 数据命令）；未消费 → 默认连接；命中容差 + 就近判定 |
 | F7 | 侧边栏笔记 / 搜索结果 | 工具栏 | Expose | ① 数据命令 | `CreateToolbarButtonCommand` | 源节点零变更；幂等 |
 | F8 | AI 节点 | 侧边栏根 | Expose（角色单例） | ① 数据命令 | `EnsureAIWorkspaceCommand`（目标态，替代逐 AI 面板） | 每个侧边栏根至多一个 `ai-workspace`；AI 节点保持 L0 |
-| F9 | 笔记 / 搜索结果 | 画布 AI 卡片 | Bind | ① 数据命令 | `DropIntoAICommand` | 组合根 `CanvasCardDropHandler` 判定 |
+| F9 | 笔记 / 搜索结果 | 画布 AI 卡片 | Bind | ① 数据命令 | `DropIntoAICommand` | node_ai 的 `CanvasCardDropSemantics` last-wins 判定（M8，非组合根） |
 | F10 | 任意 | 自身/后代/不兼容容器 | Reject | 拒绝 | `CycleError` / `RejectDrop` | Phase 4 回弹，零持久化副作用 |
 | F11 | AI Tab 关闭/取消固定 | 侧边栏根 | Unexpose | ① 数据命令 | `RemoveAIWorkspaceCommand`（目标态） | 删除的是工作区投影，不删任何 AI 节点 |
 | F12 | 画布卡片菜单"从画布移除" | 画布 | Unproject | ② UIStateStore 移除 | `position.graph.<id>` / `style.graph.<id>` | 同一身份在文件夹/工具栏等视图保持存在 |
@@ -616,4 +616,4 @@ abstract class WriteResult {
 | 侧边栏 Tab | `packages/node_folder/lib/src/sidebar_tabs_view.dart` | 角色级 Tab 聚合；实例在 Tab 内部呈现 |
 | AI 面板 | `packages/node_ai/lib/src/ai_panel_concept.dart` | 工作区单例；投影 drop 委托 pointsTo；Unexpose 入口 |
 | 卡片壳 | `packages/node_graph/lib/src/node_card.dart` | 画布卡片拖拽源/连接目标；菜单区分 Unproject 与身份删除 |
-| 语义服务 | `SidebarDropSemantics` / `ToolbarDropSemantics` / `CanvasCardDropHandler` | 插件/组合根语义覆盖 |
+| 语义服务 | `SidebarDropSemantics` / `ToolbarDropSemantics` / `CanvasCardDropSemantics`（M8：三族同构，宿主缺省 + 插件 last-wins） | 插件语义覆盖 |

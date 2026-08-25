@@ -103,6 +103,8 @@ class CanvasHook extends Hook {
     if (host == null || sink == null) {
       return; // 测试环境：无宿主/收集器 → 不渲染。
     }
-    sink.add(GraphCanvas(host: host, onCardDrop: flutterContext.onCardDrop));
+    // M8：drop 语义 = CanvasCardDropSemantics 壳层服务（宿主缺省 null +
+    // 插件 last-wins），渲染上下文不再穿线回调——画布只注入宿主。
+    sink.add(GraphCanvas(host: host));
   }
 }

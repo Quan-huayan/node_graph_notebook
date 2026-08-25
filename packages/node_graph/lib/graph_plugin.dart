@@ -11,6 +11,8 @@
 /// 画布只提供定位与交互壳。
 library;
 
+import 'dart:io';
+
 import 'package:appframe/appframe.dart';
 import 'package:core/core.dart';
 import 'package:core_data/core_data.dart';
@@ -24,6 +26,61 @@ import 'src/graph_nodes_dialog.dart';
 import 'src/layout/layout_commands.dart';
 import 'src/layout/layout_dialog.dart';
 import 'src/node_commands.dart';
+import 'src/node_dialogs.dart';
+
+/// 新建笔记对话框 + 写路径（M8：动作实现归插件——Ctrl+N 与画布双击
+/// 空白共用 NodeEditDialog，数据命令经 CommandBus 落盘，判据①）。
+Future<void> _showCreateNoteDialog(
+  BuildContext context,
+  ServiceProvider services,
+) async {
+  final i18n = services.get<I18nService>();
+  final form = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (dialogContext) => NodeEditDialog(
+      dialogTitle: i18n.t('node.create'),
+      i18n: i18n,
+    ),
+  );
+  if (form == null) {
+    return;
+  }
+  final id = newNodeId();
+  final kind = form['kind'] as String?;
+  try {
+    await services.get<CommandBus>().dispatch<CreateNodeCommand, CreateNodeResult>(
+      CreateNodeCommand(
+        id: id,
+        title: form['title'] as String,
+        content: form['content'] as String,
+        metadata: kind == null || kind == 'note'
+            ? null
+            : <String, dynamic>{'kind': kind},
+      ),
+    );
+  } on IOException {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(i18n.t('error.saveFailed')),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+    return;
+  } on Exception catch (error) {
+    // 失败反馈（架构 §8：禁止静默失败；R9：类型化异常——先
+    // IOException，再 Exception 兜底，禁裸 catch）。
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${i18n.t('error.operationFailed')}: $error'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+}
 
 /// 画布插件。
 class GraphPlugin extends Plugin {
@@ -78,6 +135,14 @@ class GraphPlugin extends Plugin {
     // 力导向；按钮/命令面板数据驱动自动入列，动作名 'graph.global'）。
     _provider.get<ToolbarActionRegistry>().register('graph.global', (ctx) {
       showGlobalGraphDialog(ctx, _provider.get<HostRuntime>());
+    });
+    // M8（组合根回调移除，01 拍板 #32 反转）：Ctrl+N / 命令面板「新建
+    // 笔记」= 动作注册——**拥有 NodeEditDialog + CreateNodeCommand 写
+    // 路径的插件注册实现**（本插件 = 对话框归属方）。壳层（NotebookApp）
+    // 只把 NewNoteIntent 映射到动作名 'note.create'，app 组合根零实现。
+    _provider.get<ToolbarActionRegistry>().register('note.create', (ctx) {
+      // 运行时最新 provider（M7 修正模式——plugon 每次 loadPlugin 重建）。
+      _showCreateNoteDialog(ctx, _provider);
     });
   }
 

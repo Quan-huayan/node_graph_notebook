@@ -15,9 +15,8 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 
 import '../host/host_runtime.dart';
-import '../host/vault_manager.dart';
+import '../host/vault_host.dart';
 import '../knowledge/backlink_service.dart';
-import '../render/flutter_render_context.dart';
 import 'hook_view.dart';
 
 /// 应用壳。
@@ -27,7 +26,6 @@ class AppShell extends StatefulWidget {
     super.key,
     required this.host,
     required this.rootNodeId,
-    this.onCardDrop,
     this.vaultManager,
   });
 
@@ -37,12 +35,9 @@ class AppShell extends StatefulWidget {
   /// 前端图根节点（sidebar 语义）。
   final String rootNodeId;
 
-  /// 画布卡片 drop 语义分发（数据层——组合根注入）。
-  final CanvasCardDropHandler? onCardDrop;
-
-  /// 多仓库管理器（null = 单仓库模式；非空 → AppBar 仓库切换器，
-  /// M7.3 Obsidian 式多仓库）。
-  final VaultManager? vaultManager;
+  /// 多仓库宿主（null = 单仓库模式；非空 → AppBar 仓库切换器，
+  /// M7.3 Obsidian 式多仓库；M8 起经 `VaultHost` 接口消费）。
+  final VaultHost? vaultManager;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -133,7 +128,6 @@ class _AppShellState extends State<AppShell> {
             host: widget.host,
             nodeId: widget.rootNodeId,
             kind: 'sidebar-root',
-            onCardDrop: widget.onCardDrop,
             // M7.4：侧边栏内所有拖拽源（笔记行/搜索行）向共享事务
             // 记录起点——成功飞行/失败回弹的 from 不再退化到落点。
             onDragStart: _onDragStart,
@@ -146,7 +140,6 @@ class _AppShellState extends State<AppShell> {
             host: widget.host,
             nodeId: _canvasNodeId() ?? widget.rootNodeId,
             kind: 'graph',
-            onCardDrop: widget.onCardDrop,
           ),
         ),
       ],

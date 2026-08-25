@@ -112,7 +112,9 @@ void main() {
     expect(host.graph.get('noteA')!.title, '新标题');
   });
 
-  testWidgets('Ctrl+N → onNewNote 回调（组合根新建笔记分发）', (tester) async {
+  testWidgets('Ctrl+N → ToolbarActionRegistry note.create 动作（M8：意图归壳层，实现归插件）', (
+    tester,
+  ) async {
     final root = Directory.systemTemp.createTempSync('ngn_new_note');
     addTearDown(() {
       if (root.existsSync()) {
@@ -124,14 +126,10 @@ void main() {
     host.graph.save(
       StoredNode(id: 'root', title: '根', createdAt: now, updatedAt: now),
     );
+    // M8：不再注入组合根回调——测试用插件等价物注册动作。
     var invoked = 0;
-    await tester.pumpWidget(
-      NotebookApp(
-        host: host,
-        rootNodeId: 'root',
-        onNewNote: (_) => invoked++,
-      ),
-    );
+    host.toolbarActions.register('note.create', (_) => invoked++);
+    await tester.pumpWidget(NotebookApp(host: host, rootNodeId: 'root'));
     await tester.pump();
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);

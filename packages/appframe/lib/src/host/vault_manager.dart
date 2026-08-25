@@ -19,38 +19,12 @@ import 'package:plugon/plugon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'host_runtime.dart';
+import 'vault_host.dart';
 
-/// 仓库条目。
-class VaultEntry {
-  /// 构造仓库条目。
-  const VaultEntry({required this.id, required this.name, required this.path});
-
-  /// 反序列化（容错：缺字段 → 空串兜底）。
-  factory VaultEntry.fromJson(Map<String, dynamic> json) => VaultEntry(
-    id: json['id'] as String? ?? '',
-    name: json['name'] as String? ?? '',
-    path: json['path'] as String? ?? '',
-  );
-
-  /// 仓库 id（配置文件主键）。
-  final String id;
-
-  /// 仓库显示名。
-  final String name;
-
-  /// 数据根目录绝对路径。
-  final String path;
-
-  /// JSON 序列化。
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'name': name,
-    'path': path,
-  };
-}
-
-/// 多仓库管理器（ChangeNotifier——切换通知 NotebookApp 整树重建）。
-class VaultManager extends ChangeNotifier {
+/// 多仓库管理器 —— `VaultHost` 的文件仓库实现（M8 拆分：契约上移
+/// vault_host.dart，本类只保留实现——装配策略经构造注入，更换实现
+/// 时壳层/插件零改动）。
+class VaultManager extends VaultHost {
   /// 注入基础目录（仓库列表配置文件所在 + 缺省仓库根）、
   /// 插件工厂（每次装配新 host 的全新插件实例）、数据播种器与
   /// 设置持久化（P1-1：透传 HostRuntime，跨仓库切换共享同一 prefs）。
@@ -78,10 +52,10 @@ class VaultManager extends ChangeNotifier {
   File get _configFile =>
       File('${_baseDir.path}${Platform.pathSeparator}vaults.json');
 
-  /// 仓库列表。
+  @override
   List<VaultEntry> get vaults => List<VaultEntry>.unmodifiable(_vaults);
 
-  /// 当前仓库。
+  @override
   VaultEntry get current {
     final value = _current;
     if (value == null) {
@@ -90,7 +64,7 @@ class VaultManager extends ChangeNotifier {
     return value;
   }
 
-  /// 当前 HostRuntime。
+  @override
   HostRuntime get host {
     final value = _host;
     if (value == null) {
@@ -99,10 +73,10 @@ class VaultManager extends ChangeNotifier {
     return value;
   }
 
-  /// 已启动。
+  @override
   bool get started => _started;
 
-  /// 启动：读配置（缺省仓库补齐）→ 装配当前仓库。
+  @override
   Future<void> start() async {
     await _loadConfig();
     if (_vaults.isEmpty) {
@@ -116,7 +90,7 @@ class VaultManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 热切换仓库：新 host 装配 → 状态迁移 → 替换 → 旧 host 延迟 dispose。
+  @override
   Future<void> switchTo(String id) async {
     final target = _vaults.where((v) => v.id == id).firstOrNull;
     if (target == null) {
@@ -147,7 +121,7 @@ class VaultManager extends ChangeNotifier {
     }
   }
 
-  /// 创建仓库（建目录 + 条目 + 切换）。
+  @override
   Future<VaultEntry> createVault(String name) async {
     final id = 'vault-${DateTime.now().millisecondsSinceEpoch}';
     final dir = Directory('${_baseDir.path}${Platform.pathSeparator}$id');
@@ -163,6 +137,7 @@ class VaultManager extends ChangeNotifier {
   /// 数据目录**不物理删除**——移入 `<baseDir>/.trash/<id>-<时间戳>/`
   /// 回收站（renameSync 同卷移动；失败即抛异常、数据原地保留），
   /// 误删可手工移回；未来恢复 UI 直接读 .trash 目录。
+  @override
   Future<void> removeVault(String id) async {
     if (_current?.id == id) {
       throw StateError('当前仓库不可删除');
@@ -251,8 +226,9 @@ class VaultManager extends ChangeNotifier {
       theme.notifyListeners();
       newHost.i18nService.language = old.i18nService.language;
     }
-    // VaultManager 自注册（设置条目解析用；本实例跨 host 共享）。
-    newHost.services.addInstance<VaultManager>(this);
+    // VaultHost 自注册（M8：设置条目/插件经接口解析——可替换实现；
+    // 本实例跨 host 共享）。
+    newHost.services.addInstance<VaultHost>(this);
     _seed(newHost);
     await newHost.start(
       plugins: _pluginFactory(newHost),

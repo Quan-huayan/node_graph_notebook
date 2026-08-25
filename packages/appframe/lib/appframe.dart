@@ -9,6 +9,7 @@ library;
 
 export 'src/command/create_toolbar_button.dart';
 export 'src/host/host_runtime.dart';
+export 'src/host/vault_host.dart';
 export 'src/host/vault_manager.dart';
 export 'src/i18n/i18n_service.dart';
 export 'src/i18n/translations.dart';

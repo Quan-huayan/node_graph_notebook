@@ -13,8 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../host/host_runtime.dart';
-import '../host/vault_manager.dart';
-import '../render/flutter_render_context.dart';
+import '../host/vault_host.dart';
 import 'app_shell.dart';
 import 'command_palette.dart';
 import 'quick_switcher.dart';
@@ -27,12 +26,14 @@ class NotebookApp extends StatelessWidget {
   ///
   /// [vaultManager] 多仓库管理器（null = 单仓库模式，测试兼容）——
   /// 非空时整树随仓库切换键控重建（M7.3：热切换不重启进程）。
+  /// M8 修正（组合根回调移除）：不再注入 onCardDrop/onNewNote——
+  /// 画布拖入语义 = `CanvasCardDropSemantics` 壳层服务；Ctrl+N =
+  /// `ToolbarActionRegistry` 动作（'note.create'，插件注册）。壳层只
+  /// 提供意图接线，行为归属插件。
   NotebookApp({
     super.key,
     required this.host,
     required this.rootNodeId,
-    this.onCardDrop,
-    this.onNewNote,
     this.themeController,
     this.vaultManager,
   });
@@ -47,18 +48,12 @@ class NotebookApp extends StatelessWidget {
   /// 前端图根节点（sidebar 语义）。
   final String rootNodeId;
 
-  /// 画布卡片 drop 语义分发（数据层——组合根注入，01 拍板 #32）。
-  final CanvasCardDropHandler? onCardDrop;
-
-  /// Ctrl+N 新建笔记（组合根注入——对话框在 graph 插件，appframe
-  /// 零插件依赖，01 拍板 #32 同款语义分发模式）。
-  final void Function(BuildContext context)? onNewNote;
-
   /// 主题控制器（null = 固定跟随系统，测试/无设置场景）。
   final ThemeController? themeController;
 
-  /// 多仓库管理器（M7.3）。
-  final VaultManager? vaultManager;
+  /// 多仓库宿主（M7.3；M8 起经 `VaultHost` 接口消费——可替换实现，
+  /// 壳层不依赖具体 VaultManager）。
+  final VaultHost? vaultManager;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +124,11 @@ class NotebookApp extends StatelessWidget {
             onInvoke: (_) {
               final navContext = navigatorKey.currentContext;
               if (navContext != null) {
-                onNewNote?.call(navContext);
+                // M8：意图 → 动作注册表（'note.create' 由拥有建笔记
+                // 对话框/写路径的插件注册——app 不知道也不持有实现）。
+                effectiveHost.toolbarActions
+                    .lookup('note.create')
+                    ?.call(navContext);
               }
               return null;
             },
@@ -146,7 +145,7 @@ class NotebookApp extends StatelessWidget {
               if (ctx != null) {
                 showCommandPalette(
                   ctx,
-                  _paletteEntries(ctx, effectiveHost, onNewNote),
+                  _paletteEntries(ctx, effectiveHost),
                   emptyMessage: effectiveHost.i18nService.t('palette.empty'),
                 );
               }
@@ -190,7 +189,6 @@ class NotebookApp extends StatelessWidget {
           home: AppShell(
             host: effectiveHost,
             rootNodeId: rootNodeId,
-            onCardDrop: onCardDrop,
             vaultManager: vaultManager,
           ),
         ),
@@ -260,18 +258,17 @@ class QuickSwitchIntent extends Intent {
 /// 工具栏按钮 = 节点（00"All is Node"）：kind=='toolbar' 的节点即命令
 /// 入口——动作名查 ToolbarActionRegistry（targeted 优先），图标/标签
 /// 取节点 metadata（icon/tooltip）。
-List<PaletteEntry> _paletteEntries(
-  BuildContext ctx,
-  HostRuntime host,
-  void Function(BuildContext)? newNote,
-) {
+List<PaletteEntry> _paletteEntries(BuildContext ctx, HostRuntime host) {
   final t = host.i18nService.t;
+  // M8：新建笔记条目 = 动作注册表解析（'note.create' 插件注册——
+  // 命令面板与 Ctrl+N 同一动作源，行为不归组合根）。
+  final newNoteAction = host.toolbarActions.lookup('note.create');
   return <PaletteEntry>[
-    if (newNote != null)
+    if (newNoteAction != null)
       PaletteEntry(
         label: t('palette.newNote'),
         icon: Icons.note_add_outlined,
-        run: () => newNote(ctx),
+        run: () => newNoteAction(ctx),
       ),
     PaletteEntry(
       label: t('palette.search'),

@@ -122,6 +122,11 @@ P0/P1 全部落地（commit a0a5e95…a47d31c，19 个拆分提交 + 11 个整�
 - **P1-2 完成**：撤销系统（03 §四 条款兑现）——UndoManager（撤销/重做栈、executeRaw 防重复入栈）+ Create/Update/SaveNote/Delete/Restore/Move/Uncontain/Connect 全部声明 inverse + Ctrl+Z/Ctrl+Y 全局快捷键。
 - **P1-3 完成**：UI 层硬编码中文清零（converter/market/graph_nodes/theme/i18n/search/folder/卡片视图全文案走 t()）；翻译表 70 → ~120 key；8 条死 key 转正。剩余中文 = 数据/协议层（种子标题、导出文件头、Mock 回复、AI 工具协议文案）——按验收豁免。
 - **P1-4 完成**：Ctrl+N（组合根回调，onCardDrop 同款语义分发）/ Ctrl+S（编辑器内作用域）/ Ctrl+F（ShellSignals 壳层信号 → 侧边栏切搜索 tab）。实测坑：快捷键在 MaterialApp 内层无焦点即失效——置于外层 + navigatorKey 供对话框上下文。
+- **M8 教训（组合根回调 = 软性反模式，01 拍板 #32 已反转）**：事件源在 A 插件、语义判定在 B 插件时，把回调注入组合根 = 每新增一个跨插件交互就往 app 顶层加参数（onCardDrop → onNewNote → VaultManager 接龙）——组合根从"装配清单"退化为主持所有插件行为的"超级领导"。正确模式：
+  - **语义判定归系统**：壳层语义服务家族（宿主缺省 null + 插件 last-wins——Sidebar/Toolbar/CanvasCardDrop 三族同构），画布 widget 经 `host.serviceProvider` 运行时解析；
+  - **意图归壳层、动作归插件**：Ctrl+N = ToolbarActionRegistry `'note.create'`（拥有对话框的 graph 插件注册），壳层只做意图→动作名映射，app 顶层零实现；
+  - **可替换实现走接口**：VaultHost ← VaultManager（文件实现），壳层/插件只消费接口，换仓库框架 = 换实现类，组合根只选择实现。
+  判断准则：组合根出现"行为实现"即越权；只剩"模块清单 + 持久化注入 + 实现选择"才合规。
 - **P1-5 完成**：侧边栏笔记/文件夹删除入口 + 共用确认壳（appframe showDeleteNodeConfirm）；**命令词表 DTO 上移 core**（插件互相不依赖的正确落地——node_folder/node_editor 发删除命令零 node_graph 依赖）。
 - **P1-6 完成**：首启引导（onboarding.shown 标记，zh/en 文案，核心玩法四步 + 快捷键清单）。
 

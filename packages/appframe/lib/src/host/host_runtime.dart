@@ -126,6 +126,12 @@ class HostRuntime {
       ..addSingleton<ToolbarDropSemantics>(
         (sp) =>
             ({required draggedNodeId}) => null,
+      )
+      // M8（组合根回调移除）：画布卡片拖入语义——宿主缺省 null（画布
+      // 默认连接语义），插件 last-wins 覆盖（node_ai → DropIntoAICommand）。
+      // 语义判定归系统（语义服务家族），app 组合根不再注入回调。
+      ..addSingleton<CanvasCardDropSemantics>(
+        (sp) => ({required draggedId, required targetId}) => null,
       );
     // P1-1：设置持久化绑定（构造体执行——字段已初始化）。
     themeController.attach(prefs);

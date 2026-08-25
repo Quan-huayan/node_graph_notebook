@@ -1,20 +1,26 @@
-/// 应用入口（rewrite 架构）——**只组装，零 UI**（强限制，M7 修正）。
+/// 应用入口（rewrite 架构）——**只组装，零 UI、零行为分发**（强限制，
+/// M7 修正 + M8 组合根回调移除）。
 ///
 /// 职责：
 /// 1. 创建 HostRuntime（数据根 = 运行目录 data/）
 /// 2. 播种示例数据（结构进 Graph，位置进 UIStateStore，投影不变式）
-/// 3. 加载插件（servicesProvider 注入——M7 修正模式）
-/// 4. 提供数据层回调（onCardDrop——语义分发归组合根，01 拍板 #32）
-/// 5. runApp(AppShell)——应用壳在 appframe（Hook 承载 UI；
-///    节点打开 = 渲染其 Hook，无 UI 行为分发）
+/// 3. 加载插件（servicesProvider 注入——M7 修正模式；模块清单 =
+///    组合根本职，插件行为不归组合根）
+/// 4. 选择多仓库实现（VaultManager = VaultHost 的文件实现，可替换）
+/// 5. runApp(NotebookApp)——应用壳在 appframe；**行为全归壳层服务/
+///    插件**（画布 drop 语义 = CanvasCardDropSemantics 服务、Ctrl+N =
+///    ToolbarActionRegistry 'note.create' 动作——01 拍板 #32 已反转，
+///    M8）。app 顶层不再持有任何插件行为实现。
 library;
 
 import 'dart:async';
 import 'dart:io';
 
-import 'package:appframe/appframe.dart';
 import 'package:flutter/material.dart';
-import 'package:core/core.dart';
+import 'package:plugon/plugon.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:appframe/appframe.dart';
 import 'package:node_ai/node_ai.dart';
 import 'package:node_converter/node_converter.dart';
 import 'package:node_data_recovery/node_data_recovery.dart';
@@ -26,8 +32,6 @@ import 'package:node_lua/node_lua.dart';
 import 'package:node_market/node_market.dart';
 import 'package:node_search/node_search.dart';
 import 'package:node_settings/node_settings.dart';
-import 'package:plugon/plugon.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,13 +81,9 @@ Future<void> main() async {
           // 主题控制器（组合根注入，拍板 #39：设置对话框编辑 →
           // MaterialApp 即时响应，M7.2 E3 接线）。
           themeController: host.themeController,
-          // 数据层回调（语义分发归组合根，01 拍板 #32）。
-          onCardDrop: ({required targetId, required draggedId}) =>
-              _onCardDrop(host, targetId, draggedId),
-          // P1-4：Ctrl+N 新建笔记（组合根回调——对话框在 graph 插件，
-          // appframe 零插件依赖，同 onCardDrop 语义分发模式）。
-          onNewNote: (context) => _createNote(host, context),
-          // 多仓库（AppBar 切换器 + 键控整树重建）。
+          // M8：多仓库（AppBar 切换器 + 键控整树重建）——经 VaultHost
+          // 接口消费（可替换实现）；drop 语义 / Ctrl+N 均不再传回调：
+          // 壳层从 CanvasCardDropSemantics 服务与 'note.create' 动作解析。
           vaultManager: vaultManager,
         ),
       );
@@ -93,68 +93,6 @@ Future<void> main() async {
       debugPrint('Stack trace: $stack');
     },
   );
-}
-
-/// Ctrl+N 新建笔记（P1-4）：NodeEditDialog 收集 → CreateNodeCommand
-/// 落盘（判据① 写路径；无位置键 → 侧边栏未归类区展示）。
-Future<void> _createNote(HostRuntime host, BuildContext context) async {
-  final form = await showDialog<Map<String, dynamic>>(
-    context: context,
-    builder: (dialogContext) => NodeEditDialog(
-      dialogTitle: host.i18nService.t('node.create'),
-      i18n: host.i18nService,
-    ),
-  );
-  if (form == null) {
-    return;
-  }
-  final id = newNodeId();
-  final kind = form['kind'] as String?;
-  try {
-    await host.commandBus.dispatch<CreateNodeCommand, CreateNodeResult>(
-      CreateNodeCommand(
-        id: id,
-        title: form['title'] as String,
-        content: form['content'] as String,
-        metadata: kind == null || kind == 'note'
-            ? null
-            : <String, dynamic>{'kind': kind},
-      ),
-    );
-  } catch (error) {
-    // 失败反馈（架构 §8：禁止静默失败）。
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${host.i18nService.t('error.operationFailed')}: $error',
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-}
-
-/// 画布卡片 drop 语义分发（01 拍板 #32，数据层）：目标 = AI 节点 →
-/// DropIntoAICommand（建/更新会话，判据①）；已消费返回 true。
-Future<bool> _onCardDrop(
-  HostRuntime host,
-  String targetId,
-  String draggedId,
-) async {
-  final target = host.graph.get(targetId);
-  if (target == null || !const AIConcept().validate(target)) {
-    return false;
-  }
-  try {
-    await host.commandBus.dispatch<DropIntoAICommand, DropIntoAIResult>(
-      DropIntoAICommand(aiNodeId: targetId, sourceId: draggedId),
-    );
-    return true;
-  } on CycleError {
-    return true; // 已处理（拒绝），不落入连接语义。
-  }
 }
 
 /// 预置播种（contain 关系模型 + M7 工具栏 UI 节点）。

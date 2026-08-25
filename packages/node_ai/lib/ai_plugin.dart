@@ -18,6 +18,7 @@ import 'src/ai_panel_concept.dart';
 import 'src/ai_provider.dart';
 import 'src/ai_provider_config.dart';
 import 'src/ai_settings.dart';
+import 'src/chat_commands.dart';
 import 'src/chat_concept.dart';
 import 'src/chat_handlers.dart';
 import 'src/function_calling/ai_tool.dart';
@@ -110,6 +111,21 @@ class AiPlugin extends Plugin {
               aiNodeId: draggedNodeId,
               sidebarRootId: targetContainerId,
             );
+          }
+          return null;
+        },
+      )
+      // M8（组合根回调移除，01 拍板 #32 反转）：画布卡片拖入语义
+      // last-wins 覆盖——**目标 = AI 节点 → DropIntoAICommand**（数据
+      // 命令，判据① 建/更新会话）；非 AI 目标 → null（宿主缺省 =
+      // 画布默认连接语义）。判定归系统（语义服务家族），app 组合根
+      // 不再注入回调（消灭"每加一个跨插件交互就往 app 顶层加回调"）。
+      ..addSingleton<CanvasCardDropSemantics>(
+        (sp) => ({required draggedId, required targetId}) {
+          final graph = sp.get<Graph>();
+          final target = graph.get(targetId);
+          if (target != null && const AIConcept().validate(target)) {
+            return DropIntoAICommand(aiNodeId: targetId, sourceId: draggedId);
           }
           return null;
         },

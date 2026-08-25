@@ -38,7 +38,6 @@ class HookView extends StatefulWidget {
     required this.host,
     required this.nodeId,
     required this.kind,
-    this.onCardDrop,
     this.onDragStart,
     this.recycleOnDispose = false,
   });
@@ -51,9 +50,6 @@ class HookView extends StatefulWidget {
 
   /// 渲染形态（HookContext.kind：sidebar / graph / open …）。
   final String kind;
-
-  /// 画布卡片 drop 语义分发（数据层——组合根注入，01 拍板 #32）。
-  final CanvasCardDropHandler? onCardDrop;
 
   /// 拖拽起点记录（飞行视觉——父容器透传给子 Hook）。
   final DragStartHandler? onDragStart;
@@ -114,7 +110,6 @@ class _HookViewState extends State<HookView> {
       FlutterRenderContext(
         host: widget.host,
         kind: widget.kind,
-        onCardDrop: widget.onCardDrop,
         onDragStart: widget.onDragStart,
         sink: sink,
       ),

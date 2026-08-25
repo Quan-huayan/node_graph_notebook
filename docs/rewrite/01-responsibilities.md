@@ -87,7 +87,7 @@
 | 对话会话（chat 实例） | L1-node：`chat.references = {ai, source}`；消息历史 = content（markdown 序列化） | 01 拍板 #30 |
 | 对话发送 | AppendMessageCommand（快，用户消息落盘）+ AskAICommand（长任务，回复落盘）——均走写路径 | 03（§四 长任务）+ 01 拍板 #30 |
 | LLM 后端 | AIProvider 接口（plugon DI 注册，Handler 延迟解析）；Mock 默认 + OpenAI 可换 | archive/ai 资产带走，01 拍板 #31 |
-| 卡片 drop 语义分发 | app 组合根注入（GraphCanvas.onCardDrop 回调）；插件互相不依赖 | 04（§三 约束 3）+ 01 拍板 #31 |
+| 卡片 drop 语义分发 | 壳层语义服务（`CanvasCardDropSemantics`，宿主缺省 null + 插件 last-wins）；**app 组合根回调已移除**（M8 反转） | 04（§三 约束 3）+ 01 拍板 #31 修正：拍板 #32 已反转 |
 
 ## F. 遗留细化（非决策级，进入 02 / architecture.md 时定）
 
@@ -175,6 +175,10 @@
   30. **AI 场景模型**（00 杀手演示"拖进 AI 节点 → 变对话"落地）：**AI 节点 = L0-node**（references 恒空，`metadata.kind == 'ai'`，AIConcept 结构匹配——同 folder 模式）；**对话会话 = chat 实例（L1-node）**：`chat.references = {ai: <AI节点>, source: <笔记>}`，拖笔记进 AI 节点 = 数据命令（查 references.source 唯一实例：无则创建、有则更新 ai——同 contain 模式）；**消息历史 = chat 实例 content**（markdown 序列化 `**用户**:` / `**AI**:` 分段——对话记录是文本，可被编辑器/git 管理，00 §3.2）。笔记本体零修改、无数据副本。
   31. **对话发送 = 两命令拆分**（每条消息写 = 独立命令 + 独立写后通知，UI 时序自然）：`AppendMessageCommand`（快命令：用户消息 append 落盘 → 通知 → UI 即时显示）+ `AskAICommand`（长任务 Handler，03 §四：读 chat + source 上下文 → AIProvider 回复 → append 落盘 → 通知——复用写路径，不阻塞 UI）。**LLM 后端按 archive/ai 方式带走**：`AIProvider` 接口 + `MockAIProvider`（默认，延迟回复）+ `OpenAIProvider`（http，key 配置留 settings 迭代）；服务经 plugon DI 注册（`addSingleton<AIProvider>`），Handler 延迟解析。
   32. **UI 组合**：AI 节点创建 = 画布双击对话框加 kind 选择（笔记/文件夹/AI 节点，NodeEditDialog 扩展）；画布卡片 drop 语义分发 = **app 组合根注入**（04 §三 约束 3：node_graph 不依赖 node_ai——`GraphCanvas.onCardDrop` 可选回调，app 判定目标 Concept == AIConcept → `DropIntoAICommand`，否则默认连接）；对话 UI = `AIChatDialog`（会话列表 + 消息流 + 输入框，node_ai 包内，点击画布 AI 卡片打开）。
+   ### M8（组合根回调移除，拍板 #32 反转）
+   **错误**：卡片 drop 语义分发归组合根回调——每新增一个跨插件交互就往 app 顶层加一个回调（onCardDrop / onNewNote / vaultManager 同病），组合根被塞进插件行为实现，"领导啥事都干"。
+   **反转**：drop 语义判定归 **壳层语义服务家族**（`CanvasCardDropSemantics`，与 `SidebarDropSemantics`/`ToolbarDropSemantics` 同族：宿主缺省 null = 默认连接语义，插件 last-wins 覆盖——node_ai 对 AI 目标返回 `DropIntoAICommand` 数据命令）；Ctrl+N = `ToolbarActionRegistry` 动作（'note.create'，归拥有 NodeEditDialog 的 graph 插件注册，壳层只把 NewNoteIntent 映射到动作名）；多仓库 = `VaultHost` 接口（`VaultManager` 为文件实现，可替换——壳层/插件只消费接口）。
+   **落点**：app 组合根只剩模块清单 + 持久化注入 + VaultHost 实现选择；**零插件行为实现**. M8.
 
 - 2026-08-05（M7 Lua 动态 Concept 引擎，01-E 承诺落地）——
   33. **Lua = 动态 Concept 引擎**：脚本（data/lua_scripts/*.lua，文件树可 git 管理）定义 `Concept` 表（id/name/slots/requiredSlots/requiredMetadataKeys/contentRequirement + `validate`/`createHook` Lua 函数），Dart `LuaConcept` 桥实现 Concept 接口委托 Lua——**接口薄度验证**（02 §1.2：Concept 接口薄到 Lua 能实现）。脚本可注册命令处理（`Commands = {name = fn(payload)}`）→ `LuaCommand`（纯 DTO）+ `LuaCommandHandler` 路由；返回值约定字符串：`"affected:<id1>,<id2>;<kind>"` / `"error:<消息>"` / `"ok"`。

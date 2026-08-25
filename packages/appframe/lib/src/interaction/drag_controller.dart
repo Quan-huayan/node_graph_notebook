@@ -87,6 +87,16 @@ typedef SidebarDropSemantics =
 typedef ToolbarDropSemantics =
     Command? Function({required String draggedNodeId});
 
+/// 画布卡片拖入语义（M8 修正：撤销 01 拍板 #32——语义分发**不再归
+/// 组合根回调**，归本壳层语义服务家族）：宿主缺省注册（返回 null =
+/// 画布默认连接语义）；插件 last-wins 覆盖（如 node_ai 对 AI 目标
+/// 返回 DropIntoAICommand——目标接收拖入 = 数据命令，判据①）。
+typedef CanvasCardDropSemantics =
+    Command? Function({
+      required String draggedId,
+      required String targetId,
+    });
+
 /// 拖拽控制器：四阶段事务 + drop 语义判定 + 提交。
 class DragController {
   /// 注入判定/执行依赖（环校验器与命令工厂缺省内置）。

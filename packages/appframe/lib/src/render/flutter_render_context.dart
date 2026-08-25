@@ -8,9 +8,12 @@
 /// M7 修正（Hook 承载 UI，00"UI 是 Hook 构成的图"）：
 /// - host：渲染宿主引用——Hook 渲染时经此解析服务（plugon DI），
 ///   构造自己的 UI（服务注入——插件 UI 不依赖组合根类型）
-/// - onCardDrop：画布卡片 drop 语义分发（**数据层**——目标 Concept
-///   判定归组合根，插件互相不依赖，01 拍板 #32）
 /// - sink：渲染结果收集（widget 列表；null = 丢弃，供测试）
+///
+/// M8 修正（组合根回调移除）：画布卡片拖入语义不再经渲染上下文穿线
+/// （旧 onCardDrop 字段已删）——语义 = `CanvasCardDropSemantics` 壳层
+/// 服务（宿主缺省 null + 插件 last-wins，drag_controller.dart），画布
+/// 经 `host.serviceProvider` 运行时解析。渲染上下文回归纯渲染通道。
 ///
 /// 节点打开 = 渲染节点 Hook（HookView）——**无 UI 行为分发回调**。
 library;
@@ -23,20 +26,12 @@ import '../host/host_runtime.dart';
 /// 拖拽起点回调（节点 id + 全局坐标——共享事务的 Phase 1 入口）。
 typedef DragStartHandler = void Function(String nodeId, Offset position);
 
-/// 画布卡片 drop 语义分发（数据层——true = 已消费，不走默认语义）。
-typedef CanvasCardDropHandler =
-    Future<bool> Function({
-      required String targetId,
-      required String draggedId,
-    });
-
 /// Flutter 渲染目标。
 class FlutterRenderContext implements RenderContext {
   /// 注入宿主、渲染形态、数据层回调与渲染结果收集。
   FlutterRenderContext({
     this.host,
     this.kind,
-    this.onCardDrop,
     this.onDragStart,
     this.sink,
   });
@@ -47,9 +42,6 @@ class FlutterRenderContext implements RenderContext {
   /// 渲染形态（HookContext.kind：sidebar / graph / open …——
   /// Hook render 按形态分发自己的呈现，02 §1.2）。
   final String? kind;
-
-  /// 画布卡片 drop 语义分发（数据层）。
-  final CanvasCardDropHandler? onCardDrop;
 
   /// 拖拽起点记录（飞行视觉——拖拽源 Hook 的 Draggable 调用，
   /// 目标容器经 DragController 读取；M7）。
@@ -71,7 +63,6 @@ class FlutterRenderContext implements RenderContext {
       FlutterRenderContext(
         host: host,
         kind: kind,
-        onCardDrop: onCardDrop,
         onDragStart: onDragStart,
         sink: sink,
       );

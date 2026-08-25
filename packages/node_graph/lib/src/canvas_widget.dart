@@ -38,16 +38,15 @@ import 'node_dialogs.dart';
 /// 画布保留 commandBus 订阅（连接线 = 画布级派生状态，ConnectionConcept
 /// 无 Hook 物化——10⁶ 优化项：连接 Hook 化）。
 class GraphCanvas extends StatefulWidget {
-  /// 注入宿主组合根与数据层回调。
+  /// 注入宿主组合根。
   ///
-  /// [onCardDrop] 卡片 drop 语义分发（null = 默认连接语义）。
-  const GraphCanvas({super.key, required this.host, this.onCardDrop});
+  /// M8（组合根回调移除）：卡片 drop 语义不再经本组件回调注入——
+  /// 语义 = `CanvasCardDropSemantics` 壳层服务（`host.serviceProvider`
+  /// 运行时解析，宿主缺省 null = 默认连接），与侧边栏/工具栏同族。
+  const GraphCanvas({super.key, required this.host});
 
   /// 宿主组合根。
   final HostRuntime host;
-
-  /// 卡片 drop 语义分发（数据层——组合根注入，01 拍板 #32）。
-  final CanvasCardDropHandler? onCardDrop;
 
   @override
   State<GraphCanvas> createState() => _GraphCanvasState();
@@ -474,9 +473,10 @@ class _GraphCanvasState extends State<GraphCanvas> {
   }
 
   /// 落点统一判定（卡片 DragTarget 与画布 DragTarget 共用）：
-  /// 落点距某成员卡片中心 < 容差 → 语义分发（01 拍板 #32：宿主注入
-  /// 的 onCardDrop 先判定——AI 节点接收拖入 = 数据命令；未消费 →
-  /// 默认连接，判据① L1 实例）；否则 → 位置直写（判据② 外观，零结构写入）。
+  /// 落点距某成员卡片中心 < 容差 → 语义分发（M8：`CanvasCardDropSemantics`
+  /// 壳层服务——宿主缺省 null = 默认连接；插件 last-wins 覆盖，如 AI
+  /// 节点接收拖入 = `DropIntoAICommand` 数据命令。命令非 null = 已消费，
+  /// 不执行默认连接）；否则 → 位置直写（判据② 外观，零结构写入）。
   ///
   /// 修正记录：初版连接必须精确落在卡片上（DragTarget 命中），
   /// 用户"拖过之后就判别不上"——就近判定 + 容差解决。
@@ -506,12 +506,25 @@ class _GraphCanvasState extends State<GraphCanvas> {
       connectTolerance = targetSize.width / 2 + 32;
     }
     if (nearest != null && nearestDistance < connectTolerance) {
-      // 01 拍板 #32：宿主注入的语义分发先判定（AI 节点接收拖入 =
-      // 数据命令）；已消费则不执行默认连接。
-      final consumed =
-          await widget.onCardDrop?.call(targetId: nearest, draggedId: nodeId) ??
-          false;
-      if (consumed) {
+      // M8：语义判定归系统（CanvasCardDropSemantics 壳层服务——
+      // 拖拽语义服务家族，drag_controller.dart；插件 last-wins）。
+      // 命令非 null = 已消费（含撞环拒绝），不执行默认连接。
+      final command = widget.host.serviceProvider
+          .get<CanvasCardDropSemantics>()(draggedId: nodeId, targetId: nearest);
+      if (command != null) {
+        try {
+          await widget.host.commandBus.dispatch<Command, WriteResult>(command);
+        } on CycleError {
+          return; // 已处理（拒绝），不落入默认连接语义。
+        } on IOException {
+          _showError(widget.host.i18nService.t('error.saveFailed'));
+          return;
+        } on Exception catch (error) {
+          _showError(
+            '${widget.host.i18nService.t('error.operationFailed')}: $error',
+          );
+          return;
+        }
         return;
       }
       _connect(nodeId, nearest);
@@ -805,7 +818,6 @@ class _GraphCanvasState extends State<GraphCanvas> {
                                         position:
                                             positions[nodeId]! + worldOffset,
                                         onTap: () => _openNode(context, nodeId),
-                                        onCardDrop: widget.onCardDrop,
                                         onConnectRequest: _resolveDrop,
                                         onDragStart: _onDragStart,
                                         onDragUpdate: _onDragPreview,
@@ -919,7 +931,6 @@ class _GraphCanvasState extends State<GraphCanvas> {
                   host: widget.host,
                   nodeId: nodeId,
                   kind: 'open',
-                  onCardDrop: widget.onCardDrop,
                   recycleOnDispose: true,
                 ),
               ),
@@ -945,7 +956,6 @@ class _PositionedCard extends StatefulWidget {
     required this.host,
     required this.position,
     required this.onTap,
-    this.onCardDrop,
     this.onConnectRequest,
     this.onDragStart,
     this.onDragUpdate,
@@ -956,9 +966,6 @@ class _PositionedCard extends StatefulWidget {
   final HostRuntime host;
   final Offset position;
   final VoidCallback onTap;
-
-  /// 画布卡片 drop 语义分发（数据层——组合根注入，01 拍板 #32）。
-  final CanvasCardDropHandler? onCardDrop;
 
   final void Function(String draggedId, Offset globalPoint)? onConnectRequest;
   final void Function(String nodeId, Offset globalPoint)? onDragStart;
@@ -1016,7 +1023,6 @@ class _PositionedCardState extends State<_PositionedCard> {
       FlutterRenderContext(
         host: host,
         kind: 'graph',
-        onCardDrop: widget.onCardDrop,
         sink: sink,
       ),
     );

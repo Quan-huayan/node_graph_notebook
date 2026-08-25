@@ -86,8 +86,9 @@ class VaultSettingsHook extends Hook {
     if (host == null || sink == null) {
       return;
     }
-    // 单仓库模式（测试/无 VaultManager）→ 不渲染（tryGet 容错）。
-    final manager = host.serviceProvider.tryGet<VaultManager>();
+    // 单仓库模式（测试/无 VaultHost 实现）→ 不渲染（tryGet 容错）。
+    // M8：经接口解析——可替换实现（不依赖具体 VaultManager）。
+    final manager = host.serviceProvider.tryGet<VaultHost>();
     if (manager == null) {
       return;
     }
@@ -104,8 +105,8 @@ class VaultSettingsForm extends StatefulWidget {
     required this.i18n,
   });
 
-  /// 多仓库管理器。
-  final VaultManager manager;
+  /// 多仓库宿主（M8：经 VaultHost 接口——可替换实现）。
+  final VaultHost manager;
 
   /// 国际化服务（壳层）。
   final I18nService i18n;

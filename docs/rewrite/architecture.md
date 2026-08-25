@@ -313,7 +313,7 @@ M7 落地（2026-08-05，01 拍板 #30-41）
   - 任意节点拖入工具栏 → `CreateToolbarButtonCommand` 建 `kind=='toolbar'` 按钮（metadata.action='node.open' + target）→ `ToolbarActionRegistry.registerTargeted` 目标动作（点击打开目标节点对话框）。
   - 搜索结果行 = Draggable：拖到文件夹 = MoveNodes（列表项）/ 拖到画布 = 位置直写（卡片，单击出对话框）/ 拖到工具栏 = 建按钮。**落点语义全在既有 DragTarget，三向零新语义。**
   - `HookView._onInvalidation`：structure 事件无条件重建（容器子级 = 运行时枚举，M7.3 暴露缺口）。
-- **多仓库（Obsidian 式）**：`VaultManager`（appframe）——仓库 = 独立数据根；config `baseDir/vaults.json`；热切换 = 重建 HostRuntime + 重装配插件（servicesProvider 闭包天然适配）+ NotebookApp 键控整树重建 + theme/i18n 状态迁移 + 旧 host post-frame dispose。AppBar 切换器 + 设置「仓库」条目。
+- **多仓库（Obsidian 式）**：`VaultHost`（接口，appframe）← `VaultManager`（文件实现）——仓库 = 独立数据根；config `baseDir/vaults.json`；热切换 = 重建 HostRuntime + 重装配插件（servicesProvider 闭包天然适配）+ NotebookApp 键控整树重建 + theme/i18n 状态迁移 + 旧 host post-frame dispose。AppBar 切换器 + 设置「仓库」条目。**M8**：壳层/插件只消费 `VaultHost` 接口（换 git/云仓库 = 新实现类，组合根只选择实现），app 顶层不再持有仓库行为。
 - **节点样式**：`style.graph.<nodeId>`（判据②）——颜色（12 色板）/ 尺寸 / 形态（card/circle 卡片与圆圈）；只在画布卡片壳层应用（卡片体 Hook 渲染样式无关）；默认按 kind 配色（ai→indigo 50、folder→amber 50）；DeleteNodeHandler 级联清理样式键。
 - **布局**：`ApplyLayoutCommand`（ChangeKind.ui，不发失效事件——画布观察者通道刷新）——力导向（`IncrementalLayoutEngine` 移植，AdjacencyList → AdjacencyMap）/ 网格 / 树状（BFS 分层 + 分量兜底）；入口 = 画布空白右键菜单 + 工具栏 'layout.apply' 动作。
 - **Function Calling 复活**：`AIToolRegistry`（服务，factory 预装 6 内置工具——onLoad 副作用在 plugon provider 重建后丢失的修正）/ `AIToolParameterValidator`（原型污染/DoS 防护）/ `FunctionCallingLoop`（maxIterations=10 兜底）；`AIProvider.complete`（OpenAI tools + tool_choice:auto，Mock scriptedToolCalls 测试驱动）；工具经 CommandBus dispatch 节点命令（判据①，写后通知画布实时反映）；AskAIHandler 工具调用/结果以 AI 角色文本落盘（每次重读最新 chat——陈旧快照互相覆盖的实测坑）；注册表空 → 旧 generate 路径回归兼容。
